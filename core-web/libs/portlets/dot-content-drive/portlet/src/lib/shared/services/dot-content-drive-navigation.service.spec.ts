@@ -4,11 +4,10 @@ import {
     mockProvider,
     SpyObject
 } from '@openng/spectator/vitest';
-import { of, throwError } from 'rxjs';
+import { of } from 'rxjs';
 import { Mocked, describe, expect, it, vi } from 'vitest';
 
 import { Location } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
 import { signal } from '@angular/core';
 import { Router } from '@angular/router';
 
@@ -17,11 +16,7 @@ import {
     DotHttpErrorManagerService,
     DotRouterService
 } from '@dotcms/data-access';
-import {
-    DotCMSBaseTypesContentTypes,
-    DotCMSContentlet,
-    FeaturedFlags
-} from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes, FeaturedFlags } from '@dotcms/dotcms-models';
 import { EDIT_CONTENT_NAVIGATION_OVERRIDE } from '@dotcms/edit-content';
 import { createFakeContentlet, createFakeContentType } from '@dotcms/utils-testing';
 
@@ -83,7 +78,6 @@ describe('DotContentDriveNavigationService', () => {
     let router: Mocked<Router>;
     let dotRouterService: Mocked<DotRouterService>;
     let location: SpyObject<Location>;
-    let httpErrorManager: SpyObject<DotHttpErrorManagerService>;
     let contentSearch: Mocked<DotContentSearchService>;
     let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
 
@@ -116,8 +110,9 @@ describe('DotContentDriveNavigationService', () => {
         router = spectator.inject(Router);
         dotRouterService = spectator.inject(DotRouterService);
         location = spectator.inject(Location);
-        httpErrorManager = spectator.inject(DotHttpErrorManagerService);
         contentSearch = spectator.inject(DotContentSearchService);
+        // Finds nothing, should anything search: the opener looks content up, not this service.
+        contentSearch.get.mockReturnValue(of({ jsonObjectView: { contentlets: [] } }));
         store = spectator.inject(DotContentDriveStore);
         // The store mock's functions are shared across tests and `clearAllMocks` keeps their
         // return values, so start every test with no language known.
@@ -219,11 +214,6 @@ describe('DotContentDriveNavigationService', () => {
                 title: 'Breaking',
                 portletId: 'content-drive'
             });
-            expect(service.$panelLocation()).toEqual({
-                kind: 'edit',
-                editContent: 'id-1',
-                editContentLang: 2
-            });
             expect(router.navigate).not.toHaveBeenCalled();
         });
 
@@ -278,10 +268,6 @@ describe('DotContentDriveNavigationService', () => {
                     folderInode: 'inode-1',
                     languageId: 1,
                     portletId: 'content-drive'
-                });
-                expect(service.$panelLocation()).toEqual({
-                    kind: 'create',
-                    createContent: contentType
                 });
                 expect(router.navigate).not.toHaveBeenCalled();
             }
@@ -453,17 +439,23 @@ describe('DotContentDriveNavigationService', () => {
     });
 
     /**
-     * One signal says what was asked to open, whichever editor will show it, plus `$panelLocation`,
-     * which says what the URL must show. Keeping the location separate is what lets it follow the
-     * panel later (first save, language switch) without remounting it (#37759, #38303).
+     * One signal says what was asked to open, whichever editor will show it. What the URL shows is
+     * the opener's, which names the panel from this request and follows it after it opened (first
+     * save, language switch) without remounting it (#38303, FR-044).
      */
-    describe('panel request and URL location', () => {
-        it('starts with nothing open and no location', () => {
+    describe('panel request', () => {
+        it('starts with nothing open', () => {
             expect(service.$editPanelRequest()).toBeNull();
-            expect(service.$panelLocation()).toBeNull();
         });
 
-        it('exposes an edit through $editPanelRequest and names it in the location', () => {
+        it('keeps no URL location of its own: the opener writes the panel to the URL', () => {
+            expect('$panelLocation' in service).toBe(false);
+            expect('panelSaved' in service).toBe(false);
+            expect('panelLanguageChanged' in service).toBe(false);
+        });
+
+        // The opener names an edit in the URL by the request's identifier and language.
+        it('exposes an edit through $editPanelRequest, with its identifier and language', () => {
             service.editContent(
                 createFakeContentlet({
                     contentType: 'blog',
@@ -474,150 +466,21 @@ describe('DotContentDriveNavigationService', () => {
             );
 
             expect(service.$editPanelRequest()).toEqual(
-                expect.objectContaining({ mode: 'edit', inode: 'inode-1' })
-            );
-            expect(service.$panelLocation()).toEqual({
-                kind: 'edit',
-                editContent: 'id-1',
-                editContentLang: 2
-            });
-        });
-
-        it('names a create by its content type variable in the location', () => {
-            service.createContent('blog');
-
-            expect(service.$panelLocation()).toEqual({ kind: 'create', createContent: 'blog' });
-        });
-
-        it('names a deep-linked edit by identifier and the resolved language', () => {
-            contentSearch.get.mockReturnValue(
-                of({
-                    jsonObjectView: {
-                        contentlets: [
-                            createFakeContentlet({
-                                inode: 'es-inode',
-                                identifier: 'id-1',
-                                languageId: 3
-                            })
-                        ]
-                    }
+                expect.objectContaining({
+                    mode: 'edit',
+                    inode: 'inode-1',
+                    identifier: 'id-1',
+                    languageId: 2
                 })
             );
-
-            service.openEditByIdentifier('id-1', 3);
-
-            expect(service.$panelLocation()).toEqual({
-                kind: 'edit',
-                editContent: 'id-1',
-                editContentLang: 3
-            });
         });
 
-        /**
-         * The location follows the panel after it opened, without touching the request: replacing
-         * the request would remount the panel and reload the editor under the author (#37759,
-         * FR-020, FR-025).
-         */
-        describe('following the open panel', () => {
-            const openCreate = () => {
-                service.createContent('blog');
-            };
+        it('names a deep-linked edit by identifier and the language the link names', () => {
+            service.openEditByIdentifier('id-1', 3);
 
-            const openEdit = () => {
-                service.editContent(
-                    createFakeContentlet({
-                        contentType: 'blog',
-                        inode: 'inode-1',
-                        identifier: 'id-1',
-                        languageId: 1
-                    })
-                );
-            };
-
-            it('names the saved content once a create is saved for the first time', () => {
-                openCreate();
-                const request = service.$editPanelRequest();
-
-                service.panelSaved({ identifier: 'id-9', languageId: 2 });
-
-                expect(service.$panelLocation()).toEqual({
-                    kind: 'edit',
-                    editContent: 'id-9',
-                    editContentLang: 2
-                });
-                expect(service.$editPanelRequest()).toBe(request);
-            });
-
-            it('leaves an edit where it is on a later save', () => {
-                openEdit();
-
-                service.panelSaved({ identifier: 'id-1', languageId: 1 });
-
-                expect(service.$panelLocation()).toEqual({
-                    kind: 'edit',
-                    editContent: 'id-1',
-                    editContentLang: 1
-                });
-            });
-
-            // A new translation saved in the new editor: the saved content names the language
-            // (#37759, FR-020, T124).
-            it('follows the language a save names in an open edit', () => {
-                openEdit();
-                const request = service.$editPanelRequest();
-
-                service.panelSaved({ identifier: 'id-1', languageId: 4 });
-
-                expect(service.$panelLocation()).toEqual({
-                    kind: 'edit',
-                    editContent: 'id-1',
-                    editContentLang: 4
-                });
-                expect(service.$editPanelRequest()).toBe(request);
-            });
-
-            // A save of related content reached in place names another content: its language is
-            // not the language of the content the URL names (#37759, FR-020, T131).
-            it('ignores the language of a save that names another content', () => {
-                openEdit();
-
-                service.panelSaved({ identifier: 'id-9', languageId: 4 });
-
-                expect(service.$panelLocation()).toEqual({
-                    kind: 'edit',
-                    editContent: 'id-1',
-                    editContentLang: 1
-                });
-            });
-
-            it('follows a language switch in the open edit', () => {
-                openEdit();
-                const request = service.$editPanelRequest();
-
-                service.panelLanguageChanged(3);
-
-                expect(service.$panelLocation()).toEqual({
-                    kind: 'edit',
-                    editContent: 'id-1',
-                    editContentLang: 3
-                });
-                expect(service.$editPanelRequest()).toBe(request);
-            });
-
-            it('ignores a language switch while creating, which has no content to name yet', () => {
-                openCreate();
-
-                service.panelLanguageChanged(3);
-
-                expect(service.$panelLocation()).toEqual({ kind: 'create', createContent: 'blog' });
-            });
-
-            it('does nothing with no panel open', () => {
-                service.panelSaved({ identifier: 'id-9', languageId: 2 });
-                service.panelLanguageChanged(3);
-
-                expect(service.$panelLocation()).toBeNull();
-            });
+            expect(service.$editPanelRequest()).toEqual(
+                expect.objectContaining({ mode: 'edit', identifier: 'id-1', languageId: 3 })
+            );
         });
 
         /**
@@ -647,10 +510,33 @@ describe('DotContentDriveNavigationService', () => {
                 expect(spectator.inject(EDIT_CONTENT_NAVIGATION_OVERRIDE)).toBe(service);
             });
 
+            /**
+             * A panel opened from a link names its content by identifier, and the opener finds the
+             * inode the editor opens with: Content Drive knows that panel by its identifier.
+             */
+            it('answers for the panel it opened from a link, by identifier', () => {
+                service.openEditByIdentifier('id-1', 2);
+
+                expect(
+                    service.switchToLegacyEditor(
+                        { inode: 'inode-1', identifier: 'id-1' },
+                        BLOG_POST,
+                        'blog'
+                    )
+                ).toBe(true);
+            });
+
+            it('declines a panel of other content while one opened from a link is open', () => {
+                service.openEditByIdentifier('id-1', 2);
+
+                expect(service.leaveOnLoadError({ inode: 'inode-9', identifier: 'id-9' })).toBe(
+                    false
+                );
+            });
+
             it('reopens its edit, in the same language, as a fresh request', () => {
                 openEdit();
                 const before = service.$editPanelRequest();
-                const locationBefore = service.$panelLocation();
 
                 const handled = service.switchToLegacyEditor(
                     { inode: 'inode-1' },
@@ -670,13 +556,12 @@ describe('DotContentDriveNavigationService', () => {
                 });
                 // A new request, so the panel reopens rather than keeping the new editor.
                 expect(service.$editPanelRequest()).not.toBe(before);
-                // Same content, same language: the URL already says so.
-                expect(service.$panelLocation()).toEqual(locationBefore);
             });
 
             // Inside the panel, related content opens in place, so the panel opened for one content
-            // can show another. The URL names what reopens (#37759, FR-020, T131).
-            it('names the switched content when the panel moved to related content', () => {
+            // can show another. The request names what reopens, identifier and language, and the
+            // opener names the reopened panel in the URL from it (#37759, FR-020, T131).
+            it('names the switched content and its language when the panel moved to related content', () => {
                 openEdit();
 
                 const handled = service.switchToLegacyEditor(
@@ -696,14 +581,10 @@ describe('DotContentDriveNavigationService', () => {
                         mode: 'edit',
                         inode: 'inode-9',
                         identifier: 'id-9',
-                        contentType: 'news'
+                        contentType: 'news',
+                        languageId: 3
                     })
                 );
-                expect(service.$panelLocation()).toEqual({
-                    kind: 'edit',
-                    editContent: 'id-9',
-                    editContentLang: 3
-                });
             });
 
             it('reopens its create as a fresh create of the same type, in the same language', () => {
@@ -727,7 +608,6 @@ describe('DotContentDriveNavigationService', () => {
                     })
                 );
                 expect(service.$editPanelRequest()).not.toBe(before);
-                expect(service.$panelLocation()).toEqual({ kind: 'create', createContent: 'blog' });
             });
 
             /**
@@ -799,7 +679,6 @@ describe('DotContentDriveNavigationService', () => {
 
                 expect(handled).toBe(true);
                 expect(service.$editPanelRequest()).toBeNull();
-                expect(service.$panelLocation()).toBeNull();
             });
 
             it("declines another editor's load error and keeps its panel open", () => {
@@ -811,154 +690,69 @@ describe('DotContentDriveNavigationService', () => {
             });
         });
 
-        it('clears the request and the location on close', () => {
+        it('clears the request on close', () => {
             service.createContent('blog');
 
             service.closeEditPanel();
 
             expect(service.$editPanelRequest()).toBeNull();
-            expect(service.$panelLocation()).toBeNull();
         });
     });
 
+    /**
+     * A link names content by identifier. The opener finds its working version, falls back to any
+     * language when the one asked for has none, and shows the standard error for content that
+     * cannot be opened (FR-050): Content Drive asks it with the identifier and the language it
+     * prefers, and searches nothing itself.
+     */
     describe('openEditByIdentifier', () => {
-        it('should resolve the identifier to its working inode and open one edit request', () => {
-            const resolved = createFakeContentlet({
-                contentType: 'blog',
-                inode: 'working-inode-1',
-                identifier: 'shared-identifier',
-                languageId: 1,
-                title: 'Shared Content'
-            });
-            contentSearch.get.mockReturnValue(of({ jsonObjectView: { contentlets: [resolved] } }));
-
-            service.openEditByIdentifier('shared-identifier');
-
-            expect(contentSearch.get).toHaveBeenCalledWith(
-                expect.objectContaining({ query: '+identifier:shared-identifier +working:true' })
-            );
-            expect(service.$editPanelRequest()).toEqual({
-                mode: 'edit',
-                inode: 'working-inode-1',
-                identifier: 'shared-identifier',
-                contentType: 'blog',
-                languageId: 1,
-                title: 'Shared Content',
-                portletId: 'content-drive'
-            });
-            expect(router.navigate).not.toHaveBeenCalled();
-        });
-
-        /** Answers each `contentSearch.get` call in order, so a fallback lookup can be simulated. */
-        const answerWith = (...batches: DotCMSContentlet[][]) => {
-            let call = 0;
-            contentSearch.get.mockImplementation(() =>
-                of({ jsonObjectView: { contentlets: batches[call++] ?? [] } })
-            );
-        };
-
-        it('should look up the exact version the URL asked for', () => {
-            // One identifier has one inode PER LANGUAGE, so the identifier alone does not name a
-            // version. Pinning the query is exact and has no result-window ceiling.
-            answerWith([createFakeContentlet({ inode: 'es-inode', languageId: 2 })]);
-
+        it('should hand the opener an edit by identifier, in the language the URL names, without searching', () => {
             service.openEditByIdentifier('shared-identifier', 2);
 
-            expect(contentSearch.get).toHaveBeenCalledWith({
-                query: '+identifier:shared-identifier +working:true +languageId:2',
-                limit: 1
+            expect(service.$editPanelRequest()).toEqual({
+                mode: 'edit',
+                identifier: 'shared-identifier',
+                languageId: 2,
+                portletId: 'content-drive'
             });
-            expect(service.$editPanelRequest()).toEqual(
-                expect.objectContaining({ inode: 'es-inode', languageId: 2 })
-            );
+            expect(contentSearch.get).not.toHaveBeenCalled();
+            expect(router.navigate).not.toHaveBeenCalled();
         });
 
         it('should prefer the URL language over the active filter', () => {
             store.getFilterValue.mockReturnValue(['1']);
-            answerWith([createFakeContentlet({ inode: 'es-inode', languageId: 2 })]);
 
             service.openEditByIdentifier('shared-identifier', 2);
 
-            expect(contentSearch.get).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    query: '+identifier:shared-identifier +working:true +languageId:2'
-                })
-            );
+            expect(service.$editPanelRequest()?.languageId).toBe(2);
         });
 
         it('should fall back to the drive language, then the environment default', () => {
             store.getFilterValue.mockReturnValue(['3']);
-            answerWith([createFakeContentlet({ inode: 'i' })]);
 
             service.openEditByIdentifier('shared-identifier');
 
-            expect(contentSearch.get).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    query: '+identifier:shared-identifier +working:true +languageId:3'
-                })
-            );
+            expect(service.$editPanelRequest()?.languageId).toBe(3);
 
-            contentSearch.get.mockClear();
             store.getFilterValue.mockReturnValue(undefined);
             defaultLanguageId.mockReturnValue(4);
-            answerWith([createFakeContentlet({ inode: 'i' })]);
 
             service.openEditByIdentifier('shared-identifier');
 
-            expect(contentSearch.get).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    query: '+identifier:shared-identifier +working:true +languageId:4'
-                })
-            );
+            expect(service.$editPanelRequest()?.languageId).toBe(4);
         });
 
-        it('should still open another language when the preferred one has no version', () => {
-            // A pinned query returns nothing for a language the content was never translated into, and
-            // "nothing" must not be read as "do not open" — a shared link to English-only content would
-            // silently do nothing on a Spanish-default environment.
-            answerWith([], [createFakeContentlet({ inode: 'en-inode', languageId: 1 })]);
-
-            service.openEditByIdentifier('shared-identifier', 2);
-
-            expect(contentSearch.get).toHaveBeenLastCalledWith({
-                query: '+identifier:shared-identifier +working:true',
-                limit: 1
-            });
-            expect(service.$editPanelRequest()).toEqual(
-                expect.objectContaining({ inode: 'en-inode' })
-            );
-        });
-
-        it('should not run a second lookup when no language is known at all', () => {
+        it('should name no language when none is known at all, so the opener takes any', () => {
             store.getFilterValue.mockReturnValue(undefined);
             defaultLanguageId.mockReturnValue(undefined);
-            answerWith([createFakeContentlet({ inode: 'i' })]);
 
             service.openEditByIdentifier('shared-identifier');
 
-            expect(contentSearch.get).toHaveBeenCalledTimes(1);
-            expect(contentSearch.get).toHaveBeenCalledWith({
-                query: '+identifier:shared-identifier +working:true',
-                limit: 1
+            expect(service.$editPanelRequest()).toEqual({
+                mode: 'edit',
+                identifier: 'shared-identifier',
+                portletId: 'content-drive'
             });
-        });
-
-        it('should not open the panel when the identifier resolves to nothing', () => {
-            contentSearch.get.mockReturnValue(of({ jsonObjectView: { contentlets: [] } }));
-
-            service.openEditByIdentifier('missing-identifier');
-
-            expect(service.$editPanelRequest()).toBeNull();
-        });
-
-        it('should surface the error and not open the panel when the search fails', () => {
-            const error = new HttpErrorResponse({ status: 500 });
-            contentSearch.get.mockReturnValue(throwError(() => error));
-
-            service.openEditByIdentifier('shared-identifier');
-
-            expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
-            expect(service.$editPanelRequest()).toBeNull();
         });
 
         /**
@@ -967,63 +761,14 @@ describe('DotContentDriveNavigationService', () => {
          * shows the new editor for a type that opted out of it (#37759, FR-021; #38303).
          */
         describe('leaving the editor to the opener', () => {
-            /** The resolved content, of the given type. */
-            const banner = (contentType: string) =>
-                createFakeContentlet({
-                    contentType,
-                    inode: 'banner-inode',
-                    identifier: 'banner-id',
-                    languageId: 2,
-                    title: 'Spring sale'
-                });
-
-            it.each([
-                ['a type that opted into the new editor', NEW_EDITOR_TYPE.variable],
-                ['a type on the legacy editor', LEGACY_TYPE.variable]
-            ])(
-                'should open the same edit request for content of %s, without looking its type up',
-                (_label, contentType) => {
-                    contentSearch.get.mockReturnValue(
-                        of({ jsonObjectView: { contentlets: [banner(contentType)] } })
-                    );
-
-                    service.openEditByIdentifier('banner-id', 2);
-
-                    expect(service.$editPanelRequest()).toEqual({
-                        mode: 'edit',
-                        inode: 'banner-inode',
-                        identifier: 'banner-id',
-                        contentType,
-                        languageId: 2,
-                        title: 'Spring sale',
-                        portletId: 'content-drive'
-                    });
-                    expect(service.$panelLocation()).toEqual({
-                        kind: 'edit',
-                        editContent: 'banner-id',
-                        editContentLang: 2
-                    });
-                    expect(router.navigate).not.toHaveBeenCalled();
-                }
-            );
-
-            it('should keep the language fallback for content of any type', () => {
-                answerWith(
-                    [],
-                    [
-                        createFakeContentlet({
-                            contentType: LEGACY_TYPE.variable,
-                            inode: 'en-inode',
-                            languageId: 1
-                        })
-                    ]
-                );
-
+            it('should name no content type, so the opener reads it and picks the editor', () => {
                 service.openEditByIdentifier('banner-id', 2);
 
                 expect(service.$editPanelRequest()).toEqual(
-                    expect.objectContaining({ inode: 'en-inode', languageId: 1 })
+                    expect.objectContaining({ mode: 'edit', identifier: 'banner-id' })
                 );
+                expect(service.$editPanelRequest()?.contentType).toBeUndefined();
+                expect(router.navigate).not.toHaveBeenCalled();
             });
         });
     });

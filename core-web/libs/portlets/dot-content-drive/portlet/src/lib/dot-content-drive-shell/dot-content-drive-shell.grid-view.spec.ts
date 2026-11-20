@@ -12,7 +12,7 @@ import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal, WritableSignal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -61,7 +61,6 @@ import {
     DotContentDriveActionExecution,
     DotContentDriveActionExecutionResult,
     DotContentDriveDialogDrillDown,
-    DotContentDrivePanelLocation,
     DotContentDriveSortOrder,
     DotContentDriveStatus
 } from '../shared/models';
@@ -73,9 +72,6 @@ import { DotContentDriveStore } from '../store/dot-content-drive.store';
 // Backs the navigation service mock's readonly `$editPanelRequest`. Typed (not cast) so tests get
 // a compile-checked payload; reset in the shared beforeEach for isolation.
 const editPanelRequestSignal: WritableSignal<DotEditContentRequest | null> = signal(null);
-// Backs the mock's `$panelLocation`: what the URL must say about the open panel. The shell's URL
-// sync and its Back guard read this, not the request (#37759).
-const panelLocationSignal: WritableSignal<DotContentDrivePanelLocation | null> = signal(null);
 /**
  * The Edit Permissions dialog the shell opens through `DialogService` (#37759, FR-030). `onClose`
  * is a subject so a test can close it the way PrimeNG does.
@@ -118,7 +114,6 @@ const pathSignal: WritableSignal<string> = signal('/');
 describe('DotContentDriveShellComponent — grid view', () => {
     let spectator: Spectator<DotContentDriveShellComponent>;
     let store: Mocked<InstanceType<typeof DotContentDriveStore>>;
-    let router: SpyObject<Router>;
     let location: SpyObject<Location>;
     let filtersSignal: ReturnType<typeof signal>;
     let statusSignal: ReturnType<typeof signal<DotContentDriveStatus>>;
@@ -190,11 +185,8 @@ describe('DotContentDriveShellComponent — grid view', () => {
                 createContent: vi.fn(),
                 closeEditPanel: vi.fn(),
                 openEditByIdentifier: vi.fn(),
-                panelSaved: vi.fn(),
-                panelLanguageChanged: vi.fn(),
                 $editPanelRequest: editPanelRequestSignal,
-                $forceLegacyEditor: signal(false),
-                $panelLocation: panelLocationSignal
+                $forceLegacyEditor: signal(false)
             }),
             LoggerService,
             StringUtils,
@@ -246,7 +238,6 @@ describe('DotContentDriveShellComponent — grid view', () => {
         );
         showInListFieldsSignal = signal<DotCMSContentTypeField[]>([]);
         editPanelRequestSignal.set(null);
-        panelLocationSignal.set(null);
         permissionsDialogClose$ = new Subject<unknown>();
         dialogServiceOpen.mockClear();
         permissionsDialogRef.close.mockClear();
@@ -375,24 +366,6 @@ describe('DotContentDriveShellComponent — grid view', () => {
                     viewType: viewTypeSignal,
                     setViewType: vi.fn()
                 }),
-                mockProvider(Router, {
-                    createUrlTree: vi.fn(
-                        (
-                            _commands: unknown[],
-                            opts: { queryParams?: Record<string, string | null> }
-                        ) => ({
-                            toString: () => {
-                                const params = Object.fromEntries(
-                                    Object.entries(opts?.queryParams ?? {}).filter(
-                                        ([, value]) => value != null
-                                    )
-                                ) as Record<string, string>;
-
-                                return '?' + new URLSearchParams(params).toString();
-                            }
-                        })
-                    )
-                }),
                 mockProvider(Location, {
                     go: vi.fn(),
                     replaceState: vi.fn(),
@@ -439,7 +412,6 @@ describe('DotContentDriveShellComponent — grid view', () => {
             ]
         });
         store = spectator.inject(DotContentDriveStore, true);
-        router = spectator.inject(Router);
         location = spectator.inject(Location);
 
         // Module-level, so whatever the last test left here is what the next one starts with. The
@@ -509,10 +481,8 @@ describe('DotContentDriveShellComponent — grid view', () => {
                 spectator.detectChanges();
                 showGrid();
 
-                expect(router.createUrlTree).toHaveBeenLastCalledWith([], {
-                    queryParams: expect.objectContaining({ viewType: 'card' }),
-                    queryParamsHandling: 'merge'
-                });
+                // The shell builds the URL from the address bar, so its own params are all it sets
+                // (#38303).
                 expect(location.replaceState).toHaveBeenLastCalledWith(
                     expect.stringContaining('viewType=card')
                 );

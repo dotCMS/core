@@ -5,12 +5,13 @@ import {
     ElementRef,
     HostListener,
     inject,
+    Injector,
     signal,
     viewChild,
     ChangeDetectionStrategy
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterOutlet } from '@angular/router';
+import { ActivatedRoute, Router, RouterOutlet } from '@angular/router';
 
 import { LazyLoadEvent, MenuItem, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -19,7 +20,7 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TieredMenu } from 'primeng/tieredmenu';
 import { ToastModule } from 'primeng/toast';
 
-import { take } from 'rxjs/operators';
+import { distinctUntilChanged, filter, map, take } from 'rxjs/operators';
 
 import {
     DotESContentService,
@@ -44,6 +45,7 @@ import {
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotAddToBundleComponent } from '@dotcms/ui';
+import { panelUrlIntentKey, readPanelUrlIntent } from '@dotcms/utils';
 
 import { DotCreatePageDialogComponent } from './dot-create-page-dialog/dot-create-page-dialog.component';
 import { DotPageFavoritesPanelComponent } from './dot-page-favorites-panel/dot-page-favorites-panel.component';
@@ -51,6 +53,8 @@ import { DotPagesTableComponent } from './dot-pages-table/dot-pages-table.compon
 import { DotPageActionsService } from './services/dot-page-actions.service';
 import { DotPageListService } from './services/dot-page-list.service';
 import { DotCMSPagesStore } from './store/store';
+
+import { refusePanelUrl } from '../../api/util/open-edit-content-panel';
 
 export interface DotActionsMenuEventParams {
     originalEvent: MouseEvent;
@@ -113,6 +117,9 @@ export class DotPagesComponent {
     readonly #dotPageActionsService = inject(DotPageActionsService);
     readonly #element = inject(ElementRef);
     readonly #destroyRef = inject(DestroyRef);
+    readonly #route = inject(ActivatedRoute);
+    readonly #router = inject(Router);
+    readonly #injector = inject(Injector);
 
     readonly #dotCMSPagesStore = inject(DotCMSPagesStore);
     readonly #globalStore = inject(GlobalStore);
@@ -134,6 +141,50 @@ export class DotPagesComponent {
 
     constructor() {
         this.listenSavePageEvent();
+        this.#openFromUrl();
+    }
+
+    /**
+     * Opens what the URL names (#38303, FR-026, FR-049), through the same path as the Edit action:
+     * on load, so a shared link or a refresh reopens the panel that was open, and on every
+     * navigation of the app's own that changes it, since a `/pages/<inode>` or `/pages/new/<type>`
+     * link builds this portlet first and its deep-link child then redirects here with the params.
+     *
+     * A navigation the browser's Back or Forward started opens nothing: those belong to the panel
+     * URL service (FR-048), and the router replays an entry that may name a panel still open. The
+     * same panel arriving again opens nothing, since an app navigation that changes other params
+     * carries the panel params the router last saw. A link the author cannot have meant (a panel
+     * param of the wrong shape, or two panels) opens nothing, shows the standard error and loses
+     * its params.
+     */
+    #openFromUrl(): void {
+        this.#route.queryParams
+            .pipe(
+                // Before the dedup, so a skipped entry is never the one the next URL is compared to.
+                filter(() => this.#router.currentNavigation()?.trigger !== 'popstate'),
+                map((params) => readPanelUrlIntent(params)),
+                distinctUntilChanged(
+                    (previous, next) => panelUrlIntentKey(previous) === panelUrlIntentKey(next)
+                ),
+                takeUntilDestroyed(this.#destroyRef)
+            )
+            .subscribe((intent) => {
+                if (intent.kind === 'edit') {
+                    const { identifier, languageId } = intent;
+                    this.#dotPageActionsService.openContent({
+                        mode: 'edit',
+                        identifier,
+                        ...(languageId ? { languageId } : {})
+                    });
+                } else if (intent.kind === 'create') {
+                    this.#dotPageActionsService.openContent({
+                        mode: 'new',
+                        contentType: intent.contentType
+                    });
+                } else if (intent.kind === 'refused') {
+                    void refusePanelUrl(this.#injector);
+                }
+            });
     }
 
     /**
@@ -272,21 +323,9 @@ export class DotPagesComponent {
             });
     }
 
-    protected getPages(): void {
-        this.#dotCMSPagesStore.getPages({ offset: 0 });
-    }
-
     /**
-     * Reloads the listing after an edit in the side panel (#38303), keeping the filters and the
-     * page the author is on. A refetch of the whole page rather than of the edited row: the panel
-     * may have deleted or archived it, and a row lookup would then report an error.
-     */
-    #refreshPages(): void {
-        this.#dotCMSPagesStore.getPages();
-    }
-
-    /**
-     * Opens the PrimeNG popup menu for a page row (three-dots button click).
+     * Opens the PrimeNG popup menu for a page row (three-dots button click). Edit refreshes the
+     * listing itself (`DotPageActionsService`), as it does from the right-click menu.
      * Positions at the button using anchor; menu items are loaded asynchronously.
      *
      * @param event Menu trigger payload containing the original mouse event and the page contentlet.
@@ -295,7 +334,7 @@ export class DotPagesComponent {
         const anchor = originalEvent.currentTarget || originalEvent.target;
         const { clientX, clientY } = originalEvent;
         this.#dotPageActionsService
-            .getItems(data, () => this.#refreshPages())
+            .getItems(data)
             .pipe(take(1))
             .subscribe((actions) => {
                 this.menu()?.show({

@@ -40,12 +40,14 @@ Configured in `/.mcp.json`. Use these instead of guessing:
 pnpm nx serve dotcms-ui                    # Dev server (proxies /api/* to port 8080)
 pnpm nx build dotcms-ui                    # Build
 pnpm nx test {project}                     # Test specific project
-pnpm nx test {project} --testPathPatterns=  # Test specific file (note the plural — the singular form now hard-errors)
+pnpm nx test {project} -- {file-or-substring}  # Test specific spec files (Vitest filters by path)
 pnpm nx lint {project}                     # Lint
 pnpm nx affected:test                      # Test only changed projects
 pnpm run test:dotcms                       # Test all
 pnpm run lint:dotcms                       # Lint all
 ```
+
+`--testPathPatterns` (and the singular `--testPathPattern`) is Jest's flag: these Vitest projects reject it with an error. Pass file names or substrings after `--` instead.
 
 ## Architecture
 

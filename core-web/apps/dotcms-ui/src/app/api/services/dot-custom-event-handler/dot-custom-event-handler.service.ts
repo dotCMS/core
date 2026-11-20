@@ -1,6 +1,7 @@
 import { Injectable, Injector, inject } from '@angular/core';
 
 import {
+    DotContentEditor,
     DotEventsService,
     DotGenerateSecurePasswordService,
     DotIframeService,
@@ -16,6 +17,7 @@ import type { DotEditContentRequest } from '@dotcms/edit-content';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 
 import { openEditContentPanel } from '../../util/open-edit-content-panel';
+import { PORTLET_FOLDER_PARAM } from '../../util/portlet-panel-url';
 import { DotDownloadBundleDialogService } from '../dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 
 export const COMPARE_CUSTOM_EVENT = 'compare-contentlet';
@@ -30,8 +32,20 @@ export interface DotCMSEditPageEvent {
     };
 }
 
+/** What a screen runs when a side panel {@link DotCustomEventHandlerService} opened reports. */
+export interface DotPortletPanelEvents {
+    /** On every save, with the panel still open. */
+    saved: () => void;
+    /** On a close after the legacy editor, once the portlet's list has reloaded. */
+    closed: () => void;
+}
+
 /**
- * Handle Custom events
+ * Handles the `ng-event` custom events the legacy JSP screens send to the admin. Two senders: the
+ * legacy portlets (`IframePortletLegacyComponent`), and the Workflow Tasks detail dialog
+ * (`DotWorkflowTaskComponent`), which passes on every event but its own close events and
+ * `edit-contentlet`. Its "Edit Content" sends that one, and the detail opens it itself through
+ * {@link openContent}, so it can view its task again after the panel (#38303, FR-025a).
  *
  * @export
  * @class DotCustomEventHandlerService
@@ -58,6 +72,9 @@ export class DotCustomEventHandlerService {
      * would fail inside.
      */
     #panelInjector: Injector | null = null;
+
+    /** What runs when a side panel this service opened saves or closes; see {@link onPanelEvents}. */
+    #panelEvents: DotPortletPanelEvents | null = null;
 
     private handlers: Record<string, ($event: CustomEvent) => void> = {
         'edit-page': this.goToEditPage.bind(this),
@@ -118,7 +135,7 @@ export class DotCustomEventHandlerService {
     private editContentlet($event: CustomEvent): void {
         const { inode, contentType } = $event.detail.data;
 
-        this.#openInSidePanel({ mode: 'edit', inode, contentType });
+        this.openContent({ mode: 'edit', inode, contentType });
     }
 
     /**
@@ -126,7 +143,7 @@ export class DotCustomEventHandlerService {
      * the contentlet to learn its type.
      */
     private editHost($event: CustomEvent): void {
-        this.#openInSidePanel({ mode: 'edit', inode: $event.detail.data.inode });
+        this.openContent({ mode: 'edit', inode: $event.detail.data.inode });
     }
 
     /**
@@ -140,7 +157,7 @@ export class DotCustomEventHandlerService {
         const languageId = languageOf(url);
         const folderInode = paramOf(url, 'folder');
 
-        this.#openInSidePanel({
+        this.openContent({
             mode: 'new',
             contentType,
             folderPath,
@@ -151,20 +168,51 @@ export class DotCustomEventHandlerService {
 
     /** The Sites portlet asked to create a site. The JSP's `url` is ignored. */
     private createHost(): void {
-        this.#openInSidePanel({ mode: 'new', contentType: 'Host' });
+        this.openContent({ mode: 'new', contentType: 'Host' });
     }
 
     /**
-     * Opens a request in the side panel for the portlet that asked (#38303, R11). The portlet is
-     * the one current when the event arrived: the request names it, and every save and the close
-     * reload its list.
+     * Registers what runs when a side panel this service opened saves or closes: the Workflow
+     * Tasks detail views its task again, so it shows the content's current title and step,
+     * whichever path opened the panel (its "Edit Content", or the task's URL, which the portlet
+     * behind reopens) (#38303, FR-025a). `saved` runs on every save, with the panel still open.
+     * `closed` runs after the portlet's list reloads, and only when the panel showed the legacy
+     * editor, whose workflow actions report nothing; the new editor reports each one as a save.
+     * One registration at a time; the last one wins.
+     *
+     * @param handlers What to run on a save and on a close.
+     * @returns Releases the handlers; call it when the registering screen goes away.
+     */
+    onPanelEvents(handlers: DotPortletPanelEvents): () => void {
+        this.#panelEvents = handlers;
+
+        return () => {
+            if (this.#panelEvents === handlers) {
+                this.#panelEvents = null;
+            }
+        };
+    }
+
+    /**
+     * Opens a request in the side panel for the current legacy portlet (#38303, R11): for the
+     * portlet's events, for what the portlet's URL names on load (`IframePortletLegacyComponent`,
+     * FR-049), and for the Workflow Tasks detail's "Edit Content" (`DotWorkflowTaskComponent`,
+     * FR-025a). The request names the portlet current now, a close after the legacy editor reloads
+     * its list, for the moves and language switches that editor reports nothing of, and the panel
+     * is written to its URL like on every surface but the page editor (FR-044). A save or a delete
+     * does not reload the list here: the portlet, while it is shown, reloads it on every save and
+     * delete in any panel (`IframePortletLegacyComponent`, T174), so a close after the new editor
+     * reloads nothing.
      *
      * Nothing opens until `DotSidePanelHostComponent` has registered its injector, which it does
      * before any portlet can send an event; a request before then is logged as an error.
      *
+     * A save runs the `saved` handler {@link onPanelEvents} registered. A close runs its `closed`
+     * handler after the portlet's list reloads, when the panel showed the legacy editor.
+     *
      * @param request What to open, without the portlet.
      */
-    #openInSidePanel(request: DotEditContentRequest): void {
+    openContent(request: DotEditContentRequest): void {
         const injector = this.#panelInjector;
 
         if (!injector) {
@@ -176,18 +224,35 @@ export class DotCustomEventHandlerService {
         }
 
         const portletId = this.dotRouterService.currentPortlet.id;
-        const reload = () => {
-            if (portletId) {
-                this.dotIframeService.reloadData(portletId);
-            }
-        };
+        let editor: DotContentEditor | null = null;
 
+        // The handlers are read when the panel reports, not when it opened: a panel the URL
+        // reopens opens before the Workflow Tasks detail that registers them exists.
         void openEditContentPanel(
             { ...request, portletId },
             {
                 injector,
-                saved: reload,
-                closed: reload
+                editorResolved: (resolved) => (editor = resolved),
+                saved: () => this.#panelEvents?.saved(),
+                // After the new editor, which reports every save and delete, the content change
+                // notification has reloaded the portlet already.
+                closed: () => {
+                    if (editor === 'new') {
+                        return;
+                    }
+
+                    if (portletId) {
+                        this.dotIframeService.reloadData(portletId);
+                    }
+
+                    this.#panelEvents?.closed();
+                },
+                // A create's folder is named in the portlet's URL beside the panel params, so the
+                // tracker writes it with them and removes it on close.
+                url:
+                    request.mode === 'new' && request.folderInode
+                        ? { extraParams: { [PORTLET_FOLDER_PARAM]: request.folderInode } }
+                        : {}
             }
         );
     }

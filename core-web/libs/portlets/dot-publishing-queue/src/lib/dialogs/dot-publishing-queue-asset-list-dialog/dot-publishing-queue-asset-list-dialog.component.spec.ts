@@ -14,7 +14,11 @@ import { Button } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { Toast } from 'primeng/toast';
 
-import { DotContentletEditUrlService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotContentChangeService,
+    DotContentletEditUrlService,
+    DotMessageService
+} from '@dotcms/data-access';
 import { BundleAssetView, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotEditContentOpenerService, DotEditContentOpenOptions } from '@dotcms/edit-content';
 import { DotSidePanelRef } from '@dotcms/ui';
@@ -27,8 +31,17 @@ import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store'
 /** Whether anything resolved `DotContentletEditUrlService` while the dialog was mounted. */
 let editUrlServiceInjected: boolean;
 
+// A type whose display name is not its variable: the opener looks the type up by its variable,
+// and a lookup by name finds nothing and falls back to the legacy editor.
 const ASSETS: BundleAssetView[] = [
-    { asset: 'a1', title: 'Asset 1', type: 'contentlet', inode: 'i1', content_type_name: 'Blog' },
+    {
+        asset: 'a1',
+        title: 'Asset 1',
+        type: 'contentlet',
+        inode: 'i1',
+        content_type_name: 'Blog Post',
+        content_type_variable: 'Blog'
+    },
     { asset: 'a2', title: 'Asset 2', type: 'template' }
 ];
 
@@ -197,6 +210,7 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
             // The panel holds focus while it is open.
             (document.activeElement as HTMLElement | null)?.blur();
 
+            openOptions().editorResolved?.('legacy');
             openOptions().closed?.();
             // The reload, as the store runs it: the list empties, then the assets come back.
             selectedAssets.set([]);
@@ -260,20 +274,53 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
             expect(spectator.query(Toast)).not.toBeNull();
         });
 
-        it('reloads the asset list on every save', () => {
+        // #38303, T174: through the content change notification, at any depth, once each.
+        it('reloads the asset list on every content change, at any depth', () => {
             clickRow(0);
+            const changes = spectator.inject(DotContentChangeService);
 
-            openOptions().saved?.({ inode: 'i1-saved' } as DotCMSContentlet);
+            changes.notify({
+                kind: 'saved',
+                contentlet: { inode: 'i1-saved' } as DotCMSContentlet,
+                depth: 0
+            });
+            changes.notify({
+                kind: 'saved',
+                contentlet: { inode: 'related' } as DotCMSContentlet,
+                depth: 1
+            });
 
-            expect(store.loadAssets).toHaveBeenCalledTimes(1);
+            expect(openOptions().saved).toBeUndefined();
+            expect(store.loadAssets).toHaveBeenCalledTimes(2);
         });
 
-        it('reloads the asset list when the panel closes', () => {
+        // The safety net for workflow actions in the legacy editor, which report nothing.
+        it('reloads the asset list when a legacy editor panel closes', () => {
             clickRow(0);
+            openOptions().editorResolved?.('legacy');
 
             openOptions().closed?.();
 
             expect(store.loadAssets).toHaveBeenCalledTimes(1);
+        });
+
+        // The new editor reports every save and delete through the notification, which already
+        // reloaded the list (stack review L7-7).
+        it('reloads nothing when a new editor panel closes', () => {
+            clickRow(0);
+            openOptions().editorResolved?.('new');
+
+            openOptions().closed?.();
+
+            expect(store.loadAssets).not.toHaveBeenCalled();
+        });
+
+        // The opener writes the panel to the portlet's URL; on load the portlet reopens it over the
+        // list, without the dialog (#38303, FR-044).
+        it('asks the opener to write the panel to the URL', () => {
+            clickRow(0);
+
+            expect(openOptions().url).toEqual({});
         });
 
         it('never opens a new tab', () => {

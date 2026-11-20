@@ -47,7 +47,9 @@ export function sendMessageToUVE<T = unknown>(message: DotCMSUVEMessage<T>) {
 /**
  * You can use this function to edit a contentlet in the editor.
  *
- * Calling this function inside the editor, will prompt the UVE to open a dialog to edit the contentlet.
+ * Calling this function inside the editor makes the UVE open the contentlet in a side panel over the
+ * page, in the editor its content type uses. The page refreshes after every save, and the panel stays
+ * open until the author closes it.
  *
  * @export
  * @template T
@@ -145,10 +147,12 @@ export function enableBlockEditorInline<T extends DotCMSBasicContentlet>(
 }
 
 /**
- * Opens the contentlet creation panel for the given content type without adding it to the page.
+ * Opens a create form for the given content type in a side panel over the page, in the editor the
+ * content type uses, without adding the new contentlet to the page.
  *
  * This function is intended for use cases where you want to create a contentlet in the system
- * (e.g., for widgets that auto-pull content) without dropping it onto the current page layout.
+ * (e.g., for widgets that auto-pull content) without dropping it onto the current page layout. The
+ * page refreshes after every save.
  *
  * @export
  * @param {string} contentType - The content type variable or structure inode to create a contentlet for.

@@ -17,6 +17,7 @@ import { Toast } from 'primeng/toast';
 
 import { DotPushPublishFormComponent } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.component';
 import {
+    DotContentChangeService,
     DotContentletEditUrlService,
     DotContentTypeService,
     DotCurrentUserService,
@@ -331,14 +332,18 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
      * reload the active bundle's assets (FR-017).
      */
     describe('asset row click → opens content editor', () => {
-        /** A contentlet row and a template row, as `/api/bundle/{id}/assets` returns them. */
+        /**
+         * A contentlet row and a template row, as `/api/bundle/{id}/assets` returns them. The
+         * type's display name is not its variable: the opener looks the type up by its variable.
+         */
         const ROW_ASSETS = [
             {
                 asset: 'a1',
                 title: 'Spring Sale Landing',
                 type: 'contentlet',
                 inode: 'i1',
-                content_type_name: 'Blog'
+                content_type_name: 'Blog Post',
+                content_type_variable: 'Blog'
             },
             { asset: 't1', title: 'Main template', type: 'template' }
         ];
@@ -384,6 +389,7 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             // The panel holds focus while it is open.
             (document.activeElement as HTMLElement | null)?.blur();
 
+            openOptions().editorResolved?.('legacy');
             openOptions().closed?.();
             spectator.detectChanges();
 
@@ -441,22 +447,51 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             expect(spectator.query(Toast)).not.toBeNull();
         });
 
-        it("reloads the active bundle's assets on every save", () => {
+        // #38303, T174: through the content change notification, at any depth.
+        it("reloads the active bundle's assets on every content change, at any depth", () => {
             clickRow(0);
             (service.getBundleAssets as Mock).mockClear();
 
-            openOptions().saved?.({ inode: 'i1-saved' } as DotCMSContentlet);
+            spectator.inject(DotContentChangeService).notify({
+                kind: 'saved',
+                contentlet: { inode: 'related' } as DotCMSContentlet,
+                depth: 1
+            });
 
+            expect(openOptions().saved).toBeUndefined();
+            expect(service.getBundleAssets).toHaveBeenCalledTimes(1);
             expect(service.getBundleAssets).toHaveBeenCalledWith('bundle-1');
         });
 
-        it("reloads the active bundle's assets when the panel closes", () => {
+        // The safety net for workflow actions in the legacy editor, which report nothing.
+        it("reloads the active bundle's assets when a legacy editor panel closes", () => {
             clickRow(0);
+            openOptions().editorResolved?.('legacy');
             (service.getBundleAssets as Mock).mockClear();
 
             openOptions().closed?.();
 
             expect(service.getBundleAssets).toHaveBeenCalledWith('bundle-1');
+        });
+
+        // The new editor reports every save and delete through the notification, which already
+        // reloaded the assets (stack review L7-7).
+        it('reloads nothing when a new editor panel closes', () => {
+            clickRow(0);
+            openOptions().editorResolved?.('new');
+            (service.getBundleAssets as Mock).mockClear();
+
+            openOptions().closed?.();
+
+            expect(service.getBundleAssets).not.toHaveBeenCalled();
+        });
+
+        // The opener writes the panel to the portlet's URL; on load the portlet reopens it over the
+        // list, without the dialog (#38303, FR-044).
+        it('asks the opener to write the panel to the URL', () => {
+            clickRow(0);
+
+            expect(openOptions().url).toEqual({});
         });
 
         it('never opens a new tab', () => {

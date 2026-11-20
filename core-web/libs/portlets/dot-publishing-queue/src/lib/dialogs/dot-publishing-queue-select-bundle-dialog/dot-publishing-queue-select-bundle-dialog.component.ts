@@ -43,6 +43,8 @@ import {
 
 import { DotPushPublishFormComponent } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.component';
 import {
+    DotContentChangeService,
+    DotContentEditor,
     DotCurrentUserService,
     DotGlobalMessageService,
     DotHttpErrorManagerService,
@@ -153,6 +155,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #destroyRef = inject(DestroyRef);
+    readonly #contentChanges = inject(DotContentChangeService);
     readonly #opener = inject(DotEditContentOpenerService);
     /** The dialog's injector: a panel a row opens closes with the dialog. */
     readonly #injector = inject(Injector);
@@ -321,6 +324,16 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
                 this.$bundlesPage.set(1);
                 this.#loadBundles();
             });
+
+        // Every save and delete in a side panel, at any depth, reloads the active bundle's assets:
+        // content saved from a relationship inside the panel a row opened may be in it (T174).
+        this.#contentChanges.changes$.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe(() => {
+            const bundleId = this.$activeBundleId();
+
+            if (bundleId) {
+                this.#loadAssets(bundleId);
+            }
+        });
 
         this.#currentUserService
             .getCurrentUser()
@@ -717,8 +730,10 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
 
     /**
      * Opens a contentlet row in the side panel over this dialog, in whichever editor its type uses
-     * (#38303, R12). Every save, and the close, reload the bundle's assets (FR-017); the close also
-     * puts focus back on the row once the assets have reloaded (FR-039). Other rows do nothing.
+     * (#38303, R12). A save or a delete reloads the bundle's assets through the content change
+     * notification (T174). The close reloads them again only after the legacy editor, whose
+     * workflow actions report nothing (FR-017), and puts focus back on the row once they have
+     * rendered (FR-039). Other rows do nothing.
      *
      * @param asset The clicked row.
      */
@@ -729,22 +744,28 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
             return;
         }
 
-        const reload = () => this.#loadAssets(bundleId);
+        let editor: DotContentEditor | null = null;
 
         this.#opener.open(
             {
                 mode: 'edit',
                 inode: asset.inode,
-                contentType: asset.content_type_name,
+                // The variable: the opener looks the type up by it to choose the editor.
+                contentType: asset.content_type_variable,
                 portletId: 'publishing-queue'
             },
             {
                 injector: this.#injector,
-                saved: reload,
+                editorResolved: (resolved) => (editor = resolved),
                 closed: () => {
-                    reload();
+                    if (editor !== 'new') {
+                        this.#loadAssets(bundleId);
+                    }
+
                     this.#focusRowAfterReload(asset.asset);
-                }
+                },
+                // In the portlet's URL: on load the portlet reopens the panel over the list (#38303).
+                url: {}
             }
         );
     }

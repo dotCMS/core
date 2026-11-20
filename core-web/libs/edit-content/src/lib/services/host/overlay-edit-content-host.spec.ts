@@ -1,9 +1,7 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { Mock, vi } from 'vitest';
 
-import { Injector } from '@angular/core';
-
-import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DynamicDialogConfig } from 'primeng/dynamicdialog';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotSidePanelRef } from '@dotcms/ui';
@@ -14,10 +12,7 @@ import { OverlayEditContentHost } from './overlay-edit-content-host';
 
 import { DotEditContentRequest } from '../../models/dot-edit-content-request.model';
 import { DotOpenContentEvent } from '../../models/dot-open-content-event.model';
-import {
-    DotEditContentOpenerService,
-    DotEditContentOpenOptions
-} from '../../opener/dot-edit-content-opener.service';
+import { DotEditContentOpenerService } from '../../opener/dot-edit-content-opener.service';
 import { DotRelatedContentNavigationStore } from '../../store/dot-related-content-navigation.store';
 
 /**
@@ -51,7 +46,6 @@ describe('OverlayEditContentHost', () => {
                 registerTitle: vi.fn()
             }),
             mockProvider(DynamicDialogConfig, { data: undefined }),
-            mockProvider(DynamicDialogRef, { close: vi.fn() }),
             mockProvider(DotEditContentOpenerService, {
                 open: vi.fn(() => new DotSidePanelRef(() => undefined))
             })
@@ -88,24 +82,46 @@ describe('OverlayEditContentHost', () => {
         });
 
         // The UVE opens the editor on an experiment variant (#38303, FR-022).
-        it('carries the experiment variant from the dialog config', () => {
-            config.data = { contentletInode: 'inode-9', variantName: 'variant-a' };
+        it('carries the experiment variant from the request', () => {
+            config.data = { mode: 'edit', inode: 'inode-9', variantName: 'variant-a' };
             expect(host.resolveIdentity()).toEqual(
                 expect.objectContaining({ inode: 'inode-9', variantName: 'variant-a' })
             );
         });
 
-        it('maps contentletInode and contentTypeId from the dialog config', () => {
-            config.data = { contentletInode: 'inode-9', contentTypeId: 'Blog' };
+        // The side panel puts its request on the config (#38303).
+        it('maps the inode and the content type from the request', () => {
+            config.data = { mode: 'edit', inode: 'inode-9', contentType: 'Blog' };
             expect(host.resolveIdentity()).toEqual({
                 inode: 'inode-9',
                 contentTypeId: 'Blog'
             });
         });
 
+        /**
+         * A panel opened from a link names its content by identifier, and the opener fills in the
+         * inode it found: a surface knows its own panel by either (#38303, FR-050).
+         */
+        it('carries the identifier of an edit, and none for a create', () => {
+            config.data = { mode: 'edit', inode: 'inode-9', identifier: 'id-9' };
+            expect(host.resolveIdentity()).toEqual(
+                expect.objectContaining({ inode: 'inode-9', identifier: 'id-9' })
+            );
+
+            config.data = { mode: 'new', identifier: 'stale-id', contentType: 'Blog' };
+            expect(host.resolveIdentity().identifier).toBeUndefined();
+        });
+
+        it('names no inode for a create, even if the request carries one', () => {
+            config.data = { mode: 'new', inode: 'stale-inode', contentType: 'Blog' };
+            expect(host.resolveIdentity()).toEqual(
+                expect.objectContaining({ inode: undefined, contentTypeId: 'Blog' })
+            );
+        });
+
         // Content Drive starts a create in the language the list is filtered by (#37759, FR-003).
         it('carries the language the opener asked the content to start in', () => {
-            config.data = { mode: 'new', contentTypeId: 'Blog', languageId: 2 };
+            config.data = { mode: 'new', contentType: 'Blog', languageId: 2 };
 
             expect(host.resolveIdentity()).toEqual(
                 expect.objectContaining({ contentTypeId: 'Blog', languageId: 2 })
@@ -114,13 +130,7 @@ describe('OverlayEditContentHost', () => {
     });
 
     describe('leaveDeletedContent', () => {
-        it('closes a DialogService dialog through its ref', () => {
-            host.leaveDeletedContent('SimpleWidget');
-
-            expect(spectator.inject(DynamicDialogRef).close).toHaveBeenCalled();
-        });
-
-        it('emits left$ so overlays without a dialog ref (side panel) can close', () => {
+        it('emits left$ so the side panel can close', () => {
             const leftSpy = vi.fn();
             host.left$.subscribe(leftSpy);
 
@@ -279,17 +289,38 @@ describe('OverlayEditContentHost', () => {
      * anything else stacks a panel over this one. The discriminator is the event's `source`:
      * `'relationship' | 'block-editor'`.
      */
+    /**
+     * Content stacked over this panel goes to the panel, which emits it on its `openContent`
+     * output with its own injector; the opener wires that output for every panel it opens, so the
+     * stacked panel is written to the URL exactly when this one is (#38303, FR-044). The host never
+     * opens it through the opener itself.
+     */
     describe('openContent', () => {
         /** The opener's `open`, as the mock records it. */
         const opened = () => spectator.inject(DotEditContentOpenerService).open as Mock;
 
-        /** The options the host handed the opener on its only `open`. */
-        const openOptions = (): DotEditContentOpenOptions => {
-            expect(opened().mock.calls.length, 'the host stacks a panel through the opener').toBe(
-                1
-            );
+        /** The requests the host handed its panel to stack, from now on. */
+        const stacked = (): DotOpenContentEvent[] => {
+            const events: DotOpenContentEvent[] = [];
+            const withStream = host as unknown as {
+                openContent$?: { subscribe: (next: (event: DotOpenContentEvent) => void) => void };
+            };
 
-            return opened().mock.calls[0][1] as DotEditContentOpenOptions;
+            expect(
+                withStream.openContent$,
+                'the host hands stacked content to its panel'
+            ).toBeDefined();
+            withStream.openContent$?.subscribe((event) => events.push(event));
+
+            return events;
+        };
+
+        /** The one request the host handed its panel, and that the opener was not called. */
+        const stackedOnce = (events: DotOpenContentEvent[]): DotOpenContentEvent => {
+            expect(events.length, 'the host stacks one panel').toBe(1);
+            expect(opened().mock.calls.length, 'the host never opens it itself').toBe(0);
+
+            return events[0];
         };
 
         describe('an existing item a Relationship field names', () => {
@@ -344,20 +375,21 @@ describe('OverlayEditContentHost', () => {
                 }
             };
 
-            it('stacks a panel through the opener with the host injector', () => {
+            it('hands it to the panel to stack', () => {
+                const events = stacked();
+
                 openContent(host, { request: REQUEST, source: 'relationship', onSaved: vi.fn() });
 
-                expect(opened().mock.calls[0][0]).toEqual(REQUEST);
-                // Compared by identity: printing an injector runs the worker out of memory.
-                expect(openOptions().injector === spectator.inject(Injector)).toBe(true);
+                expect(stackedOnce(events).request).toEqual(REQUEST);
             });
 
-            it('hands every save of the stacked panel to the field', () => {
+            it("hands every save of the stacked panel to the field, through the event's reply", () => {
+                const events = stacked();
                 const onSaved = vi.fn();
                 const contentlet = createFakeContentlet({ identifier: 'created-id' });
                 openContent(host, { request: REQUEST, source: 'relationship', onSaved });
 
-                openOptions().saved?.(contentlet);
+                stackedOnce(events).onSaved?.(contentlet);
 
                 expect(onSaved).toHaveBeenCalledWith(contentlet);
             });
@@ -372,7 +404,8 @@ describe('OverlayEditContentHost', () => {
         });
 
         describe('content a block editor names', () => {
-            it('stacks a panel through the opener and never replaces the panel content', () => {
+            it('hands it to the panel to stack and never replaces the panel content', () => {
+                const events = stacked();
                 const goToRelatedContent = vi.spyOn(host, 'goToRelatedContent');
                 const request: DotEditContentRequest = {
                     mode: 'edit',
@@ -382,8 +415,7 @@ describe('OverlayEditContentHost', () => {
 
                 openContent(host, { request, source: 'block-editor' });
 
-                expect(opened().mock.calls[0][0]).toEqual(request);
-                expect(openOptions().injector === spectator.inject(Injector)).toBe(true);
+                expect(stackedOnce(events).request).toEqual(request);
                 expect(goToRelatedContent).not.toHaveBeenCalled();
             });
         });
@@ -391,39 +423,16 @@ describe('OverlayEditContentHost', () => {
         // Only an explicit Relationship edit replaces in place; anything unnamed stacks, which
         // never discards the panel's own content.
         describe('an edit that names no source', () => {
-            it('stacks a panel through the opener', () => {
+            it('hands it to the panel to stack', () => {
+                const events = stacked();
                 const goToRelatedContent = vi.spyOn(host, 'goToRelatedContent');
                 const request: DotEditContentRequest = { mode: 'edit', inode: 'inode-d' };
 
                 openContent(host, { request });
 
-                expect(opened().mock.calls[0][0]).toEqual(request);
+                expect(stackedOnce(events).request).toEqual(request);
                 expect(goToRelatedContent).not.toHaveBeenCalled();
             });
         });
-    });
-});
-
-describe('OverlayEditContentHost without a dialog ref (side panel injector)', () => {
-    const createHostWithoutRef = createServiceFactory({
-        service: OverlayEditContentHost,
-        providers: [
-            mockProvider(DotRelatedContentNavigationStore, {
-                appendToTrail: vi.fn(),
-                titleCache: vi.fn().mockReturnValue({}),
-                registerTitle: vi.fn()
-            }),
-            mockProvider(DynamicDialogConfig, { data: undefined }),
-            mockProvider(DotEditContentOpenerService)
-        ]
-    });
-
-    it('still emits left$ and does not throw', () => {
-        const hostWithoutRef = createHostWithoutRef().service;
-        const leftSpy = vi.fn();
-        hostWithoutRef.left$.subscribe(leftSpy);
-
-        expect(() => hostWithoutRef.leaveDeletedContent('SimpleWidget')).not.toThrow();
-        expect(leftSpy).toHaveBeenCalledTimes(1);
     });
 });

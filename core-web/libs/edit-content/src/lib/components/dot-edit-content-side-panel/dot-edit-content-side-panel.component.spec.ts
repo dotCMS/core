@@ -3,7 +3,7 @@ import { MockComponent } from 'ng-mocks';
 import { Subject } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
-import { signal } from '@angular/core';
+import { reflectComponentType, signal } from '@angular/core';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -18,9 +18,11 @@ import {
     AngularImageEditorLauncher,
     IMAGE_EDITOR_LAUNCHER
 } from '../../fields/shared/image-editor-launcher';
-import { EditContentDialogData } from '../../models/dot-edit-content-dialog.interface';
 import { DotEditContentRequest } from '../../models/dot-edit-content-request.model';
+import { DotOpenContentEvent } from '../../models/dot-open-content-event.model';
+import { DotEditContentOpenerService } from '../../opener/dot-edit-content-opener.service';
 import { OverlayEditContentHost } from '../../services/host/overlay-edit-content-host';
+import { DotRelatedContentNavigationStore } from '../../store/dot-related-content-navigation.store';
 import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-edit-content.layout.component';
 
 /**
@@ -72,14 +74,8 @@ describe('DotEditContentSidePanelComponent', () => {
     let saved$: Subject<DotCMSContentlet>;
     let left$: Subject<void>;
     let languageChanged$: Subject<number>;
+    let openContent$: Subject<DotOpenContentEvent>;
     let panel: { close: Mock; closed: Subject<void> };
-
-    const EDIT_DATA: EditContentDialogData = {
-        mode: 'edit',
-        contentletInode: 'inode-1',
-        identifier: 'id-1',
-        title: 'My Content'
-    };
 
     const EDIT_REQUEST: DotEditContentRequest = {
         mode: 'edit',
@@ -111,6 +107,7 @@ describe('DotEditContentSidePanelComponent', () => {
         saved$ = new Subject<DotCMSContentlet>();
         left$ = new Subject<void>();
         languageChanged$ = new Subject<number>();
+        openContent$ = new Subject<DotOpenContentEvent>();
         panel = panelRef();
 
         spectator = createComponent({
@@ -120,7 +117,8 @@ describe('DotEditContentSidePanelComponent', () => {
                     useValue: {
                         saved$: saved$.asObservable(),
                         left$: left$.asObservable(),
-                        languageChanged$: languageChanged$.asObservable()
+                        languageChanged$: languageChanged$.asObservable(),
+                        openContent$: openContent$.asObservable()
                     }
                 },
                 { provide: DotSidePanelRef, useValue: panel }
@@ -129,14 +127,7 @@ describe('DotEditContentSidePanelComponent', () => {
         });
     });
 
-    /** Opens the panel on `data` and lets the host subscriptions (afterNextRender) run. */
-    const open = async (data: EditContentDialogData = EDIT_DATA) => {
-        spectator.setInput('data', data);
-        spectator.detectChanges();
-        await spectator.fixture.whenStable();
-    };
-
-    /** Opens the panel on a request (the new contract) and lets the host subscriptions run. */
+    /** Opens the panel on a request and lets the host subscriptions (afterNextRender) run. */
     const openRequest = async (request: DotEditContentRequest = EDIT_REQUEST) => {
         spectator.setInput('request', request);
         spectator.detectChanges();
@@ -153,18 +144,8 @@ describe('DotEditContentSidePanelComponent', () => {
                 }
             });
 
-    it('should render the editor only when data is set', () => {
-        spectator.setInput('data', null);
-        spectator.detectChanges();
-        expect(spectator.query(DotEditContentLayoutComponent)).toBeNull();
-
-        spectator.setInput('data', EDIT_DATA);
-        spectator.detectChanges();
-        expect(spectator.query(DotEditContentLayoutComponent)).not.toBeNull();
-    });
-
     it('should route a close request through the editor guard and close the panel when it proceeds', async () => {
-        await open();
+        await openRequest();
         const confirmClose = guardAnswers('proceed');
 
         spectator.component.requestClose();
@@ -174,7 +155,7 @@ describe('DotEditContentSidePanelComponent', () => {
     });
 
     it('should keep the panel open when the editor guard cancels (unsaved changes kept)', async () => {
-        await open();
+        await openRequest();
         guardAnswers('keep');
 
         spectator.component.requestClose();
@@ -183,7 +164,7 @@ describe('DotEditContentSidePanelComponent', () => {
     });
 
     it('should forward the host `saved$` stream to the `saved` output', async () => {
-        await open();
+        await openRequest();
         const savedSpy = vi.fn();
         spectator.output('saved').subscribe(savedSpy);
 
@@ -194,7 +175,7 @@ describe('DotEditContentSidePanelComponent', () => {
     });
 
     it('should forward the host language switch to the `languageChanged` output', async () => {
-        await open();
+        await openRequest();
         const languageSpy = vi.fn();
         spectator.output('languageChanged').subscribe(languageSpy);
 
@@ -203,51 +184,74 @@ describe('DotEditContentSidePanelComponent', () => {
         expect(languageSpy).toHaveBeenCalledWith(2);
     });
 
-    it('should fire data.onContentSaved (last save) and data.onCancel on close', async () => {
-        const onContentSaved = vi.fn();
-        const onCancel = vi.fn();
-        await open({ ...EDIT_DATA, onContentSaved, onCancel });
+    /**
+     * A field asks to stack content (a block editor's "Edit contentlet", a relationship's "New"):
+     * the panel hands it to the opener on its `openContent` output, with its own injector, the way
+     * the legacy editor panel does. The opener then stacks it under this panel, written to the URL
+     * when this panel is (#38303, FR-044).
+     */
+    it("should hand the content its fields stack to `openContent`, with the panel's own injector", async () => {
+        await openRequest();
+        const openSpy = vi.fn();
+        spectator.output('openContent').subscribe(openSpy);
+        const onSaved = vi.fn();
+        const request: DotEditContentRequest = {
+            mode: 'edit',
+            inode: 'inode-9',
+            contentType: 'Blog'
+        };
 
-        const contentlet = { inode: 'inode-2' } as DotCMSContentlet;
-        saved$.next(contentlet);
-        guardAnswers('proceed');
+        openContent$.next({ request, onSaved, source: 'block-editor' });
 
-        spectator.component.requestClose();
-
-        expect(onContentSaved).toHaveBeenCalledWith(contentlet);
-        expect(onCancel).toHaveBeenCalledTimes(1);
+        expect(openSpy).toHaveBeenCalledTimes(1);
+        const event = openSpy.mock.calls[0][0] as DotOpenContentEvent;
+        expect(event.request).toEqual(request);
+        expect(event.onSaved === onSaved).toBe(true);
+        // The panel's own injector: it resolves the panel's ref.
+        expect(event.injector?.get(DotSidePanelRef) === panel).toBe(true);
     });
 
-    it('should not fire data.onContentSaved on close when nothing was saved', async () => {
-        const onContentSaved = vi.fn();
-        const onCancel = vi.fn();
-        await open({ ...EDIT_DATA, onContentSaved, onCancel });
-        guardAnswers('proceed');
+    /**
+     * #38303 (layer 6) — the panel takes a request and reports through its outputs only. The
+     * dialog-era `data` input, the only way `onContentSaved` and `onCancel` reached the panel, is
+     * gone with the dialog-era data type.
+     */
+    describe('without dialog data', () => {
+        it('should take a request and no data input', () => {
+            const inputs = reflectComponentType(DotEditContentSidePanelComponent)?.inputs.map(
+                ({ propName }) => propName
+            );
 
-        spectator.component.requestClose();
+            expect(inputs).toContain('request');
+            expect(inputs).not.toContain('data');
+        });
 
-        expect(onContentSaved).not.toHaveBeenCalled();
-        expect(onCancel).toHaveBeenCalledTimes(1);
-    });
+        it('should report each save, in order, as it happens', async () => {
+            await openRequest();
+            const saved = vi.fn();
+            spectator.output('saved').subscribe(saved);
+            const first = createFakeContentlet({ inode: 'inode-2' });
+            const second = createFakeContentlet({ inode: 'inode-3' });
 
-    it('should close without the guard or a save report when the host says the content was deleted', async () => {
-        const onContentSaved = vi.fn();
-        const onCancel = vi.fn();
-        await open({ ...EDIT_DATA, onContentSaved, onCancel });
+            saved$.next(first);
+            saved$.next(second);
 
-        // An earlier save of the same content must not reach the opener once it is deleted.
-        saved$.next({ inode: 'inode-2' } as DotCMSContentlet);
-        const confirmClose = vi.spyOn(
-            spectator.query(DotEditContentLayoutComponent)!,
-            'confirmClose'
-        );
+            expect(saved.mock.calls).toEqual([[first], [second]]);
+        });
 
-        left$.next();
+        it('should report the close once, with no last-saved payload', async () => {
+            await openRequest();
+            const closed = vi.fn();
+            spectator.output('closed').subscribe(closed);
+            saved$.next(createFakeContentlet({ inode: 'inode-2' }));
+            guardAnswers('proceed');
 
-        expect(panel.close).toHaveBeenCalledTimes(1);
-        expect(confirmClose).not.toHaveBeenCalled();
-        expect(onContentSaved).not.toHaveBeenCalled();
-        expect(onCancel).toHaveBeenCalledTimes(1);
+            spectator.component.requestClose();
+            panel.closed.next();
+            panel.closed.complete();
+
+            expect(closed.mock.calls).toEqual([[undefined]]);
+        });
     });
 
     /**
@@ -263,41 +267,6 @@ describe('DotEditContentSidePanelComponent', () => {
             await openRequest();
 
             expect(spectator.query(DotEditContentLayoutComponent)).not.toBeNull();
-        });
-
-        it('gives the overlay host the identity the request names, variant included', async () => {
-            await openRequest();
-
-            // What the panel's DynamicDialogConfig hands the host; this suite replaces the
-            // component's providers, so the config itself is not injectable here.
-            expect(spectator.component.$dialogData()).toEqual(
-                expect.objectContaining({
-                    contentletInode: 'inode-1',
-                    contentTypeId: 'Blog',
-                    languageId: undefined,
-                    variantName: 'variant-a'
-                })
-            );
-        });
-
-        it('maps a create request to the content type the editor starts from', async () => {
-            await openRequest({
-                mode: 'new',
-                contentType: 'Blog',
-                folderPath: '/news/',
-                languageId: 2
-            });
-
-            // What the panel's DynamicDialogConfig hands the host; this suite replaces the
-            // component's providers, so the config itself is not injectable here.
-            expect(spectator.component.$dialogData()).toEqual(
-                expect.objectContaining({
-                    contentletInode: undefined,
-                    contentTypeId: 'Blog',
-                    folderPath: '/news/',
-                    languageId: 2
-                })
-            );
         });
 
         it('reports deleted and then closes, without the guard, when the host says the content left', async () => {
@@ -412,6 +381,82 @@ describe('DotEditContentSidePanelComponent — image editor host capability', ()
  * closes. A panel stacked over another must get its own frame, give the parent's back when it
  * closes, and keep its own when the parent underneath closes first.
  */
+/**
+ * #38303 (layer 6) — the editor's identity comes from the request alone. This suite keeps the
+ * component's own providers (only the heavy layout is stubbed), so the real `OverlayEditContentHost`
+ * resolves the identity exactly as the editor would on construction.
+ */
+describe('DotEditContentSidePanelComponent — identity from the request', () => {
+    let spectator: Spectator<DotEditContentSidePanelComponent>;
+
+    const createComponent = createComponentFactory({
+        component: DotEditContentSidePanelComponent,
+        overrideComponents: [
+            [
+                DotEditContentSidePanelComponent,
+                {
+                    remove: { imports: [DotEditContentLayoutComponent] },
+                    add: { imports: [MockComponent(DotEditContentLayoutComponent)] }
+                }
+            ]
+        ],
+        providers: [
+            mockProvider(DotMessageService, { get: (key: string) => key }),
+            // The real host injects both; neither is exercised here.
+            mockProvider(DotEditContentOpenerService),
+            mockProvider(DotRelatedContentNavigationStore, { titleCache: () => ({}) }),
+            { provide: DotSidePanelRef, useFactory: panelRef }
+        ],
+        detectChanges: false
+    });
+
+    /** Mounts the panel on a request and returns what the editor's host resolves from it. */
+    const identityFor = (request: DotEditContentRequest) => {
+        spectator = createComponent();
+        spectator.setInput('request', request);
+        spectator.detectChanges();
+
+        return spectator.inject(OverlayEditContentHost, true).resolveIdentity();
+    };
+
+    it('should resolve an edit to the inode, the language and the variant the request names', () => {
+        expect(
+            identityFor({
+                mode: 'edit',
+                inode: 'inode-1',
+                identifier: 'id-1',
+                contentType: 'Blog',
+                languageId: 3,
+                variantName: 'variant-a'
+            })
+        ).toEqual(
+            expect.objectContaining({
+                inode: 'inode-1',
+                languageId: 3,
+                variantName: 'variant-a'
+            })
+        );
+    });
+
+    it('should resolve a create to the content type, the folder and the language it starts in', () => {
+        expect(
+            identityFor({
+                mode: 'new',
+                contentType: 'Blog',
+                folderPath: '/news/',
+                languageId: 2
+            })
+        ).toEqual(
+            expect.objectContaining({
+                inode: undefined,
+                contentTypeId: 'Blog',
+                folderPath: '/news/',
+                languageId: 2
+            })
+        );
+    });
+});
+
 describe('DotEditContentSidePanelComponent — form bridge frames when panels stack', () => {
     const createComponent = createComponentFactory({
         component: DotEditContentSidePanelComponent,
@@ -427,7 +472,8 @@ describe('DotEditContentSidePanelComponent — form bridge frames when panels st
                                 useFactory: () => ({
                                     saved$: new Subject<DotCMSContentlet>(),
                                     left$: new Subject<void>(),
-                                    languageChanged$: new Subject<number>()
+                                    languageChanged$: new Subject<number>(),
+                                    openContent$: new Subject<DotOpenContentEvent>()
                                 })
                             }
                         ]

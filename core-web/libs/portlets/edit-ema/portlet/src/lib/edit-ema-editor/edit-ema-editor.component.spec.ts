@@ -11,7 +11,7 @@ import { Mock, MockInstance, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { EventEmitter, Injector, Input, Output, Signal, signal, Component } from '@angular/core';
+import { EventEmitter, Input, Output, Signal, signal, Component } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -27,6 +27,7 @@ import {
     DotAlertConfirmService,
     DotAnalyticsTrackerService,
     DotContentTypeService,
+    DotContentletEditUrlService,
     DotContentletLockerService,
     DotContentletService,
     DotCopyContentService,
@@ -66,8 +67,7 @@ import {
     DotEditContentOpenOptions,
     DotEditContentRequest,
     DotLegacyScreenEvent,
-    DotLegacyScreenRequest,
-    loadDotLegacyEditorSidePanel
+    DotLegacyScreenRequest
 } from '@dotcms/edit-content';
 import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
@@ -240,6 +240,9 @@ const createOpenerFake = () => {
 
 // Re-created before each test and read through a factory, so each test gets its own.
 let opener: ReturnType<typeof createOpenerFake>;
+
+/** Which editor a content type uses, as `DotContentletEditUrlService` answers it; set per test. */
+const resolveEditor = vi.fn();
 
 /**
  * Where a content type is dropped: a container the page does not list yet, with room. The editor
@@ -457,6 +460,10 @@ const createRouting = () =>
             DotSeoMetaTagsUtilService,
             DialogService,
             { provide: DotEditContentOpenerService, useFactory: () => opener },
+            {
+                provide: DotContentletEditUrlService,
+                useValue: { resolveEditor: (variable: string) => resolveEditor(variable) }
+            },
             DotCopyContentService,
             DotCopyContentModalService,
             DotWorkflowActionsFireService,
@@ -2229,6 +2236,34 @@ describe('EditEmaEditorComponent', () => {
                             expect(pageReloadSpy).toHaveBeenCalledTimes(1);
                         });
 
+                        /**
+                         * A page's first save in the legacy editor names the page to open, and the
+                         * legacy panel then closes itself: that page is loaded once, and the close
+                         * does not reload it again. The next panel's close reloads as always.
+                         */
+                        it('should load the page the editor names once, with no reload when the panel then closes', () => {
+                            const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
+                            const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
+                            const panel = openEdit();
+
+                            panel.options.pageEditorRequested?.({
+                                url: '/new-page',
+                                languageId: 2
+                            });
+                            panel.ref.close();
+
+                            expect(pageLoadSpy).toHaveBeenCalledTimes(1);
+                            expect(pageLoadSpy).toHaveBeenCalledWith({
+                                url: '/new-page',
+                                language_id: '2'
+                            });
+                            expect(pageReloadSpy).not.toHaveBeenCalled();
+
+                            openEdit().ref.close();
+
+                            expect(pageReloadSpy).toHaveBeenCalledTimes(1);
+                        });
+
                         // The safety net for workflow actions run in the legacy editor, which report
                         // nothing the page can use (#38303, R4).
                         it('should reload the page and clear the request when a legacy editor panel closes itself', () => {
@@ -2762,6 +2797,11 @@ describe('EditEmaEditorComponent', () => {
                         contentType: 'htmlpageasset'
                     } as unknown as DotCMSPage;
 
+                    beforeEach(() => {
+                        resolveEditor.mockReset();
+                        resolveEditor.mockReturnValue(of({ editor: 'legacy', contentType: null }));
+                    });
+
                     /** The legacy translate screen's URL, exactly as the page editor's dialog built it. */
                     const translateUrl = () => {
                         const params = new URLSearchParams({
@@ -2797,39 +2837,41 @@ describe('EditEmaEditorComponent', () => {
                         spectator.detectChanges();
                     };
 
-                    /** The legacy editor panel the translation opened in: the one given a create screen. */
-                    const translatePanel = (): OpenedPanel => {
-                        const panel = sidePanels
-                            .filter((opened) => 'createUrl' in (opened.config.inputs ?? {}))
+                    /**
+                     * The translation, opened through the opener with the translate screen as its
+                     * create screen (stack review L7-9), so it nests and notifies as any panel.
+                     */
+                    const translatePanel = (): OpenedContent => {
+                        const panel = opener.opened
+                            .filter((opened) => !!opened.options.createUrl)
                             .at(-1);
 
                         expect(
                             panel,
-                            'the editor opens the translation in the legacy editor panel'
+                            'the editor opens the translation through the opener'
                         ).toBeDefined();
 
-                        return panel as OpenedPanel;
+                        return panel as OpenedContent;
                     };
 
-                    /** Emits one of the translate panel's outputs, as the legacy editor would. */
+                    /** Runs one of the translation's handlers, as the legacy editor would. */
                     const emit = <T>(name: string, value?: T): void => {
-                        const handler = translatePanel().config.outputs?.[name] as
-                            | ((value?: T) => void)
-                            | undefined;
+                        const handler = (
+                            translatePanel().options as unknown as Record<string, unknown>
+                        )[name] as ((value?: T) => void) | undefined;
 
-                        expect(handler, `the translate panel binds ${name}`).toEqual(
+                        expect(handler, `the translation handles ${name}`).toEqual(
                             expect.any(Function)
                         );
                         handler?.(value);
                         spectator.detectChanges();
                     };
 
-                    it('should open the legacy editor panel on the translate screen', async () => {
+                    it('should open the translate screen through the opener, in the legacy editor', () => {
                         translate();
                         const panel = translatePanel();
 
-                        expect(await panel.component).toBe(await loadDotLegacyEditorSidePanel());
-                        expect(inputOf(panel, 'request')).toEqual({
+                        expect(panel.request).toEqual({
                             mode: 'new',
                             contentType: 'htmlpageasset',
                             languageId: 2,
@@ -2837,7 +2879,23 @@ describe('EditEmaEditorComponent', () => {
                             siteId: siteId(),
                             portletId: 'edit-page'
                         });
-                        expect(inputOf(panel, 'createUrl')).toBe(translateUrl());
+                        expect(panel.options.createUrl).toBe(translateUrl());
+                        // The editor is decided already: the opener does not ask again (L7-8).
+                        expect(panel.options.resolved).toEqual({
+                            editor: 'legacy',
+                            contentType: null
+                        });
+                        expect(panel.options.url).toBeUndefined();
+                    });
+
+                    it('should open no legacy editor panel of its own', () => {
+                        translate();
+
+                        expect(
+                            sidePanels.filter(
+                                (opened) => 'createUrl' in (opened.config.inputs ?? {})
+                            )
+                        ).toHaveLength(0);
                     });
 
                     it('should not open the generic legacy-screen panel', () => {
@@ -2899,30 +2957,107 @@ describe('EditEmaEditorComponent', () => {
                         expect(pageLoadSpy).not.toHaveBeenCalled();
                     });
 
-                    /**
-                     * A block editor inside the translate form asks to edit embedded content the
-                     * way it does in any legacy editor panel: the content stacks over the
-                     * translate panel, under that panel's own injector, so it closes with it.
-                     */
-                    it('should stack content the translate form asks for over the translate panel', () => {
+                    it('should ask which editor the page type uses, once', () => {
                         translate();
-                        const panelInjector = Injector.create({
-                            providers: [],
-                            parent: spectator.inject(Injector)
+
+                        expect(resolveEditor).toHaveBeenCalledTimes(1);
+                        expect(resolveEditor).toHaveBeenCalledWith('htmlpageasset');
+                    });
+
+                    /**
+                     * A page type on the new editor translates in it (#38303, T178): the page opens
+                     * through the opener in the asked language, and the editor offers to populate
+                     * the translation from the page, as its own locale switch does.
+                     */
+                    describe('on a page type that uses the new editor', () => {
+                        beforeEach(() => {
+                            resolveEditor.mockReturnValue(of({ editor: 'new', contentType: null }));
                         });
-                        const request: DotEditContentRequest = {
-                            mode: 'edit',
-                            inode: 'embedded-inode',
-                            contentType: 'Blog',
-                            title: 'Embedded'
+
+                        /** The panel the translation opened through the opener. */
+                        const openedTranslation = (): OpenedContent => {
+                            const panel = opener.opened.at(-1);
+
+                            expect(
+                                panel,
+                                'the editor opens the page through the opener'
+                            ).toBeDefined();
+
+                            return panel as OpenedContent;
                         };
 
-                        emit('openContent', { request, injector: panelInjector });
+                        it('should open the page through the opener in the asked language', () => {
+                            translate();
 
-                        const stacked = opener.opened.at(-1);
-                        expect(stacked?.request).toEqual(request);
-                        // Compared by identity: printing an injector runs the worker out of memory.
-                        expect(stacked?.options.injector === panelInjector).toBe(true);
+                            expect(opener.opened.length).toBe(1);
+                            expect(openedTranslation().request).toEqual({
+                                mode: 'edit',
+                                inode: 'inode-123',
+                                identifier: 'test-page-123',
+                                contentType: 'htmlpageasset',
+                                languageId: 2,
+                                title: 'Translated page',
+                                siteId: siteId(),
+                                portletId: 'edit-page'
+                            });
+                            expect(openedTranslation().options.url).toBeUndefined();
+                        });
+
+                        // Asked once, here; the opener is handed the answer (stack review L7-8).
+                        it('should hand the opener the editor it found, so it does not ask again', () => {
+                            translate();
+
+                            expect(resolveEditor).toHaveBeenCalledTimes(1);
+                            expect(openedTranslation().options.resolved).toEqual({
+                                editor: 'new',
+                                contentType: null
+                            });
+                        });
+
+                        it('should not open the legacy editor panel', () => {
+                            translate();
+
+                            expect(
+                                sidePanels.filter(
+                                    (opened) => 'createUrl' in (opened.config.inputs ?? {})
+                                )
+                            ).toHaveLength(0);
+                        });
+
+                        it('should load the saved translation at its URL and in its language', () => {
+                            translate();
+                            const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
+
+                            openedTranslation().options.saved?.(
+                                createFakeContentlet({ languageId: 2, url: '/translated-page' })
+                            );
+
+                            expect(pageLoadSpy).toHaveBeenCalledWith({
+                                language_id: '2',
+                                url: '/translated-page'
+                            });
+                        });
+
+                        it('should reload the page when the panel closes after a save', () => {
+                            translate();
+                            openedTranslation().options.saved?.(
+                                createFakeContentlet({ languageId: 2, url: '/translated-page' })
+                            );
+                            const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
+
+                            openedTranslation().ref.close();
+
+                            expect(pageReloadSpy).toHaveBeenCalledTimes(1);
+                        });
+
+                        it('should leave the page alone when the panel closes without a save', () => {
+                            translate();
+                            const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
+
+                            openedTranslation().ref.close();
+
+                            expect(pageReloadSpy).not.toHaveBeenCalled();
+                        });
                     });
                 });
 

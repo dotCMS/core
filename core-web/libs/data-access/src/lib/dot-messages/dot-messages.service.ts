@@ -1,4 +1,4 @@
-import { Observable, of } from 'rxjs';
+import { Observable, of, ReplaySubject } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
@@ -27,6 +27,16 @@ export class DotMessageService {
     private readonly dotLocalstorageService = inject(DotLocalstorageService);
 
     private messageMap: { [key: string]: string } = {};
+
+    readonly #ready = new ReplaySubject<void>(1);
+
+    /**
+     * Emits once the messages are loaded, from the server or from local storage, and replays that
+     * to every later subscriber. Until then {@link get} answers with the keys, so text built before
+     * it (an error dialog raised while the app starts, #38303 T175) waits on this. Never emits if
+     * {@link init} is never called, or if the messages cannot be fetched.
+     */
+    readonly ready$: Observable<void> = this.#ready.asObservable();
 
     /**
      * Initializes the DotMessageService.
@@ -82,6 +92,7 @@ export class DotMessageService {
                     this.dotLocalstorageService.setItem(MESSAGES_LOCALSTORAGE_KEY, this.messageMap);
                     this.dotLocalstorageService.setItem(LANGUAGE_LOCALSTORAGE_KEY, lang);
                     this.dotLocalstorageService.setItem(BUILDATE_LOCALSTORAGE_KEY, newBuildDate);
+                    this.#ready.next();
                 }),
                 map(() => void 0),
                 shareReplay({ bufferSize: 1, refCount: false })
@@ -91,6 +102,7 @@ export class DotMessageService {
         this.messageMap = this.dotLocalstorageService.getItem(MESSAGES_LOCALSTORAGE_KEY) as {
             [key: string]: string;
         };
+        this.#ready.next();
 
         return of(void 0);
     }

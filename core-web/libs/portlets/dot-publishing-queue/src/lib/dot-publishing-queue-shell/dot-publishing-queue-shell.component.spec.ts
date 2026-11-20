@@ -1,15 +1,18 @@
 import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { Subject, of } from 'rxjs';
-import { Mocked, vi } from 'vitest';
+import { Mock, Mocked, vi } from 'vitest';
 
 import { CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA } from '@angular/core';
+import { ActivatedRoute, Params } from '@angular/router';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { Toast } from 'primeng/toast';
 
 /* eslint-disable @nx/enforce-module-boundaries */
 
 import {
+    DotContentChangeService,
     DotCurrentUserService,
     DotFormatDateService,
     DotGlobalMessageService,
@@ -20,12 +23,51 @@ import {
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { PublishAuditStatus, PublishingJobView } from '@dotcms/dotcms-models';
+import {
+    DotEditContentOpenerService,
+    DotEditContentOpenOptions,
+    DotPanelUrlStateService
+} from '@dotcms/edit-content';
+import { DotSidePanelRef } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 
 import { DotPublishingQueueShellComponent } from './dot-publishing-queue-shell.component';
 
 import { DotPublishingQueueStore } from '../store/dot-publishing-queue.store';
+
+/** What the shell, its store and the table it renders need, mocked. */
+const shellProviders = () => [
+    mockProvider(DotPublishingQueueService, {
+        listPublishingJobs: vi.fn().mockReturnValue(
+            of({
+                entity: [],
+                pagination: { currentPage: 1, perPage: 10, totalEntries: 0 }
+            })
+        ),
+        getBundleAssets: vi.fn().mockReturnValue(of([])),
+        getPublishingJobDetails: vi.fn().mockReturnValue(of({})),
+        probeBundleDownload: vi.fn().mockReturnValue(of(true)),
+        probeBundleManifest: vi.fn().mockReturnValue(of(true)),
+        getUnsendBundles: vi
+            .fn()
+            .mockReturnValue(of({ identifier: 'id', label: 'name', items: [], numRows: 0 }))
+    }),
+    mockProvider(DotCurrentUserService, {
+        getCurrentUser: vi.fn().mockReturnValue(of({ userId: 'user-1' }))
+    }),
+    mockProvider(DotHttpErrorManagerService),
+    mockProvider(DotFormatDateService),
+    mockProvider(DotGlobalMessageService, { error: vi.fn() }),
+    mockProvider(DotMessageDisplayService, { push: vi.fn() }),
+    mockProvider(DotPushPublishDialogService, { open: vi.fn() }),
+    mockProvider(DotDownloadBundleDialogService, { open: vi.fn() }),
+    { provide: DotMessageService, useValue: new MockDotMessageService({}) },
+    mockProvider(DotEditContentOpenerService, {
+        open: vi.fn(() => new DotSidePanelRef(() => undefined))
+    }),
+    mockProvider(DotPanelUrlStateService, { clear: vi.fn(), refuse: vi.fn(), register: vi.fn() })
+];
 
 describe('DotPublishingQueueShellComponent', () => {
     let spectator: Spectator<DotPublishingQueueShellComponent>;
@@ -46,34 +88,14 @@ describe('DotPublishingQueueShellComponent', () => {
         componentProviders: [
             DotPublishingQueueStore,
             ConfirmationService,
+            // The shell's own, for a panel reopened from the URL; its describe below checks it.
+            MessageService,
             mockProvider(DialogService, { open: vi.fn().mockReturnValue(dialogRef) })
         ],
         providers: [
-            mockProvider(DotPublishingQueueService, {
-                listPublishingJobs: vi.fn().mockReturnValue(
-                    of({
-                        entity: [],
-                        pagination: { currentPage: 1, perPage: 10, totalEntries: 0 }
-                    })
-                ),
-                getBundleAssets: vi.fn().mockReturnValue(of([])),
-                getPublishingJobDetails: vi.fn().mockReturnValue(of({})),
-                probeBundleDownload: vi.fn().mockReturnValue(of(true)),
-                probeBundleManifest: vi.fn().mockReturnValue(of(true)),
-                getUnsendBundles: vi
-                    .fn()
-                    .mockReturnValue(of({ identifier: 'id', label: 'name', items: [], numRows: 0 }))
-            }),
-            mockProvider(DotCurrentUserService, {
-                getCurrentUser: vi.fn().mockReturnValue(of({ userId: 'user-1' }))
-            }),
-            mockProvider(DotHttpErrorManagerService),
-            mockProvider(DotFormatDateService),
-            mockProvider(DotGlobalMessageService, { error: vi.fn() }),
-            mockProvider(DotMessageDisplayService, { push: vi.fn() }),
-            mockProvider(DotPushPublishDialogService, { open: vi.fn() }),
-            mockProvider(DotDownloadBundleDialogService, { open: vi.fn() }),
-            { provide: DotMessageService, useValue: new MockDotMessageService({}) }
+            ...shellProviders(),
+            // A URL that names no panel (#38303); the load-time cases have their own describe.
+            { provide: ActivatedRoute, useValue: { snapshot: { queryParams: {} } } }
         ],
         schemas: [CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA]
     });
@@ -244,5 +266,164 @@ describe('DotPublishingQueueShellComponent', () => {
             spectator.component.confirmDeleteBundles();
             expect(spy).not.toHaveBeenCalled();
         });
+    });
+});
+
+/**
+ * #38303 (FR-049) — a row opened from the asset list or the bundle wizard writes its panel to the
+ * portlet's URL. On load the shell reopens that panel over the list, under its own injector, without
+ * the dialog it came from; saves and the close reload the list.
+ */
+describe('DotPublishingQueueShellComponent — the panel named in the URL', () => {
+    const IDENTIFIER = '3f0c8e5a-7b2d-4c1e-9a6f-0d4b8e2c1a57';
+
+    let spectator: Spectator<DotPublishingQueueShellComponent>;
+    let dialogOpen: Mock;
+
+    const createComponent = createComponentFactory({
+        component: DotPublishingQueueShellComponent,
+        // No `componentProviders`: the shell's own providers apply, its MessageService among them.
+        providers: shellProviders(),
+        schemas: [CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA],
+        detectChanges: false
+    });
+
+    /** Builds the portlet on a URL with these query params. */
+    const mount = (queryParams: Params): void => {
+        dialogOpen = vi.fn();
+        spectator = createComponent({
+            providers: [
+                { provide: ActivatedRoute, useValue: { snapshot: { queryParams } } },
+                mockProvider(DialogService, { open: dialogOpen })
+            ]
+        });
+        spectator.detectChanges();
+    };
+
+    const opened = () => spectator.inject(DotEditContentOpenerService).open as Mock;
+
+    /** The options the shell handed the opener, on its only `open`. */
+    const openOptions = (): DotEditContentOpenOptions => {
+        expect(opened().mock.calls.length, 'the shell opens one panel').toBe(1);
+
+        return opened().mock.calls[0][1] as DotEditContentOpenOptions;
+    };
+
+    beforeEach(() => vi.clearAllMocks());
+
+    it('reopens the version the URL names over the list, by identifier and language', () => {
+        mount({ editContent: IDENTIFIER, editContentLang: '2' });
+
+        expect(opened().mock.calls.length, 'the shell opens one panel').toBe(1);
+        expect(opened().mock.calls[0][0]).toEqual({
+            mode: 'edit',
+            identifier: IDENTIFIER,
+            languageId: 2,
+            portletId: 'publishing-queue'
+        });
+        expect(openOptions().url).toEqual({});
+        // Over the list: the dialog the row was in is not reopened.
+        expect(dialogOpen).not.toHaveBeenCalled();
+    });
+
+    it("opens it under the shell's injector", () => {
+        mount({ editContent: IDENTIFIER });
+
+        // Compared by identity: printing an injector runs the worker out of memory.
+        expect(
+            openOptions().injector.get(DotPublishingQueueShellComponent, null) ===
+                spectator.component
+        ).toBe(true);
+    });
+
+    // A create is never written here, but a link may name one; it opens like anywhere else.
+    it('opens a create of the content type the URL names', () => {
+        mount({ createContent: 'Blog' });
+
+        expect(opened().mock.calls[0][0]).toEqual({
+            mode: 'new',
+            contentType: 'Blog',
+            portletId: 'publishing-queue'
+        });
+    });
+
+    /**
+     * #38303, T174: every save and delete in a side panel, at any depth, reloads the list through
+     * the content change notification, once each; the panel only reloads it on its own close.
+     */
+    it('reloads the list on every content change and when the panel closes', () => {
+        mount({ editContent: IDENTIFIER, editContentLang: '2' });
+        const refresh = vi.spyOn(spectator.inject(DotPublishingQueueStore, true), 'refresh');
+        const changes = spectator.inject(DotContentChangeService);
+
+        changes.notify({ kind: 'saved', contentlet: { inode: 'saved' } as never, depth: 0 });
+        changes.notify({ kind: 'saved', contentlet: { inode: 'related' } as never, depth: 1 });
+        openOptions().closed?.();
+
+        expect(openOptions().saved).toBeUndefined();
+        expect(refresh).toHaveBeenCalledTimes(3);
+    });
+
+    /**
+     * A save in a panel over one of the dialogs changes no bundle row; the dialog reloads its own
+     * list. So while a dialog is open the bundle list is left alone (stack review L7-7).
+     */
+    it.each([
+        [
+            'the asset list',
+            (
+                shell: DotPublishingQueueShellComponent,
+                store: { openAssetList: (id: string) => void }
+            ) => store.openAssetList('B-1')
+        ],
+        ['the bundle wizard', (shell: DotPublishingQueueShellComponent) => shell.openSelectBundle()]
+    ])(
+        'leaves the bundle list alone on a content change while %s is open',
+        (_label, openDialog) => {
+            mount({});
+            dialogOpen.mockReturnValue({ onClose: new Subject() });
+            const store = spectator.inject(DotPublishingQueueStore, true);
+            openDialog(spectator.component, store);
+            const refresh = vi.spyOn(store, 'refresh');
+
+            spectator
+                .inject(DotContentChangeService)
+                .notify({ kind: 'saved', contentlet: { inode: 'saved' } as never, depth: 0 });
+
+            expect(refresh).not.toHaveBeenCalled();
+        }
+    );
+
+    it('opens nothing for a URL that names no panel', () => {
+        mount({});
+
+        expect(opened()).not.toHaveBeenCalled();
+        expect(spectator.inject(DotPanelUrlStateService).clear).not.toHaveBeenCalled();
+        expect(spectator.inject(DotPanelUrlStateService).refuse).not.toHaveBeenCalled();
+    });
+
+    // A link the author cannot have meant opens nothing, tells them, and loses its params (T172).
+    it.each([
+        ['names two panels', { editContent: IDENTIFIER, createContent: 'Blog' }],
+        ['names content by a malformed identifier', { editContent: 'wrong-identifier' }]
+    ])('refuses a URL that %s', (_label, queryParams) => {
+        mount(queryParams);
+
+        expect(opened()).not.toHaveBeenCalled();
+        expect(spectator.inject(DotPanelUrlStateService).refuse).toHaveBeenCalledTimes(1);
+    });
+
+    /**
+     * The dialogs bring their own MessageService and toast for the panels they open; a panel opened
+     * over the list toasts through the shell's. The admin root provides none (one there would hide
+     * the page editor's).
+     */
+    it('provides a MessageService of its own and renders its toast', () => {
+        mount({ editContent: IDENTIFIER });
+        const own = spectator.inject(MessageService, true);
+
+        expect(own).toBeTruthy();
+        expect(openOptions().injector.get(MessageService, null) === own).toBe(true);
+        expect(spectator.query(Toast)).not.toBeNull();
     });
 });
