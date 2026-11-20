@@ -1854,6 +1854,34 @@ describe('EditEmaEditorComponent', () => {
                     expect(panel.options.injector).toBeDefined();
                 });
 
+                // A Story Block's contentlet "Edit", in the block editor drawer, opens it in the
+                // side panel, in whichever editor its type uses (#38303, review R1).
+                it('should open the contentlet a Story Block in the block editor drawer asks to edit', () => {
+                    spectator.detectChanges();
+
+                    spectator.triggerEventHandler(
+                        DotBlockEditorSidebarComponent,
+                        'contentletEdit',
+                        {
+                            inode: 'embedded-inode',
+                            contentType: 'Activity'
+                        }
+                    );
+                    spectator.detectChanges();
+
+                    const request = editPanel().request as Signal<DotEditContentRequest>;
+
+                    expect(opener.opened.length).toBe(1);
+                    expect(request()).toEqual({
+                        mode: 'edit',
+                        inode: 'embedded-inode',
+                        contentType: 'Activity',
+                        languageId: store.pageLanguageId(),
+                        siteId: siteId(),
+                        portletId: 'edit-page'
+                    });
+                });
+
                 /**
                  * Every request carries the experiment variant the page is on, so the editor saves
                  * in it, but only when it is not the default variant (#38303, FR-022).
