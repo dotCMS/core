@@ -27,6 +27,7 @@ import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplPhaseTest
 import com.dotcms.content.index.VersionedIndices;
 import com.dotcms.content.index.domain.IndexBulkRequest;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.UserAPI;
@@ -36,6 +37,7 @@ import com.dotmarketing.common.reindex.ReindexQueueAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
@@ -288,17 +290,21 @@ public class ContentletIndexAPIImplDirectPathRejectionTest {
         when(versionInfo.getLiveInode()).thenReturn("inode-live");
         final VersionableAPI versionableAPI = mock(VersionableAPI.class);
         when(versionableAPI.findContentletVersionInfos("id-1")).thenReturn(List.of(versionInfo));
-        final ContentletAPI contentletAPI = mock(ContentletAPI.class);
-        when(contentletAPI.findInDb("inode-working")).thenReturn(Optional.of(working));
-        when(contentletAPI.findInDb("inode-live")).thenReturn(Optional.of(live));
+        // The reindex path loads every version through the factory, asking it to ignore the
+        // Story Block values of the current request.
+        final ContentletFactory contentletFactory = mock(ContentletFactory.class);
+        when(contentletFactory.findInDb("inode-working", true)).thenReturn(Optional.of(working));
+        when(contentletFactory.findInDb("inode-live", true)).thenReturn(Optional.of(live));
         final ReindexQueueAPI queueAPI = mock(ReindexQueueAPI.class);
 
         final RecordingBulkRequest request = new RecordingBulkRequest();
-        try (MockedStatic<APILocator> apiLocator = mockStatic(APILocator.class)) {
+        try (MockedStatic<APILocator> apiLocator = mockStatic(APILocator.class);
+                MockedStatic<FactoryLocator> factoryLocator = mockStatic(FactoryLocator.class)) {
             apiLocator.when(APILocator::getContentMappingAPI).thenReturn(mappingAPI);
             apiLocator.when(APILocator::getVersionableAPI).thenReturn(versionableAPI);
-            apiLocator.when(APILocator::getContentletAPI).thenReturn(contentletAPI);
             apiLocator.when(APILocator::getReindexQueueAPI).thenReturn(queueAPI);
+            factoryLocator.when(FactoryLocator::getContentletFactory)
+                    .thenReturn(contentletFactory);
             api.appendBulkRequest(request, entry);
         }
 
