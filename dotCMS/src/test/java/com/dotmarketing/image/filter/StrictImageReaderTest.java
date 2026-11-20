@@ -186,6 +186,31 @@ public class StrictImageReaderTest {
     }
 
     /**
+     * Given a JPEG that holds all its image data but lacks the final EOI marker (the reader warns only
+     * "Truncated File - Missing EOI marker"), when read, then it decodes like the original. A file that
+     * is really cut short also warns "premature end of data segment" and still fails.
+     */
+    @Test
+    public void read_completeJpegWithoutEoiMarker_decodes() throws Exception {
+        final byte[] bytes = Files.readAllBytes(resource("test.jpg").toPath());
+        final File withoutEoi = new File(workDir, generatedName("test.jpg"));
+        Files.write(withoutEoi.toPath(), Arrays.copyOf(bytes, bytes.length - 2));
+        final BufferedImage expected = javax.imageio.ImageIO.read(resource("test.jpg"));
+
+        final BufferedImage actual = StrictImageReader.read(withoutEoi);
+
+        assertEquals(expected.getWidth(), actual.getWidth());
+        assertEquals(expected.getHeight(), actual.getHeight());
+        final File truncated = truncatedCopy("test.jpg");
+        try {
+            StrictImageReader.read(truncated);
+            fail("a JPEG that is really cut short must not decode");
+        } catch (IOException cutShort) {
+            // "premature end of data segment" comes with the missing EOI warning, so it stays fatal
+        }
+    }
+
+    /**
      * Given reader warning messages, when classified, then only truncation / short-read warnings are
      * fatal; recoverable ones (bogus APPn segments, extraneous bytes, unknown transforms) are not.
      */

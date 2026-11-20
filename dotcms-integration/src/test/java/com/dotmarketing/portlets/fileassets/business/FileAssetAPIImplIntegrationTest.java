@@ -8,6 +8,8 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -158,6 +160,41 @@ public class FileAssetAPIImplIntegrationTest  extends IntegrationTestBase {
             for (final File rendition : renditionsA) {
                 rendition.delete();
             }
+        }
+    }
+
+    /**
+     * Method to test: {@link FileAssetAPIImpl#cleanThumbnailsFromFileAsset(IFileAsset)}
+     * When: finished renditions are published to the shared store (the default {@code shared} value,
+     * treated as SHARED_COMPLETED) and a file asset version, whose binary can be replaced under the
+     * same inode by Push Publishing, has its thumbnails cleaned
+     * Should: delete that inode's renditions in the shared store too, leaving other inodes' alone
+     */
+    @Test
+    public void cleanThumbnailsFromFileAsset_alsoDeletesThatInodesSharedRenditions() throws Exception {
+        final String previousMode = Config.getStringProperty("DOTGENERATED_DEFAULT_PATH", null);
+        final String inodeA = UUID.randomUUID().toString();
+        final String inodeB = inodeA.substring(0, 2) + UUID.randomUUID().toString().substring(2);
+        final File bucket = new File(ConfigUtils.getDotGeneratedSharedPath() + File.separator
+                + inodeA.charAt(0) + File.separator + inodeA.charAt(1));
+        final File sharedA = new File(bucket, "dotGenerated_" + inodeA + "_resize_0123456789abcdef.png");
+        final File sharedB = new File(bucket, "dotGenerated_" + inodeB + "_resize_0123456789abcdef.png");
+        try {
+            Config.setProperty("DOTGENERATED_DEFAULT_PATH", "shared");
+            assertTrue(bucket.isDirectory() || bucket.mkdirs());
+            Files.write(sharedA.toPath(), "rendition".getBytes());
+            Files.write(sharedB.toPath(), "rendition".getBytes());
+            final FileAsset fileAssetA = new FileAsset();
+            fileAssetA.setInode(inodeA);
+
+            fileAssetAPIImpl.cleanThumbnailsFromFileAsset(fileAssetA);
+
+            assertFalse("the shared rendition of the cleaned inode must be deleted: " + sharedA, sharedA.exists());
+            assertTrue("another inode's shared rendition must be kept: " + sharedB, sharedB.exists());
+        } finally {
+            Config.setProperty("DOTGENERATED_DEFAULT_PATH", previousMode);
+            sharedA.delete();
+            sharedB.delete();
         }
     }
 

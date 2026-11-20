@@ -30,8 +30,8 @@ public class VipsSubSampleImageFilter extends VipsImageFilter {
             }
             final VImage thumb = width > 0 && height > 0
                     ? VImage.thumbnail(arena, in.getAbsolutePath(), width, VipsOption.Int("height", height),
-                            VipsManager.FAIL_ON_ERROR)
-                    : VImage.thumbnail(arena, in.getAbsolutePath(), Math.max(width, height), VipsManager.FAIL_ON_ERROR);
+                            VipsManager.FAIL_ON_TRUNCATED)
+                    : VImage.thumbnail(arena, in.getAbsolutePath(), Math.max(width, height), VipsManager.FAIL_ON_TRUNCATED);
             thumb.writeToFile(out.getAbsolutePath());
         });
     }

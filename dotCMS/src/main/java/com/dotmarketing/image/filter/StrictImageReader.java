@@ -63,6 +63,10 @@ public final class StrictImageReader {
      * Decodes the first image of a reader whose input is already set, failing on a truncation
      * warning or a {@code null} image. Other reader warnings are logged and the image is accepted.
      *
+     * <p>A lone "Missing EOI marker" warning is not fatal: the JPEG decoder reports it for a file
+     * that holds all its image data but lacks the final end marker, which browsers render fine. A
+     * file that is really cut short always also reports "premature end of data segment".</p>
+     *
      * @param reader reader whose input is already set
      * @param params read params, or {@code null} for the reader defaults
      * @param source what is being decoded, for messages only
@@ -77,7 +81,7 @@ public final class StrictImageReader {
         try {
             final BufferedImage image = reader.read(0, params);
             for (final String warning : warnings) {
-                if (isTruncationWarning(warning)) {
+                if (isTruncationWarning(warning) && !isMissingEoiWarning(warning)) {
                     throw new IOException("corrupt or truncated image data while decoding " + source
                             + ": " + warning);
                 }
@@ -113,6 +117,17 @@ public final class StrictImageReader {
             }
             throw new IOException("written rendition does not decode: " + file + " : " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Tells whether a reader warning only says the JPEG end marker is missing, e.g. "Truncated File -
+     * Missing EOI marker". On its own it means the image data is complete.
+     *
+     * @param message the reader warning, may be {@code null}
+     * @return {@code true} if the warning is about the missing EOI marker
+     */
+    static boolean isMissingEoiWarning(@Nullable final String message) {
+        return message != null && message.toLowerCase(Locale.ROOT).contains("missing eoi");
     }
 
     /**

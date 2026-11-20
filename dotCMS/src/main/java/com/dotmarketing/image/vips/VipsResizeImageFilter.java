@@ -65,8 +65,8 @@ public class VipsResizeImageFilter extends VipsImageFilter {
         VipsManager.run(arena -> {
             // Normalise static-image orientation before ResizeCalc and the no-resampling path.
             final VImage source = animated
-                    ? VImage.newFromFile(arena, in.getAbsolutePath(), VipsOption.Int("n", -1), VipsManager.FAIL_ON_ERROR)
-                    : VImage.newFromFile(arena, in.getAbsolutePath(), VipsManager.FAIL_ON_ERROR).autorot();
+                    ? VImage.newFromFile(arena, in.getAbsolutePath(), VipsOption.Int("n", -1), VipsManager.FAIL_ON_TRUNCATED)
+                    : VImage.newFromFile(arena, in.getAbsolutePath(), VipsManager.FAIL_ON_TRUNCATED).autorot();
 
             final int originalWidth = source.getWidth();
             // For animated images getHeight() returns total strip height; use page-height metadata.

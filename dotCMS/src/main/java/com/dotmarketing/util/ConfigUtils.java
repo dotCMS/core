@@ -219,9 +219,11 @@ public class ConfigUtils {
     /**
      * Reads {@code DOTGENERATED_DEFAULT_PATH} live (so it can flip without a restart) and maps it to
      * {@code LOCAL} or {@code SHARED_COMPLETED}, logging a WARN the first time an unrecognized value is seen.
+     * Surrounding spaces are ignored, so {@code "LOCAL "} (easy to get from YAML or env files) still means LOCAL.
      */
     private static String normalizedDotGeneratedMode() {
-        final String mode = Config.getStringProperty("DOTGENERATED_DEFAULT_PATH", LOCAL);
+        final String raw = Config.getStringProperty("DOTGENERATED_DEFAULT_PATH", LOCAL);
+        final String mode = raw == null ? null : raw.trim();
         if (LOCAL.equalsIgnoreCase(mode)) {
             return LOCAL;
         }

@@ -137,17 +137,23 @@ public final class VipsManager {
     }
 
     /**
-     * Load option that makes libvips fail on a decode error or truncated input instead of silently
-     * filling the missing scanlines with black/grey. Pass it to every {@code VImage.newFromFile} and
-     * {@code VImage.thumbnail} call so a bad read reaches the fallback path rather than the cache.
+     * Load option that makes libvips fail on truncated input (a short file, or a read that stops
+     * partway) instead of silently filling the missing scanlines with black/grey. Pass it to every
+     * {@code VImage.newFromFile} and {@code VImage.thumbnail} call so a bad read reaches the error
+     * path rather than the cache.
+     *
+     * <p>{@code truncated}, not {@code error}: {@code error} also rejects images browsers and the
+     * previous engine render fine, e.g. a PNG with a bad IDAT checksum ({@code pngload: invalid chunk
+     * checksum}). A JPEG that is complete but lacks its final EOI marker is still reported as
+     * truncated by libjpeg; {@link #withMissingJpegEoiRepaired(java.io.File)} recovers that case.</p>
      */
-    static final VipsOption FAIL_ON_ERROR = VipsOption.Enum("fail_on", VipsFailOn.FAIL_ON_ERROR);
+    static final VipsOption FAIL_ON_TRUNCATED = VipsOption.Enum("fail_on", VipsFailOn.FAIL_ON_TRUNCATED);
 
     /**
      * Loads an image for full-frame (random access) operations such as crop, rotate and flip.
      */
     static VImage load(final Arena arena, final java.io.File file) {
-        return VImage.newFromFile(arena, file.getAbsolutePath(), FAIL_ON_ERROR);
+        return VImage.newFromFile(arena, file.getAbsolutePath(), FAIL_ON_TRUNCATED);
     }
 
     /** Extensions whose libvips loader may hold several frames, so a full check decodes all of them. */
@@ -172,7 +178,7 @@ public final class VipsManager {
     }
 
     /**
-     * Decodes every pixel of the file in libvips with {@code fail_on=error}, all frames for GIF and
+     * Decodes every pixel of the file in libvips with {@code fail_on=truncated}, all frames for GIF and
      * WebP. The work stays in native memory: {@code avg()} walks the pixels and returns one number, so
      * nothing is copied into the JVM heap.
      *
@@ -190,8 +196,67 @@ public final class VipsManager {
         final String ext = com.dotmarketing.util.UtilMethods.getFileExtension(file.getName());
         final boolean multiPage = ext != null && MULTI_PAGE_EXTENSIONS.contains(ext.toLowerCase(java.util.Locale.ROOT));
         return Try.run(() -> run(arena -> (multiPage
-                ? VImage.newFromFile(arena, file.getAbsolutePath(), VipsOption.Int("n", -1), FAIL_ON_ERROR)
+                ? VImage.newFromFile(arena, file.getAbsolutePath(), VipsOption.Int("n", -1), FAIL_ON_TRUNCATED)
                 : load(arena, file)).avg())).isSuccess();
+    }
+
+    /** Strictest load: any decoder warning fails. Used only to vet a repaired JPEG. */
+    private static final VipsOption FAIL_ON_WARNING = VipsOption.Enum("fail_on", VipsFailOn.FAIL_ON_WARNING);
+
+    /**
+     * Recovers a JPEG that is complete but lacks its final EOI marker ({@code FFD9}), which libjpeg
+     * reports exactly like a truncated file. A copy with the marker appended is decoded with
+     * {@code fail_on=warning}: a complete image then decodes with no warning at all, while a file that
+     * is really cut short still warns "premature end of data segment" and is rejected. (With the
+     * marker appended, a cut-short file passes {@code fail_on=truncated} and {@code error}, so the
+     * strict level is required here.) Only called after a load failed.
+     *
+     * @param file an input libvips could not load
+     * @return a temporary repaired copy (the caller deletes it), or empty when the file is not a JPEG
+     *         missing only its EOI marker
+     */
+    public static java.util.Optional<java.io.File> withMissingJpegEoiRepaired(final java.io.File file) {
+        if (!isEnabled() || !endsWithoutJpegEoi(file)) {
+            return java.util.Optional.empty();
+        }
+        final java.io.File repaired = Try.of(() -> {
+            final java.io.File copy = java.io.File.createTempFile("dot-eoi-repaired_", ".jpg");
+            java.nio.file.Files.copy(file.toPath(), copy.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            java.nio.file.Files.write(copy.toPath(), new byte[]{(byte) 0xFF, (byte) 0xD9},
+                    java.nio.file.StandardOpenOption.APPEND);
+            return copy;
+        }).getOrNull();
+        if (repaired == null) {
+            return java.util.Optional.empty();
+        }
+        final boolean complete = Try.run(() -> run(arena ->
+                VImage.newFromFile(arena, repaired.getAbsolutePath(), FAIL_ON_WARNING).avg())).isSuccess();
+        if (complete) {
+            return java.util.Optional.of(repaired);
+        }
+        Try.run(() -> java.nio.file.Files.deleteIfExists(repaired.toPath()));
+        return java.util.Optional.empty();
+    }
+
+    /**
+     * Tells whether a file starts like a JPEG (SOI marker) but does not end with the EOI marker.
+     *
+     * @param file the input file
+     * @return true for a JPEG whose last two bytes are not {@code FF D9}
+     */
+    private static boolean endsWithoutJpegEoi(final java.io.File file) {
+        return Try.of(() -> {
+            try (java.io.RandomAccessFile raf = new java.io.RandomAccessFile(file, "r")) {
+                final long length = raf.length();
+                if (length < 4) {
+                    return false;
+                }
+                final boolean startsAsJpeg = raf.read() == 0xFF && raf.read() == 0xD8;
+                raf.seek(length - 2);
+                final boolean endsWithEoi = raf.read() == 0xFF && raf.read() == 0xD9;
+                return startsAsJpeg && !endsWithEoi;
+            }
+        }).getOrElse(false);
     }
 
     /**

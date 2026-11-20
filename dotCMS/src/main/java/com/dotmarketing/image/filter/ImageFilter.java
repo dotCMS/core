@@ -96,12 +96,23 @@ public abstract class ImageFilter implements ImageFilterIf {
 			
 
 
+			// The first stage keys on the original binary's size and modification time, so a binary
+			// replaced under the same inode (push publishing, save without a new version) gets new
+			// rendition names on every node and in the shared store instead of a stale cached copy.
+			// Chained stages inherit it: their input's name already carries the previous stage's hash.
+			final String sourceVersion = file.getName().startsWith(WebKeys.GENERATED_FILE)
+					? "" : ":" + file.length() + ":" + file.lastModified();
 			MessageDigest digest = java.security.MessageDigest.getInstance("MD5");
-			digest.update((inode + sb.toString() + this.getClass() + file.getName()).getBytes());
+			digest.update((inode + sb.toString() + this.getClass() + file.getName() + sourceVersion).getBytes());
 
 			StringBuilder ret = new StringBuilder();
 			ret.append( WebKeys.GENERATED_FILE);
-			ret.append(inode + "_");
+			// only a real version inode goes into the name (cleanup matches on it); a fallback value
+			// (temp-file id, a chained input's whole name) stays in the digest only, otherwise each
+			// chained stage would embed the previous name and grow past the file name limit
+			if (inode.matches(UUID_REGEX)) {
+				ret.append(inode + "_");
+			}
 			ret.append(thisFilter + "_");
 			ret.append(convertToHex(digest.digest()));
 

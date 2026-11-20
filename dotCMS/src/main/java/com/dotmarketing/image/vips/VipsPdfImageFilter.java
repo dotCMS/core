@@ -26,7 +26,7 @@ public class VipsPdfImageFilter extends VipsImageFilter {
         VipsManager.run(arena -> {
             final VImage src = VImage.newFromFile(arena, in.getAbsolutePath(),
                     VipsOption.Int("page", page - 1),
-                    VipsOption.Double("dpi", dpi), VipsManager.FAIL_ON_ERROR);
+                    VipsOption.Double("dpi", dpi), VipsManager.FAIL_ON_TRUNCATED);
             src.writeToFile(out.getAbsolutePath());
         });
     }

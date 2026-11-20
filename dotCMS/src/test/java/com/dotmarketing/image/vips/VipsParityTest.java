@@ -671,6 +671,74 @@ public class VipsParityTest {
         assertEquals(new Dimension(200, 150), dims(out));
     }
 
+    /**
+     * Stages bytes as a generated input in a fresh folder, so any rendition lands next to it.
+     *
+     * @param bytes the file content
+     * @param ext the file extension
+     * @return the staged input
+     * @throws Exception if the file cannot be written
+     */
+    private File staged(final byte[] bytes, final String ext) throws Exception {
+        final File in = new File(TRUNCATED_ROOT.newFolder(), "dotGenerated_staged." + ext);
+        java.nio.file.Files.write(in.toPath(), bytes);
+        return in;
+    }
+
+    /**
+     * Resizes the input with the legacy fallback off and asserts it renders at the requested size,
+     * so the result can only come from libvips.
+     *
+     * @param in the staged input
+     * @throws Exception if the result cannot be read
+     */
+    private void assertRendersWithoutFallback(final File in) throws Exception {
+        final String previous = Config.getStringProperty(FALLBACK_PROPERTY, null);
+        Config.setProperty(FALLBACK_PROPERTY, false);
+        try {
+            final File out = new VipsResizeImageFilter().runFilter(in, params("resize_w", "200", "resize_h", "150"));
+            assertEquals(new Dimension(200, 150), dims(out));
+        } finally {
+            Config.setProperty(FALLBACK_PROPERTY, previous);
+        }
+    }
+
+    /**
+     * Given a JPEG that holds all its image data but lacks its final EOI marker (common in camera and
+     * pipeline output; libjpeg reports it like a truncated file), when resized by libvips, then it
+     * renders: the marker is restored on a temporary copy and the transform is retried.
+     */
+    @Test
+    public void runFilter_complete_jpeg_without_eoi_marker_renders() throws Exception {
+        final byte[] bytes = java.nio.file.Files.readAllBytes(image("test.jpg").toPath());
+        assertRendersWithoutFallback(staged(java.util.Arrays.copyOf(bytes, bytes.length - 2), "jpg"));
+    }
+
+    /**
+     * Given a PNG whose first IDAT chunk has a wrong checksum but complete data (browsers and the
+     * previous engine render it), when resized by libvips, then it renders: {@code fail_on=truncated}
+     * rejects short reads only, not checksum errors. The fixture is written with several IDAT chunks,
+     * which is what makes libvips check the first one ({@code fail_on=error} rejects it).
+     */
+    @Test
+    public void runFilter_png_with_bad_idat_checksum_renders() throws Exception {
+        final BufferedImage noise = new BufferedImage(320, 240, BufferedImage.TYPE_INT_RGB);
+        for (int y = 0; y < noise.getHeight(); y++) {
+            for (int x = 0; x < noise.getWidth(); x++) {
+                noise.setRGB(x, y, (x * 7919 + y * 104729) & 0xFFFFFF);
+            }
+        }
+        final java.io.ByteArrayOutputStream png = new java.io.ByteArrayOutputStream();
+        ImageIO.write(noise, "png", png);
+        final byte[] bytes = png.toByteArray();
+        final int idat = new String(bytes, java.nio.charset.StandardCharsets.ISO_8859_1).indexOf("IDAT");
+        assertTrue("fixture has an IDAT chunk", idat > 4);
+        final int length = java.nio.ByteBuffer.wrap(bytes, idat - 4, 4).getInt();
+        final int crcLastByte = idat + 4 + length + 3;
+        bytes[crcLastByte] = (byte) (bytes[crcLastByte] ^ 0xFF);
+        assertRendersWithoutFallback(staged(bytes, "png"));
+    }
+
     @Test
     public void legacy_fallback_map_covers_every_filter() {
         for (final String name : new String[] {"crop", "resize", "scale", "thumbnail", "rotate", "flip",

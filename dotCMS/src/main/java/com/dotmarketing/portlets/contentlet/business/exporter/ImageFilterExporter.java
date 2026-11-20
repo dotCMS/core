@@ -299,7 +299,9 @@ public class ImageFilterExporter implements BinaryContentExporter {
         if (!publishInFlight.add(key)) {
             return;
         }
-        final File sharedTmpDir = new File(ConfigUtils.getAssetTempPath());
+        // stage next to the target: the same folder is always on the same filesystem, so the final
+        // move can be atomic even when tmp_upload is mounted separately from dotGenerated
+        final File sharedTmpDir = shared.getParentFile();
         Thread.ofVirtual().name("dotGenerated-share").start(() -> {
             try {
                 copyToShared(localFinal, shared, sharedTmpDir);
@@ -315,10 +317,9 @@ public class ImageFilterExporter implements BinaryContentExporter {
      *
      * <p>{@code sharedTmpDir} <b>must live on the same filesystem (the shared mount) as
      * {@code shared}</b>: the move is attempted as an {@link StandardCopyOption#ATOMIC_MOVE} and only
-     * a same-filesystem rename can satisfy that. The caller passes {@link ConfigUtils#getAssetTempPath()}
-     * (the shared {@code tmp_upload} dir under the assets root), which sits on the same mount as the
-     * shared {@code dotGenerated} store. If the filesystem cannot do an atomic move, it falls back to a
-     * non-atomic replace. The staged temp file is uniquely named (so two cluster instances cannot
+     * a same-filesystem rename can satisfy that. The caller passes the target's own folder, which is
+     * always on the same filesystem, even when {@code tmp_upload} is mounted separately. If the
+     * filesystem still cannot do an atomic move, it falls back to a non-atomic replace. The staged temp file is uniquely named (so two cluster instances cannot
      * collide) and is removed if the publish fails. Package-visible and synchronous for tests; the
      * virtual-thread hand-off lives in {@link #publishToShared(File)}.</p>
      */

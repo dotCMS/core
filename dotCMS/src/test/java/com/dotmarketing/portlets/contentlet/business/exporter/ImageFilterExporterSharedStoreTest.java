@@ -170,6 +170,61 @@ class ImageFilterExporterSharedStoreTest {
         }
     }
 
+    /** Surrounding spaces, easy to get from YAML or env files, do not change the meaning of a value. */
+    @Test
+    void isDotGeneratedSharedCompleted_ignoresSurroundingSpaces() {
+        final String original = Config.getStringProperty(DOTGENERATED_DEFAULT_PATH, "LOCAL");
+        try {
+            Config.setProperty(DOTGENERATED_DEFAULT_PATH, " LOCAL ");
+            assertFalse(ConfigUtils.isDotGeneratedSharedCompleted());
+
+            Config.setProperty(DOTGENERATED_DEFAULT_PATH, "SHARED_COMPLETED ");
+            assertTrue(ConfigUtils.isDotGeneratedSharedCompleted());
+        } finally {
+            Config.setProperty(DOTGENERATED_DEFAULT_PATH, original);
+        }
+    }
+
+    /**
+     * Given an original binary replaced under the same inode (push publishing, a save without a new
+     * version) with different content,
+     * When the result files of a two-stage chain are resolved before and after the replacement,
+     * Then both stages get new names, so no node or shared store serves the old rendition, while
+     * resolving twice without a change gives the same names (the cache still hits).
+     */
+    @Test
+    void getResultsFile_replacedBinaryUnderSameInodeGetsNewNames(@TempDir final Path tmp) throws Exception {
+        final String inode = UUID.randomUUID().toString();
+        final File binary = tmp.resolve("assets/" + inode.charAt(0) + "/" + inode.charAt(1) + "/"
+                + inode + "/fileAsset/image.jpg").toFile();
+        assertTrue(binary.getParentFile().mkdirs());
+        final Map<String, String[]> parameters = new HashMap<>();
+        parameters.put("filter", new String[]{"Resize", "Resize"});
+        parameters.put("resize_w", new String[]{"100"});
+        parameters.put("fieldVarName", new String[]{"fileAsset"});
+        final File bucket = new File(ConfigUtils.getDotGeneratedPath() + File.separator
+                + inode.charAt(0) + File.separator + inode.charAt(1));
+        final boolean bucketExisted = bucket.exists();
+        try {
+            java.nio.file.Files.write(binary.toPath(), new byte[]{1, 2, 3});
+            final File firstBefore = new ResizeImageFilter().getResultsFile(binary, parameters);
+            final File secondBefore = new ResizeImageFilter().getResultsFile(firstBefore, parameters);
+            assertEquals(firstBefore, new ResizeImageFilter().getResultsFile(binary, parameters));
+
+            java.nio.file.Files.write(binary.toPath(), new byte[]{1, 2, 3, 4, 5});
+            final File firstAfter = new ResizeImageFilter().getResultsFile(binary, parameters);
+            final File secondAfter = new ResizeImageFilter().getResultsFile(firstAfter, parameters);
+
+            assertFalse(firstBefore.equals(firstAfter), "first stage must be renamed after a replacement");
+            assertFalse(secondBefore.equals(secondAfter), "chained stage must be renamed after a replacement");
+            assertTrue(firstAfter.getName().startsWith("dotGenerated_" + inode + "_"));
+        } finally {
+            if (!bucketExisted) {
+                org.apache.commons.io.FileUtils.deleteQuietly(bucket);
+            }
+        }
+    }
+
     /**
      * Given a made-up {@code DOTGENERATED_DEFAULT_PATH} value,
      * When the feature gate is read several times,
@@ -247,6 +302,43 @@ class ImageFilterExporterSharedStoreTest {
             if (!bucketExisted) {
                 bucket.delete();
                 bucket.getParentFile().delete();
+            }
+        }
+    }
+
+    /**
+     * Given a temp upload, whose path holds no version inode and whose request names it by a
+     * {@code temp_} id,
+     * When a five-stage chain resolves the result file of each stage from the previous one,
+     * Then no stage embeds the previous stage's name: every name keeps the fixed-length
+     * {@code dotGenerated_<filter>_<hash>} shape, far below the 255-byte file name limit.
+     */
+    @Test
+    void getResultsFile_tempUploadNamesDoNotGrowAlongTheChain(@TempDir final Path tmp) throws Exception {
+        final File upload = tmp.resolve("temp_abcdef1234/hero-banner-final-version.png").toFile();
+        final Map<String, String[]> parameters = new HashMap<>();
+        parameters.put("filter", new String[]{"Resize"});
+        parameters.put("resize_w", new String[]{"100"});
+        parameters.put("fieldVarName", new String[]{"fileAsset"});
+        parameters.put("assetInodeOrIdentifier", new String[]{"temp_abcdef1234"});
+        final File root = new File(ConfigUtils.getDotGeneratedPath());
+        final java.util.List<File> buckets = java.util.List.of(new File(root, "t"), new File(root, "d"));
+        final java.util.List<File> preexisting = buckets.stream().filter(File::exists)
+                .collect(java.util.stream.Collectors.toList());
+        try {
+            File stage = upload;
+            for (int i = 0; i < 5; i++) {
+                stage = new ResizeImageFilter().getResultsFile(stage, parameters);
+                final String name = stage.getName();
+                assertTrue(name.length() < 80, () -> "rendition name grew: " + name.length() + " " + name);
+                assertFalse(name.contains("hero-banner") || name.contains("temp_"),
+                        () -> "rendition name embeds a fallback value: " + name);
+            }
+        } finally {
+            for (final File bucket : buckets) {
+                if (!preexisting.contains(bucket)) {
+                    org.apache.commons.io.FileUtils.deleteQuietly(bucket);
+                }
             }
         }
     }
