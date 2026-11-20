@@ -15,7 +15,11 @@ import { DotMessageService, DotRouterService, DotIframeService } from '@dotcms/d
 
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { refusePanelUrl } from '../../../api/util/open-edit-content-panel';
-import { PORTLET_FOLDER_PARAM, portletPanelUrl$ } from '../../../api/util/portlet-panel-url';
+import {
+    DotPortletUrlPanel,
+    PORTLET_FOLDER_PARAM,
+    portletPanelUrl$
+} from '../../../api/util/portlet-panel-url';
 import { DotWorkflowTaskDetailComponent } from '../../../view/components/dot-workflow-task-detail/dot-workflow-task-detail.component';
 import { DotWorkflowTaskDetailService } from '../../../view/components/dot-workflow-task-detail/services/dot-workflow-task-detail.service';
 
@@ -41,8 +45,11 @@ export class DotWorkflowTaskComponent implements OnInit {
     /** The task the route names. */
     #taskId = '';
 
-    /** Whether the panel the URL names is followed; from the task dialog's first show on. */
-    #followingPanelUrl = false;
+    /** Whether the task dialog has shown; a panel the URL names waits for it. */
+    #shown = false;
+
+    /** What the URL named for the side panel before the task dialog showed, opened once it does. */
+    #pendingPanel: DotPortletUrlPanel | null = null;
 
     /**
      * Shows the task the route names, and the next one a navigation names: the route is reused
@@ -84,29 +91,42 @@ export class DotWorkflowTaskComponent implements OnInit {
                 this.#taskId = taskId;
                 this.#viewTask();
             });
+
+        // Followed from here, during the navigation that shows the task, so a Back or Forward
+        // onto it is told apart and opens nothing: the panel URL service owns those, and drops the
+        // params of a panel the author left (#38303, FR-048). Once the dialog has shown, the
+        // dialog's own navigation is over and could no longer be told apart.
+        portletPanelUrl$(this.route, this.#router)
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe((panel) => {
+                if (this.#shown) {
+                    this.#openPanel(panel);
+                } else {
+                    this.#pendingPanel = panel;
+                }
+            });
     }
 
     /**
-     * The task dialog has shown. A side panel the task's URL names opens now, and on every app
-     * navigation that changes it, through the same path as "Edit Content": after the dialog, so
-     * the panel lands above it whichever loaded first, the menu call the dialog waits for or the
-     * panel's chunk (#38303, FR-025a). The portlet behind leaves it to this while the task shows.
+     * The task dialog has shown. A side panel the task's URL named on the way in opens now, and
+     * one an app navigation names later opens as it comes, through the same path as "Edit
+     * Content": after the dialog, so the panel lands above it whichever loaded first, the menu
+     * call the dialog waits for or the panel's chunk (#38303, FR-025a). The portlet behind leaves
+     * it to this while the task shows.
      */
     onTaskShown(): void {
-        if (this.#followingPanelUrl) {
+        if (this.#shown) {
             return;
         }
 
-        this.#followingPanelUrl = true;
-        portletPanelUrl$(this.route, this.#router)
-            .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe(({ request, refused }) => {
-                if (request) {
-                    this.dotCustomEventHandlerService.openContent(request);
-                } else if (refused) {
-                    void refusePanelUrl(this.#injector, [PORTLET_FOLDER_PARAM]);
-                }
-            });
+        this.#shown = true;
+
+        const pending = this.#pendingPanel;
+        this.#pendingPanel = null;
+
+        if (pending) {
+            this.#openPanel(pending);
+        }
     }
 
     /**
@@ -148,6 +168,19 @@ export class DotWorkflowTaskComponent implements OnInit {
      */
     #editContent({ inode, contentType }: { inode: string; contentType: string }): void {
         this.dotCustomEventHandlerService.openContent({ mode: 'edit', inode, contentType });
+    }
+
+    /**
+     * Opens what the task's URL names in the side panel, or refuses a link of the wrong shape.
+     *
+     * @param panel What the URL names.
+     */
+    #openPanel({ request, refused }: DotPortletUrlPanel): void {
+        if (request) {
+            this.dotCustomEventHandlerService.openContent(request);
+        } else if (refused) {
+            void refusePanelUrl(this.#injector, [PORTLET_FOLDER_PARAM]);
+        }
     }
 
     /** Shows the route's task in the dialog, or loads it again when it is shown already. */

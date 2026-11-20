@@ -67,11 +67,25 @@ export function panelFromPortletUrl(params: Params): DotPortletUrlPanel {
 }
 
 /**
+ * Whether the URL the router shows came from the browser's Back or Forward: the navigation under
+ * way, or the last one to end when none is.
+ *
+ * @param router The app's router.
+ */
+function fromHistoryMove(router: Router): boolean {
+    const navigation = router.currentNavigation() ?? router.lastSuccessfulNavigation();
+
+    return navigation?.trigger === 'popstate';
+}
+
+/**
  * What a legacy portlet's URL asks the side panel to show, on subscribe and on every navigation of
  * the app's own that changes it (#38303, FR-049).
  *
  * A navigation the browser's Back or Forward started is skipped: those belong to the panel URL
- * service (FR-048), and the router replays an entry that may name a panel still open. A URL whose
+ * service (FR-048), and the router replays an entry that may name a panel still open, or one the
+ * author left. That holds also for a URL read once that navigation ended: a screen the navigation
+ * created reads it at its first change detection, after the router's `NavigationEnd`. A URL whose
  * panel did not change is skipped too, since an app navigation that changes other params carries
  * the panel params the router last saw.
  *
@@ -86,7 +100,7 @@ export function portletPanelUrl$(
     when: () => boolean = () => true
 ): Observable<DotPortletUrlPanel> {
     return route.queryParams.pipe(
-        filter(() => router.currentNavigation()?.trigger !== 'popstate' && when()),
+        filter(() => !fromHistoryMove(router) && when()),
         map(panelFromPortletUrl),
         distinctUntilChanged((previous, next) => previous.key === next.key)
     );
