@@ -581,10 +581,11 @@ describe('DotCustomEventHandlerService', () => {
                 expect(reloadData).not.toHaveBeenCalled();
             });
 
-            it('should reload the portlet that asked when the panel closes', async () => {
+            it('should reload the portlet that asked when the legacy editor closes', async () => {
                 const reloadData = vi.spyOn(dotIframeService, 'reloadData');
                 await send(name, data);
 
+                openOptions().editorResolved?.('legacy');
                 openOptions().closed?.();
 
                 expect(reloadData).toHaveBeenCalledWith(PORTLET_ID);
@@ -657,8 +658,9 @@ describe('DotCustomEventHandlerService', () => {
             });
 
             // A save reloads the portlet through the content change notification (T174), and a
-            // close reloads it whichever editor the panel showed.
-            it('should reload the portlet when the panel closes, and leave a save to the notification', async () => {
+            // close after the legacy editor reloads it, for its moves and language switches that
+            // report nothing.
+            it('should reload the portlet when the legacy editor closes, and leave a save to the notification', async () => {
                 const reloadData = vi.spyOn(dotIframeService, 'reloadData');
                 await openContent({
                     mode: 'new',
@@ -666,11 +668,25 @@ describe('DotCustomEventHandlerService', () => {
                     folderInode: 'folder-inode'
                 });
 
+                openOptions().editorResolved?.('legacy');
                 openOptions().saved?.({} as never);
                 openOptions().closed?.();
 
                 expect(reloadData).toHaveBeenCalledTimes(1);
                 expect(reloadData).toHaveBeenCalledWith(PORTLET_ID);
+            });
+
+            // The new editor reports each save and delete, which the notification reloads the
+            // portlet for: its close reloads nothing more (review R5).
+            it('should not reload the portlet when the new editor closes', async () => {
+                const reloadData = vi.spyOn(dotIframeService, 'reloadData');
+                await openContent({ mode: 'edit', identifier: IDENTIFIER, languageId: 2 });
+
+                openOptions().editorResolved?.('new');
+                openOptions().saved?.({} as never);
+                openOptions().closed?.();
+
+                expect(reloadData).not.toHaveBeenCalled();
             });
 
             /**
@@ -728,7 +744,7 @@ describe('DotCustomEventHandlerService', () => {
                     openOptions().closed?.();
 
                     expect(handlers.closed).not.toHaveBeenCalled();
-                    expect(reloadData).toHaveBeenCalledWith(PORTLET_ID);
+                    expect(reloadData).not.toHaveBeenCalled();
                 });
 
                 it('should stop running them once released', async () => {
