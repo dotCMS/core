@@ -197,10 +197,12 @@ export class DotCustomEventHandlerService {
      * Opens a request in the side panel for the current legacy portlet (#38303, R11): for the
      * portlet's events, for what the portlet's URL names on load (`IframePortletLegacyComponent`,
      * FR-049), and for the Workflow Tasks detail's "Edit Content" (`DotWorkflowTaskComponent`,
-     * FR-025a). The request names the portlet current now, the close reloads its list, and the
-     * panel is written to its URL like on every surface but the page editor (FR-044). A save does
-     * not reload the list here: the portlet, while it is shown, reloads it on every save and delete
-     * in any panel (`IframePortletLegacyComponent`, T174).
+     * FR-025a). The request names the portlet current now, a close after the legacy editor reloads
+     * its list, for the moves and language switches that editor reports nothing of, and the panel
+     * is written to its URL like on every surface but the page editor (FR-044). A save or a delete
+     * does not reload the list here: the portlet, while it is shown, reloads it on every save and
+     * delete in any panel (`IframePortletLegacyComponent`, T174), so a close after the new editor
+     * reloads nothing.
      *
      * Nothing opens until `DotSidePanelHostComponent` has registered its injector, which it does
      * before any portlet can send an event; a request before then is logged as an error.
@@ -232,14 +234,18 @@ export class DotCustomEventHandlerService {
                 injector,
                 editorResolved: (resolved) => (editor = resolved),
                 saved: () => this.#panelEvents?.saved(),
+                // After the new editor, which reports every save and delete, the content change
+                // notification has reloaded the portlet already.
                 closed: () => {
+                    if (editor === 'new') {
+                        return;
+                    }
+
                     if (portletId) {
                         this.dotIframeService.reloadData(portletId);
                     }
 
-                    if (editor !== 'new') {
-                        this.#panelEvents?.closed();
-                    }
+                    this.#panelEvents?.closed();
                 },
                 // A create's folder is named in the portlet's URL beside the panel params, so the
                 // tracker writes it with them and removes it on close.

@@ -10,6 +10,7 @@ import { map, switchMap, take } from 'rxjs/operators';
 
 import {
     DotContentChangeService,
+    DotContentEditor,
     DotCurrentUserService,
     DotEventsService,
     DotHttpErrorManagerService,
@@ -182,16 +183,28 @@ export class DotPageActionsService {
      * Opens content in the side panel over the Pages listing, in whichever editor its type uses,
      * and keeps the panel in the portlet's URL (#38303, FR-044). The Edit action opens through
      * here, and so does the portlet on load, for what its URL names (FR-049), so both open the same
-     * panel. The listing refreshes when the panel closes, through the store, so no entry point can
-     * leave it stale (T173); a save or delete in it refreshes the listing through the content change
-     * notification, like a save in any panel stacked over it (T174).
+     * panel. A save or delete in it refreshes the listing through the content change notification,
+     * like a save in any panel stacked over it (T174). A close after the legacy editor refreshes it
+     * too, through the store, for the moves and language switches that editor reports nothing of,
+     * so no entry point can leave it stale (T173); the new editor reports everything it changes.
      *
      * @param request What to open, without the portlet.
      */
     openContent(request: DotEditContentRequest): void {
+        let editor: DotContentEditor | null = null;
+
         void openEditContentPanel(
             { ...request, portletId: 'pages' },
-            { injector: this.#injector, closed: () => this.#refreshPages(), url: {} }
+            {
+                injector: this.#injector,
+                editorResolved: (resolved) => (editor = resolved),
+                closed: () => {
+                    if (editor !== 'new') {
+                        this.#refreshPages();
+                    }
+                },
+                url: {}
+            }
         );
     }
 
