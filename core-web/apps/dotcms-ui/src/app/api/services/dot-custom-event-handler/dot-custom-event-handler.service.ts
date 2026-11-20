@@ -17,6 +17,7 @@ import type { DotEditContentRequest } from '@dotcms/edit-content';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 
 import { openEditContentPanel } from '../../util/open-edit-content-panel';
+import { PORTLET_FOLDER_PARAM } from '../../util/portlet-panel-url';
 import { DotDownloadBundleDialogService } from '../dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 
 export const COMPARE_CUSTOM_EVENT = 'compare-contentlet';
@@ -240,7 +241,12 @@ export class DotCustomEventHandlerService {
                         this.#panelEvents?.closed();
                     }
                 },
-                url: {}
+                // A create's folder is named in the portlet's URL beside the panel params, so the
+                // tracker writes it with them and removes it on close.
+                url:
+                    request.mode === 'new' && request.folderInode
+                        ? { extraParams: { [PORTLET_FOLDER_PARAM]: request.folderInode } }
+                        : {}
             }
         );
     }
