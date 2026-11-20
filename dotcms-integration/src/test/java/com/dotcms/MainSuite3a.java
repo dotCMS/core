@@ -110,6 +110,7 @@ import org.junit.runners.Suite;
         AppsAPIImplTest.class,
         com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest.class,
         com.dotcms.rendering.velocity.viewtools.content.util.ContentUtilsTest.class,
+    com.dotcms.security.apps.AppsUtilTest.class,
         com.dotcms.browser.BrowserAPITest.class,
         com.dotcms.rest.api.v1.content.search.strategies.GlobalSearchAttributeStrategyMatchingTest.class,
     com.dotmarketing.portlets.contentlet.action.ContentImportAccessTest.class,
