@@ -204,6 +204,23 @@ describe('IframePortletLegacyComponent — the panel in the URL', () => {
         expect(openContent).toHaveBeenCalledTimes(1);
     });
 
+    /**
+     * A portlet a Back or Forward shows again reads its URL once that navigation has ended, when
+     * the router no longer reports it as current: the URL is still the panel URL service's, which
+     * drops the params of a panel the author left (#38303, review R4).
+     */
+    it('opens nothing for a URL a Back or Forward showed, read after that navigation ended', async () => {
+        const lastSuccessfulNavigation = vi
+            .spyOn(Router.prototype, 'lastSuccessfulNavigation', 'get')
+            .mockReturnValue(signal({ trigger: 'popstate' } as Navigation));
+
+        mount({ editContent: IDENTIFIER, editContentLang: '2' });
+        await settle();
+
+        expect(openContent).not.toHaveBeenCalled();
+        lastSuccessfulNavigation.mockRestore();
+    });
+
     it('opens what a later navigation names', async () => {
         mount({});
         await settle();
