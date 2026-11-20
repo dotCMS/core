@@ -377,7 +377,9 @@ public class PublisherQueueJob implements StatefulJob {
 		final Map<String, Map<String, EndpointDetail>> endpointsMap = localHistory.getEndpointsMap();
 
 		final Client client = getRestClient();
-		final Map<String, BundlesToSent> bundlesToSent = new HashMap<>();
+		// Keyed by environment and endpoint, like the audit entries, so an endpoint the audit tracks
+		// under two environments (it was moved and the bundle retried) is polled for each entry
+		final Map<Map.Entry<String, String>, BundlesToSent> bundlesToSent = new HashMap<>();
 		// Endpoints this pass is responsible for, as environment id -> endpoint ids
 		final Map<String, Set<String>> trackedEndpoints = new HashMap<>();
 
@@ -395,7 +397,7 @@ public class PublisherQueueJob implements StatefulJob {
 					if (!AWSS3Publisher.PROTOCOL_AWS_S3.equalsIgnoreCase(targetEndpoint.getProtocol())
 							&& !StaticPublisher.PROTOCOL_STATIC.equalsIgnoreCase(targetEndpoint.getProtocol())) {
 
-						final BundlesToSent bundleToSend = bundlesToSent.computeIfAbsent(targetEndpoint.getId(),
+						final BundlesToSent bundleToSend = bundlesToSent.computeIfAbsent(Map.entry(groupID, targetEndpoint.getId()),
 								key -> new BundlesToSent(targetEndpoint, groupID));
 
 						bundleToSend.add(bundleAudit.getBundleId());

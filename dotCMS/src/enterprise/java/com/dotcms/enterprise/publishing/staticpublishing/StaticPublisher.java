@@ -375,17 +375,21 @@ public class StaticPublisher extends Publisher {
      * way the queue job does (see {@link PublishAuditHistory#isFailed(EndpointDetail)}).
      * The static endpoints of this run are already recorded when this is called, so a failure found
      * here belongs to an earlier publisher of the run. The audit keeps the entry of an endpoint
-     * that was deleted afterwards, for display, but nothing can retry it, so it must not hold the
-     * bundle in the queue.
+     * that was deleted or disabled afterwards, or that is a receiver-side (sending) endpoint, for
+     * display, but nothing delivers to it, so it must not hold the bundle in the queue.
      *
      * @param history the audit history of the bundle
-     * @return true when at least one existing endpoint of any environment is recorded as failed
+     * @return true when at least one enabled delivery endpoint of any environment is recorded as failed
      */
     private boolean hasFailedEndpoint(final PublishAuditHistory history) throws DotDataException {
         for (final Map<String, EndpointDetail> endpoints : history.getEndpointsMap().values()) {
             for (final Map.Entry<String, EndpointDetail> entry : endpoints.entrySet()) {
-                if (PublishAuditHistory.isFailed(entry.getValue())
-                        && this.publisherEndPointAPI.findEndPointById(entry.getKey()) != null) {
+                if (!PublishAuditHistory.isFailed(entry.getValue())) {
+                    continue;
+                }
+                final PublishingEndPoint endpoint =
+                        this.publisherEndPointAPI.findEndPointById(entry.getKey());
+                if (endpoint != null && endpoint.isEnabled() && !endpoint.isSending()) {
                     return true;
                 }
             }

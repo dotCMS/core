@@ -9,6 +9,7 @@ import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher;
 import com.dotcms.publisher.business.PublisherTestUtil.MixedEndpointEnvironment;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publishing.PublisherAPIImpl;
+import com.dotmarketing.business.APILocator;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
 import com.dotcms.util.IntegrationTestInitService;
@@ -238,6 +239,37 @@ public class PublishAuditMixedEndpointsTest {
             assertEquals("The historical entry stays in the audit for display",
                     PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode(),
                     endpointsOf(fixture).get("deleted-s3-endpoint").getStatus());
+        } finally {
+            fixture.cleanUp();
+        }
+    }
+
+    /**
+     * Method to test: {@link StaticPublisher#process(com.dotcms.publishing.PublishStatus)}
+     * Given scenario: the audit keeps a FAILED entry of an endpoint that still exists but was
+     * disabled afterwards, so it is no longer a delivery target
+     * Expected result: the disabled endpoint's old failure does not hold the bundle back, so the
+     * overall status is saved (issue #34434, review of PR 38578).
+     */
+    @Test
+    public void test_static_failedEntryOfDisabledEndpoint_doesNotBlockSavedStatus() throws Exception {
+        final MixedEndpointEnvironment fixture = PublisherTestUtil.createMixedEndpointEnvironment(
+                order(StaticPublisher.class), false);
+        try {
+            fixture.httpEndpoint.setEnabled(false);
+            APILocator.getPublisherEndPointAPI().updateEndPoint(fixture.httpEndpoint);
+            final PublishAuditAPI auditAPI = PublishAuditAPI.getInstance();
+            final PublishAuditHistory history =
+                    auditAPI.getPublishAuditStatus(fixture.bundle.getId()).getStatusPojo();
+            history.addOrUpdateEndpoint(fixture.environment.getId(), fixture.httpEndpoint.getId(),
+                    detail(PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode(), "S3 upload failed"));
+            auditAPI.updatePublishAuditStatus(fixture.bundle.getId(),
+                    PublishAuditStatus.Status.SENDING_TO_ENDPOINTS, history);
+
+            new PublisherAPIImpl().publish(fixture.config);
+
+            assertEquals(PublishAuditStatus.Status.BUNDLE_SAVED_SUCCESSFULLY,
+                    auditAPI.getPublishAuditStatus(fixture.bundle.getId()).getStatus());
         } finally {
             fixture.cleanUp();
         }
