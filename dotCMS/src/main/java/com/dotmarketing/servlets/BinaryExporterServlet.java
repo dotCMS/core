@@ -689,7 +689,10 @@ public class BinaryExporterServlet extends HttpServlet {
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
 			Logger.error(BinaryExporterServlet.class, "[BinaryContentExporterException] An error occurred when accessing '" + uri + "': " + e.getMessage());
 			if(!resp.isCommitted()){
-			  resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+			  // the content exists but could not be rendered: report a server error and keep it out of
+			  // browser/CDN caches, so the next request retries instead of a cached "not found"
+			  resp.setHeader("Cache-Control", "no-store");
+			  resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			}
 		}catch (Exception e) {
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);

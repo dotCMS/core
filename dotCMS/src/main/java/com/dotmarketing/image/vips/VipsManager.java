@@ -127,6 +127,9 @@ public final class VipsManager {
      */
     public static void run(final VipsWork work) {
         try {
+            // libvips keeps one process-wide error buffer that is never reset between operations; clear
+            // it so a failure reports this operation's error, not messages left by unrelated earlier work
+            Try.run(VipsHelper::error_clear);
             Vips.run(work::run);
         } catch (VipsError e) {
             throw new DotRuntimeException("libvips operation failed: " + e.getMessage(), e);

@@ -18,6 +18,8 @@ import com.dotmarketing.image.ImageEngine;
 import com.dotmarketing.image.filter.ImageFilter;
 import com.dotmarketing.image.filter.ImageFilterAPI;
 import com.dotmarketing.image.filter.PDFImageFilter;
+import com.dotmarketing.image.filter.StrictImageReader;
+import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporter;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporterException;
 import com.dotmarketing.util.Config;
@@ -114,9 +116,34 @@ public class ImageFilterExporter implements BinaryContentExporter {
         } catch (Exception e) {
 
             Logger.warnAndDebug(errorClass,  e);
+            discardBrokenIntermediate(file);
             throw new BinaryContentExporterException(e.getMessage(), e);
         }
 
+    }
+
+    /** Raster formats the pure-JVM decoder can verify; other intermediates are never discarded here. */
+    private static final Set<String> VERIFIABLE_INTERMEDIATE_EXTENSIONS = Set.of("png", "jpg", "jpeg", "gif");
+
+    /**
+     * When a step fails, {@code input} is the file that step was reading. If that file is a cached
+     * dotGenerated intermediate that no longer decodes (e.g. a short or damaged write), delete it so the
+     * next request regenerates it; otherwise every request reusing it keeps failing. The asset's own
+     * binary is never touched.
+     */
+    // package-visible for tests
+    static void discardBrokenIntermediate(final File input) {
+        if (input == null || !input.isFile() || !input.getName().startsWith(WebKeys.GENERATED_FILE)
+                || !VERIFIABLE_INTERMEDIATE_EXTENSIONS.contains(
+                        UtilMethods.getFileExtension(input.getName()).toLowerCase())) {
+            return;
+        }
+        try {
+            StrictImageReader.assertDecodable(input); // deletes the file when it does not decode
+        } catch (IOException e) {
+            Logger.warn(ImageFilterExporter.class,
+                    "Discarded a damaged image intermediate so it is regenerated: " + input + " : " + e.getMessage());
+        }
     }
     
     
