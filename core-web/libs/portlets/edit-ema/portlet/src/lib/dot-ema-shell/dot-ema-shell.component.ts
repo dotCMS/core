@@ -27,7 +27,7 @@ import { ToastModule } from 'primeng/toast';
 
 import { filter } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotContentEditor, DotMessageService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_ID,
@@ -687,11 +687,14 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
     /**
      * Opens the page's properties in the side panel, in whichever editor its content type uses,
-     * when no editor route is mounted to do it (#38303).
+     * when no editor route is mounted to do it (#38303). Each save reloads the page; a close
+     * reloads it only after the legacy editor, whose workflow actions report nothing.
      *
      * @param page The page being edited.
      */
     #openPageProperties(page: DotCMSPage): void {
+        let editor: DotContentEditor | null = null;
+
         this.#opener.open(
             withPageContext(
                 {
@@ -705,8 +708,13 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             ),
             {
                 injector: this.#injector,
+                editorResolved: (resolved) => (editor = resolved),
                 saved: (contentlet) => this.#onPagePropertiesSaved(contentlet),
-                closed: () => this.#pageApi.pageReload()
+                closed: () => {
+                    if (editor !== 'new') {
+                        this.#pageApi.pageReload();
+                    }
+                }
             }
         );
     }
