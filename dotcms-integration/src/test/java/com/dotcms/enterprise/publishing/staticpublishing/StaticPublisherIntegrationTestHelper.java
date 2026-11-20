@@ -625,6 +625,22 @@ public class StaticPublisherIntegrationTestHelper {
         }
     }
 
+    /**
+     * Creates and publishes a page with a container and one content item, and returns the live page.
+     * It exists for tests outside this package, because {@link TestCase} and the page builder are
+     * package-private.
+     *
+     * @return the live {@link Contentlet} page, in the default language
+     * @throws WebAssetException if the page or its container could not be created
+     * @throws DotDataException if reading or saving the data fails
+     * @throws DotSecurityException if the system user is not allowed to do it
+     * @throws IOException if a file the page needs could not be written
+     */
+    public static Contentlet createLivePage()
+            throws WebAssetException, DotDataException, DotSecurityException, IOException {
+        return (Contentlet) getLivePage().addToBundle;
+    }
+
     public static TestCase getLivePage()
             throws WebAssetException, DotDataException, DotSecurityException, IOException {
         final PageWithDependencies livePageWithContent = new PageWithDependenciesBuilder().buildAndPublish();

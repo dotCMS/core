@@ -85,6 +85,12 @@ public class StaticPublisher extends Publisher {
     public static final String REGEX_DOT_DOT = "\\.{2}";
     public static final String PROTOCOL_STATIC = "static";
 
+    /** Info recorded on an endpoint when the bundle had no static content to publish. */
+    static final String EMPTY_BUNDLE_INFO = "Bundle is empty: nothing to publish to this endpoint";
+
+    /** True once any endpoint of this run found the bundle empty; read to word the final log line. */
+    private boolean bundleWasEmpty = false;
+
     private final PublishAuditAPI publishAuditAPI;
     private final EnvironmentAPI environmentAPI;
     private final PublishingEndPointAPI publisherEndPointAPI;
@@ -131,6 +137,15 @@ public class StaticPublisher extends Publisher {
         return this.config;
     } // init.
 
+    /**
+     * Moves the static bundle to every static endpoint of the bundle's environments and records
+     * the result of each endpoint in the audit history. An endpoint that received an empty
+     * bundle is recorded with a message saying so, instead of being reported as "Bundle sent".
+     *
+     * @param status the status of the publishing run
+     * @return the publisher configuration used for the run
+     * @throws DotPublishingException the bundle could not be processed
+     */
     @Override
     public PublisherConfig process(PublishStatus status) throws DotPublishingException {
         this.checkLicense();
@@ -157,9 +172,19 @@ public class StaticPublisher extends Publisher {
                 }
             }
 
-            if (failedEnvironmentCounter == 0) {
+            if (failedEnvironmentCounter == 0 && hasFailedEndpoint(currentStatusHistory)) {
+                // Every static endpoint got the bundle, but an earlier publisher of this run (S3)
+                // left a failed endpoint in the audit. Saying "saved" and deleting the queue entry
+                // would hide it, because the queue job never looks at the bundle again (#34434)
+                PushPublishLogger.log(this.getClass(),
+                        "Status Update: Static endpoints saved, an earlier endpoint failed");
+                this.publishAuditAPI.updatePublishAuditStatus(config.getId(),
+                    PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_GROUPS, currentStatusHistory);
+            } else if (failedEnvironmentCounter == 0) {
                 //Updating Audit table
-                PushPublishLogger.log(this.getClass(), "Status Update: Bundle sent");
+                PushPublishLogger.log(this.getClass(), bundleWasEmpty
+                        ? "Status Update: Bundle is empty, nothing to send"
+                        : "Status Update: Bundle sent");
                 this.publishAuditAPI.updatePublishAuditStatus(config.getId(),
                     PublishAuditStatus.Status.BUNDLE_SAVED_SUCCESSFULLY, currentStatusHistory);
 
@@ -212,14 +237,16 @@ public class StaticPublisher extends Publisher {
                                       List<EndpointFailureDetail> allFailureDetails)
         throws DotDataException{
 
-        EndpointDetail detail = new EndpointDetail();
         boolean hasEnvironmentFailed = false;
-        boolean isHistoryEmpty = currentStatusHistory.getEndpointsMap().isEmpty();
 
         for (PublishingEndPoint endpoint : getStaticEndpointsByEnviroment(environment)) {
+            // One detail per endpoint: a shared one would carry the result of an earlier endpoint
+            // into the next one, and a later failure would rewrite an earlier result (#34434)
+            final EndpointDetail detail = new EndpointDetail();
             EndpointFailureDetail endpointFailureDetail = null;
+            boolean endpointHadContent = true;
             try {
-                handleEndpoint(endpoint);
+                endpointHadContent = handleEndpoint(endpoint);
             } catch (DotDataException | DotPublishingException e) {
                 // if the bundle can't be sent after the total num of tries, delete the pushed assets for this bundle
                 if (currentStatusHistory.getNumTries() >= PublisherQueueJob.MAX_NUM_TRIES) {
@@ -243,12 +270,21 @@ public class StaticPublisher extends Publisher {
 
             if (detail.getStatus() == 0) {
                 detail.setStatus(Status.BUNDLE_SAVED_SUCCESSFULLY.getCode());
-                detail.setInfo("Bundle saved successfully for Endpoint " + endpoint.getId());
+                if (endpointHadContent) {
+                    detail.setInfo("Bundle saved successfully for Endpoint " + endpoint.getId());
+                } else {
+                    bundleWasEmpty = true;
+                    detail.setInfo(EMPTY_BUNDLE_INFO);
+                }
                 currentStatusHistory.setPublishEnd(new Date());
             }
 
-            // If not empty, don't overwrite publish history already set via the PublisherQueueJob.
-            if (isHistoryEmpty || hasEnvironmentFailed) {
+            // Record the endpoint when it has no entry yet, this run failed, or the entry is a failure
+            // from an earlier attempt that this run replaces; don't overwrite a result already set
+            // via the PublisherQueueJob (issue #34434).
+            if (hasEnvironmentFailed
+                    || !currentStatusHistory.hasEndpointWithoutFailure(environment.getId(),
+                            endpoint.getId())) {
                 currentStatusHistory
                     .addOrUpdateEndpoint(environment.getId(), endpoint.getId(), detail);
             }
@@ -271,8 +307,12 @@ public class StaticPublisher extends Publisher {
     /**
      * Retrieves endpoint properties and build the publish-to folder path with that information.
      * Then it will pass /live folder to handleLiveFolder method.
+     *
+     * @param endpoint the static {@link PublishingEndPoint} to publish to
+     * @return true if the bundle had static content and it was moved to the endpoint, false if the
+     * bundle was empty and there was nothing to publish
      */
-    private void handleEndpoint(PublishingEndPoint endpoint)
+    private boolean handleEndpoint(PublishingEndPoint endpoint)
         throws DotDataException, DotPublishingException {
 
         //For logging purpose
@@ -293,11 +333,12 @@ public class StaticPublisher extends Publisher {
         if (liveFolder.exists()) {
             PushPublishLogger.log(this.getClass(), "Status Update: Moving bundle");
             handleLiveFolder(liveFolder);
-
-        } else {
-            Logger.warn(this.getClass(), "Bundle is EMPTY");
-            PushPublishLogger.log(this.getClass(), "Bundle is EMPTY");
+            return true;
         }
+
+        Logger.warn(this.getClass(), "Bundle is EMPTY");
+        PushPublishLogger.log(this.getClass(), "Bundle is EMPTY");
+        return false;
     } //handleEndpoint.
 
     /**
@@ -328,6 +369,33 @@ public class StaticPublisher extends Publisher {
 
         return endpoints;
     } //getStaticEndpointsByEnviroment.
+
+    /**
+     * Tells whether the audit already holds a failed endpoint that still exists, counted the same
+     * way the queue job does (see {@link PublishAuditHistory#isFailed(EndpointDetail)}).
+     * The static endpoints of this run are already recorded when this is called, so a failure found
+     * here belongs to an earlier publisher of the run. The audit keeps the entry of an endpoint
+     * that was deleted or disabled afterwards, or that is a receiver-side (sending) endpoint, for
+     * display, but nothing delivers to it, so it must not hold the bundle in the queue.
+     *
+     * @param history the audit history of the bundle
+     * @return true when at least one enabled delivery endpoint of any environment is recorded as failed
+     */
+    private boolean hasFailedEndpoint(final PublishAuditHistory history) throws DotDataException {
+        for (final Map<String, EndpointDetail> endpoints : history.getEndpointsMap().values()) {
+            for (final Map.Entry<String, EndpointDetail> entry : endpoints.entrySet()) {
+                if (!PublishAuditHistory.isFailed(entry.getValue())) {
+                    continue;
+                }
+                final PublishingEndPoint endpoint =
+                        this.publisherEndPointAPI.findEndPointById(entry.getKey());
+                if (endpoint != null && endpoint.isEnabled() && !endpoint.isSending()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 
     /**
      * 1. Gets {@link PublishAuditHistory} status based on the config id.
