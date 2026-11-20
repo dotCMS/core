@@ -1170,13 +1170,28 @@ describe('DotEmaShellComponent', () => {
                 expect(workflowFetchSpy).not.toHaveBeenCalled();
             });
 
-            it('should reload the page when the panel closes', () => {
+            // The legacy editor's workflow actions report nothing, so its close reloads the page
+            // (#38303, review R2).
+            it('should reload the page once when the legacy editor closes', () => {
                 const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
                 const page = openProperties();
 
+                page.options.editorResolved?.('legacy');
                 page.ref.close();
 
                 expect(pageReloadSpy).toHaveBeenCalledTimes(1);
+            });
+
+            // The new editor reports each save, which reloads the page already: a cancel or a
+            // close after a save reloads nothing more.
+            it('should not reload the page when the new editor closes', () => {
+                const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
+                const page = openProperties();
+
+                page.options.editorResolved?.('new');
+                page.ref.close();
+
+                expect(pageReloadSpy).not.toHaveBeenCalled();
             });
         });
 
