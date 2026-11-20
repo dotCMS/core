@@ -27,6 +27,10 @@ import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { ComponentStatus, DotEnvironment } from '@dotcms/dotcms-models';
 import { DotAddToBundleComponent, DotMessagePipe } from '@dotcms/ui';
 
+import {
+    DotUsersDialogMaximizeIconComponent,
+    DotUsersDialogMinimizeIconComponent
+} from './components/dot-users-dialog-fullscreen-icon/dot-users-dialog-fullscreen-icon.component';
 import { DotUsersFilterByComponent } from './components/dot-users-filter-by/dot-users-filter-by.component';
 import { DotUsersListStore } from './store/dot-users-list.store';
 
@@ -259,7 +263,11 @@ export class DotUsersListComponent {
      * Permissions, API Tokens) plus a legacy JSP iframe for
      * Permissions, so it opens at the "Special" width bucket
      * documented in `libs/portlets/CLAUDE.md` — much wider than the
-     * standard 700px form dialog.
+     * standard 700px form dialog. `maximizable` adds a full-screen
+     * toggle to the header; PrimeNG's `.p-dialog-maximized` rule uses
+     * `!important`, so it wins over the inline width/height below.
+     *
+     * @param user the user to edit; omit to open the dialog in create mode
      */
     private openUserDialog(user?: DotUserListItem): void {
         // Edit mode: show the user's name in the dialog title so the
@@ -275,11 +283,18 @@ export class DotUsersListComponent {
                 this.#dotMessageService.get('users.edit.header'));
         const ref = this.#dialogService.open(DotUsersCreateComponent, {
             header: user ? editHeader : this.#dotMessageService.get('users.create.header'),
-            width: 'min(92vw, 75rem)',
-            height: 'min(90vh, 48rem)',
+            width: 'min(95vw, 90rem)',
+            height: 'min(92vh, 60rem)',
             data: user ? { user } : undefined,
             closable: true,
             closeOnEscape: true,
+            maximizable: true,
+            // Swap PrimeNG's window icons for the Material Symbols every
+            // other full-screen dialog in the app uses.
+            templates: {
+                maximizeicon: DotUsersDialogMaximizeIconComponent,
+                minimizeicon: DotUsersDialogMinimizeIconComponent
+            },
             draggable: false,
             position: 'center',
             contentStyle: { padding: '0', overflow: 'hidden' },

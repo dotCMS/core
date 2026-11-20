@@ -6,6 +6,9 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.business.CloseDB;
 import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
+import com.dotcms.util.CdnTagHeader;
+import com.dotcms.util.SecurityUtils;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.UserWebAPIImpl;
@@ -20,10 +23,12 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilde
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.LoginMode;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import java.io.IOException;
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -113,6 +118,16 @@ public class VelocityServlet extends HttpServlet {
         return referer != null && referer.contains("/dotAdmin");
     }
 
+    /**
+     * Renders the page, file or redirect that the request's URI resolves to. A {@link DotSecurityException}
+     * raised while rendering is handed to {@link #handleSecurityException}, which answers 401 to a signed-out
+     * visitor and 403 to a signed-in user.
+     *
+     * @param req      the incoming request
+     * @param response the response to render into
+     * @throws ServletException when rendering fails
+     * @throws IOException      when writing the response fails
+     */
     @Override
     @CloseDB
     // Not final: Weld's Tomcat InstanceManager (WELD-ENV-001100) processes all servlets
@@ -166,21 +181,17 @@ public class VelocityServlet extends HttpServlet {
 
             Logger.debug(this, "VelocityServlet_service pageHtml: " + pageHtml);
             APILocator.getRequestCostAPI().addCostHeader(request, response);
+            if (mode == PageMode.LIVE) {
+                tagDeliveredPage(request, response);
+            }
             response.getOutputStream().write(pageHtml.getBytes());
         } catch (ResourceNotFoundException rnfe) {
             Logger.warnAndDebug(this.getClass(), "ResourceNotFoundException" + rnfe.toString(), rnfe);
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
         } catch (DotSecurityException dse) {
             Logger.warnAndDebug(this.getClass(), dse.getMessage(),dse);
-            if(!response.isCommitted()) {
-                if(user==null || APILocator.getUserAPI().getAnonymousUserNoThrow().equals(user)) {
-                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-                    return;
-                }else {
-                    response.sendError(HttpServletResponse.SC_FORBIDDEN);
-                    return;
-                }
-            }
+            handleSecurityException(user, request, response);
+            return;
         } catch (HTMLPageAssetNotFoundException hpnfe) {
             Logger.warnAndDebug(this.getClass(), hpnfe.getMessage(),hpnfe);
             if(!response.isCommitted()) {
@@ -198,6 +209,24 @@ public class VelocityServlet extends HttpServlet {
             
         }
         
+    }
+
+    /**
+     * Tags the live HTTP response after rendering, when the final page status is known.
+     * A custom error forward may retain the failed URL map's content ID and must not emit it.
+     */
+    private void tagDeliveredPage(final HttpServletRequest request,
+            final HttpServletResponse response) {
+        if (response.isCommitted() || response.getStatus() >= HttpServletResponse.SC_BAD_REQUEST
+                || request.getAttribute(RequestDispatcher.ERROR_STATUS_CODE) != null) {
+            return;
+        }
+
+        if (request.getAttribute(VelocityLiveMode.RESOLVED_PAGE_ATTRIBUTE) instanceof Identifier page) {
+            final String mappedContentId = (String) request.getAttribute(WebKeys.WIKI_CONTENTLET);
+            CdnTagHeader.set(response,
+                    UtilMethods.isSet(mappedContentId) ? mappedContentId : page.getId());
+        }
     }
 
     @Override
@@ -239,4 +268,35 @@ public class VelocityServlet extends HttpServlet {
       return false;
   }
 
+
+    /**
+     * Answers a page the current user may not read. A signed-out visitor (no user, or the anonymous user) gets a
+     * 401, and the page's query string is saved in the session ({@link SecurityUtils#rememberLoginQueryString}),
+     * because the 401 error page that runs next can no longer see it and an SSO login needs it to return the
+     * visitor to the full URL. A signed-in user gets a 403, and any saved query string and its path are cleared. Nothing is
+     * written when the response is already committed.
+     *
+     * @param user     the user the page was rendered for, may be {@code null}
+     * @param request  the page request
+     * @param response the page response
+     * @throws IOException when the error cannot be sent
+     */
+    static void handleSecurityException(final User user, final HttpServletRequest request,
+                                        final HttpServletResponse response) throws IOException {
+
+        if (response.isCommitted()) {
+            return;
+        }
+        if (user == null || APILocator.getUserAPI().getAnonymousUserNoThrow().equals(user)) {
+            SecurityUtils.rememberLoginQueryString(request);
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+        } else {
+            final HttpSession session = request.getSession(false);
+            if (session != null) {
+                session.removeAttribute(SecurityUtils.REDIRECT_AFTER_LOGIN_QUERY_STRING);
+                session.removeAttribute(SecurityUtils.REDIRECT_AFTER_LOGIN_QUERY_PATH);
+            }
+            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+        }
+    }
 }

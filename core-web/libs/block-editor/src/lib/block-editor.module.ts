@@ -18,12 +18,14 @@ import { Textarea } from 'primeng/textarea';
 import {
     DotContentSearchService,
     DotLanguagesService,
+    DotLocalstorageService,
+    initializeLegacyTranslations,
     DotMessageService,
     DotPropertiesService,
     DotWorkflowActionsFireService,
     DotContentTypeService
 } from '@dotcms/data-access';
-import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import {
     DotAssetSearchComponent,
     DotFieldRequiredDirective,
@@ -49,10 +51,6 @@ import { AssetFormModule } from './extensions/asset-form/asset-form.module';
 import { ContentletBlockComponent } from './nodes';
 import { EditorDirective } from './shared';
 import { SharedModule } from './shared/shared.module';
-
-const initTranslations = (dotMessageService: DotMessageService) => {
-    return () => dotMessageService.init();
-};
 
 @NgModule({
     imports: [
@@ -99,10 +97,14 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         DotLanguagesService,
         DotContentTypeService,
         DotWorkflowActionsFireService,
-        provideAppInitializer(() => {
-            const initializerFn = initTranslations(inject(DotMessageService));
-            return initializerFn();
-        })
+        provideAppInitializer(() =>
+            initializeLegacyTranslations(
+                inject(DotMessageService),
+                inject(DotcmsConfigService),
+                inject(DotLocalstorageService),
+                inject(LoggerService)
+            )
+        )
     ],
     exports: [
         EditorDirective,

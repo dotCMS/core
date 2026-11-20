@@ -71,6 +71,8 @@ public class ConcurrentDependencyProcessor implements DependencyProcessor {
     private BlockingQueue<DependencyProcessorItem> queue;
     private Map<PusheableAsset, Set<String>> assetsRequestToProcess;
     private AtomicInteger finishReceived;
+    /** Extra queue entries added by {@link #reprocessAsset(Object, PusheableAsset)} for assets already requested. */
+    private final AtomicInteger reprocessRequests = new AtomicInteger(0);
     private DotSubmitter submitter;
     private Map<PusheableAsset, Consumer<Object>> consumerDependencies = new HashMap<>();
 
@@ -99,6 +101,23 @@ public class ConcurrentDependencyProcessor implements DependencyProcessor {
         if (added) {
             queue.add(new DependencyProcessorItem(asset, pusheableAsset));
         }
+    }
+
+    /**
+     * Queues an asset to have its dependencies processed again, even if it was already queued or
+     * processed. Use it when something that decides how far processing goes has changed for that
+     * asset since it was first queued; for example, a Contentlet reached later through a shorter
+     * relationship path, with more relationship levels left to follow. An asset that was never
+     * queued is simply queued, as {@link #addAsset(Object, PusheableAsset)} would do.
+     *
+     * @param asset          The asset to process again.
+     * @param pusheableAsset The type of the asset, which selects the processor to run.
+     */
+    public synchronized void reprocessAsset(final Object asset, final PusheableAsset pusheableAsset) {
+        if (!addRequestToProcess(asset, pusheableAsset)) {
+            reprocessRequests.incrementAndGet();
+        }
+        queue.add(new DependencyProcessorItem(asset, pusheableAsset));
     }
 
     private <T> boolean addRequestToProcess(final T asset, final PusheableAsset pusheableAsset) {
@@ -178,12 +197,17 @@ public class ConcurrentDependencyProcessor implements DependencyProcessor {
         return queue.isEmpty() && isAllTaskFinished();
     }
 
+    /**
+     * Checks that every queued entry has been submitted and has finished. Each distinct asset
+     * counts once, plus one for every time {@link #reprocessAsset(Object, PusheableAsset)} queued
+     * an asset again.
+     */
     private synchronized boolean isAllTaskFinished() {
         final long taskCount = submitter.getTaskCount();
         final int nFinishReceived = finishReceived.get();
-        final Integer nRequest = assetsRequestToProcess.values().stream()
-                .map(set -> set.size())
-                .reduce(0, Integer::sum);
+        final int nRequest = assetsRequestToProcess.values().stream()
+                .map(Set::size)
+                .reduce(0, Integer::sum) + reprocessRequests.get();
 
         return taskCount == nRequest && taskCount == nFinishReceived;
     }

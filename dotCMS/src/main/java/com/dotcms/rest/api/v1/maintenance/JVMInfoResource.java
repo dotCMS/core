@@ -4,8 +4,8 @@ import com.dotcms.business.SystemTable;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.util.ObfuscationUtil;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.util.ReleaseInfo;
@@ -37,15 +37,23 @@ import java.util.regex.Pattern;
 @SuppressWarnings("serial")
 public class JVMInfoResource implements Serializable {
 
-    private static final String DEFAULT_OBFUSCATE_PATTERN = "passw|pass|passwd|secret|key|token";
+    /** @deprecated use {@link ObfuscationUtil#BASE_PATTERN} */
+    @Deprecated
+    public static final Pattern obfuscateBasePattern = ObfuscationUtil.BASE_PATTERN;
 
-    public static final Pattern obfuscateBasePattern = Pattern.compile(DEFAULT_OBFUSCATE_PATTERN,
-            Pattern.CASE_INSENSITIVE);
+    /** @deprecated use {@link ObfuscationUtil#CUSTOM_PATTERN} */
+    @Deprecated
+    public static final Pattern obfuscatePattern = ObfuscationUtil.CUSTOM_PATTERN;
 
-    public static final Pattern obfuscatePattern = Pattern.compile(
-            Config.getStringProperty("OBFUSCATE_SYSTEM_ENVIRONMENTAL_VARIABLES", DEFAULT_OBFUSCATE_PATTERN),
-            Pattern.CASE_INSENSITIVE);
-
+    /**
+     * Returns release, host, JVM, environment, configuration override and system property
+     * information for this node. Requires a CMS Administrator.
+     *
+     * @param request  the current {@link HttpServletRequest}
+     * @param response the current {@link HttpServletResponse}
+     * @return a map with the {@code release}, {@code host}, {@code jvm}, {@code environment},
+     *         {@code configOverrides} and {@code system} sections
+     */
     @Path("/")
     @GET
     @JSONP
@@ -56,6 +64,7 @@ public class JVMInfoResource implements Serializable {
 
         final InitDataObject initData = new WebResource.InitBuilder(request, response)
                         .requiredBackendUser(true)
+                        .requireAdmin(true)
                         .requestAndResponse(request, response)
                         .rejectWhenNoUser(true)
                         .requiredPortlet("maintenance")
@@ -117,7 +126,7 @@ public class JVMInfoResource implements Serializable {
         SystemTable systemTable =APILocator.getSystemAPI().getSystemTable();
 
         systemTable.all().forEach((key, value) ->
-                resultMap.put(key, obfuscateIfNeeded(key, value)));
+                resultMap.put(key, ObfuscationUtil.obfuscateIfNeeded(key, value)));
 
         return resultMap;
     }
@@ -153,7 +162,7 @@ public class JVMInfoResource implements Serializable {
         Properties props = System.getProperties();
         for(Object keyObject : props.keySet()) {
             final String key = (String) keyObject;
-            resultMap.put(key, obfuscateIfNeeded(key,props.getProperty(key)));
+            resultMap.put(key, ObfuscationUtil.obfuscateIfNeeded(key, props.getProperty(key)));
         }
         
         return resultMap;
@@ -166,7 +175,7 @@ public class JVMInfoResource implements Serializable {
         final Map<String,Object> resultMap=new LinkedHashMap<>();
         Map<String,String> vars = System.getenv();
         for(String key : vars.keySet()) {
-            resultMap.put(key, obfuscateIfNeeded(key,vars.get(key)));
+            resultMap.put(key, ObfuscationUtil.obfuscateIfNeeded(key, vars.get(key)));
         }
         
         return resultMap;
@@ -189,18 +198,10 @@ public class JVMInfoResource implements Serializable {
     
     
     
+    /** @deprecated use {@link ObfuscationUtil#obfuscateIfNeeded(String, Object)} */
+    @Deprecated
     public static String obfuscateIfNeeded(final String key, final Object valueObject) {
-        final String value = (String) valueObject;
-        if(UtilMethods.isEmpty(value)) return "";
-        return obfuscateBasePattern.matcher(key).find() || obfuscatePattern.matcher(key).find()
-                ? obfuscate(value)
-                : value;
-    }
-    
-    private static String obfuscate(final String value) {
-        return value.charAt(0)
-                + "*********"
-                + value.charAt(value.length() - 1);
+        return ObfuscationUtil.obfuscateIfNeeded(key, valueObject);
     }
     
 

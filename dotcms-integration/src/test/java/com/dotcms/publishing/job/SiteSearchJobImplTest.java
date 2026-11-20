@@ -69,10 +69,12 @@ import org.quartz.JobExecutionException;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -131,32 +133,42 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
 
         PublishFactory.publishAsset(template, systemUser, false, false);
 
-        //Create Contentlet in English
-        final Contentlet contentlet1 = new ContentletDataGen(contentGenericId)
+        publishPageWithContent(site, folder, "our-page");
+    }
+
+    /**
+     * Publishes a default-language content in the given folder and a page named {@code pageName}
+     * that shows it through the shared container and template.
+     *
+     * @param pageSite   the site the content belongs to
+     * @param pageFolder the folder the content and the page are created in
+     * @param pageName   the URL, friendly name and title of the page
+     * @return the published page
+     */
+    private static HTMLPageAsset publishPageWithContent(final Host pageSite, final Folder pageFolder,
+            final String pageName) throws DotDataException, DotSecurityException {
+        final Contentlet contentlet = new ContentletDataGen(contentGenericId)
                 .languageId(defaultLang)
-                .folder(folder)
-                .host(site)
+                .folder(pageFolder)
+                .host(pageSite)
                 .setProperty("title", "content1")
                 .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
                 .nextPersisted();
 
-        contentlet1.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        contentlet1.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
-        contentlet1.setBoolProperty(Contentlet.IS_TEST_MODE, true);
-        contentletAPI.publish(contentlet1, systemUser, false);
+        contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        contentlet.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+        contentletAPI.publish(contentlet, systemUser, false);
 
-        final String pageName = "our-page";
-
-        final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder, template).languageId(1)
+        final HTMLPageAsset page = new HTMLPageDataGen(pageFolder, template).languageId(defaultLang)
                 .pageURL(pageName)
                 .friendlyName(pageName)
                 .title(pageName).nextPersisted();
-        final String uuid = UUIDGenerator.generateUuid();
-        final MultiTree multiTree = new MultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier(), contentlet1.getIdentifier() ,uuid,0);
+        final MultiTree multiTree = new MultiTree(page.getIdentifier(), container.getIdentifier(),
+                contentlet.getIdentifier(), UUIDGenerator.generateUuid(), 0);
         APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
-
-        HTMLPageDataGen.publish(pageEnglishVersion);
-
+        HTMLPageDataGen.publish(page);
+        return page;
     }
 
     /**
@@ -357,6 +369,14 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Method to test: {@link SiteSearchJobImpl} incremental crawl
+     * Given scenario: a site of the test's own with published pages is crawled, a new page is
+     * published and crawled incrementally, then a page is unpublished and crawled again
+     * Expected result: the new page is picked up by the incremental crawl and the unpublished page
+     * is gone from the index. The test owns its site, so nothing it publishes is seen by the other
+     * crawl tests in this class.
+     */
     @Test
     public void Test_Incremental_Job_Test_Pages_Are_Found_Create_And_Publish_New_Page_Test_Changes_Are_Picked_Unpublish_Then_Verify_Page_Is_Gone()
     throws DotPublishingException, JobExecutionException, DotDataException, IOException, DotSecurityException {
@@ -366,6 +386,13 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         final String jobName = "Any-Scheduled-Job-" + System.currentTimeMillis();
 
         deleteAllSiteSearchIndices();
+
+        // This test publishes (and only at its very end unpublishes) a page of its own, so it crawls a
+        // site of its own: a failure part way through must not leave an extra page in the shared site
+        // that the other tests count.
+        final Host incrementalSite = new SiteDataGen().nextPersisted();
+        final Folder incrementalFolder = new FolderDataGen().site(incrementalSite).nextPersisted();
+        publishPageWithContent(incrementalSite, incrementalFolder, "our-page");
 
         final long timeMillis1 = System.currentTimeMillis();
         final String newIndexAlias = IndexType.SITE_SEARCH.getPrefix() + "_alias_" + timeMillis1;
@@ -381,7 +408,7 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         jobDataMap.put(SiteSearchJobImpl.QUARTZ_JOB_NAME, jobName);
         jobDataMap.put(SiteSearchJobImpl.INCLUDE_EXCLUDE, "all");
         jobDataMap.put(SiteSearchJobImpl.LANG_TO_INDEX, new String[]{Long.toString(defaultLang)});
-        jobDataMap.put(SiteSearchJobImpl.INDEX_HOST, site.getIdentifier());
+        jobDataMap.put(SiteSearchJobImpl.INDEX_HOST, incrementalSite.getIdentifier());
 
         final JobDetail jobDetail1 = Mockito.mock(JobDetail.class);
         Mockito.when(jobDetail1.getJobDataMap()).thenReturn(jobDataMap);
@@ -444,30 +471,9 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
                     return search2.getTotalResults() >= 1;
                 });
 
-        //Create Contentlet in English
-        final Contentlet contentlet1 = new ContentletDataGen(contentGenericId)
-                .languageId(defaultLang)
-                .folder(folder)
-                .host(site)
-                .setProperty("title", "content1")
-                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
-                .nextPersisted();
-
-        contentlet1.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        contentlet1.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
-        contentlet1.setBoolProperty(Contentlet.IS_TEST_MODE, true);
-        contentletAPI.publish(contentlet1, systemUser, false);
-
         final String pageName = RandomStringUtils.randomAlphabetic(20);
-
-        final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder, template).languageId(defaultLang)
-                .pageURL(pageName)
-                .friendlyName(pageName)
-                .title(pageName).nextPersisted();
-        final String uuid = UUIDGenerator.generateUuid();
-        final MultiTree multiTree = new MultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier(), contentlet1.getIdentifier() ,uuid,0);
-        APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
-        HTMLPageDataGen.publish(pageEnglishVersion);
+        final HTMLPageAsset pageEnglishVersion =
+                publishPageWithContent(incrementalSite, incrementalFolder, pageName);
 
         //Next Run should run completely incrementally
         final JobExecutionContext incrementalContext2 = Mockito.mock(JobExecutionContext.class);
@@ -482,7 +488,17 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         final SiteSearchAudit siteSearchAudit3 = recentAudits.get(0);
 
         //Now we make sure the page is now part of Site-search search results.
-        await().atMost(30, TimeUnit.SECONDS)
+        // The window is named so a miss can be told apart from slow indexing: a page versioned in the
+        // same second as the window start, after it, is the case the incremental crawl used to drop.
+        final Object pageVersionTs = APILocator.getVersionableAPI()
+                .getContentletVersionInfo(pageEnglishVersion.getIdentifier(), defaultLang)
+                .map(info -> info.getVersionTs().getTime()).orElse(null);
+        final String thirdCrawl = String.format(
+                "page %s (versionTs %s ms) found by crawl incremental=%s, window [%s, %s] ms",
+                pageName, pageVersionTs, siteSearchAudit3.isIncremental(),
+                Optional.ofNullable(siteSearchAudit3.getStartDate()).map(Date::getTime).orElse(null),
+                Optional.ofNullable(siteSearchAudit3.getEndDate()).map(Date::getTime).orElse(null));
+        await(thirdCrawl).atMost(30, TimeUnit.SECONDS)
                 .pollInterval(2, TimeUnit.SECONDS)
                 .until(() -> {
                     final SiteSearchResults search3 = siteSearchAPI.search(siteSearchAudit3.getIndexName(), pageName, 0, 10);
@@ -1074,8 +1090,9 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
      * closely.</p>
      *
      * <p>The exception must arrive intact rather than wrapped or replaced: whoever reads the job
-     * result needs to see which insert failed and why — including, via this same path, the separate
-     * {@code path varchar(500)} overflow of issue #36706.</p>
+     * result needs to see which insert failed and why — which is how the separate
+     * {@code path varchar(500)} overflow of issue #36706 surfaced before that column became
+     * {@code text}.</p>
      */
     @Test
     public void Test_Failed_Audit_Save_Propagates_Out_Of_Run()
@@ -1230,10 +1247,11 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
      *
      * <p>This is the assertion the rest of the suite could not make without mocking the thing under
      * test: {@link SiteSearchJobProxy} builds its own {@code SiteSearchJobImpl}, so there is nowhere
-     * to inject a failing audit API. Instead the failure is induced for real, the same way
-     * production hits it — the {@code path} column is {@code varchar(500)} and nothing truncates
-     * what the job writes into it, so an over-long path makes the genuine audit insert fail
-     * (issue #36706). No mock stands between the crawl and the database here.</p>
+     * to inject a failing audit API. Instead the failure is induced for real in Postgres: a
+     * temporary {@code CHECK} constraint that rejects only this test's job id makes the genuine
+     * audit insert fail. No mock stands between the crawl and the database here. (This used to rely
+     * on the {@code path varchar(500)} overflow, which issue #36706 removed by making the column
+     * {@code text}.)</p>
      *
      * <p>What it proves end to end: the exception leaves {@code SiteSearchJobImpl.run()}, the proxy
      * turns it into a {@link JobExecutionException} — which is what Quartz records as a failed run —
@@ -1248,14 +1266,17 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
      */
     @Test
     public void Test_Proxy_Reports_Failed_Audit_Save_As_Job_Execution_Exception()
-            throws DotDataException, IOException {
+            throws DotDataException, IOException, SQLException {
 
         deleteAllSiteSearchIndices();
 
         final String jobId = UUIDUtil.uuid();
-        // sitesearch_audit.path is varchar(500) and the job does not truncate (issue #36706),
-        // so this is a real insert failure, not a simulated one.
-        final String overlongPath = "/" + RandomStringUtils.randomAlphabetic(600);
+        // A real insert failure, not a mocked one: this constraint rejects only this job's id, so
+        // Postgres refuses the genuine audit insert and nothing else is affected. NOT VALID skips
+        // checking the rows already in the table.
+        final String constraint = "it_reject_audit_" + jobId.replace("-", "");
+        new DotConnect().executeStatement("ALTER TABLE sitesearch_audit ADD CONSTRAINT "
+                + constraint + " CHECK (job_id <> '" + jobId + "') NOT VALID");
 
         final JobDataMap jobDataMap = new JobDataMap();
         jobDataMap.put(SiteSearchJobImpl.RUN_NOW, Boolean.TRUE.toString());
@@ -1265,7 +1286,6 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         jobDataMap.put(SiteSearchJobImpl.INCLUDE_EXCLUDE, "all");
         jobDataMap.put(SiteSearchJobImpl.LANG_TO_INDEX, new String[]{Long.toString(defaultLang)});
         jobDataMap.put(SiteSearchJobImpl.INDEX_HOST, site.getIdentifier());
-        jobDataMap.put(SiteSearchJobImpl.PATHS, overlongPath);
 
         final JobDetail jobDetail = Mockito.mock(JobDetail.class);
         Mockito.when(jobDetail.getJobDataMap()).thenReturn(jobDataMap);
@@ -1290,6 +1310,9 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
                     cause instanceof DotDataException
                             && cause.getMessage() != null
                             && cause.getMessage().contains("sitesearch_audit"));
+        } finally {
+            new DotConnect().executeStatement(
+                    "ALTER TABLE sitesearch_audit DROP CONSTRAINT IF EXISTS " + constraint);
         }
 
         Assert.assertTrue(

@@ -168,4 +168,35 @@ public class PublisherFilterImplTest {
         Assert.assertFalse(publisherFilter.isRelationshipsSecondLevel());
     }
 
+    /**
+     * Method to test: {@link PublisherFilter#getRelationshipsDepth()}
+     * Given Scenario: PublisherFilterImpl built with the constructors that predate
+     * relationshipsDepth (issue #38394)
+     * ExpectedResult: depth 1 without second level and depth 2 with it, so existing call sites
+     * keep today's traversal
+     */
+    @Test
+    public void Test_getRelationshipsDepth_derived_from_second_level_flag() {
+        Assert.assertEquals(1, new PublisherFilterImpl(true, true).getRelationshipsDepth());
+        Assert.assertEquals(1, new PublisherFilterImpl("key.yml", true, true).getRelationshipsDepth());
+        Assert.assertEquals(1, new PublisherFilterImpl("key.yml", true, true, false).getRelationshipsDepth());
+        Assert.assertEquals(2, new PublisherFilterImpl("key.yml", true, true, true).getRelationshipsDepth());
+    }
+
+    /**
+     * Method to test: {@link PublisherFilter#getRelationshipsDepth()}
+     * Given Scenario: PublisherFilterImpl built with the 5-arg constructor and an explicit depth,
+     * including the "unlimited" value
+     * ExpectedResult: the explicit depth is returned as given, even when it disagrees with the
+     * second-level flag
+     */
+    @Test
+    public void Test_getRelationshipsDepth_explicit_value_via_five_arg_constructor() {
+        Assert.assertEquals(5, new PublisherFilterImpl("key.yml", true, true, false, 5).getRelationshipsDepth());
+        Assert.assertEquals(1, new PublisherFilterImpl("key.yml", true, true, true, 1).getRelationshipsDepth());
+        Assert.assertEquals(FilterDescriptor.RELATIONSHIPS_DEPTH_UNLIMITED,
+                new PublisherFilterImpl("key.yml", true, true, false,
+                        FilterDescriptor.RELATIONSHIPS_DEPTH_UNLIMITED).getRelationshipsDepth());
+    }
+
 }

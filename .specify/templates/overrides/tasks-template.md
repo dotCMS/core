@@ -29,7 +29,6 @@ the gate tasks and do not reorder implementation ahead of them.
 - **Backend**: `dotCMS/src/main/java/com/dotcms/...` (prefer modern) or `com/dotmarketing/...` (legacy)
 - **Integration tests**: `dotcms-integration/src/test/java/...`
 - **Postman**: `dotcms-postman/src/main/resources/postman/...`
-- **Karate**: `dotCMS/src/curl-test/...` (or the module's karate suite)
 - **Frontend + e2e**: `core-web/libs/...`, `core-web/apps/...` (Jest/Spectator, Playwright)
 
 ## Test types by layer (choose the applicable ones per story)
@@ -39,7 +38,6 @@ the gate tasks and do not reorder implementation ahead of them.
 | Java service/util logic | Unit (JUnit) | module test goal |
 | Java + DB/ES, API behavior | Integration | `./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=Class#method` |
 | REST endpoint contracts | Postman | `./mvnw verify -pl :dotcms-postman -Dpostman.test.skip=false -Dpostman.collections=<name>` |
-| REST/API scenarios | Karate | run the karate suite for the endpoint |
 | Angular component/service | Jest/Spectator | `yarn nx test <project>` |
 | User-facing flow | e2e | Playwright suite |
 
@@ -56,7 +54,7 @@ the gate tasks and do not reorder implementation ahead of them.
 
 - [ ] T001 Create/verify project structure per implementation plan
 - [ ] T002 [P] Ensure test scaffolding exists for the layers this feature will touch
-        (integration/postman/karate/e2e harness reachable)
+        (integration/postman/e2e harness reachable)
 
 ---
 
@@ -80,7 +78,7 @@ the gate tasks and do not reorder implementation ahead of them.
 ### Tests for User Story 1 (MANDATORY — write FIRST)
 
 > Write these tests before any implementation. Pick the layer-appropriate type(s) from the
-> table above (unit / integration / postman / karate / e2e).
+> table above (unit / integration / postman / e2e).
 
 - [ ] T010 [P] [US1] [Test type] test for [behavior] in [exact test path]
 - [ ] T011 [P] [US1] [Test type] test for [edge/sad path] in [exact test path]

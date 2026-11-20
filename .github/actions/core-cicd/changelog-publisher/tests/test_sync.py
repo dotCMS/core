@@ -208,3 +208,14 @@ def test_transient_500_then_success(tmp_path, capsys):
     assert main(["sync-site", "--state-file", _state_file(tmp_path), "--apply"]) == 0
     assert "::evergreen-sync::updated" in capsys.readouterr().out
     assert len(_fires()) == 2
+
+
+@responses_lib.activate
+def test_missing_action_is_a_clean_error(tmp_path, monkeypatch, capsys):
+    """sync-site (including the read-only drift check) constructs the client, so an unset
+    DOTCMS_DEVSITE_RELEASENOTES_ACTION fails with the sync error marker and no network call."""
+    monkeypatch.setattr("changelog_publisher.client.PUBLISH_ACTION_ID", "")
+    assert main(["sync-site", "--state-file", _state_file(tmp_path)]) == 1
+    out = capsys.readouterr().out
+    assert "::evergreen-sync-error::DOTCMS_DEVSITE_RELEASENOTES_ACTION is not set" in out
+    assert len(responses_lib.calls) == 0

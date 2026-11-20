@@ -7,7 +7,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import java.util.Map;
 import javax.enterprise.context.Dependent;
 
-@Queue("failSuccess")
+@Queue(value = "failSuccess", genericEntry = true)
 @Dependent
 public class FailSuccessJob implements JobProcessor {
 

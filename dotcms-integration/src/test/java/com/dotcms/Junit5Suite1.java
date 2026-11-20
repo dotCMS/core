@@ -1,5 +1,6 @@
 package com.dotcms;
 
+import com.dotcms.content.elasticsearch.business.DeferredBinaryRemovalIT;
 import com.dotcms.jobs.business.HeartbeatIT;
 import com.dotcms.jobs.business.api.JobProcessorDiscoveryTest;
 import com.dotcms.jobs.business.api.JobQueueManagerAPICDITest;
@@ -29,7 +30,9 @@ import com.dotcms.rest.api.v1.asset.bulkupload.BulkUploadResourceIT;
 import com.dotcms.rest.api.v1.asset.bulkupload.BulkUploadSecurityIT;
 import com.dotcms.rest.api.v1.content.bulkrefresh.BulkRefreshResourceIntegrationTest;
 import com.dotcms.rest.api.v1.content.dotimport.ContentImportResourceIntegrationTest;
+import com.dotcms.rest.api.v1.job.JobQueueDomainQueuesBypassIntegrationTest;
 import com.dotcms.rest.api.v1.job.JobQueueHelperIntegrationTest;
+import com.dotmarketing.portlets.folders.business.FolderDeleteKeepsFilesOnRollbackIT;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
@@ -48,8 +51,13 @@ import org.junit.platform.suite.api.Suite;
 @Suite
 @SelectClasses({
         JobQueueManagerAPICDITest.class,
+        com.dotmarketing.portlets.structure.business.LegacyFieldAPIFieldVariableTest.class,
         PostgresJobQueueIntegrationTest.class,
+        com.dotmarketing.factories.PublishAssetPermissionIT.class,
+        com.dotmarketing.portlets.links.action.PublishLinksActionIT.class,
+        com.dotmarketing.portal.struts.PublishWebAssetActionIT.class,
         JobQueueManagerAPIIntegrationTest.class,
+        JobQueueDomainQueuesBypassIntegrationTest.class,
         JobQueueHelperIntegrationTest.class,
         ImportContentletsProcessorIntegrationTest.class,
         ContentImportResourceIntegrationTest.class,
@@ -68,15 +76,20 @@ import org.junit.platform.suite.api.Suite;
         FolderBulkDeleteCancellationIT.class,
         FolderBulkDeleteNotificationIT.class,
         FolderBulkDeleteOverlapIT.class,
+        com.dotcms.rendering.velocity.viewtools.DotCMSMacroWebAPIGalleryTest.class,
+        com.dotmarketing.portlets.links.action.EditLinkActionTest.class,
+        com.dotcms.rest.api.v1.contenttype.FieldVariableResourceDeleteTest.class,
         FolderBulkDeleteAnnouncementIT.class,
         FolderBulkDeleteResumeIT.class,
         FolderBulkDeleteHeartbeatIT.class,
         FolderBulkDeleteMemoryCeilingIT.class,
+        DeferredBinaryRemovalIT.class,
+        FolderDeleteKeepsFilesOnRollbackIT.class,
         FolderBulkDuplicateResourceIT.class,
         FolderBulkDuplicateProcessorIT.class,
         FolderBulkDuplicateCancellationIT.class,
         FolderBulkDuplicateNotificationIT.class,
-        FolderBulkDuplicateHeartbeatIT.class
+        FolderBulkDuplicateHeartbeatIT.class,
 })
 public class Junit5Suite1 {
 

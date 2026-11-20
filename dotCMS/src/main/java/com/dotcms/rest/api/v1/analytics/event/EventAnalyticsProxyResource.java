@@ -101,6 +101,16 @@ public class EventAnalyticsProxyResource {
      *     → POST {DOT_ANALYTICS_BASE_URL}/v1/event/ingest   {body with site_id injected}
      * </pre>
      *
+     * <p>Before forwarding, each event's URL fields are cleaned by {@link UrlParamFilter}: the
+     * page's {@code url}, {@code doc_search} and {@code doc_hash} and the clicked element's
+     * {@code href} keep only allowlisted query parameters (defaults, the
+     * {@code analytics.url.allowed.params} property and the site's {@code allowedUrlParams} App
+     * field); user info and {@code ;jsessionid} segments are removed from {@code url},
+     * {@code doc_path} and {@code href}; a URL field holding an array or object becomes
+     * {@code ""}; and an event whose {@code data} or {@code page} is not an object is removed from
+     * the batch. When the site's {@code filterUrlParams} App field is {@code false}, only user info
+     * and session ids are removed.
+     *
      * <p>Read-side endpoints (e.g. {@code total-events}, {@code unique-visitors}) are GETs
      * served by {@link #proxyGetRequest} via the catch-all {@code /v1/analytics/{path:.*}}.
      *
@@ -123,7 +133,9 @@ public class EventAnalyticsProxyResource {
             operationId = "proxyAnalyticsEventRequest",
             summary = "Proxy analytics event ingest with site auth validation",
             description = "Validates the site_auth field in the JSON body via SiteAuthValidator, " +
-                    "resolves the active site, injects site_id into context, and asynchronously " +
+                    "resolves the active site, adds site_id to context, cleans each event's page and " +
+                    "link URL fields (allowlisted query parameters only, no user info or session ids; events " +
+                    "with a malformed data or page object are dropped), and asynchronously " +
                     "forwards the body to {DOT_ANALYTICS_BASE_URL}/v1/event/ingest. " +
                     "The dotCMS-side path is a fixed match; the upstream sub-path is not " +
                     "caller-controllable.",
@@ -153,45 +165,47 @@ public class EventAnalyticsProxyResource {
                     required = true)
             final String body) {
 
-        if (body == null || body.isBlank()) {
-            asyncResponse.resume(Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ResponseEntityView<>(
-                            List.of(new ErrorEntity(ValidationErrorCode.INVALID_JSON.name(),
-                                    "Request body is required"))))
-                    .build());
+        // Gate 1: resolve site from request headers — reads Origin/Referer only, no body inspection.
+        final Host site;
+        try {
+            site = ContentAnalyticsUtil.getSiteFromRequest(request);
+        } catch (final AnalyticsValidationException e) {
+            // Site cannot be resolved from headers — no meaningful gate to run.
+            resumeWithBadRequest(asyncResponse, e.getCode().name(), e.getMessage());
             return;
         }
 
-        String proxyBody = body;
-        Host site = null;
+        // Gate 2: body and site_auth validation — runs before the App-config check so that
+        // unauthenticated callers always get 400 (never 503), preventing them from probing
+        // whether analytics is configured for a site by comparing response codes.
+        if (body == null || body.isBlank()) {
+            resumeWithBadRequest(asyncResponse, ValidationErrorCode.INVALID_JSON.name(),
+                    "Request body is required");
+            return;
+        }
+
+        final Map<String, Object> eventBody;
         try {
             final Map<String, Object> bodyMap = JsonUtil.getJsonFromString(body);
             // The literal JSON token "null" parses to a Java null — guard before deref.
             if (bodyMap == null) {
-                asyncResponse.resume(Response.status(Response.Status.BAD_REQUEST)
-                        .entity(new ResponseEntityView<>(
-                                List.of(new ErrorEntity(ValidationErrorCode.INVALID_JSON.name(),
-                                        "Request body must be a JSON object"))))
-                        .build());
+                resumeWithBadRequest(asyncResponse, ValidationErrorCode.INVALID_JSON.name(),
+                        "Request body must be a JSON object");
                 return;
             }
-            Object context = bodyMap.get("context");
 
+            final Object context = bodyMap.get("context");
             if (context == null) {
                 Logger.warn(this, "Context is required");
-                asyncResponse.resume(Response.status(Response.Status.BAD_REQUEST)
-                        .entity(new ResponseEntityView<>(
-                                List.of(new ErrorEntity(ValidationErrorCode.INVALID_SITE_AUTH.name(), "SiteAuth is required"))))
-                        .build());
+                resumeWithBadRequest(asyncResponse, ValidationErrorCode.INVALID_SITE_AUTH.name(),
+                        "SiteAuth is required");
                 return;
             }
 
             if (!(context instanceof Map)) {
                 Logger.warn(this, "\"context\" must be a JSON object");
-                asyncResponse.resume(Response.status(Response.Status.BAD_REQUEST)
-                        .entity(new ResponseEntityView<>(
-                                List.of(new ErrorEntity(ValidationErrorCode.INVALID_JSON.name(), "\"context\" must be a JSON object"))))
-                        .build());
+                resumeWithBadRequest(asyncResponse, ValidationErrorCode.INVALID_JSON.name(),
+                        "\"context\" must be a JSON object");
                 return;
             }
 
@@ -201,35 +215,37 @@ public class EventAnalyticsProxyResource {
 
             if (siteAuth == null) {
                 Logger.warn(this, "SiteAuth is required");
-                asyncResponse.resume(Response.status(Response.Status.BAD_REQUEST)
-                        .entity(new ResponseEntityView<>(
-                                List.of(new ErrorEntity(ValidationErrorCode.INVALID_SITE_AUTH.name(), "SiteAuth is required"))))
-                        .build());
+                resumeWithBadRequest(asyncResponse, ValidationErrorCode.INVALID_SITE_AUTH.name(),
+                        "SiteAuth is required");
                 return;
             }
 
             new SiteAuthValidator().validate(siteAuth.toString());
 
-            site = ContentAnalyticsUtil.getSiteFromRequest(request);
             contextMap.put("site_id", site.getIdentifier());
-            proxyBody = JsonUtil.getJsonStringFromObject(bodyMap);
+            eventBody = bodyMap;
         } catch (final AnalyticsValidationException e) {
             Logger.warn(this, "SiteAuth validation failed for analytics proxy: " + e.getMessage());
-            asyncResponse.resume(Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ResponseEntityView<>(
-                            List.of(new ErrorEntity(e.getCode().name(), e.getMessage()))))
-                    .build());
+            resumeWithBadRequest(asyncResponse, e.getCode().name(), e.getMessage());
             return;
         } catch (IOException | IllegalArgumentException e) {
             Logger.warn(this, "Malformed body for analytics proxy: " + e.getMessage());
-            asyncResponse.resume(Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ResponseEntityView<>(
-                            List.of(new ErrorEntity(ValidationErrorCode.INVALID_JSON.name(), e.getMessage()))))
-                    .build());
+            resumeWithBadRequest(asyncResponse, ValidationErrorCode.INVALID_JSON.name(),
+                    e.getMessage());
             return;
         }
 
-        final Secret persistenceMode = ContentAnalyticsUtil.getAppSecrets(site).get(PERSISTENCE_MODE_KEY);
+        // Gate 3: App-config check — runs after site_auth so only authenticated callers can
+        // learn whether analytics is configured for this site.
+        if (!ContentAnalyticsUtil.isAppConfigured(site)) {
+            Logger.debug(this, () -> "Analytics App not configured for site '"
+                    + site.getIdentifier() + "' — returning 503 for event ingest");
+            asyncResponse.resume(analyticsNotConfiguredResponse());
+            return;
+        }
+
+        final Map<String, Secret> appSecrets = ContentAnalyticsUtil.getAppSecrets(site);
+        final Secret persistenceMode = appSecrets.get(PERSISTENCE_MODE_KEY);
         if (null != persistenceMode && PERSISTENCE_MODE_READONLY.equals(persistenceMode.getString())) {
             // Read Only suppressing an event is expected, everyday behavior for an instance an
             // admin deliberately chose not to persist from -- not a fault condition, hence debug
@@ -249,12 +265,100 @@ public class EventAnalyticsProxyResource {
             return;
         }
 
-        final String finalProxyBody = proxyBody;
+        // Page URL fields keep only allowlisted query parameters; user info and session id path
+        // segments are removed either way. See UrlParamFilter.
+        if (UrlParamFilter.isEnabled(appSecrets)) {
+            UrlParamFilter.filterEventPages(eventBody, UrlParamFilter.resolveAllowedParams(appSecrets));
+        } else {
+            UrlParamFilter.removeUserInfoAndSessionIds(eventBody);
+        }
+
+        final String finalProxyBody = JsonUtil.getJsonStringFromObject(eventBody);
         final Host finalSite = site;
         ResponseUtil.handleAsyncResponse(
                 () -> EventAnalyticsProxyHelper.proxy("event/ingest", uriInfo, finalProxyBody,
                         request.getHeader("User-Agent"), finalSite),
                 asyncResponse);
+    }
+
+    /**
+     * Returns a dotCMS-evaluated analytics health status for the site resolved from the request.
+     *
+     * <p>Unlike the catch-all proxy path, this endpoint is always accessible and never returns
+     * {@code 503}. The response reflects what {@link ContentAnalyticsUtil#resolveAnalyticsHealth}
+     * determines about the site's Content Analytics configuration and backend connectivity:
+     * <ul>
+     *   <li>{@code "OK"} — credentials present and backend reachable.
+     *   <li>{@code "NOT_CONFIGURED"} — the Analytics App is not configured for the site.
+     *   <li>{@code "CONFIGURATION_ERROR"} — credentials present but incomplete or backend unreachable.
+     * </ul>
+     *
+     * <p>Auth required ({@code 401} if unauthenticated); site READ permission required
+     * ({@code 403 SITE_ACCESS_DENIED} if missing).
+     *
+     * @param request  the HTTP servlet request
+     * @param response the HTTP servlet response
+     * @return a {@code 200} response with a {@code ResponseEntityView} containing {@code { "health": "..." }}
+     */
+    @Operation(
+            operationId = "analyticsHealth",
+            summary = "Evaluate analytics health for the current site",
+            description = "Returns a dotCMS-evaluated analytics health state. Always returns 200 — " +
+                    "never returns 503 unlike the catch-all proxy. Reflects the App configuration " +
+                    "and backend connectivity for the site resolved from the request.",
+            tags = {"Content Analytics"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Health state evaluated successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(type = "object",
+                                    description = "ResponseEntityView containing {\"health\": \"OK\"|\"NOT_CONFIGURED\"|\"CONFIGURATION_ERROR\"}"))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized — backend user required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "User lacks READ on the resolved site",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @GET
+    @Path("/health")
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response analyticsHealth(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response) {
+
+        final User user = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(request, response)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .init()
+                .getUser();
+
+        final Host site;
+        try {
+            site = resolveSiteForUser(request, user);
+        } catch (DotSecurityException e) {
+            Logger.warn(this, "User '" + user.getUserId()
+                    + "' denied site access on analytics health: " + e.getMessage());
+            SecurityLogger.logInfo(this.getClass(), "User '" + user.getUserId()
+                    + "' denied site access on analytics health: " + e.getMessage());
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(new ResponseEntityView<>(
+                            List.of(new ErrorEntity("SITE_ACCESS_DENIED",
+                                    "User does not have access to the requested site"))))
+                    .build();
+        } catch (DotDataException e) {
+            Logger.warn(this, "Failed to resolve site for analytics health: " + e.getMessage());
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseEntityView<>(
+                            List.of(new ErrorEntity("INVALID_SITE_ID",
+                                    "Could not resolve a site for the request"))))
+                    .build();
+        }
+
+        final com.dotcms.experiments.business.ExperimentsAPI.Health health =
+                ContentAnalyticsUtil.resolveAnalyticsHealth(site);
+        return Response.ok(new ResponseEntityView<>(
+                java.util.Map.of("health", health.name()))).build();
     }
 
     /**
@@ -337,6 +441,17 @@ public class EventAnalyticsProxyResource {
                                     "Could not resolve a site for the request"))))
                     .build();
         }
+        // Gate: App must be configured for this site — the /health and /content/siteauth/generate
+        // paths are handled by dedicated methods (JAX-RS most-specific-match) and never reach here.
+        if (!ContentAnalyticsUtil.isAppConfigured(site)) {
+            Logger.debug(this, () -> "Analytics App not configured for site '"
+                    + site.getIdentifier() + "' — returning 503 for path: " + path);
+            return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                    .entity(new ResponseEntityView<>(
+                            List.of(new ErrorEntity("ANALYTICS_NOT_CONFIGURED",
+                                    "Analytics is not configured for this site."))))
+                    .build();
+        }
         return EventAnalyticsProxyHelper.proxy(path, uriInfo, null, request.getHeader("User-Agent"), site);
     }
 
@@ -407,5 +522,30 @@ public class EventAnalyticsProxyResource {
         final Host site = APILocator.getHostAPI().find(siteId, user, DONT_RESPECT_FRONT_END_ROLES);
         Objects.requireNonNull(site, String.format("Site with ID '%s' was not found", siteId));
         return Response.ok().entity(ContentAnalyticsUtil.generateInternalSiteKey(site.getIdentifier())).build();
+    }
+
+    /**
+     * Resumes an async response with {@code 503 ANALYTICS_NOT_CONFIGURED} — the App-config gate
+     * response used when the Analytics App is absent for the site.
+     */
+    private static Response analyticsNotConfiguredResponse() {
+        return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                .entity(new ResponseEntityView<>(
+                        List.of(new ErrorEntity("ANALYTICS_NOT_CONFIGURED",
+                                "Analytics is not configured for this site."))))
+                .build();
+    }
+
+    /**
+     * Resumes an async response with {@code 400 Bad Request} carrying a machine-readable error
+     * code and human-readable message. Centralises the repeated inline pattern.
+     */
+    private static void resumeWithBadRequest(final AsyncResponse asyncResponse,
+                                             final String errorCode,
+                                             final String message) {
+        asyncResponse.resume(Response.status(Response.Status.BAD_REQUEST)
+                .entity(new ResponseEntityView<>(
+                        List.of(new ErrorEntity(errorCode, message))))
+                .build());
     }
 }

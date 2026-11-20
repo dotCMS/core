@@ -580,6 +580,32 @@ public class RoleAPITest extends IntegrationTestBase {
     }
 
     /**
+     * Testing {@code RoleFactoryImpl.findUserIdsForRole(Role, true)}: the users of a role
+     * include the users holding any role on its path up to the root, and nobody holding only
+     * a sibling role. The role ids on the path are looked up in one query.
+     */
+    @Test
+    public void test_findUserIdsForRole_inherited_returnsUsersOfRoleAndAncestors() throws Exception {
+
+        final long now = System.currentTimeMillis();
+        final Role parent = new RoleDataGen().name("inhParent_" + now).nextPersisted();
+        final Role child = new RoleDataGen().name("inhChild_" + now).parent(parent.getId())
+                .nextPersisted();
+        final Role sibling = new RoleDataGen().name("inhSibling_" + now).parent(parent.getId())
+                .nextPersisted();
+
+        final User parentUser = new UserDataGen().roles(parent).nextPersisted();
+        final User childUser = new UserDataGen().roles(child).nextPersisted();
+        final User siblingUser = new UserDataGen().roles(sibling).nextPersisted();
+
+        final List<String> userIds = new RoleFactoryImpl().findUserIdsForRole(child, true);
+
+        assertTrue(userIds.contains(parentUser.getUserId()));
+        assertTrue(userIds.contains(childUser.getUserId()));
+        assertFalse(userIds.contains(siblingUser.getUserId()));
+    }
+
+    /**
      * Issue #37303 AC-004: the DBFQN cascade in {@code RoleFactoryImpl.save} must visit each
      * descendant exactly once per reparent (a subtree of N roles ⇒ N updates, not 4N).
      *
@@ -657,6 +683,68 @@ public class RoleAPITest extends IntegrationTestBase {
     }
 
     /**
+     * Method to test: {@link RoleAPI#loadRolesForUser(String, boolean)}
+     * Given Scenario: A user holds a role; another role is moved under it, which flushes every
+     *                 user's cached role list. The first lookup afterwards asks for direct roles only.
+     * Expected Result: The direct lookup returns only the assigned role, and a following lookup
+     *                  that includes inherited roles still returns the moved role.
+     */
+    @Test
+    public void test_loadRolesForUser_directLookupAfterMove_keepsInheritedRolesCached() throws Exception {
+
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final long now = System.currentTimeMillis();
+        final Role parent = new RoleDataGen().name("inheritParent_" + now).nextPersisted();
+        final Role moved = new RoleDataGen().name("inheritMoved_" + now).nextPersisted();
+        final User user = new UserDataGen().roles(parent).nextPersisted();
+
+        final Role copy = copyForSave(roleAPI.loadRoleById(moved.getId()), "move");
+        copy.setParent(parent.getId());
+        roleAPI.save(copy);
+
+        final List<Role> direct = roleAPI.loadRolesForUser(user.getUserId(), false);
+        assertTrue(direct.contains(parent));
+        assertFalse(direct.contains(moved));
+
+        final List<Role> all = roleAPI.loadRolesForUser(user.getUserId(), true);
+        assertTrue("an inherited role must survive a direct-only lookup filling the cache",
+                all.contains(moved));
+        assertTrue(roleAPI.doesUserHaveRole(user, moved));
+    }
+
+    /**
+     * Method to test: {@link RoleAPI#loadRolesForUser(String, boolean)}
+     * Given Scenario: A user holds both a role and that role's child, so the child is reachable
+     *                 directly and through its parent.
+     * Expected Result: The child appears once in a direct lookup and once in a lookup with
+     *                  inherited roles, whether the user's role list is built fresh or read from cache.
+     */
+    @Test
+    public void test_loadRolesForUser_userHoldsParentAndChild_childListedOnce() throws Exception {
+
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final long now = System.currentTimeMillis();
+        final Role parent = new RoleDataGen().name("dupParent_" + now).nextPersisted();
+        final Role child = new RoleDataGen().name("dupChild_" + now).parent(parent.getId()).nextPersisted();
+        // child first: addRoleToUser skips a role the user already inherits
+        final User user = new UserDataGen().roles(child, parent).nextPersisted();
+        assertTrue("precondition: the child must be listed under its parent",
+                roleAPI.loadRoleById(parent.getId()).getRoleChildren().contains(child.getId()));
+        assertTrue("precondition: the user must hold the child directly",
+                roleAPI.loadRolesForUser(user.getUserId(), false).contains(child));
+
+        for (final boolean includeImplicitRoles : new boolean[]{false, true}) {
+            CacheLocator.getRoleCache().clearUserRoleCache();
+            assertEquals("fresh lookup, implicit=" + includeImplicitRoles, 1,
+                    Collections.frequency(roleAPI.loadRolesForUser(user.getUserId(), includeImplicitRoles), child));
+            assertEquals("cached lookup, implicit=" + includeImplicitRoles, 1,
+                    Collections.frequency(roleAPI.loadRolesForUser(user.getUserId(), includeImplicitRoles), child));
+            assertEquals("cached lookup, implicit=" + !includeImplicitRoles, 1,
+                    Collections.frequency(roleAPI.loadRolesForUser(user.getUserId(), !includeImplicitRoles), child));
+        }
+    }
+
+    /**
      * Detached copy of a role, mirroring how {@code RoleHelper.updateRole} prepares the
      * instance it hands to {@link RoleAPI#save(Role)} (the flow of #37303).
      */
@@ -665,6 +753,104 @@ public class RoleAPITest extends IntegrationTestBase {
         org.apache.commons.beanutils.BeanUtils.copyProperties(copy, source);
         copy.setDescription(descriptionTag);
         return copy;
+    }
+
+    /**
+     * Creates a back-end user who is not a CMS Administrator.
+     */
+    private static User newNonAdminBackendUser() throws DotDataException {
+        final User user = new UserDataGen()
+                .roles(com.dotcms.datagen.TestUserUtils.getBackendRole()).nextPersisted();
+        assertFalse("precondition: the user must not be a CMS Administrator", user.isAdmin());
+        return user;
+    }
+
+    /**
+     * Method to test: {@link RoleAPI#checkUserRolesChange(User, User, java.util.Collection, java.util.Collection)}
+     * Given Scenario: The system user and a CMS Administrator each request a change that adds a role.
+     * Expected Result: Both are allowed; no exception is thrown.
+     */
+    @Test
+    public void test_checkUserRolesChange_systemUserAndAdmin_allowed() throws Exception {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final User target = newNonAdminBackendUser();
+        final Role role = new RoleDataGen().nextPersisted();
+
+        roleAPI.checkUserRolesChange(APILocator.systemUser(), target, List.of(role), List.of());
+        roleAPI.checkUserRolesChange(com.dotcms.datagen.TestUserUtils.getAdminUser(), target,
+                List.of(role), List.of(role));
+    }
+
+    /**
+     * Method to test: {@link RoleAPI#checkUserRolesChange(User, User, java.util.Collection, java.util.Collection)}
+     * Given Scenario: A user who is not a CMS Administrator requests a change with nothing to add or remove.
+     * Expected Result: Allowed; an unchanged role set never fails.
+     */
+    @Test
+    public void test_checkUserRolesChange_nonAdminEmptyChange_allowed() throws Exception {
+        final User user = newNonAdminBackendUser();
+
+        APILocator.getRoleAPI().checkUserRolesChange(user, user, List.of(), List.of());
+        APILocator.getRoleAPI().checkUserRolesChange(user, user, null, null);
+    }
+
+    /**
+     * Method to test: {@link RoleAPI#checkUserRolesChange(User, User, java.util.Collection, java.util.Collection)}
+     * Given Scenario: A user who is not a CMS Administrator requests adding an ordinary role to their own account.
+     * Expected Result: {@link DotSecurityException}; the role is not granted.
+     */
+    @Test
+    public void test_checkUserRolesChange_nonAdminAddingRole_refused() throws Exception {
+        final User user = newNonAdminBackendUser();
+        final Role role = new RoleDataGen().nextPersisted();
+
+        try {
+            APILocator.getRoleAPI().checkUserRolesChange(user, user, List.of(role), List.of());
+            fail("only a CMS Administrator can add roles");
+        } catch (final DotSecurityException e) {
+            // expected
+        }
+        assertFalse(APILocator.getRoleAPI().doesUserHaveRole(user, role));
+    }
+
+    /**
+     * Method to test: {@link RoleAPI#checkUserRolesChange(User, User, java.util.Collection, java.util.Collection)}
+     * Given Scenario: A user who is not a CMS Administrator requests removing a role they hold.
+     * Expected Result: {@link DotSecurityException}; the role is still held.
+     */
+    @Test
+    public void test_checkUserRolesChange_nonAdminRemovingRole_refused() throws Exception {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen()
+                .roles(com.dotcms.datagen.TestUserUtils.getBackendRole(), role).nextPersisted();
+        assertFalse(user.isAdmin());
+
+        try {
+            APILocator.getRoleAPI().checkUserRolesChange(user, user, List.of(), List.of(role));
+            fail("only a CMS Administrator can remove roles");
+        } catch (final DotSecurityException e) {
+            // expected
+        }
+        assertTrue(APILocator.getRoleAPI().doesUserHaveRole(user, role));
+    }
+
+    /**
+     * Method to test: {@link RoleAPI#checkUserRolesChange(User, User, java.util.Collection, java.util.Collection)}
+     * Given Scenario: A user who is not a CMS Administrator requests adding the CMS Administrator role to their own account.
+     * Expected Result: {@link DotSecurityException}; the user is still not a CMS Administrator.
+     */
+    @Test
+    public void test_checkUserRolesChange_nonAdminAddingAdministratorRole_refused() throws Exception {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final User user = newNonAdminBackendUser();
+
+        try {
+            roleAPI.checkUserRolesChange(user, user, List.of(roleAPI.loadCMSAdminRole()), List.of());
+            fail("only a CMS Administrator can add the CMS Administrator role");
+        } catch (final DotSecurityException e) {
+            // expected
+        }
+        assertFalse(user.isAdmin());
     }
 
 }

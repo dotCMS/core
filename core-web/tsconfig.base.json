@@ -39,9 +39,6 @@
             "@dotcms/edit-content": ["libs/edit-content/src/index.ts"],
             "@dotcms/edit-content-bridge": ["libs/edit-content-bridge/src/index.ts"],
             "@dotcms/edit-content/*": ["libs/edit-content/src/lib/*"],
-            "@dotcms/edit-content/custom-languages/*": [
-                "./libs/edit-content/src/lib/custom-languages/*"
-            ],
             "@dotcms/events": ["libs/sdk/events/src/index.ts"],
             "@dotcms/experiments": ["libs/sdk/experiments/src/index.ts"],
             "@dotcms/portlets/content-drive/portlet": [
@@ -75,6 +72,9 @@
             ],
             "@dotcms/portlets/dot-auth/portlet": ["libs/portlets/dot-auth/src/index.ts"],
             "@dotcms/portlets/dot-ai/portlet": ["libs/portlets/dot-ai/src/index.ts"],
+            "@dotcms/portlets/dot-configuration/portlet": [
+                "libs/portlets/dot-configuration/src/index.ts"
+            ],
             "@dotcms/portlets/dot-plugins/portlet": ["libs/portlets/dot-plugins/src/index.ts"],
             "@dotcms/portlets/dot-es-search/portlet": ["libs/portlets/dot-es-search/src/index.ts"],
             "@dotcms/portlets/dot-publishing-queue/portlet": [
@@ -117,11 +117,13 @@
             "@dotcms/ai/sandbox": ["libs/sdk/ai/src/sandbox/index.ts"],
             "@dotcms/ai/adapter": ["libs/sdk/ai/src/adapter/index.ts"],
             "@dotcms/ai/spec": ["libs/sdk/ai/src/spec/index.ts"],
+            "@dotcms/ai/tools": ["libs/sdk/ai/src/tools/index.ts"],
             "@dotcms/vue": ["./libs/sdk/vue/src/index.ts"],
             "@dotcms/portlets/dot-roles/portlet": ["libs/portlets/dot-roles/src/index.ts"],
             "@dotcms/portlets/dot-agents/portlet": ["libs/portlets/dot-agents/src/index.ts"],
             "@dotcms/http": ["libs/http/src/index.ts"],
-            "dotcms": ["libs/sdk/cli/src/index.ts"]
+            "dotcms": ["libs/sdk/cli/src/index.ts"],
+            "@dotcms/portlets/dot-tools/portlet": ["libs/portlets/dot-tools/src/index.ts"]
         }
     },
     "exclude": ["node_modules", "tmp"]

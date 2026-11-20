@@ -47,7 +47,8 @@
 	dojo.require("dojox.grid.enhanced.plugins.Pagination");
 	dojo.require('dijit.layout.ContentPane');
 	dojo.require("dojo.data.ItemFileWriteStore");
-	dojo.require("dojox.data.QueryReadStore");
+	dojo.require("dotcms.dojo.data.CategoryReadStore");
+	dojo.require("dojox.html.entities");
 
 	var grid<%=counter%>;
 	var myStore<%=counter%>;
@@ -79,7 +80,7 @@
 
 		var deleteFormatter = function(value, index) {
 			var inode = addedGrid<%=counter%>.store.getValue(addedGrid<%=counter%>.getItem(index), 'id');
-			return "<div style='width:100%;height:20px;cursor:pointer;' onclick=\"javascript:delCat<%=counter%>('"+inode+"');\">&nbsp;<span class='deleteIcon'></span>&nbsp" + value  + "</div>";
+			return "<div style='width:100%;height:20px;cursor:pointer;' onclick=\"javascript:delCat<%=counter%>('"+inode+"');\">&nbsp;<span class='deleteIcon'></span>&nbsp" + dojox.html.entities.encode(value)  + "</div>";
 		}
 
 		var addedlayout = [
@@ -120,7 +121,7 @@
 	function addSelectedCat<%=counter%>(inode,name) {
 		addedStore<%=counter%>.fetch({query: {id:inode}, onComplete:function(items) {
 			if(items.length > 0){
-				showDotCMSErrorMessage( items[0].name.toString() + " : " + "<%= LanguageUtil.get(pageContext, "category-already-added") %>");
+				showDotCMSErrorMessage( dojox.html.entities.encode(items[0].name.toString()) + " : " + "<%= LanguageUtil.get(pageContext, "category-already-added") %>");
 					}else{
 						addedStore<%=counter%>.newItem({id : inode, name: name});
 				        addedGrid<%=counter%>.render();
@@ -168,16 +169,17 @@
 	var formatHref<%=counter%> = function(value, index) {
 		if(value == undefined || value==null || value=="null"){
 			value="&nbsp;";
+		} else {
+			value = dojox.html.entities.encode(String(value));
 		}
 
 		return "<div style='width:100%;cursor:pointer;' onclick=\"addCat<%=counter%>("+index+")\" >"+value+"</div>";
 	};
 
-	function createStore<%=counter%>(params) {
-		if(params==null) params = '';
-
-		myStore<%=counter%> = new dojox.data.QueryReadStore({
-			url : '/categoriesServlet'+params
+	function createStore<%=counter%>(inode, filter) {
+		myStore<%=counter%> = new dotcms.dojo.data.CategoryReadStore({
+			inode : inode,
+			filter : filter
 		});
 	}
 
@@ -252,11 +254,10 @@
 	function doSearch<%=counter%>() {
 
 		if(currentInodeOrIdentifier<%=counter%>) {
-			var params = dojo.byId("catFilter<%=counter%>").value;
-			params = "?inode="+currentInodeOrIdentifier<%=counter%>+"&q="+params;
+			var filter = dojo.byId("catFilter<%=counter%>").value;
 
 			grid<%=counter%>.destroy(true);
-			createStore<%=counter%>(params);
+			createStore<%=counter%>(currentInodeOrIdentifier<%=counter%>, filter);
 			createGrid<%=counter%>();
 			grid<%=counter%>.startup();
 		}
@@ -273,7 +274,12 @@
 	}
 
 	function manageBreadCrumbs<%=counter%>(inode, name) {
-		dojo.place(" <a style=\"\" id=\"a_"+inode+"\" href=\"javascript:prepareCrumbs<%=counter%>('"+inode+"', '"+name+"');  \"> &#62; "+name+"</a>", "nav<%=counter%>", "last");
+		var crumb = dojo.create("a", { id: "a_" + inode, href: "javascript:void(0);" }, "nav<%=counter%>", "last");
+		crumb.innerHTML = " &#62; " + dojox.html.entities.encode(name);
+		dojo.connect(crumb, "onclick", function(evt) {
+			dojo.stopEvent(evt);
+			prepareCrumbs<%=counter%>(inode, name);
+		});
 	}
 
 	function prepareCrumbs<%=counter%>(inode, name) {
@@ -320,7 +326,7 @@
 	}
 
 	function addPreview<%=counter%>(catName, inode) {
-		dojo.place("<li id='preview"+inode+"'  ><a href=\"javascript:delCat<%=counter%>('"+inode+"');\"><img src='/html/images/icons/cross.png' /></a>"+catName+"</li>", "previewCats<%=counter%>", "last");
+		dojo.place("<li id='preview"+inode+"'  ><a href=\"javascript:delCat<%=counter%>('"+inode+"');\"><img src='/html/images/icons/cross.png' /></a>"+dojox.html.entities.encode(catName)+"</li>", "previewCats<%=counter%>", "last");
 	}
 </script>
 

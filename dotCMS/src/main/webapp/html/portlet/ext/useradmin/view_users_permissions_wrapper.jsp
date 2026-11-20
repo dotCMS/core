@@ -27,7 +27,7 @@
     Role userRole = null;
 
     if (UtilMethods.isSet(userId)
-            && APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("users", user)) {
+            && APILocator.getLayoutAPI().doesUserHaveAccessToUsersPortlet(user)) {
         try {
             final User userToEdit = APILocator.getUserAPI().loadUserById(userId, user, false);
             userRole = APILocator.getRoleAPI().getUserRole(userToEdit);

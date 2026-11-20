@@ -48,7 +48,7 @@ import java.util.List;
  * REST resource for navigation sections (layouts) as the Tools portlet manages them: the ordered
  * list of sections in the back-end left menu, each with its icon, position and ordered tools.
  * <p>
- * Reads require an authenticated back-end user who holds the {@code tools} or {@code tools-beta}
+ * Reads require an authenticated back-end user who holds the {@code tools}
  * portlet in a granted section, or the CMS Administrator role; a missing grant answers 401, as
  * every portlet-gated resource does. Writes additionally require the CMS Administrator role,
  * following the role-layout operations on {@code /v1/roles/layouts}; a portlet holder who is not
@@ -64,8 +64,8 @@ public class LayoutResource implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    /** Portlet ids that open this resource: the Tools portlet and its beta alias. */
-    static final String[] TOOLS_PORTLET_IDS = {PortletID.TOOLS.toString(), PortletID.TOOLS_BETA.toString()};
+    /** Portlet ids that open this resource: the Tools portlet. */
+    static final String[] TOOLS_PORTLET_IDS = {PortletID.TOOLS.toString()};
 
     private static final String OP_CREATE = "create";
     private static final String OP_UPDATE = "update";
@@ -113,7 +113,7 @@ public class LayoutResource implements Serializable {
                     + "them. Each section carries its id, name, icon, position, the ordered ids of its tools and "
                     + "one localized title per tool id, aligned with portletIds. Sections holding tools the tools "
                     + "catalog hides are still returned as stored. Requires an authenticated back-end user with "
-                    + "access to the tools or tools-beta portlet, or the CMS Administrator role."
+                    + "access to the tools portlet, or the CMS Administrator role."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200",
@@ -121,8 +121,8 @@ public class LayoutResource implements Serializable {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntitySectionListView.class))),
             @ApiResponse(responseCode = "401",
-                    description = "Unauthorized - authentication required, or the caller holds neither the "
-                            + "tools nor the tools-beta portlet and is not a CMS Administrator",
+                    description = "Unauthorized - authentication required, or the caller does not hold the "
+                            + "tools portlet and is not a CMS Administrator",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "500",
                     description = "Internal server error",
@@ -143,12 +143,13 @@ public class LayoutResource implements Serializable {
     // ==================== create / update / delete ====================
 
     /**
-     * Creates a navigation section from a name and an icon. The section is placed after every
-     * existing one and holds no tools.
+     * Creates a navigation section from a name and an icon. The section goes at the position sent,
+     * or after every existing one, and holds the tools sent, or none. Section, position and tools
+     * are saved in one transaction, so a failed create leaves no empty section behind.
      *
      * @param request  the current request
      * @param response the current response
-     * @param form     the name and icon
+     * @param form     the name and icon, optionally the position and the ordered tool ids
      * @return the saved section
      * @throws DotDataException     if the write fails
      * @throws DotSecurityException if the caller is not a CMS Administrator
@@ -156,10 +157,13 @@ public class LayoutResource implements Serializable {
     @Operation(
             operationId = "createNavigationSection",
             summary = "Create a navigation section",
-            description = "Creates a section from a name and an icon. The new section is placed after every "
-                    + "existing section and holds no tools. The name is trimmed, must be present, at most 255 "
-                    + "characters and unique among sections; the icon is at most 255 characters and may be empty. "
-                    + "Requires a CMS Administrator who also holds the tools or tools-beta portlet."
+            description = "Creates a section from a name and an icon. Unless tabOrder is sent, the new section "
+                    + "is placed after every existing section; unless portletIds is sent, it holds no tools. The "
+                    + "section, its position and its tools are saved in one transaction, so a failed create leaves "
+                    + "nothing behind. The name is trimmed, must be present, at most 255 characters and unique among "
+                    + "sections; the icon is at most 255 characters and may be empty; the tool ids follow the same "
+                    + "rules as setting a section's tools. "
+                    + "Requires a CMS Administrator who also holds the tools portlet."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200",
@@ -167,10 +171,11 @@ public class LayoutResource implements Serializable {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntitySectionView.class))),
             @ApiResponse(responseCode = "400",
-                    description = "Bad request - blank or over-long name, over-long icon, or duplicate name",
+                    description = "Bad request - blank or over-long name, over-long icon, duplicate name, or an "
+                            + "unknown, repeated or disallowed tool id",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "401",
-                    description = "Unauthorized - authentication required, or no tools / tools-beta portlet",
+                    description = "Unauthorized - authentication required, or no tools portlet",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "403",
                     description = "Forbidden - CMS Administrator role required",
@@ -185,7 +190,7 @@ public class LayoutResource implements Serializable {
     @Produces(MediaType.APPLICATION_JSON)
     public Response create(@Context final HttpServletRequest request,
                            @Context final HttpServletResponse response,
-                           @RequestBody(description = "Name and icon of the new section", required = true,
+                           @RequestBody(description = "Name and icon of the new section, optionally its position and tools", required = true,
                                    content = @Content(schema = @Schema(implementation = SectionForm.class)))
                            final SectionForm form) throws DotDataException, DotSecurityException {
 
@@ -194,14 +199,23 @@ public class LayoutResource implements Serializable {
         final Layout layout = new Layout();
         layout.setName(helper.validateName(form.getName()));
         layout.setDescription(helper.validateIcon(form.getIcon()));
-        layout.setTabOrder(helper.nextTabOrder(layoutApi.findAllLayouts()));
-        helper.saveOrDuplicate(layout);
+        final List<String> portletIds = null == form.getPortletIds()
+                ? List.of() : helper.validateToolIds(form.getPortletIds());
+        LocalTransaction.wrap(() -> {
+            layout.setTabOrder(null == form.getTabOrder()
+                    ? helper.nextTabOrder(layoutApi.findAllLayouts()) : form.getTabOrder());
+            helper.saveOrDuplicate(layout);
+            if (!portletIds.isEmpty()) {
+                layoutApi.setPortletIdsToLayout(layout, portletIds);
+            }
+        });
         logWrite(user, OP_CREATE, layout.getId());
         return Response.ok(new ResponseEntitySectionView(helper.toView(layoutApi.loadLayout(layout.getId()), user))).build();
     }
 
     /**
-     * Renames and re-icons a navigation section. Position and tools are left as they are.
+     * Renames and re-icons a navigation section. Position and tools are left as they are, and a
+     * body that sends either is refused rather than silently ignored.
      *
      * @param request  the current request
      * @param response the current response
@@ -214,9 +228,9 @@ public class LayoutResource implements Serializable {
     @Operation(
             operationId = "updateNavigationSection",
             summary = "Rename and re-icon a navigation section",
-            description = "Changes a section's name and icon together; its position and its tools are untouched. "
-                    + "Same name and icon rules as create. Getting Started may be renamed and re-iconed. "
-                    + "Requires a CMS Administrator who also holds the tools or tools-beta portlet."
+            description = "Changes a section's name and icon together; its position and its tools are untouched, "
+                    + "and sending tabOrder or portletIds is refused. Same name and icon rules as create. Getting Started may be renamed and re-iconed. "
+                    + "Requires a CMS Administrator who also holds the tools portlet."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200",
@@ -224,10 +238,11 @@ public class LayoutResource implements Serializable {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntitySectionView.class))),
             @ApiResponse(responseCode = "400",
-                    description = "Bad request - blank or over-long name, over-long icon, or duplicate name",
+                    description = "Bad request - blank or over-long name, over-long icon, duplicate name, or a "
+                            + "position or tools sent",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "401",
-                    description = "Unauthorized - authentication required, or no tools / tools-beta portlet",
+                    description = "Unauthorized - authentication required, or no tools portlet",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "403",
                     description = "Forbidden - CMS Administrator role required",
@@ -254,6 +269,9 @@ public class LayoutResource implements Serializable {
 
         final User user = initWrite(request, response, OP_UPDATE);
         requireBody(form);
+        if (null != form.getTabOrder() || null != form.getPortletIds()) {
+            throw new BadRequestException("Use the reorder and tools endpoints to change a section's position or tools");
+        }
         final String name = helper.validateName(form.getName());
         final String icon = helper.validateIcon(form.getIcon());
         final Layout layout = helper.findSectionOrThrow(layoutId);
@@ -281,7 +299,7 @@ public class LayoutResource implements Serializable {
             description = "Removes the section, its tool list and every grant of it to a role or a user, so "
                     + "users who reached a tool only through this section lose it from their menu. The Getting "
                     + "Started section cannot be deleted. Returns the remaining sections in navigation order. "
-                    + "Requires a CMS Administrator who also holds the tools or tools-beta portlet."
+                    + "Requires a CMS Administrator who also holds the tools portlet."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200",
@@ -292,7 +310,7 @@ public class LayoutResource implements Serializable {
                     description = "Bad request - the Getting Started section cannot be deleted",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "401",
-                    description = "Unauthorized - authentication required, or no tools / tools-beta portlet",
+                    description = "Unauthorized - authentication required, or no tools portlet",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "403",
                     description = "Forbidden - CMS Administrator role required",
@@ -344,7 +362,7 @@ public class LayoutResource implements Serializable {
                     + "list must contain every existing section id exactly once; a missing, unknown or repeated "
                     + "id is rejected and no position changes. Positions are written strictly increasing in the "
                     + "order sent, in one transaction, and open sessions receive a single refresh. Requires a CMS "
-                    + "Administrator who also holds the tools or tools-beta portlet."
+                    + "Administrator who also holds the tools portlet."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200",
@@ -355,7 +373,7 @@ public class LayoutResource implements Serializable {
                     description = "Bad request - an id is missing, unknown or repeated; nothing was written",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "401",
-                    description = "Unauthorized - authentication required, or no tools / tools-beta portlet",
+                    description = "Unauthorized - authentication required, or no tools portlet",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "403",
                     description = "Forbidden - CMS Administrator role required",
@@ -409,7 +427,7 @@ public class LayoutResource implements Serializable {
                     + "allows in a section and may appear once; otherwise the request is rejected naming the id and "
                     + "the section is unchanged. Registered tools the tools catalog hides are accepted. An empty "
                     + "list is accepted for every section except Getting Started. Requires a CMS Administrator who "
-                    + "also holds the tools or tools-beta portlet."
+                    + "also holds the tools portlet."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200",
@@ -421,7 +439,7 @@ public class LayoutResource implements Serializable {
                             + "would empty the Getting Started section",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "401",
-                    description = "Unauthorized - authentication required, or no tools / tools-beta portlet",
+                    description = "Unauthorized - authentication required, or no tools portlet",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "403",
                     description = "Forbidden - CMS Administrator role required",
@@ -463,8 +481,8 @@ public class LayoutResource implements Serializable {
     // ==================== gates and audit ====================
 
     /**
-     * Authenticates the caller for a read: a back-end user holding {@code tools} or
-     * {@code tools-beta}, or a CMS Administrator. A missing grant throws the REST
+     * Authenticates the caller for a read: a back-end user holding {@code tools}, or a CMS
+     * Administrator. A missing grant throws the REST
      * {@code SecurityException} that answers 401.
      */
     private User initRead(final HttpServletRequest request, final HttpServletResponse response) {

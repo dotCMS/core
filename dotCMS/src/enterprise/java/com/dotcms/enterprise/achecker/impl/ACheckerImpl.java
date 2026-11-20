@@ -14,17 +14,20 @@ import java.util.LinkedList;
 import java.util.List;
 
 import com.dotcms.enterprise.license.LicenseLevel;
-import org.apache.commons.logging.Log;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.achecker.AChecker;
 import com.dotcms.enterprise.achecker.ACheckerRequest;
+import com.dotcms.enterprise.achecker.ACheckerRequestValidator;
 import com.dotcms.enterprise.achecker.ACheckerResponse;
 import com.dotcms.enterprise.achecker.AccessibilityResult;
 import com.dotcms.enterprise.achecker.dao.GuidelinesDAO;
 import com.dotcms.enterprise.achecker.model.GuideLineBean;
 import com.dotcms.enterprise.achecker.utility.Constants;
 import com.dotcms.enterprise.achecker.validation.AccessibilityValidator;
+import com.dotmarketing.business.DotValidationException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Logger;
 
 
 /*
@@ -38,8 +41,23 @@ import com.dotcms.enterprise.achecker.validation.AccessibilityValidator;
 
 public class ACheckerImpl implements AChecker {
 	
-	private static final Log LOG = org.apache.commons.logging.LogFactory.getLog(ACheckerImpl.class );
-	
+	/**
+	 * Checks the request content against the requested Accessibility Guidelines.
+	 * <p>The request's comma-separated guideline abbreviations are trimmed, blank entries are
+	 * skipped, and each one must match an existing guideline (letter case is ignored). When no
+	 * abbreviation is given, the default guideline is used. Fragment content is wrapped in a
+	 * minimal HTML document before it is checked, and the reported line numbers are adjusted
+	 * back.</p>
+	 *
+	 * @param request the {@link ACheckerRequest} holding the content, guidelines, language and
+	 *                fragment flag
+	 * @return the {@link ACheckerResponse} with the results and errors of the check
+	 * @throws DotValidationException if a guideline abbreviation is not accepted or does not
+	 *                                match an existing guideline
+	 * @throws Exception if the license level is too low, the default guideline is missing, or the
+	 *                   check fails
+	 */
+	@Override
 	public ACheckerResponse validate(ACheckerRequest request) throws Exception {
 	    if(LicenseUtil.getLevel()< LicenseLevel.STANDARD.level)
             throw new RuntimeException("need enterprise license");
@@ -55,33 +73,22 @@ public class ACheckerImpl implements AChecker {
 		try{
 			// Generate guidelines
 			List<Integer> gids = new LinkedList<>();
-			String[] guides = request.getGuide().split(",");
 			GuidelinesDAO guidelinesDAO = new GuidelinesDAO();
-			for (String abbr : guides) {
-
-				if ( abbr.trim().equals("") ){
-					continue;
+			for (String abbr : ACheckerRequestValidator.guidelineTokens(request.getGuide())) {
+				GuideLineBean guideline = guidelinesDAO.getEnabledGuidelinesByAbbr(abbr, true);
+				if ( guideline == null ) {
+					throw new DotValidationException(ACheckerRequestValidator.UNSUPPORTED_GUIDELINES_MESSAGE);
 				}
-				 GuideLineBean  result = guidelinesDAO.getEnabledGuidelinesByAbbr(abbr, true);
-
-				//for ( GuideLineBean item : result ) {
-					Integer id = (Integer) result.getGuideline_id();
-					gids.add(id);
-				//}
+				gids.add(guideline.getGuideline_id());
 			}
 
 			// set to default guideline if no input guidelines
 			if ( gids.isEmpty() ) {
-
-				 GuideLineBean  result = guidelinesDAO.getEnabledGuidelinesByAbbr(Constants.DEFAULT_GUIDELINE, true);
-
-				//for ( GuideLineBean item : result ) {
-					Integer id = (Integer) result.getGuideline_id();
-					gids.add(id);
-				//}
-			}
-			if( LOG.isDebugEnabled() ){
-				LOG.debug("content da validare " + request.getContent() );
+				GuideLineBean defaultGuideline = guidelinesDAO.getEnabledGuidelinesByAbbr(Constants.DEFAULT_GUIDELINE, true);
+				if ( defaultGuideline == null ) {
+					throw new DotDataException("The default Accessibility Checker guideline is not available");
+				}
+				gids.add(defaultGuideline.getGuideline_id());
 			}
 
 			// validating uri content
@@ -92,14 +99,9 @@ public class ACheckerImpl implements AChecker {
 			List<AccessibilityResult> result = aValidator.getValidationResults();
 
 			List<AccessibilityResult> errors = aValidator.getValidationErrorRpt();
-			if( LOG.isDebugEnabled() ){
-				LOG.debug("result" + result);
-			}
+			Logger.debug(this, () -> String.format("Accessibility check finished with %d results and %d errors",
+					result == null ? 0 : result.size(), errors == null ? 0 : errors.size()));
 
-			if( LOG.isDebugEnabled() ){
-				LOG.debug("errors" + errors);
-			}
-			
 			ACheckerResponse response = new ACheckerResponse(result, errors, request.getLang());
 
 			// Adjust line numbers if was a fragment
@@ -113,10 +115,12 @@ public class ACheckerImpl implements AChecker {
 			
 			return response;
 			
-		}catch (Exception e) {
-			LOG.error(e.getMessage() ,e );
+		} catch (final DotValidationException e) {
 			throw e;
-		} 
+		} catch (final Exception e) {
+			Logger.error(this, "Accessibility check failed: " + e.getClass().getName(), e);
+			throw e;
+		}
 
 	}
 }

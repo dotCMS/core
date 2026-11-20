@@ -66,17 +66,8 @@
     <create creator="new" javascript="AutoUpdaterAjax" scope="application">
       <param name="class" value="com.dotmarketing.business.ajax.AutoUpdaterAjax"/>
     </create>
-    <create creator="new" javascript="FieldVariableAjax" scope="application">
-      <param name="class" value="com.dotmarketing.portlets.structure.ajax.FieldVariableAjax"/>
-    </create>
     <create creator="new" javascript="FileAssetAjax" scope="application">
       <param name="class" value="com.dotmarketing.portlets.fileassets.ajax.FileAssetAjax"/>
-    </create>
-    <create creator="new" javascript="ThreadMonitorTool" scope="application">
-      <param name="class" value="com.dotcms.cmsmaintenance.ajax.ThreadMonitorTool"/>
-    </create>
-    <create creator="new" javascript="UserSessionAjax"  scope="application">
-      <param name="class" value="com.dotcms.cmsmaintenance.ajax.UserSessionAjax"/>
     </create>
     <create creator="new" javascript="ACheckerDWR">
       <param name="class" value="com.dotcms.enterprise.achecker.tinymce.ACheckerDWR" />
@@ -91,7 +82,9 @@
 	<!-- END PLUGINS -->
 	<convert converter="bean" match="com.dotmarketing.beans.Inode"/>
 	<convert converter="bean" match="com.dotmarketing.portlets.categories.model.Category"/>
-	<convert converter="bean" match="com.dotmarketing.tag.model.Tag"/>
+	<convert converter="bean" match="com.dotmarketing.tag.model.Tag">
+		<param name="exclude" value="userId"/>
+	</convert>
 	<convert converter="bean" match="com.dotmarketing.tag.model.TagInode"/>
 	<convert converter="bean" match="com.dotmarketing.portlets.languagesmanager.model.LanguageKey"/>
 	<convert converter="bean" match="com.dotmarketing.portlets.htmlpageviews.factories.HTMLPageViewFactory$StatisticBetweenDates"/>

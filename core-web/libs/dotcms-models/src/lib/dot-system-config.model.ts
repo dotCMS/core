@@ -86,10 +86,18 @@ export interface DotFolderBulkDeleteCeilings {
 export type DotFolderBulkDuplicateCeilings = DotFolderBulkDeleteCeilings;
 
 export interface DotSystemConfig {
+    /** Translation fingerprint; absent on servers that do not advertise bundle versions. */
+    languageBundleVersion?: string;
+    emailRegex?: string;
     logos: DotLogos;
     colors: DotUIColors;
     releaseInfo: DotReleaseInfo;
     systemTimezone: DotSystemTimezone;
+    /**
+     * Every time zone the server accepts, one entry per Java zone id. `offset` is the raw offset
+     * in milliseconds and ignores daylight saving time.
+     */
+    timezones?: DotSystemTimezone[];
     languages: DotSystemLanguage[];
     license: DotSystemLicense;
     cluster: DotCluster;
@@ -106,10 +114,13 @@ export interface DotSystemConfig {
  */
 export interface SystemConfigEntity {
     config: {
+        languageBundleVersion?: string;
+        emailRegex?: string;
         logos: DotLogos;
         colors: DotUIColors;
         releaseInfo: DotReleaseInfo;
         systemTimezone: DotSystemTimezone;
+        timezones?: DotSystemTimezone[];
         languages: DotSystemLanguage[];
         license: DotSystemLicense;
         cluster: DotCluster;

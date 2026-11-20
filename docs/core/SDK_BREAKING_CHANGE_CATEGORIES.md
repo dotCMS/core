@@ -7,6 +7,10 @@
 >**Rule of thumb:** a change is SDK-breaking if an SDK built against the server contract *before*
 >this change would misbehave (throw, silently drop data, or misinterpret a message) against the
 >server *after* this change — with no fallback path in the SDK for the old shape.
+>
+> Before applying `SDK Breaking Change`, name an existing SDK request or workflow and explain
+> what works before the change and what fails after it. Adding a field, optional parameter,
+> or opt-in flag is not breaking if old clients keep working without it.
 
 Unlike [`ROLLBACK_UNSAFE_CATEGORIES.md`](ROLLBACK_UNSAFE_CATEGORIES.md), this reference doesn't use a
 CRITICAL/HIGH/MEDIUM/LOW risk scale — this doc answers a single binary question for a single
@@ -250,7 +254,10 @@ correctly with no visible error.
 ### Context
 
 `SdkVersionWebInterceptor` sets `X-DotCMS-Version` (from `ReleaseInfo.getVersion()`) and
-`X-DotCMS-Min-SDK` (from `MinSdkVersion.VALUE`) on every response. `sdk-compatibility.ts`'s
+`X-DotCMS-Min-SDK` (from `MinSdkVersion.VALUE`) on every response to a request that carries valid
+credentials (a logged-in session or a bearer token, which is every SDK request); requests without
+credentials get neither header unless `FEATURE_FLAG_RESPONSE_META_HEADERS_FOR_ANONYMOUS` is on.
+`sdk-compatibility.ts`'s
 `checkSdkCompatibility()` reads them case-insensitively via `Headers.get()`, and `compareVersions()`
 parses both as numeric, dot/dash-separated segments (`parseVersionSegments`), returning `null` (fail
 open, no warning) for anything that doesn't parse as plain integers — including LTS-shaped strings
@@ -273,8 +280,8 @@ version at once — not just for one release's floor value.
 
 ### Safer alternative
 
-- Treat this mechanism itself as doubly-reviewed: any change here should be treated as breaking by
-  default unless proven otherwise, since a bug here is invisible (fails open, no warning, no error)
+- Review changes here closely: the check fails silently. Apply the label only if you can show
+  how an existing SDK's compatibility check stops working or reports the wrong result.
 
 ---
 

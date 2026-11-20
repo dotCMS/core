@@ -323,7 +323,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"remoteUrl\": \"https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png\"\n}\n",
+							"raw": "{\n    \"remoteUrl\": \"http://wm:8080/s/googlelogo_color_272x92dp.png\"\n}\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -389,7 +389,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"remoteUrl\": \"https://images.unsplash.com/photo-1575936123452-b67c3203c357?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8aW1hZ2V8ZW58MHx8MHx8fDA%3D&w=1000&q=80\"\n}\n",
+							"raw": "{\n    \"remoteUrl\": \"http://wm:8080/s/photo-1575936123452-b67c3203c357?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8aW1hZ2V8ZW58MHx8MHx8fDA%3D&w=1000&q=80\"\n}\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -459,44 +459,7 @@
 				"packages": {},
 				"exec": [
 					"if (!pm.environment.get('jwt')) {",
-					"    console.log(\"generating....\")",
-					"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
-					"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
-					"",
-					"    if (!pm.environment.get('jwt')) {",
-					"        const username = pm.environment.get(\"user\");",
-					"        const password = pm.environment.get(\"password\");",
-					"        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
-					"",
-					"        const requestOptions = {",
-					"            url: apiUrl,",
-					"            method: \"POST\",",
-					"            header: {",
-					"                \"accept\": \"*/*\",",
-					"                \"content-type\": \"application/json\",",
-					"                \"Authorization\": `Basic ${basicAuth}`",
-					"            },",
-					"            body: {",
-					"                mode: \"raw\",",
-					"                raw: JSON.stringify({",
-					"                    \"expirationSeconds\": 7200,",
-					"                    \"userId\": \"dotcms.org.1\",",
-					"                    \"network\": \"0.0.0.0/0\",",
-					"                    \"claims\": {\"label\": \"postman-tests\"}",
-					"                })",
-					"            }",
-					"        };",
-					"",
-					"        pm.sendRequest(requestOptions, function (err, response) {",
-					"            if (err) {",
-					"                console.log(err);",
-					"            } else {",
-					"                const jwt = response.json().entity.jwt;",
-					"                pm.environment.set('jwt', jwt);",
-					"                console.log(jwt);",
-					"            }",
-					"        });",
-					"    }",
+					"    throw new Error('Set environment jwt to a pre-issued dotCMS API token, or use the Node runner.');",
 					"}"
 				]
 			}

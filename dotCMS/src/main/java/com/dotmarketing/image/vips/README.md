@@ -100,11 +100,20 @@ Requires **JDK 23+** (FFM); dotCMS runs on Java 25.
 
 ## Parameter contract
 
-Identical to the legacy engine. Every filter subclasses the legacy `ImageFilter`,
-reusing its cache-file naming, `overwrite()` short-circuit and prefix parsing, so
-URLs like `…/filter=resize,jpeg/resize_w/800/jpeg_q/70` work unchanged. The only
-difference is the pixels (libvips lanczos3 vs jhlabs/TwelveMonkeys) — so cached
-renditions regenerate once when the flag flips.
+Static libvips Resize/Scale inputs are normalised to their displayed EXIF orientation before
+applying size constraints. A 2016×1512 JPEG with orientation 6 is displayed as 1512×2016, so
+`resize_w/500` produces 500×666 rather than stretching it into 500×375. Supplying both width
+and height still forces those exact dimensions. The dimension-query API continues returning
+stored header dimensions, matching the legacy contract.
+
+Parameter names and URL syntax match the legacy engine. Every filter subclasses the legacy
+`ImageFilter`, reusing its cache-file naming, `overwrite()` short-circuit and prefix parsing, so
+URLs like `…/filter=resize,jpeg/resize_w/800/jpeg_q/70` work unchanged. Pixel output differs
+(libvips lanczos3 vs jhlabs/TwelveMonkeys). EXIF-oriented Resize/Scale geometry also differs:
+with `DOT_IMAGE_API_USE_LIBVIPS=false`, or when `IMAGE_API_LIBVIPS_FALLBACK` invokes the legacy
+filter, sizing uses stored dimensions without normalising orientation (500×375 in the example
+above). Cached renditions are not automatically invalidated by this fix; clear affected generated
+renditions and CDN entries before retesting, leaving original assets untouched.
 
 ## Filter coverage
 

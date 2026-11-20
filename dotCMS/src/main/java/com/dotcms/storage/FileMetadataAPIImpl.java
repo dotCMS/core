@@ -5,7 +5,6 @@ import static com.dotmarketing.util.FileUtil.binaryPath;
 import static com.dotmarketing.util.UtilMethods.isSet;
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
@@ -37,9 +36,11 @@ import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -598,111 +599,150 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     }
 
     /**
-     * Given a contentlet this will iterate over all the binary fields it has and remove the associated metadata
-     * @param contentlet
-     * @return
+     * Given a contentlet this will iterate over all the binary fields it has and remove the
+     * associated metadata, for every version of the contentlet.
+     *
+     * @param contentlet the contentlet whose metadata is removed
+     * @return the storage group mapped to the metadata paths that were removed
      */
     public Map<String, Set<String>> removeMetadata(final Contentlet contentlet) {
-        final Map<String,Set<String>> removedMetaPaths = new HashMap<>();
         final StorageType storageType = StoragePersistenceProvider.getStorageType();
-        final String metadataBucketName = Config.getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
-        removedMetaPaths.putAll(removeMetadataFromFields(contentlet, storageType, metadataBucketName));
-        removedMetaPaths.putAll(removeMetadataFromPaths(contentlet, storageType, metadataBucketName));
+        final String metadataBucketName = metadataBucketName();
+        final Map<String, Set<String>> removedMetaPaths = new HashMap<>();
+        removedMetaPaths.putAll(removeKeys(metadataKeysFromFields(contentlet), storageType,
+                metadataBucketName, false));
+        removedMetaPaths.putAll(removeKeys(metadataKeysFromPaths(contentlet), storageType,
+                metadataBucketName, false));
         return removedMetaPaths;
     }
 
     /**
-     * Given that depending on the strategy used to remove the CT where the contentlet belongs to
-     * we might end up missing the fields' info. Therefore, we need to iterate over the binary fields themselves to compute metadata keys
-     * @param contentlet
-     * @param storageType
-     * @param metadataBucketName
-     * @return
+     * Given a contentlet this will iterate over all the binary fields it has and remove the
+     * associated metadata per the current version (inode), meaning all other versions of the
+     * contentlet get to keep their own metadata.
+     *
+     * @param contentlet the version whose metadata is removed
+     * @return the storage group mapped to the metadata paths that were removed
      */
-    private Map<String, Set<String>> removeMetadataFromPaths(final Contentlet contentlet,
-            final StorageType storageType, final String metadataBucketName) {
+    public Map<String, Set<String>> removeVersionMetadata(final Contentlet contentlet) {
+        return removeKeys(metadataKeysFromFields(contentlet),
+                StoragePersistenceProvider.getStorageType(), metadataBucketName(), true);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The storage keys are computed here, from the content type's binary fields and from the
+     * metadata files found under the binary directory, so the removal still finds them once the
+     * type or the directory is gone.
+     */
+    @Override
+    public Runnable prepareMetadataRemoval(final Contentlet contentlet) {
+        final StorageType storageType = StoragePersistenceProvider.getStorageType();
+        final String metadataBucketName = metadataBucketName();
+        final Set<String> fieldKeys = metadataKeysFromFields(contentlet);
+        final Set<String> pathKeys = metadataKeysFromPaths(contentlet);
+        return () -> {
+            removeKeys(fieldKeys, storageType, metadataBucketName, false);
+            removeKeys(pathKeys, storageType, metadataBucketName, false);
+        };
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The storage keys are computed here, from the content type's binary fields, so the removal
+     * still finds them once the type is gone.
+     */
+    @Override
+    public Runnable prepareVersionMetadataRemoval(final Contentlet contentlet) {
+        final StorageType storageType = StoragePersistenceProvider.getStorageType();
+        final String metadataBucketName = metadataBucketName();
+        final Set<String> fieldKeys = metadataKeysFromFields(contentlet);
+        return () -> removeKeys(fieldKeys, storageType, metadataBucketName, true);
+    }
+
+    /**
+     * The storage group metadata is kept in.
+     */
+    private static String metadataBucketName() {
+        return Config.getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
+    }
+
+    /**
+     * The metadata keys for each binary field of the contentlet's type. Empty when the type no
+     * longer has its fields, which is why {@link #metadataKeysFromPaths(Contentlet)} exists.
+     *
+     * @param contentlet the version whose keys are wanted
+     * @return the metadata path of each binary field
+     */
+    private Set<String> metadataKeysFromFields(final Contentlet contentlet) {
+        final Tuple2<SortedSet<String>, SortedSet<String>> binaryFields = findBinaryFields(
+                contentlet);
+        return Stream.concat(binaryFields._1.stream(), binaryFields._2.stream())
+                .map(fieldName -> getFileName(contentlet, fieldName))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    /**
+     * The metadata keys found by walking the contentlet's binary directory. Depending on how the
+     * content type was removed, the fields may already be gone, so the metadata files on disk are
+     * the only way left to find the keys.
+     *
+     * @param contentlet the version whose keys are wanted
+     * @return the metadata path of every metadata file under the binary directory
+     */
+    private Set<String> metadataKeysFromPaths(final Contentlet contentlet) {
         final String prefix = APILocator.getFileAssetAPI().getRealAssetsRootPath();
         final String suffix = FileMetadataAPI.METADATA_JSON;
-        final Map<String, Set<String>> removedMetaPaths = new HashMap<>();
         final Optional<Path> rootPath = binaryPath(contentlet);
-        if (rootPath.isPresent()) {
-            try (Stream<Path> walk = Files.walk(rootPath.get())) {
-                final Set<String> paths = walk.sorted(Comparator.reverseOrder())
-                        .filter(path -> path.toString().endsWith(suffix))
-                        .map(path -> path.toString().replace(prefix, File.separator))
-                        .collect(Collectors.toSet());
-
-                for (final String path : paths) {
-                    if (fileStorageAPI.removeMetaData(
-                            new FetchMetadataParams.Builder()
-                                    .storageKey(new StorageKey.Builder().group(metadataBucketName)
-                                            .path(path).storage(storageType).build()).build()
-                    )) {
-                        removedMetaPaths.computeIfAbsent(metadataBucketName, k -> new HashSet<>())
-                                .add(path);
-                    }
-                }
-
-            } catch (IOException | DotDataException e) {
-                Logger.error(ESContentletAPIImpl.class, e.getMessage(), e);
-            }
+        if (rootPath.isEmpty()) {
+            return Set.of();
         }
-        return removedMetaPaths;
-    }
-
-    private Map<String, Set<String>> removeMetadataFromFields(final Contentlet contentlet, final StorageType storageType, final String metadataBucketName) {
-        final Map<String,Set<String>> removedMetaPaths = new HashMap<>();
-        final Tuple2<SortedSet<String>, SortedSet<String>> binaryFields = findBinaryFields(
-                contentlet);
-        final Set<String> fields = Stream
-                .concat(binaryFields._1.stream(), binaryFields._2.stream())
-                .collect(Collectors.toSet());
-        try {
-            for (final String basicMetaFieldName : fields) {
-                final String metadataPath = getFileName(contentlet, basicMetaFieldName);
-                if (fileStorageAPI.removeMetaData(
-                        new FetchMetadataParams.Builder()
-                                .storageKey(new StorageKey.Builder().group(metadataBucketName)
-                                        .path(metadataPath).storage(storageType).build()).build()
-                )) {
-                    removedMetaPaths.computeIfAbsent(metadataBucketName, k -> new HashSet<>()).add(metadataPath);
-                }
-            }
-        } catch (DotDataException e) {
-            Logger.error(FileMetadataAPIImpl.class, e);
+        try (Stream<Path> walk = Files.walk(rootPath.get())) {
+            return walk.sorted(Comparator.reverseOrder())
+                    .filter(path -> path.toString().endsWith(suffix))
+                    .map(path -> path.toString().replace(prefix, File.separator))
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+        } catch (final IOException e) {
+            Logger.error(FileMetadataAPIImpl.class, e.getMessage(), e);
+            return Set.of();
         }
-        return removedMetaPaths;
     }
 
     /**
-     * Given a contentlet this will iterate over all the binary fields it has and remove the associated metadata per the current version (inode)
-     * Meaning all other versions of the conentlet will get to keep their own metadata
-     * @param contentlet
-     * @return
+     * Removes the given metadata keys from storage. A key that fails is logged with its path, so
+     * it can be cleaned up by hand, and the rest are still removed.
+     *
+     * @param keys               the metadata paths to remove
+     * @param storageType        the storage they are kept in
+     * @param metadataBucketName the storage group they are kept in
+     * @param versionOnly        true to remove only this version's reference, leaving the
+     *                           metadata other versions share; false to remove it entirely
+     * @return the storage group mapped to the paths that were removed
      */
-    public Map<String, Set<String>> removeVersionMetadata(final Contentlet contentlet){
-        final Map<String,Set<String>> removedMetaPaths = new HashMap<>();
-        final StorageType storageType = StoragePersistenceProvider.getStorageType();
-        final String metadataBucketName = Config
-                .getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
-        final Tuple2<SortedSet<String>, SortedSet<String>> binaryFields = findBinaryFields(
-                contentlet);
-        final Set<String> fields = Stream
-                .concat(binaryFields._1.stream(), binaryFields._2.stream())
-                .collect(Collectors.toSet());
-        try {
-            for (final String basicMetaFieldName : fields) {
-                final String metadataPath = getFileName(contentlet, basicMetaFieldName);
-                if (this.fileStorageAPI.removeVersionMetaData(
-                        new FetchMetadataParams.Builder()
-                                .storageKey(new StorageKey.Builder().group(metadataBucketName)
-                                        .path(metadataPath).storage(storageType).build()).build()
-                )) {
-                    removedMetaPaths.computeIfAbsent(metadataBucketName, k -> new HashSet<>()).add(metadataPath);
+    private Map<String, Set<String>> removeKeys(final Collection<String> keys,
+            final StorageType storageType, final String metadataBucketName,
+            final boolean versionOnly) {
+        final Map<String, Set<String>> removedMetaPaths = new HashMap<>();
+        for (final String metadataPath : keys) {
+            final FetchMetadataParams params = new FetchMetadataParams.Builder()
+                    .storageKey(new StorageKey.Builder().group(metadataBucketName)
+                            .path(metadataPath).storage(storageType).build()).build();
+            try {
+                final boolean removed = versionOnly
+                        ? this.fileStorageAPI.removeVersionMetaData(params)
+                        : this.fileStorageAPI.removeMetaData(params);
+                if (removed) {
+                    removedMetaPaths.computeIfAbsent(metadataBucketName, k -> new HashSet<>())
+                            .add(metadataPath);
                 }
+            } catch (final DotDataException e) {
+                Logger.error(FileMetadataAPIImpl.class, String.format(
+                        "Unable to remove metadata [%s] from storage group [%s]; it is left in "
+                                + "place: %s", metadataPath, metadataBucketName, e.getMessage()),
+                        e);
             }
-        } catch (DotDataException e) {
-            Logger.error(FileMetadataAPIImpl.class, e);
         }
         return removedMetaPaths;
     }

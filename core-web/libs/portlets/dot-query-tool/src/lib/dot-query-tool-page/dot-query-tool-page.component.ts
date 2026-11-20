@@ -27,7 +27,6 @@ import { Menu, MenuModule } from 'primeng/menu';
 import { MessageModule } from 'primeng/message';
 import { PanelModule } from 'primeng/panel';
 import { Popover, PopoverModule } from 'primeng/popover';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { SkeletonModule } from 'primeng/skeleton';
 import { SplitterModule } from 'primeng/splitter';
 import { TableModule } from 'primeng/table';
@@ -44,7 +43,7 @@ import {
     DotMessageService
 } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSContentlet, FeaturedFlags } from '@dotcms/dotcms-models';
-import { DotEditContentSidePanelComponent, EditContentDialogData } from '@dotcms/edit-content';
+import { EditContentDialogData, loadDotEditContentSidePanel } from '@dotcms/edit-content';
 import {
     DOT_MONACO_BASE_OPTIONS,
     DOT_MONACO_RAW_OPTIONS,
@@ -53,6 +52,7 @@ import {
     DotMessagePipe,
     DotMonacoRunShortcutEditor,
     getDotMonacoRunShortcutLabel,
+    injectSidePanel,
     PrincipalConfiguration,
     registerDotMonacoRunShortcut
 } from '@dotcms/ui';
@@ -94,9 +94,7 @@ const QUERY_EDITOR_OPTIONS = {
         MenuModule,
         PopoverModule,
         DotEmptyContainerComponent,
-        DotMessagePipe,
-        DotEditContentSidePanelComponent,
-        ProgressSpinnerModule
+        DotMessagePipe
     ],
     // MessageService: the Edit Content side panel's editor injects PrimeNG's MessageService for
     // inline toasts; provide it here (as Content Drive's shell does) so the panel works in-page.
@@ -125,15 +123,6 @@ export class DotQueryToolPageComponent implements OnInit {
     #lastSyncedUrl: string | null = null;
 
     /**
-     * The rendered side panel, so browser Back can route its close through the panel's guard.
-     * Queried by template ref var (`#sidePanelRef`), not the class token: passing the class itself
-     * would be a runtime reference to it outside the `@defer` block below, which disqualifies it
-     * from Angular's automatic deferred-import bundling (the `<T>` here is a type-only generic,
-     * erased at compile time — it leaves no runtime reference).
-     */
-    readonly $sidePanel = viewChild<DotEditContentSidePanelComponent>('sidePanelRef');
-
-    /**
      * Feature flag gating the side panel. When off, editing a result opens the editor in a new
      * browser tab (the previous behavior); when on, results that resolve to the new content editor
      * open in the in-page side panel instead. Read from the store's `withFlags` slice (batch-fetched
@@ -146,6 +135,19 @@ export class DotQueryToolPageComponent implements OnInit {
 
     /** Content shown in the Edit Content side panel, or `null` when it is closed. */
     readonly $editPanelRequest = signal<EditContentDialogData | null>(null);
+
+    /**
+     * The Edit Content side panel, open while {@link $editPanelRequest} is set (new-editor results,
+     * with the feature flag on; legacy and page results still open in a new tab). Reloads the
+     * results on save. Loaded on its first open, so the editor stays out of this portlet's chunk.
+     */
+    readonly #editPanel = injectSidePanel(this.$editPanelRequest, {
+        component: loadDotEditContentSidePanel,
+        heading: (data) => data.title ?? '',
+        inputs: (data) => ({ data }),
+        outputs: { saved: () => this.onEditPanelSaved() },
+        closed: () => this.onEditPanelClosed()
+    });
 
     /**
      * Whether the last `editContent` URL write reflected an open panel — so a close writes with
@@ -317,7 +319,7 @@ export class DotQueryToolPageComponent implements OnInit {
                     })
                     .toString();
                 this.#location.replaceState(restored);
-                this.$sidePanel()?.requestClose();
+                this.#editPanel.requestClose();
             }
         });
         this.#destroyRef.onDestroy(() => locationSubscription.unsubscribe());

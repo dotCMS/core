@@ -1,4 +1,4 @@
-import { Observable, Subject, forkJoin, of } from 'rxjs';
+import { EMPTY, Observable, Subject, forkJoin, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import {
@@ -17,6 +17,7 @@ import {
 import { catchError, finalize, take, takeUntil, tap } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
+import { HttpCode } from '@dotcms/dotcms-js';
 import {
     CUSTOM_FIELD_OPTIONS_KEY,
     DotCMSClazzes,
@@ -74,6 +75,9 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
 
     /** What the server last gave us, to diff the pending edits against. */
     #stored = signal<DotFieldVariable[]>([]);
+
+    /** True once the field's stored variables are in the table; the editor waits for it. */
+    protected readonly $loaded = signal(false);
 
     /** True while a save is in flight, so the button cannot be pressed twice. */
     #saving = signal(false);
@@ -229,7 +233,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
                 this.#stored.set(this.#storedAfter(stored, current, succeeded));
 
                 if (failed.length) {
-                    this.dotHttpErrorManagerService.handle(failed[0]).pipe(take(1)).subscribe();
+                    this.#reportFailure(failed[0]);
 
                     return;
                 }
@@ -290,17 +294,46 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
         });
     }
 
+    /**
+     * Tells the admin a request failed. The error manager only shows something for the
+     * statuses in {@link HttpCode}; a network failure (status 0) or a gateway error such
+     * as 502 would otherwise end silently, leaving the editor hidden or the Save doing
+     * nothing visible, so those are shown as a server error. Their body is dropped: a
+     * gateway answers with an HTML page, which the alert would print as it is.
+     */
+    #reportFailure(err: HttpErrorResponse): void {
+        const shown = Object.values(HttpCode).includes(err.status)
+            ? err
+            : new HttpErrorResponse({ status: HttpCode.SERVER_ERROR, statusText: err.statusText });
+
+        this.dotHttpErrorManagerService.handle(shown).pipe(take(1)).subscribe();
+    }
+
+    /**
+     * Loads the field's stored variables into the table. The editor stays hidden until
+     * they arrive: the loaded list replaces the editor's own, so a pair added before the
+     * load answered would otherwise disappear.
+     */
     private initTableData(): void {
         if (!this.field?.contentTypeId || !this.field?.id) {
             this.$fieldVariables.set([]);
             this.#stored.set([]);
+            this.$loaded.set(true);
 
             return;
         }
 
+        this.$loaded.set(false);
         this.fieldVariablesService
             .load(this.field)
-            .pipe(takeUntil(this.destroy$))
+            .pipe(
+                catchError((err: HttpErrorResponse) => {
+                    this.#reportFailure(err);
+
+                    return EMPTY;
+                }),
+                takeUntil(this.destroy$)
+            )
             .subscribe(($fieldVariables: DotFieldVariable[]) => {
                 const visible = $fieldVariables.filter((item) => {
                     const fieldBlackList = this.blackList[this.field.clazz];
@@ -313,6 +346,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
 
                 this.$fieldVariables.set(visible);
                 this.#stored.set(visible);
+                this.$loaded.set(true);
                 this.#emitDialogActions();
             });
     }

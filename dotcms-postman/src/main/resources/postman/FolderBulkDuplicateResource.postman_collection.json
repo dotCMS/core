@@ -17,7 +17,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 200\", function () {\n    pm.response.to.have.status(200);\n    const entity = pm.response.json().entity;\n    pm.collectionVariables.set(\"hostname\", entity.hostname);\n});"
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const entity = pm.response.json().entity;",
+                  "    pm.collectionVariables.set(\"hostname\", entity.hostname);",
+                  "});"
                 ]
               }
             }
@@ -48,7 +52,10 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code should be 200\", function () {\n    pm.response.to.have.status(200);\n});\npm.collectionVariables.set(\"folderPath\", \"//\" + pm.collectionVariables.get(\"hostname\") + \"/bulk-duplicate-test/\");"
+                  "pm.test(\"Status code should be 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.collectionVariables.set(\"folderPath\", \"//\" + pm.collectionVariables.get(\"hostname\") + \"/bulk-duplicate-test/\");"
                 ]
               }
             }
@@ -96,7 +103,15 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test('202 Accepted', function () { pm.response.to.have.status(202); });\n\npm.test('Response carries jobId, statusUrl, submitted', function () {\n    const entity = pm.response.json().entity;\n    pm.expect(entity.jobId).to.be.a('string').and.not.empty;\n    pm.expect(entity.statusUrl).to.eql('/api/v1/jobs/' + entity.jobId + '/status');\n    pm.expect(entity.submitted).to.eql(1);\n    pm.collectionVariables.set('jobId', entity.jobId);\n});"
+              "pm.test('202 Accepted', function () { pm.response.to.have.status(202); });",
+              "",
+              "pm.test('Response carries jobId, statusUrl, submitted', function () {",
+              "    const entity = pm.response.json().entity;",
+              "    pm.expect(entity.jobId).to.be.a('string').and.not.empty;",
+              "    pm.expect(entity.statusUrl).to.eql('/api/v1/jobs/' + entity.jobId + '/status');",
+              "    pm.expect(entity.submitted).to.eql(1);",
+              "    pm.collectionVariables.set('jobId', entity.jobId);",
+              "});"
             ]
           }
         }
@@ -143,7 +158,19 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "const elapsed = Date.now() - parseInt(pm.collectionVariables.get('pollStart'));\nconst state = pm.response.json().entity.state;\nconst terminal = ['SUCCESS', 'FAILED', 'FAILED_PERMANENTLY', 'CANCELED', 'ABANDONED_PERMANENTLY'].includes(state);\n\nif (!terminal && elapsed < 60000) {\n    setTimeout(function () {}, 2000);\n    pm.execution.setNextRequest('Waiting for the duplication to finish');\n} else {\n    pm.collectionVariables.unset('pollStart');\n    pm.test('The run finished successfully', function () {\n        pm.expect(state).to.eql('SUCCESS');\n    });\n}"
+              "const elapsed = Date.now() - parseInt(pm.collectionVariables.get('pollStart'));",
+              "const state = pm.response.json().entity.state;",
+              "const terminal = ['SUCCESS', 'FAILED', 'FAILED_PERMANENTLY', 'CANCELED', 'ABANDONED_PERMANENTLY'].includes(state);",
+              "",
+              "if (!terminal && elapsed < 60000) {",
+              "    setTimeout(function () {}, 2000);",
+              "    pm.execution.setNextRequest('Waiting for the duplication to finish');",
+              "} else {",
+              "    pm.collectionVariables.unset('pollStart');",
+              "    pm.test('The run finished successfully', function () {",
+              "        pm.expect(state).to.eql('SUCCESS');",
+              "    });",
+              "}"
             ]
           }
         },
@@ -152,7 +179,9 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "if (!pm.collectionVariables.get('pollStart')) {\n    pm.collectionVariables.set('pollStart', Date.now());\n}"
+              "if (!pm.collectionVariables.get('pollStart')) {",
+              "    pm.collectionVariables.set('pollStart', Date.now());",
+              "}"
             ]
           }
         }
@@ -185,7 +214,11 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test('200 OK', function () { pm.response.to.have.status(200); });\n\npm.test('The duplicate is named after its source, plus _copy', function () {\n    pm.expect(pm.response.json().entity.name).to.eql('bulk-duplicate-test_copy');\n});"
+              "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+              "",
+              "pm.test('The duplicate is named after its source, plus _copy', function () {",
+              "    pm.expect(pm.response.json().entity.name).to.eql('bulk-duplicate-test_copy');",
+              "});"
             ]
           }
         }
@@ -230,7 +263,11 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test('200 OK', function () { pm.response.to.have.status(200); });\n\npm.test('folderBulkDuplicate.maxPaths is the enforced default', function () {\n    pm.expect(pm.response.json().entity.config.folderBulkDuplicate.maxPaths).to.eql(50);\n});"
+              "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+              "",
+              "pm.test('folderBulkDuplicate.maxPaths is the enforced default', function () {",
+              "    pm.expect(pm.response.json().entity.config.folderBulkDuplicate.maxPaths).to.eql(50);",
+              "});"
             ]
           }
         }
@@ -261,7 +298,13 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });\n\npm.test('errorCode is EMPTY_SELECTION', function () {\n    const error = pm.response.json().errors[0];\n    pm.expect(error.errorCode).to.eql('EMPTY_SELECTION');\n    pm.expect(error.fieldName).to.eql('assetPaths');\n});"
+              "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });",
+              "",
+              "pm.test('errorCode is EMPTY_SELECTION', function () {",
+              "    const error = pm.response.json().errors[0];",
+              "    pm.expect(error.errorCode).to.eql('EMPTY_SELECTION');",
+              "    pm.expect(error.fieldName).to.eql('assetPaths');",
+              "});"
             ]
           }
         }
@@ -307,7 +350,13 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });\n\npm.test('errorCode is EMPTY_SELECTION', function () {\n    const error = pm.response.json().errors[0];\n    pm.expect(error.errorCode).to.eql('EMPTY_SELECTION');\n    pm.expect(error.fieldName).to.eql('assetPaths');\n});"
+              "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });",
+              "",
+              "pm.test('errorCode is EMPTY_SELECTION', function () {",
+              "    const error = pm.response.json().errors[0];",
+              "    pm.expect(error.errorCode).to.eql('EMPTY_SELECTION');",
+              "    pm.expect(error.fieldName).to.eql('assetPaths');",
+              "});"
             ]
           }
         }
@@ -344,7 +393,13 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });\n\npm.test('errorCode is OVER_MAX_PATHS, distinct from EMPTY_SELECTION', function () {\n    const error = pm.response.json().errors[0];\n    pm.expect(error.errorCode).to.eql('OVER_MAX_PATHS');\n    pm.expect(error.fieldName).to.eql('assetPaths');\n});"
+              "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });",
+              "",
+              "pm.test('errorCode is OVER_MAX_PATHS, distinct from EMPTY_SELECTION', function () {",
+              "    const error = pm.response.json().errors[0];",
+              "    pm.expect(error.errorCode).to.eql('OVER_MAX_PATHS');",
+              "    pm.expect(error.fieldName).to.eql('assetPaths');",
+              "});"
             ]
           }
         }

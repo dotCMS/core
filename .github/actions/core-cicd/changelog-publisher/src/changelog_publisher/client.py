@@ -1,14 +1,17 @@
-"""HTTP client for the corpsites-headless dotCMS backend.
+"""HTTP client for the dev-site authoring (auth) dotCMS instance.
 
 Read side (`_search`) locates an existing `Dotcmsbuilds` entry by version; write side
-(`fire`) fires the System Workflow Publish action to create/update-and-publish it. The
-bearer token is read once from the environment and never logged (Constitution II/III).
+(`fire`) fires the configured workflow action (Push Publish, auth → prod, in CI) to
+create/update-and-publish it. The bearer token is read once from the environment and
+never logged (Constitution II/III).
 """
 from __future__ import annotations
 
 import logging
 import os
+import time
 from dataclasses import dataclass
+from typing import Callable
 
 import requests
 
@@ -19,8 +22,22 @@ BASE_URL = os.environ.get("DOTCMS_DEVSITE_URL", "").rstrip("/")
 TOKEN_ENV = "DOTCMS_DEVSITE_RELEASENOTES_TOKEN"
 _TIMEOUT = 30
 
-# System Workflow Publish action (no approval step → firing publishes live). See data-model.md D5.
-PUBLISH_ACTION_ID = "b9d89c80-3d88-4311-8365-187323c96436"
+# Workflow action fired for every write. In CI this is the Push Publish action on the
+# auth instance (publishes locally, then pushes to prod). It comes from the
+# DOTCMS_DEVSITE_RELEASENOTES_ACTION repo variable and is never hardcoded.
+ACTION_ENV = "DOTCMS_DEVSITE_RELEASENOTES_ACTION"
+PUBLISH_ACTION_ID = os.environ.get(ACTION_ENV, "").strip()
+
+# Prod is read, never written: the workflow action pushes each write from auth to prod
+# asynchronously, so a 200 from auth says nothing about prod. The tool confirms on prod
+# itself. CI feeds these from the prod repo variable and secret.
+PROD_URL_ENV = "DOTCMS_DEVSITE_PROD_URL"
+PROD_TOKEN_ENV = "DOTCMS_DEVSITE_PROD_RELEASENOTES_TOKEN"
+
+# A push from auth normally reaches prod in about a minute, 2-3 at worst; give up at 5.
+PROD_WAIT_SECONDS = 300
+PROD_POLL_ATTEMPTS = 10
+PROD_POLL_DELAY_SECONDS = PROD_WAIT_SECONDS / PROD_POLL_ATTEMPTS
 
 log = logging.getLogger("changelog_publisher.client")
 
@@ -39,20 +56,35 @@ class SearchHit:
 
 
 class CorpsitesClient:
-    """Thin wrapper over the corpsites Workflow/Content REST API.
+    """Thin wrapper over the auth instance's Workflow/Content REST API.
 
     The token is read once at construction. It is sent only as the Authorization header
     and is never logged or echoed.
     """
 
-    def __init__(self, token: str | None = None, base_url: str | None = None) -> None:
+    def __init__(
+        self,
+        token: str | None = None,
+        base_url: str | None = None,
+        action_id: str | None = None,
+        *,
+        read_only: bool = False,
+    ) -> None:
         token = token if token is not None else os.environ.get(TOKEN_ENV)
         if not token:
             raise RuntimeError(f"{TOKEN_ENV} is not set")
         base_url = base_url or BASE_URL  # resolved at call time, not def time
         if not base_url:
             raise RuntimeError("DOTCMS_DEVSITE_URL is not set")
+        # Required like the URL: an unset repo variable renders as "" in Actions, and a
+        # silent fallback could publish on auth only and never reach prod. A read-only
+        # client (the prod reader) never fires, so it needs no action.
+        action_id = None if read_only else (action_id or PUBLISH_ACTION_ID).strip()
+        if not read_only and not action_id:
+            raise RuntimeError(f"{ACTION_ENV} is not set")
         self.base_url = base_url.rstrip("/")
+        self.action_id = action_id
+        self.read_only = read_only
         self.session = requests.Session()
         self.session.headers.update({"Authorization": f"Bearer {token}"})
 
@@ -66,13 +98,16 @@ class CorpsitesClient:
         resp.raise_for_status()
         return resp.json().get("entity", {}).get("jsonObjectView", {}).get("contentlets", [])
 
-    def _search(self, version: str) -> list[SearchHit]:
+    def _search(self, version: str, *, live: bool = False) -> list[SearchHit]:
         """Locate Dotcmsbuilds entries whose `minor` exactly equals `version`.
 
         Uses the `minor_dotraw` exact-match field. `limit: 2` so a `>1` ambiguity is
-        detectable rather than silently truncated to one.
+        detectable rather than silently truncated to one. `live` searches published
+        versions instead of working ones (a draft can change `minor` and hide them).
         """
         query = f"+contentType:Dotcmsbuilds +Dotcmsbuilds.minor_dotraw:{version}"
+        if live:
+            query += " +live:true"
         return [
             SearchHit(
                 identifier=c.get("identifier"),
@@ -82,11 +117,25 @@ class CorpsitesClient:
             for c in self._query(query, 2)
         ]
 
-    def find_evergreen_state(self) -> list[dict]:
-        """The `evergreen-state` record(s); limit 2 so a duplicate is detectable."""
-        return self._query(
-            "+contentType:EvergreenState +EvergreenState.title_dotraw:evergreen-state", 2
-        )
+    def versions(self, identifier: str) -> list[SearchHit]:
+        """Every version of one Dotcmsbuilds entry, working and live, found by identifier
+        rather than by `minor`, which a draft can change."""
+        query = f"+contentType:Dotcmsbuilds +identifier:{identifier}"
+        return [
+            SearchHit(
+                identifier=c.get("identifier"),
+                mod_user=c.get("modUser"),
+                mod_user_name=c.get("modUserName"),
+            )
+            for q in (query, f"{query} +live:true")
+            for c in self._query(q, 2)
+        ]
+
+    def find_evergreen_state(self, *, live: bool = False, limit: int = 2) -> list[dict]:
+        """The `evergreen-state` record(s); limit 2 by default so a duplicate is detectable.
+        `live` restricts to the published version (prod: what visitors see, never a draft)."""
+        query = "+contentType:EvergreenState +EvergreenState.title_dotraw:evergreen-state"
+        return self._query(f"{query} +live:true" if live else query, limit)
 
     def has_release_row(self, version: str) -> bool:
         """True if a live, released, downloadable Dotcmsbuilds row exists for `version`."""
@@ -95,20 +144,56 @@ class CorpsitesClient:
             "+Dotcmsbuilds.download:1 +Dotcmsbuilds.released:true +live:true", 1
         ))
 
-    def fire(self, contentlet: dict, *, apply: bool) -> None:
-        """Fire the System Workflow Publish action with the given contentlet payload.
+    def is_live(self, inode: str) -> bool:
+        """True if the version with this inode is live here. A push keeps the inode, so on
+        prod this confirms that a specific write arrived."""
+        return bool(self._query(f"+inode:{inode} +live:true", 1))
 
-        Dry-run (apply=False) logs the intended action and issues no request — the
-        `evergreen-tracks` safety convention.
+    def fire(self, contentlet: dict, *, apply: bool) -> str | None:
+        """Fire the configured workflow action with the given contentlet payload.
+
+        Returns the inode of the version the action wrote, so the caller can look for it
+        on prod. Dry-run (apply=False) logs the intended action, issues no request and
+        returns None — the `evergreen-tracks` safety convention.
         """
+        if self.read_only:
+            raise RuntimeError(f"read-only client for {self.base_url} cannot fire workflow actions")
         minor = contentlet.get("minor") or contentlet.get("contentType")
         if not apply:
             log.info("DRY-RUN would fire Publish for %s", minor)
-            return
-        log.info("firing Publish for %s", minor)
+            return None
+        log.info("firing Publish for %s (action %s)", minor, self.action_id)
         resp = self.session.put(
-            f"{self.base_url}/api/v1/workflow/actions/{PUBLISH_ACTION_ID}/fire",
+            f"{self.base_url}/api/v1/workflow/actions/{self.action_id}/fire",
             json={"contentlet": contentlet},
             timeout=_TIMEOUT,
         )
         resp.raise_for_status()
+        return (resp.json().get("entity") or {}).get("inode")
+
+
+def prod_reader() -> CorpsitesClient:
+    """A read-only client for prod, used only to confirm that pushes from auth arrived.
+
+    Both settings are required: without them a push that never reaches prod would go
+    unnoticed, the failure this reader exists to catch.
+    """
+    base_url = os.environ.get(PROD_URL_ENV, "").strip()
+    if not base_url:
+        raise RuntimeError(f"{PROD_URL_ENV} is not set")
+    token = os.environ.get(PROD_TOKEN_ENV, "")
+    if not token:
+        raise RuntimeError(f"{PROD_TOKEN_ENV} is not set")
+    return CorpsitesClient(token=token, base_url=base_url, read_only=True)
+
+
+def wait_for_prod(check: Callable[[], bool], what: str) -> None:
+    """Poll `check` until it passes; raise RuntimeError once the 5-minute bound is spent."""
+    for _ in range(PROD_POLL_ATTEMPTS):
+        time.sleep(PROD_POLL_DELAY_SECONDS)
+        if check():
+            return
+    raise RuntimeError(
+        f"{what} did not reach prod within {PROD_WAIT_SECONDS}s; "
+        "check the push-publishing queue on auth"
+    )

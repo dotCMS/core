@@ -7,10 +7,12 @@ import { CHIP_FILTER_SCROLL_HEIGHT, SYSTEM_HOST_ID } from '@dotcms/ui';
 
 import {
     DOT_CONTENT_DRIVE_SEARCH_SCOPE,
+    DOT_CONTENT_DRIVE_VIEW_TYPE,
     DotContentDrivePage,
     DotContentDrivePagination,
     DotContentDriveSearchScope,
-    DotContentDriveSortOrder
+    DotContentDriveSortOrder,
+    DotContentDriveViewType
 } from './models';
 
 // We only need the host and the identifier from this, the other properties are mostly to comply with SiteEntity interface
@@ -81,6 +83,15 @@ export const SORT_ORDER: Record<number, DotContentDriveSortOrder> = {
 
 // Default tree expanded
 export const DEFAULT_TREE_EXPANDED = true;
+
+/** The listing the Drive opens in when nothing says otherwise (FR-020). */
+export const DEFAULT_VIEW_TYPE: DotContentDriveViewType = DOT_CONTENT_DRIVE_VIEW_TYPE.LIST;
+
+/**
+ * Browser storage key prefix for the remembered view. The portlet's id is appended, so each screen
+ * that hosts the Drive (the Drive itself, and later each custom tool, #37931) remembers its own.
+ */
+export const VIEW_TYPE_STORAGE_KEY_PREFIX = 'dotcms.content-drive.view-type.';
 
 // Default path, it needs to be undefined to show the root folder
 export const DEFAULT_PATH = undefined;
@@ -324,6 +335,28 @@ export const CONTENT_DRIVE_URL_PARAM = {
     EDIT_FOLDER: 'editFolder',
     /** Identifier of the folder whose Edit Permissions dialog is open. */
     FOLDER_PERMISSIONS: 'folderPermissions'
+} as const;
+
+/**
+ * Inode of the file open in Edit Code (#37965). Unlike {@link CONTENT_DRIVE_URL_PARAM}, not an
+ * entry point: it is written so that browser Back pops the panel through its unsaved-changes prompt
+ * instead of leaving Content Drive, and a URL that carries it opens nothing.
+ */
+export const CONTENT_DRIVE_EDIT_CODE_PARAM = 'editCode';
+
+/**
+ * URL params that choose the listing (#37930). Kept apart from {@link CONTENT_DRIVE_URL_PARAM}: those
+ * name something to open and are all cleared together when they conflict, and the view must survive
+ * that.
+ */
+export const CONTENT_DRIVE_VIEW_PARAM = {
+    /** The view asked for explicitly (`list` or `card`). Wins over everything, and is written back. */
+    VIEW_TYPE: 'viewType',
+    /**
+     * A custom tool's default view (#37931). Read only; loses to the view the user remembered for
+     * this screen, which is why it is not sent as `viewType`.
+     */
+    DEFAULT_VIEW_TYPE: 'defaultViewType'
 } as const;
 
 /**

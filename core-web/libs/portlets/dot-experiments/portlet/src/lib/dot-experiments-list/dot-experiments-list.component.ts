@@ -24,6 +24,7 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
+import { MessageModule } from 'primeng/message';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
@@ -109,6 +110,7 @@ import {
         InputIconModule,
         InputTextModule,
         MenuModule,
+        MessageModule,
         SkeletonModule,
         TableModule,
         TagModule,
@@ -722,7 +724,10 @@ export class DotExperimentsListComponent {
                 id: 'experiments-archive',
                 label: this.#dotMessageService.get('experiments.action.archive'),
                 visible: isAllowed('archive', status),
-                command: () => this.confirmArchive(experiment)
+                command: () =>
+                    this.store.isLimitedMode()
+                        ? this.#notifyLimitedModeAction()
+                        : this.confirmArchive(experiment)
             },
             {
                 id: 'experiments-restore',
@@ -736,17 +741,20 @@ export class DotExperimentsListComponent {
                 label: this.#dotMessageService.get('experiments.configure.scheduling.cancel'),
                 visible: isAllowed('cancelSchedule', status),
                 command: () =>
-                    this.#confirm({
-                        headerKey: 'experiments.configure.scheduling.cancel',
-                        messageKey: 'experiments.action.cancel.schedule-confirm',
-                        acceptLabelKey: 'dot.common.dialog.accept',
-                        accept: () => this.#dispatch.cancelScheduleExperiment(experiment)
-                    })
+                    this.store.isLimitedMode()
+                        ? this.#notifyLimitedModeAction()
+                        : this.#confirm({
+                              headerKey: 'experiments.configure.scheduling.cancel',
+                              messageKey: 'experiments.action.cancel.schedule-confirm',
+                              acceptLabelKey: 'dot.common.dialog.accept',
+                              accept: () => this.#dispatch.cancelScheduleExperiment(experiment)
+                          })
             },
             {
                 id: 'experiments-end',
                 label: this.#dotMessageService.get('experiments.action.end-experiment'),
                 visible: isAllowed('end', status),
+                // _end is allowed in limited mode (ENDED keeps the slot occupied — no loophole).
                 command: () =>
                     this.#confirm({
                         headerKey: 'experiments.action.end-experiment',
@@ -760,12 +768,14 @@ export class DotExperimentsListComponent {
                 label: this.#dotMessageService.get('experiments.action.abort.experiment'),
                 visible: isAllowed('abort', status),
                 command: () =>
-                    this.#confirm({
-                        headerKey: 'experiments.action.abort.experiment',
-                        messageKey: 'experiments.action.abort.confirm.message',
-                        acceptLabelKey: 'experiments.action.abort.experiment',
-                        accept: () => this.#dispatch.abortExperiment(experiment)
-                    })
+                    this.store.isLimitedMode()
+                        ? this.#notifyLimitedModeAction()
+                        : this.#confirm({
+                              headerKey: 'experiments.action.abort.experiment',
+                              messageKey: 'experiments.action.abort.confirm.message',
+                              acceptLabelKey: 'experiments.action.abort.experiment',
+                              accept: () => this.#dispatch.abortExperiment(experiment)
+                          })
             },
             {
                 id: 'experiments-push-publish',
@@ -801,6 +811,16 @@ export class DotExperimentsListComponent {
                     })
             }
         ];
+    }
+
+    /** Shows an info toast explaining that the action is unavailable in limited mode. */
+    #notifyLimitedModeAction(): void {
+        this.#dotMessageDisplayService.push({
+            life: 5000,
+            message: this.#dotMessageService.get('experiments.list.limited-mode.action.disabled'),
+            severity: DotMessageSeverity.INFO,
+            type: DotMessageType.SIMPLE_MESSAGE
+        });
     }
 
     #confirm({

@@ -510,7 +510,7 @@ describe('withPageApi', () => {
     });
 
     describe('saveStyleEditor — rollback provenance gate (#37097)', () => {
-        // The rollback path bypasses $handleReloadContentEffect entirely, calling
+        // The rollback path bypasses #handleReloadContent entirely, calling
         // iframeMessenger.sendPageData directly — it needs its own source check.
         const setupHistory = (sourceOfPreviousSnapshot: 'rest' | 'graphql') => {
             store.setPageAsset({

@@ -73,17 +73,29 @@ jobs:
 
   # Test — integration only, fanned out across the requested phase(s).
   # opensearch_phase defaults to 'all' on the scheduled trigger (inputs are empty there).
-  test:
-    name: Phase Sweep Test
-    needs: [ initialize, build ]
-    if: always() && !failure() && !cancelled()
-    uses: ./.github/workflows/cicd_comp_test-phase.yml
+  # The matrix needs no build output, so it is computed in parallel with the build.
+  test-matrix:
+    name: Phase Sweep Test Matrix
+    needs: [ initialize ]
+    uses: ./.github/workflows/cicd_comp_test-matrix.yml
+    permissions:
+      contents: read
     with:
       run-all-tests: false
       integration: true
       e2e: false
-      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
       opensearch_phase: ${{ inputs.opensearch_phase || 'all' }}
+
+  test:
+    name: Phase Sweep Test
+    needs: [ initialize, build, test-matrix ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/cicd_comp_test-phase.yml
+    with:
+      matrix: ${{ needs.test-matrix.outputs.matrix }}
+      has-tests: ${{ needs.test-matrix.outputs.has-tests }}
+      opensearch_phase: ${{ needs.test-matrix.outputs.opensearch_phase }}
+      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
     secrets:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
     permissions:
@@ -94,7 +106,7 @@ jobs:
   finalize:
     name: Finalize
     if: always()
-    needs: [ initialize, build, test ]
+    needs: [ initialize, build, test-matrix, test ]
     uses: ./.github/workflows/cicd_comp_finalize-phase.yml
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}

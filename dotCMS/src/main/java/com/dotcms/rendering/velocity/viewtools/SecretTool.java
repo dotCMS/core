@@ -1,23 +1,17 @@
 package com.dotcms.rendering.velocity.viewtools;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.viewtools.secrets.DotVelocitySecretAppConfig;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
-import com.dotmarketing.business.Versionable;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.filters.CMSUrlUtil;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.context.InternalContextAdapterImpl;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -31,7 +25,6 @@ import java.util.Optional;
  */
 public class SecretTool implements ViewTool {
 
-	private Context context;
 	private HttpServletRequest request;
 
 	@Override
@@ -40,11 +33,9 @@ public class SecretTool implements ViewTool {
 		if (null != initData && initData instanceof ViewContext) {
 			final ViewContext context = (ViewContext) initData;
 			this.request = context.getRequest();
-			this.context = context.getVelocityContext();
 		} else {
 
 			this.request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-			this.context = VelocityUtil.getInstance().getContext(request, HttpServletResponseThreadLocal.INSTANCE.getResponse());
 		}
 	}
 
@@ -96,8 +87,9 @@ public class SecretTool implements ViewTool {
 	/**
 	 * Resolves the {@link DotVelocitySecretAppConfig} for the current execution context.
 	 * <p>
-	 * Uses {@code this.request}, which is snapshotted at {@link #init} time — before any VTL
-	 * executes — making it immune to {@code #set($host = ...)} mutations.
+	 * File-based scripting endpoints use the site captured with the scripting file, ignoring
+	 * caller-selected host parameters. Other contexts use {@code this.request}, snapshotted at
+	 * {@link #init} time, rather than mutable Velocity context variables.
 	 * <ul>
 	 *   <li><b>Velocity page rendering:</b> {@code init(ViewContext)} sets {@code this.request}
 	 *       from the real HTTP request, so host resolution matches the browser's site.</li>
@@ -113,6 +105,18 @@ public class SecretTool implements ViewTool {
 
 		if (null == this.request) {
 			return Optional.empty();
+		}
+		final String siteId = ScriptingFileAttribute.getSiteId(this.request);
+		if (siteId != null) {
+			try {
+				final Host site = APILocator.getHostAPI().find(siteId, APILocator.systemUser(), false);
+				if (site == null) {
+					throw new SecurityException("Scripting site not found");
+				}
+				return DotVelocitySecretAppConfig.config(site);
+			} catch (final DotDataException | DotSecurityException e) {
+				throw new SecurityException("Unable to resolve scripting site", e);
+			}
 		}
 		return DotVelocitySecretAppConfig.config(this.request);
 	}
@@ -135,8 +139,8 @@ public class SecretTool implements ViewTool {
 	/**
 	 * Checks for the existence of the mandatory Scripting Role based on the following criteria:
 	 * <ol>
-	 *     <li>The User that last modified the Contentlet rendering the Secrets has the Scripting
-	 *     Role.</li>
+	 *     <li>The User who authored the code being rendered -- announced on the request by the
+	 *     renderer, never derived from the Velocity resource name -- has the Scripting Role.</li>
 	 *     <li>The User present in the HTTP Request has the Scripting Role assigned to it.</li>
 	 * </ol>
 	 *
@@ -152,18 +156,10 @@ public class SecretTool implements ViewTool {
 
         try {
 			final Role scripting = APILocator.getRoleAPI().loadRoleByKey(Role.SCRIPTING_DEVELOPER);
-			boolean hasScriptingRole = checkRoleFromLastModUser(scripting);
+			boolean hasScriptingRole = RestrictedViewToolAccess.renderingAuthorHasAccess(this.request);
 			if (!hasScriptingRole) {
-				User user = WebAPILocator.getUserWebAPI().getUser(this.request);
-
-				if (null == user || user.isAnonymousUser()) {
-					final User contextUser = (User) this.context.get("user");
-					if (null != contextUser) {
-						user = contextUser;
-					}
-				}
-
-				// try with the current user
+				final User user = WebAPILocator.getUserWebAPI().getUser(this.request);
+				// try with the request user
 				if (null != user) {
 					hasScriptingRole = APILocator.getRoleAPI().doesUserHaveRole(user, scripting);
 				}
@@ -178,46 +174,5 @@ public class SecretTool implements ViewTool {
 			throw new SecurityException(disabledScriptingErrorMsg, e);
         }
     } // canUserEvaluate.
-
-	/**
-	 * Checks whether the User who last edited the Contentlet rendering the Secrets has the
-	 * specified dotCMS Role or not.
-	 *
-	 * @param role The {@link Role} that will be checked.
-	 *
-	 * @return If the User has the specified Role, returns {@code true}.
-	 */
-	private boolean checkRoleFromLastModUser(final Role role) {
-		final InternalContextAdapterImpl internalContextAdapter = new InternalContextAdapterImpl(context);
-		final String resourcePath = internalContextAdapter.getCurrentTemplateName();
-		boolean hasRole = false;
-		if (UtilMethods.isSet(resourcePath)) {
-			String contentletInode = StringPool.BLANK;
-			try {
-
-				contentletInode = CMSUrlUtil.getInstance().getInodeFromUrlPath(resourcePath);
-				Versionable versionable = APILocator.getContentletAPI().find(contentletInode, APILocator.systemUser(), true);
-
-				if (null == versionable) {
-					versionable = APILocator.getContainerAPI().getLiveContainerById(contentletInode, APILocator.systemUser(), true);
-				}
-
-				if (null == versionable) {
-					versionable = APILocator.getTemplateAPI().findLiveTemplate(contentletInode, APILocator.systemUser(), true);
-				}
-
-				if (null != versionable) {
-					final User lastModifiedUser = APILocator.getUserAPI().loadUserById(versionable.getModUser(), APILocator.systemUser(), true);
-					hasRole = APILocator.getRoleAPI().doesUserHaveRole(lastModifiedUser, role);
-				}
-			} catch (final Exception e) {
-				Logger.warnAndDebug(SecretTool.class, String.format("Failed to find last " +
-						"modification user from Retrieved ID '%s' in URL Path '%s': %s",
-						contentletInode, resourcePath,
-						ExceptionUtil.getErrorMessage(e)), e);
-			}
-		}
-		return hasRole;
-	}
 
 }

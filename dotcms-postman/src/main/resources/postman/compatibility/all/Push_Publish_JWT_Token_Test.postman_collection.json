@@ -1,0 +1,129 @@
+{
+	"info": {
+		"name": "Push Publish JWT Token Test - ALL compatibility only",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "ALL accepts a valid user password on REST",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Expected authentication policy response', function () { pm.response.to.have.status(200); });"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"header": [],
+				"url": "{{serverURL}}/api/v1/site/currentSite"
+			},
+			"response": []
+		},
+		{
+			"name": "using_basic_authentication_instead_JWT_token",
+			"item": [
+				{
+					"name": "request_pp",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.cookies.jar().clear(pm.environment.get('serverURL'), function (err) {",
+									"    if (err) throw new Error('Could not isolate authentication test cookies');",
+									"});"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test(\"Check WWW-Authenticate header\", function () {",
+									"    expected = 'Bearer realm=\"example\",error=\"invalid_token\",error_key=\"__invalid_token__\",error_description=\"\"';",
+									"",
+									"    pm.response.to.be.header('WWW-Authenticate', expected);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/octet-stream",
+								"type": "text"
+							},
+							{
+								"key": "Content-Disposition",
+								"value": "attachment",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "file",
+							"file": {
+								"src": "../../resources/Push_publish/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundlePublisher/publish",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundlePublisher",
+								"publish"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

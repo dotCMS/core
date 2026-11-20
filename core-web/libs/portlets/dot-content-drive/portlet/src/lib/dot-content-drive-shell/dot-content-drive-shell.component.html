@@ -101,8 +101,14 @@
 
     <!-- `dataKey="inode"`: the language filter is multi-select, so one identifier can occupy
          several rows here. On the component's `identifier` default, ticking one language version
-         ticked them all. The search service already backfills folder inodes for exactly this. -->
+         ticked them all. The search service already backfills folder inodes for exactly this.
+
+         `layout` switches between the table and the grid of cards (#37930). It is one listing, so
+         the selection, the page, the focus and the paging lock carry across a switch; the card is
+         the Drive's, handed over as the `#card` template. `rows`, `sortField` and `sortOrder`
+         come from the store because a switch back rebuilds the table, which must show them. -->
     <dot-folder-list-view
+        [layout]="$isGridView() ? 'grid' : 'table'"
         [items]="$items()"
         [selection]="$selectedItems()"
         [loading]="$loading()"
@@ -111,6 +117,9 @@
         [totalItems]="$totalItems()"
         [extraColumns]="$extraColumns()"
         [offset]="$offset()"
+        [rows]="$rows()"
+        [sortField]="$sort().field"
+        [sortOrder]="$sortOrder()"
         (paginate)="onPaginate($event)"
         (sort)="onSort($event)"
         (selectionChange)="onSelectItems($event)"
@@ -120,7 +129,32 @@
         (dragEnd)="onDragEnd()"
         (drop)="onTableDrop($event)"
         (scroll)="onTableScroll()"
-        #listView />
+        #listView>
+        <ng-template
+            #card
+            let-item
+            let-id="id"
+            let-selected="selected"
+            let-busy="busy"
+            let-dragOver="dragOver"
+            let-readOnly="readOnly"
+            let-languagesMap="languagesMap"
+            let-toggle="toggle"
+            let-open="open"
+            let-menu="menu">
+            <dot-content-drive-grid-card
+                [item]="item"
+                [cardId]="id"
+                [selected]="selected"
+                [busy]="busy"
+                [dragOver]="dragOver"
+                [readOnly]="readOnly"
+                [languagesMap]="languagesMap"
+                (toggleSelect)="toggle($event)"
+                (open)="open($event)"
+                (menu)="menu($event)" />
+        </ng-template>
+    </dot-folder-list-view>
 </dot-upload-dropzone>
 <dot-folder-list-context-menu />
 
@@ -252,40 +286,3 @@
 
 <!-- Is pending to add the accept attribute. This will be come from the backend in the future. -->
 <input type="file" multiple (change)="onFileChange($event)" #fileInput hidden />
-
-<!-- Edit Content side panel: opens the new editor over Content Drive instead of navigating away.
-     `@defer` splits the editor (and its Block Editor dependency chain) out of this portlet's chunk,
-     fetched only on the first open. The inner `@if` still mounts/destroys a fresh editor on every
-     open/close — `@defer`'s `when` trigger only gates the one-time chunk load, it does not toggle
-     like `@if` (once resolved, the block stays resolved for the rest of this shell's lifetime). -->
-@defer (when $editPanelRequest()) {
-    @if ($editPanelRequest(); as data) {
-        <dot-edit-content-side-panel
-            #sidePanelRef
-            data-testId="edit-content-side-panel"
-            [data]="data"
-            (saved)="onEditPanelSaved($event)"
-            (closed)="onEditPanelClosed()"
-            (languageChanged)="onEditPanelLanguage($event)" />
-    }
-} @loading {
-    <div
-        class="fixed right-4 bottom-4 z-10000 rounded-full bg-white p-3 shadow-lg"
-        data-testid="edit-content-side-panel-loading">
-        <p-progressSpinner styleClass="h-8! w-8!" strokeWidth="4" ariaLabel="loading editor" />
-    </div>
-}
-
-<!-- The legacy (JSP) editor, for content types that have not opted into the new editor (#37759).
-     Kept apart from the new-editor panel above. Remove with the legacy editor. Not deferred: it
-     is a thin iframe host, with nothing heavy to split out. -->
-@if ($legacyPanelRequest(); as request) {
-    <dot-legacy-editor-side-panel
-        #legacyPanelRef
-        [request]="request"
-        (saved)="onLegacyPanelSaved($event)"
-        (closed)="onLegacyPanelClosed()"
-        (pageEditorRequested)="onLegacyPanelPageEditor($event)"
-        (versionRestored)="onLegacyPanelRestored()"
-        (languageChanged)="onLegacyPanelLanguage($event)" />
-}

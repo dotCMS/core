@@ -4,8 +4,12 @@ import static com.dotmarketing.util.WebKeys.LOGIN_MODE_PARAMETER;
 import static com.dotmarketing.util.WebKeys.PAGE_MODE_PARAMETER;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
@@ -18,11 +22,18 @@ import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
 import com.dotcms.rendering.velocity.viewtools.VelocitySessionWrapper;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.LoginMode;
 import com.dotmarketing.util.PageMode;
+import com.liferay.portal.model.Company;
 import com.liferay.portal.util.WebKeys;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -205,6 +216,86 @@ public class VelocityUtilTest {
 
 
     }
-    
+
+    /**
+     * Method to test: {@link VelocityUtil#getWorkflowContext(WorkflowProcessor)}.
+     * Given scenario: the context a workflow sub-action evaluates its Velocity parameters in, for a saved content.
+     * Expected result: {@code $company} is the default company without its key, in any form, while its other values,
+     * such as the email address sub-actions use as their default sender, stay available.
+     */
+    @Test
+    public void test_workflow_context_company_has_no_key() throws Exception {
+        final Company defaultCompany = APILocator.getCompanyAPI().getDefaultCompany();
+        Assert.assertNotNull("the default company holds a key", defaultCompany.getKey());
+
+        final Context context = VelocityUtil.getInstance().getWorkflowContext(workflowProcessor());
+        final Company company = (Company) context.get("company");
+
+        // Checked without printing the values, so a failure does not write a key to the build log
+        Assert.assertTrue("the company must not hold the key", company.getKey() == null);
+        Assert.assertTrue("the company must not hold the key object", company.getKeyObj() == null);
+        Assert.assertTrue("the company must not hold the key digest", company.getKeyDigest() == null);
+        Assert.assertEquals(defaultCompany.getCompanyId(), company.getCompanyId());
+        Assert.assertEquals(defaultCompany.getEmailAddress(), company.getEmailAddress());
+        Assert.assertEquals(defaultCompany.getPortalURL(), company.getPortalURL());
+        Assert.assertNotNull("the default company keeps its key", defaultCompany.getKey());
+    }
+
+    /**
+     * Method to test: {@link VelocityUtil#getWorkflowContext(WorkflowProcessor)}.
+     * Given scenario: a sub-action changes the {@code $company} of its context, then another context is built.
+     * Expected result: each context gets its own company, so the change reaches neither the next context nor the
+     * default company.
+     */
+    @Test
+    public void test_workflow_context_company_is_a_copy_per_context() throws Exception {
+        final Company defaultCompany = APILocator.getCompanyAPI().getDefaultCompany();
+        final String emailAddress = defaultCompany.getEmailAddress();
+        final String backgroundColor = defaultCompany.getBackgroundColor();
+        final WorkflowProcessor processor = workflowProcessor();
+
+        final Company first = (Company) VelocityUtil.getInstance().getWorkflowContext(processor).get("company");
+        try {
+            first.setEmailAddress("changed@example.test");
+            first.setSize("#000000");
+
+            final Company second = (Company) VelocityUtil.getInstance().getWorkflowContext(processor).get("company");
+
+            Assert.assertNotSame(first, second);
+            Assert.assertEquals(emailAddress, second.getEmailAddress());
+            Assert.assertEquals(backgroundColor, second.getBackgroundColor());
+            Assert.assertEquals(emailAddress, defaultCompany.getEmailAddress());
+            Assert.assertEquals(backgroundColor, defaultCompany.getBackgroundColor());
+        } finally {
+            // Undo the change in case the copy is shared, so other tests see the company as it was
+            first.setEmailAddress(emailAddress);
+            first.setSize(backgroundColor);
+        }
+    }
+
+    /**
+     * Builds a workflow processor for a new saved content, with the action, steps and next assignee the workflow
+     * context reads.
+     *
+     * @return the {@link WorkflowProcessor}
+     */
+    private static WorkflowProcessor workflowProcessor() {
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).nextPersisted();
+        final WorkflowStep step = new WorkflowStep();
+        step.setName("step");
+        final WorkflowAction action = new WorkflowAction();
+        action.setName("action");
+        final Role nextAssign = new Role();
+        nextAssign.setName("next assign");
+        final WorkflowProcessor processor = mock(WorkflowProcessor.class);
+        when(processor.getContentlet()).thenReturn(contentlet);
+        when(processor.getUser()).thenReturn(APILocator.systemUser());
+        when(processor.getAction()).thenReturn(action);
+        when(processor.getStep()).thenReturn(step);
+        when(processor.getNextStep()).thenReturn(step);
+        when(processor.getNextAssign()).thenReturn(nextAssign);
+        return processor;
+    }
 
 }

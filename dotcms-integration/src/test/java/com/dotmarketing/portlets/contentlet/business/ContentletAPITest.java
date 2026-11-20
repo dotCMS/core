@@ -20,6 +20,7 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
+import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -51,6 +52,7 @@ import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.MultiTreeDataGen;
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.PersonaDataGen;
 import com.dotcms.datagen.SiteDataGen;
@@ -82,6 +84,7 @@ import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.common.db.DotConnect;
@@ -192,6 +195,7 @@ import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
 import org.awaitility.Awaitility;
+import org.awaitility.core.ConditionTimeoutException;
 import com.dotcms.content.index.domain.ContentSearchResponse;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
@@ -2631,6 +2635,56 @@ public class ContentletAPITest extends ContentletBaseTest {
     }
 
     /**
+     * Method to test: {@link ContentletAPI#findPageContentlets(String, String, String, boolean, long, User, boolean)}
+     * Given: a container whose stored "sort contentlets by" value is not a supported sort column
+     * (for example data saved before the value was validated)
+     * Should: return the contentlets of the page container ordered by their multi-tree position,
+     * without using the stored value
+     */
+    @Test
+    public void findPageContentletsWithUnsupportedStoredSortFallsBackToTreeOrder()
+            throws DotDataException, DotSecurityException {
+        final Host site = new SiteDataGen().nextPersisted();
+        final com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen().name("title")
+                .velocityVarName("title").type(TextField.class).listed(true).next();
+        final ContentType contentType = new ContentTypeDataGen().host(site).field(titleField).nextPersisted();
+        final Container container = new ContainerDataGen().site(site)
+                .withContentType(contentType, "$!{title}").nextPersisted();
+        final Template template = new TemplateDataGen().site(site).withContainer(container.getIdentifier())
+                .nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(site, template).nextPersisted();
+
+        // Placed in the reverse order of their titles, so a sort by title would swap them
+        final Contentlet first = new ContentletDataGen(contentType.id()).host(site)
+                .setProperty("title", "a-first-by-title").nextPersisted();
+        final Contentlet second = new ContentletDataGen(contentType.id()).host(site)
+                .setProperty("title", "b-second-by-title").nextPersisted();
+        new MultiTreeDataGen().setPage(page).setContainer(container).setContentlet(second).setTreeOrder(0)
+                .nextPersisted();
+        new MultiTreeDataGen().setPage(page).setContainer(container).setContentlet(first).setTreeOrder(1)
+                .nextPersisted();
+
+        // Write the table directly to simulate a value stored before it was validated on save. A qualified
+        // column is not supported, and if it were applied as-is it would put "first" before "second"
+        final String storedSort = "contentlet.title asc";
+        new DotConnect().setSQL("update dot_containers set sort_contentlets_by = ? where inode = ?")
+                .addParam(storedSort).addParam(container.getInode()).loadResult();
+        CacheLocator.getContainerCache().remove(container);
+        final Container stored = APILocator.getContainerAPI()
+                .find(container.getInode(), APILocator.systemUser(), false);
+        assertEquals(storedSort, stored.getSortContentletsBy());
+
+        // Same call the page reorder action makes with the stored value
+        final List<Contentlet> pageContentlets = contentletAPI.findPageContentlets(
+                page.getIdentifier(), container.getIdentifier(), stored.getSortContentletsBy(), true, -1,
+                APILocator.systemUser(), false);
+
+        assertEquals(2, pageContentlets.size());
+        assertEquals(second.getIdentifier(), pageContentlets.get(0).getIdentifier());
+        assertEquals(first.getIdentifier(), pageContentlets.get(1).getIdentifier());
+    }
+
+    /**
      * This test is for ordering purposes. When you get the related content of a content, the
      * ordering should be the same as it was stored.
      */
@@ -3227,6 +3281,12 @@ public class ContentletAPITest extends ContentletBaseTest {
         APILocator.getStructureAPI().delete(testStructure, user);
     }
 
+    /**
+     * Method to test: {@link ContentletAPI#delete(Contentlet, User, boolean)}
+     * Given scenario: unarchived content deleted with the "don't validate me" flag set
+     * Expected result: the content is deleted and can no longer be found by inode. If it is still
+     * visible after the wait, the failure reports the cache, database and reindex queue state.
+     */
     @Test
     public void delete_GivenUnarchivedContentAndDontValidateMeInTrue_ShouldDeleteSuccessfully()
             throws Exception {
@@ -3239,16 +3299,51 @@ public class ContentletAPITest extends ContentletBaseTest {
             newContentlet.setStringProperty(Contentlet.DONT_VALIDATE_ME, "anarchy");
             contentletAPI.delete(newContentlet, user, false);
             
-            // Wait for the contentlet to be deleted asynchronously
-            Awaitility.await().atMost(10, TimeUnit.SECONDS).until(() -> {
-                final Contentlet foundContentlet = contentletAPI.find(newContentlet.getInode(), user, false);
-                return !UtilMethods.isSet(foundContentlet) || !UtilMethods.isSet(foundContentlet.getInode());
-            });
+            try {
+                Awaitility.await().atMost(10, TimeUnit.SECONDS).until(() -> {
+                    final Contentlet foundContentlet = contentletAPI.find(newContentlet.getInode(), user, false);
+                    return !UtilMethods.isSet(foundContentlet) || !UtilMethods.isSet(foundContentlet.getInode());
+                });
+            } catch (final ConditionTimeoutException e) {
+                throw new AssertionError(describeStateOfUndeletedContentlet(newContentlet), e);
+            }
 
             AssetUtil.assertDeleted(newContentlet.getInode(), newContentlet.getIdentifier(),
                     "contentlet");
         } finally {
             APILocator.getStructureAPI().delete(testStructure, user);
+        }
+    }
+
+    /**
+     * Describes where a contentlet that {@code contentletAPI.delete} was expected to remove is
+     * still visible, so a failed wait names the cause instead of just timing out. It reports
+     * the contentlet cache entry, the {@code contentlet} row read straight from the database,
+     * the version info row and the number of records waiting in the reindex queue. A cache entry
+     * that is present while the row is gone means the entry was loaded again after the delete
+     * evicted it; a row that is still present means the delete did not remove it. Only called
+     * when the wait has already timed out.
+     *
+     * @param contentlet The contentlet that was deleted.
+     * @return A one-line description of the contentlet's state in the cache and the database.
+     */
+    private String describeStateOfUndeletedContentlet(final Contentlet contentlet) {
+        final String inode = contentlet.getInode();
+        try {
+            final Contentlet cached = CacheLocator.getContentletCache().get(inode);
+            final boolean rowInDb = FactoryLocator.getContentletFactory().findInDb(inode).isPresent();
+            final boolean versionInfoInDb = APILocator.getVersionableAPI()
+                    .getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId(),
+                            contentlet.getVariantId()).isPresent();
+            return String.format(
+                    "Contentlet %s (identifier %s) was still returned by find() 10 seconds after delete(). "
+                            + "contentlet cache entry present: %s, contentlet row in DB: %s, "
+                            + "version info row in DB: %s, records in reindex queue: %d",
+                    inode, contentlet.getIdentifier(), null != cached, rowInDb, versionInfoInDb,
+                    APILocator.getReindexQueueAPI().recordsInQueue());
+        } catch (final Exception e) {
+            return String.format("Contentlet %s was still returned by find() 10 seconds after delete(); "
+                    + "could not read its cache and database state: %s", inode, e);
         }
     }
 
@@ -4432,7 +4527,9 @@ public class ContentletAPITest extends ContentletBaseTest {
             assertEquals(dateFormat.format(d4),
                     dateFormat.format(c21.getDateProperty(expireField.variable())));
 
-            // also it should be in the index update with the new dates
+            // also it should be in the index update with the new dates. On failure the message
+            // tells apart a missing document, one indexed with the old dates (stale identifier
+            // while c1 was reindexed) and one that only arrived late.
             String q = "+structureName:" + testContentType.variable() +
                     " +inode:" + c11.getInode() +
                     " +" + testContentType.variable() + "." + publishField.variable() + ":"
@@ -4443,10 +4540,42 @@ public class ContentletAPITest extends ContentletBaseTest {
                     .toLuceneDateTime(d4);
 
             final long count = APILocator.getContentletAPI().indexCount(q, user, false);
-            assertEquals(1, count);
+            if (count != 1) {
+                // The recounts read the index through a scroll query, which skips the search
+                // query cache; indexCount would return the cached first answer for q.
+                final String prefix = "+inode:" + c11.getInode() + " +" + testContentType.variable() + ".";
+                fail(String.format("Expected 1 index document for sibling %s with the new dates, found %d. "
+                                + "Now: documents for the inode: %d, with the old dates: %d, "
+                                + "with the new dates: %d; cached identifier dates: %s",
+                        c11.getInode(), count,
+                        uncachedIndexCount("+inode:" + c11.getInode()),
+                        uncachedIndexCount(prefix + publishField.variable() + ":" + DateUtil.toLuceneDateTime(d1)
+                                + " +" + testContentType.variable() + "." + expireField.variable() + ":"
+                                + DateUtil.toLuceneDateTime(d2)),
+                        uncachedIndexCount(q),
+                        Optional.ofNullable(APILocator.getIdentifierAPI().loadFromCache(c1.getIdentifier()))
+                                .map(i -> i.getSysPublishDate() + " / " + i.getSysExpireDate())
+                                .orElse("not cached")));
+            }
         } finally {
             ContentletTransformer.setUniquePublishExpireDatePerLanguages(
                     uniquePublishExpireDatePerLanguages);
+        }
+    }
+
+    /**
+     * Counts the index documents matching a query without the search query cache. The count
+     * comes from a scroll query, which goes to the search client directly, so a repeated count
+     * reflects the index as it is now rather than an earlier cached answer.
+     *
+     * @param luceneQuery the query to count
+     * @return the number of matching documents in the index right now
+     * @throws Exception if the query fails
+     */
+    private static long uncachedIndexCount(final String luceneQuery) throws Exception {
+        try (IndexContentletScroll scroll = APILocator.getContentletAPI()
+                .createScrollQuery(luceneQuery, user, false, 1, "moddate desc")) {
+            return scroll.getTotalHits();
         }
     }
 

@@ -4,8 +4,7 @@ import {
     mockProvider,
     Spectator
 } from '@openng/spectator/vitest';
-import { MockComponent } from 'ng-mocks';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { Mock, MockInstance, vi } from 'vitest';
 
 import { Location } from '@angular/common';
@@ -24,13 +23,41 @@ import {
     DotPropertiesService
 } from '@dotcms/data-access';
 import { ComponentStatus, FeaturedFlags } from '@dotcms/dotcms-models';
-import { DotEditContentSidePanelComponent } from '@dotcms/edit-content';
-import { DotClipboardUtil } from '@dotcms/ui';
+import { DotClipboardUtil, DotSidePanelConfig, DotSidePanelService } from '@dotcms/ui';
 
 import { DotQueryToolPageComponent } from './dot-query-tool-page.component';
 import { DEFAULT_LIMIT, DotQueryToolStore } from './store/dot-query-tool.store';
 
 import { DotQueryToolService } from '../services/dot-query-tool.service';
+
+/** A side panel the page opened, as the fake {@link DotSidePanelService} records it. */
+interface OpenedPanel {
+    config: DotSidePanelConfig;
+    ref: { closed: Subject<void>; close: Mock; requestClose: Mock };
+}
+
+/** Stands in for the root side-panel outlet: records each panel opened, renders none. */
+const createSidePanelsFake = () => {
+    const opened: OpenedPanel[] = [];
+
+    return {
+        opened,
+        open: vi.fn((_component: unknown, config: DotSidePanelConfig) => {
+            const closed = new Subject<void>();
+            const ref = {
+                closed,
+                close: vi.fn(() => {
+                    closed.next();
+                    closed.complete();
+                }),
+                requestClose: vi.fn()
+            };
+            opened.push({ config, ref });
+
+            return ref;
+        })
+    };
+};
 
 const SAMPLE_CONTENTLET = {
     inode: 'inode-1',
@@ -480,24 +507,19 @@ describe('DotQueryToolPageComponent', () => {
 describe('DotQueryToolPageComponent (side panel enabled)', () => {
     let spectator: Spectator<DotQueryToolPageComponent>;
     let windowOpenSpy: MockInstance;
+    let sidePanels: ReturnType<typeof createSidePanelsFake>;
 
     const createComponent = createComponentFactory({
         component: DotQueryToolPageComponent,
         overrideComponents: [
             [
                 DotQueryToolPageComponent,
-                {
-                    // Stub the side panel so setting `$editPanelRequest` renders a light element we
-                    // can drive its `(saved)`/`(closed)` outputs on, instead of the real editor.
-                    remove: {
-                        providers: [DotQueryToolStore, DotCurrentUserService],
-                        imports: [DotEditContentSidePanelComponent]
-                    },
-                    add: { imports: [MockComponent(DotEditContentSidePanelComponent)] }
-                }
+                { remove: { providers: [DotQueryToolStore, DotCurrentUserService] } }
             ]
         ],
         providers: [
+            // Records the panels the page opens instead of rendering the real editor.
+            { provide: DotSidePanelService, useFactory: () => sidePanels },
             mockProvider(DotMessageService, { get: vi.fn().mockReturnValue('') }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotGlobalMessageService, { error: vi.fn() }),
@@ -524,6 +546,7 @@ describe('DotQueryToolPageComponent (side panel enabled)', () => {
     });
 
     beforeEach(() => {
+        sidePanels = createSidePanelsFake();
         windowOpenSpy = vi.spyOn(window, 'open').mockReturnValue(null);
         spectator = createComponent({
             providers: [
@@ -589,16 +612,30 @@ describe('DotQueryToolPageComponent (side panel enabled)', () => {
         expect(location.go).not.toHaveBeenCalled();
     });
 
+    it('opens the panel on the request, headed with the content title', () => {
+        spectator.component.$editPanelRequest.set({
+            mode: 'edit',
+            contentletInode: 'inode-1',
+            identifier: 'id-1',
+            title: 'Home'
+        });
+        spectator.detectChanges();
+
+        const [{ config }] = sidePanels.opened;
+        expect((config.heading as () => string)()).toBe('Home');
+        expect((config.inputs?.['data'] as () => unknown)()).toEqual(
+            expect.objectContaining({ contentletInode: 'inode-1' })
+        );
+    });
+
     it('routes browser Back through the panel close guard (does not clear silently)', () => {
-        const requestClose = vi.fn();
-        vi.spyOn(spectator.component, '$sidePanel').mockReturnValue({
-            requestClose
-        } as unknown as DotEditContentSidePanelComponent);
         spectator.component.$editPanelRequest.set({
             mode: 'edit',
             contentletInode: 'inode-1',
             identifier: 'id-1'
         });
+        spectator.detectChanges();
+        const { requestClose } = sidePanels.opened[0].ref;
         const location = spectator.inject(Location);
         const popstate = (location.subscribe as Mock).mock.calls[0][0] as (event: {
             url: string;
@@ -620,21 +657,16 @@ describe('DotQueryToolPageComponent (side panel enabled)', () => {
         expect(spectator.component.$editPanelRequest()).toBeNull();
     });
 
-    it('reloads results on the panel (saved) output and clears the request on (closed)', async () => {
+    it('reloads results when the panel reports a save, and clears the request when it closes itself', () => {
         const store = spectator.inject(DotQueryToolStore, true);
         spectator.component.$editPanelRequest.set({ mode: 'edit', contentletInode: 'inode-1' });
         spectator.detectChanges();
-        // The panel is behind `@defer`; its dynamic import resolves as a microtask, so the element
-        // isn't in the DOM until the fixture settles.
-        await spectator.fixture.whenStable();
-        spectator.detectChanges();
+        const [{ config, ref }] = sidePanels.opened;
 
-        // Drive the real template bindings (saved)/(closed), not the handlers directly.
-        const panelSelector = '[data-testid="query-tool-edit-panel"]';
-        spectator.triggerEventHandler(panelSelector, 'saved', undefined);
+        (config.outputs?.['saved'] as () => void)();
         expect(store.runSearch).toHaveBeenCalledTimes(1);
 
-        spectator.triggerEventHandler(panelSelector, 'closed', undefined);
+        ref.close();
         expect(spectator.component.$editPanelRequest()).toBeNull();
     });
 });
@@ -652,16 +684,12 @@ describe('DotQueryToolPageComponent (editContent deep link)', () => {
         overrideComponents: [
             [
                 DotQueryToolPageComponent,
-                {
-                    remove: {
-                        providers: [DotQueryToolStore, DotCurrentUserService],
-                        imports: [DotEditContentSidePanelComponent]
-                    },
-                    add: { imports: [MockComponent(DotEditContentSidePanelComponent)] }
-                }
+                { remove: { providers: [DotQueryToolStore, DotCurrentUserService] } }
             ]
         ],
         providers: [
+            // Records the panel a deep link opens instead of rendering the real editor.
+            { provide: DotSidePanelService, useFactory: () => createSidePanelsFake() },
             mockProvider(DotMessageService, { get: vi.fn().mockReturnValue('') }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotGlobalMessageService, { error: vi.fn() }),
@@ -745,15 +773,6 @@ describe('DotQueryToolPageComponent (persisted query, real store)', () => {
 
     const createComponent = createComponentFactory({
         component: DotQueryToolPageComponent,
-        overrideComponents: [
-            [
-                DotQueryToolPageComponent,
-                {
-                    remove: { imports: [DotEditContentSidePanelComponent] },
-                    add: { imports: [MockComponent(DotEditContentSidePanelComponent)] }
-                }
-            ]
-        ],
         providers: [
             mockProvider(DotMessageService, { get: vi.fn().mockReturnValue('') }),
             mockProvider(DotHttpErrorManagerService),

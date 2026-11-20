@@ -17,7 +17,13 @@
        "script": {
         "type": "text/javascript",
         "exec": [
-         "pm.test(\"Status code is 200\", function () {\n    pm.response.to.have.status(200);\n\n    const entity = pm.response.json().entity;\n    pm.collectionVariables.set(\"hostname\", entity.hostname);\n    pm.collectionVariables.set(\"hostIdentifier\", entity.identifier);\n});"
+          "pm.test(\"Status code is 200\", function () {",
+          "    pm.response.to.have.status(200);",
+          "",
+          "    const entity = pm.response.json().entity;",
+          "    pm.collectionVariables.set(\"hostname\", entity.hostname);",
+          "    pm.collectionVariables.set(\"hostIdentifier\", entity.identifier);",
+          "});"
         ]
        }
       }
@@ -48,7 +54,16 @@
        "script": {
         "type": "text/javascript",
         "exec": [
-         "pm.test(\"Status code should be 200\", function () {\n    pm.response.to.have.status(200);\n});\n\nvar jsonData = pm.response.json();\npm.collectionVariables.set(\"folderId\", jsonData.entity[0].identifier);\n\npm.test(\"Test folder created\", function () {\n    pm.expect(jsonData.entity[0].name).to.eql('drive-test-bulk-upload');\n});"
+          "pm.test(\"Status code should be 200\", function () {",
+          "    pm.response.to.have.status(200);",
+          "});",
+          "",
+          "var jsonData = pm.response.json();",
+          "pm.collectionVariables.set(\"folderId\", jsonData.entity[0].identifier);",
+          "",
+          "pm.test(\"Test folder created\", function () {",
+          "    pm.expect(jsonData.entity[0].name).to.eql('drive-test-bulk-upload');",
+          "});"
         ]
        }
       }
@@ -96,7 +111,15 @@
      "script": {
       "type": "text/javascript",
       "exec": [
-       "pm.test('202 Accepted, not 200 - the work has not happened yet', function () {\n    pm.response.to.have.status(202);\n});\npm.test('carries both jobId and statusUrl', function () {\n    const e = pm.response.json().entity;\n    pm.expect(e).to.have.property('jobId');\n    pm.expect(e).to.have.property('statusUrl');\n    pm.collectionVariables.set('jobId', e.jobId);\n});"
+        "pm.test('202 Accepted, not 200 - the work has not happened yet', function () {",
+        "    pm.response.to.have.status(202);",
+        "});",
+        "pm.test('carries both jobId and statusUrl', function () {",
+        "    const e = pm.response.json().entity;",
+        "    pm.expect(e).to.have.property('jobId');",
+        "    pm.expect(e).to.have.property('statusUrl');",
+        "    pm.collectionVariables.set('jobId', e.jobId);",
+        "});"
       ]
      }
     }
@@ -153,7 +176,11 @@
      "script": {
       "type": "text/javascript",
       "exec": [
-       "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });\n\npm.test('Response body contains expected message', function () {\n    pm.response.to.have.jsonBody('message', 'A bulk upload requires at least one file');\n});"
+        "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });",
+        "",
+        "pm.test('Response body contains expected message', function () {",
+        "    pm.response.to.have.jsonBody('message', 'A bulk upload requires at least one file');",
+        "});"
       ]
      }
     }
@@ -200,7 +227,12 @@
      "script": {
       "type": "text/javascript",
       "exec": [
-       "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });\n\npm.test('Response body contains expected message', function () {\n    var jsonData = pm.response.json();\n    pm.expect(jsonData[0].message).to.eql('baseType must be DOTASSET or FILEASSET');\n});"
+        "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });",
+        "",
+        "pm.test('Response body contains expected message', function () {",
+        "    var jsonData = pm.response.json();",
+        "    pm.expect(jsonData[0].message).to.eql('baseType must be DOTASSET or FILEASSET');",
+        "});"
       ]
      }
     }
@@ -252,7 +284,14 @@
      "script": {
       "type": "text/javascript",
       "exec": [
-       "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });\n\npm.test(\"Error response contains expected structure\", function () {\n    var jsonData = pm.response.json();\n    pm.expect(jsonData).to.be.an(\"array\");\n    pm.expect(jsonData[0]).to.have.property(\"fieldName\", \"exactlyOneTargetGiven\");\n    pm.expect(jsonData[0]).to.have.property(\"message\", \"Exactly one of folderId or siteId is required\");\n});"
+        "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });",
+        "",
+        "pm.test(\"Error response contains expected structure\", function () {",
+        "    var jsonData = pm.response.json();",
+        "    pm.expect(jsonData).to.be.an(\"array\");",
+        "    pm.expect(jsonData[0]).to.have.property(\"fieldName\", \"exactlyOneTargetGiven\");",
+        "    pm.expect(jsonData[0]).to.have.property(\"message\", \"Exactly one of folderId or siteId is required\");",
+        "});"
       ]
      }
     }
@@ -304,7 +343,15 @@
      "script": {
       "type": "text/javascript",
       "exec": [
-       "pm.test('413 Content Too Large, not 400', function () {\n    pm.response.to.have.status(413);\n});\n\npm.test('Response has expected error message for size ceiling exceeded', function () {\n    var jsonData = pm.response.json();\n    pm.expect(jsonData.message).to.include('exceeds the maximum');\n});\n"
+        "pm.test('413 Content Too Large, not 400', function () {",
+        "    pm.response.to.have.status(413);",
+        "});",
+        "",
+        "pm.test('Response has expected error message for size ceiling exceeded', function () {",
+        "    var jsonData = pm.response.json();",
+        "    pm.expect(jsonData.message).to.include('exceeds the maximum');",
+        "});",
+        ""
       ]
      }
     }
@@ -366,45 +413,10 @@
     "type": "text/javascript",
     "packages": {},
     "exec": [
-     "   ",
-     "if(!pm.collectionVariables.get('jwt')){",
-     "    console.log(\"generating....\")",
-     "    const serverURL = pm.environment.get('serverURL') || pm.collectionVariables.get('baseUrl'); // Get the server URL from the environment variable",
-     "    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
-     "",
-     "        const username = pm.environment.get(\"user\") || pm.collectionVariables.get('user'); ",
-     "        const password = pm.environment.get(\"password\") || pm.collectionVariables.get('password');",
-     "        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
-     "",
-     "        const requestOptions = {",
-     "            url: apiUrl,",
-     "            method: \"POST\",",
-     "            header: {",
-     "                \"accept\": \"*/*\",",
-     "                \"content-type\": \"application/json\",",
-     "                \"Authorization\": `Basic ${basicAuth}`",
-     "            },",
-     "            body: {",
-     "                mode: \"raw\",",
-     "                raw: JSON.stringify({",
-     "                    \"expirationSeconds\": 7200,",
-     "                    \"userId\": \"dotcms.org.1\",",
-     "                    \"network\": \"0.0.0.0/0\",",
-     "                    \"claims\": {\"label\": \"postman-tests\"}",
-     "                })",
-     "            }",
-     "        };",
-     "",
-     "        pm.sendRequest(requestOptions, function (err, response) {",
-     "            if (err) {",
-     "                console.log(err);",
-     "            } else {",
-     "                const jwt = response.json().entity.jwt;",
-     "                pm.collectionVariables.set('jwt', jwt);",
-     "                console.log(\"Successfully got a jwt :\" + jwt);",
-     "            }",
-     "        });    ",
-     "}           "
+      "   ",
+      "if (!pm.environment.get('jwt')) {",
+      "    throw new Error('Set environment jwt to a pre-issued dotCMS API token, or use the Node runner.');",
+      "}           "
     ]
    }
   },

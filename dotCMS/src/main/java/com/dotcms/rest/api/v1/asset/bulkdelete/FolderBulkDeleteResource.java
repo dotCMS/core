@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.asset.bulkdelete;
 
+import com.dotcms.jobs.business.processor.JobQueueEntryPoint;
 import com.dotcms.rest.ResponseEntityFolderBulkDeleteSubmitView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -58,6 +59,7 @@ public class FolderBulkDeleteResource {
      */
     @POST
     @Path("/folders/_bulkdelete")
+    @JobQueueEntryPoint(FolderBulkDeleteHelper.QUEUE_NAME)
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)

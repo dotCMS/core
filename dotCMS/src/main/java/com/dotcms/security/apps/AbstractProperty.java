@@ -14,6 +14,9 @@ import java.util.Optional;
 
 /**
  * This is a super class that serves as the base form both Params and Secrets.
+ * <p>Secrets are written into Apps export files. A field of a type not yet listed in
+ * {@code AppsUtil.EXPORT_FILE_TYPES} must be added there too, or exports holding it will be
+ * refused on import.</p>
  * @param <T>
  */
 

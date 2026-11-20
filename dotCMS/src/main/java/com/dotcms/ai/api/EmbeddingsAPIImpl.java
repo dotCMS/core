@@ -1,5 +1,6 @@
 package com.dotcms.ai.api;
 
+import com.dotcms.auth.SystemUserScope;
 import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
@@ -65,6 +66,11 @@ import static com.liferay.util.StringPool.BLANK;
  */
 class EmbeddingsAPIImpl implements EmbeddingsAPI {
 
+    /*
+     * Keys hashed text to its token count and embedding vector. It holds no search results, so it
+     * is not per-user and cannot leak content across users. Never cache retrieval results here
+     * without a user dimension: results are filtered by the caller's READ permission.
+     */
     private static final Cache<String, Tuple2<Integer, List<Float>>> EMBEDDING_CACHE =
             Caffeine.newBuilder()
                     .expireAfterWrite(
@@ -182,8 +188,12 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
             return false;
         }
 
-        final Context ctx = VelocityContextFactory.getMockContext(contentlet);
-        final String textToEmbed = Try.of(() -> VelocityUtil.eval(velocityTemplate, ctx)).getOrNull();
+        final String textToEmbed = Try.of(() -> {
+            try (SystemUserScope ignored = SystemUserScope.open()) {
+                final Context ctx = VelocityContextFactory.getMockContext(contentlet);
+                return VelocityUtil.eval(velocityTemplate, ctx);
+            }
+        }).getOrNull();
 
         if (UtilMethods.isEmpty(textToEmbed)) {
             return false;
@@ -239,15 +249,25 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         return typesAndFields;
     }
 
+    /**
+     * Groups the given chunks into one entry per contentlet, each with its matching passages.
+     * {@code count} is the number of contentlets in the response, so it never reveals matches the
+     * caller could not read.
+     *
+     * @param searcher      the search request (user, query, paging)
+     * @param searchResults chunks already filtered by READ permission
+     * @return the search response JSON
+     */
     @Override
     public JSONObject reduceChunksToContent(final EmbeddingsDTO searcher, final List<EmbeddingsDTO> searchResults) {
         final long startTime = System.currentTimeMillis();
         final Map<String, JSONObject> reducedResults = new LinkedHashMap<>();
 
         for (final EmbeddingsDTO result : searchResults) {
-            final JSONObject contentObject = reducedResults.getOrDefault(
-                    result.inode,
-                    dtoToContentJson(result, searcher.user));
+            // load the contentlet only for its first chunk, not once per chunk
+            final JSONObject contentObject = reducedResults.containsKey(result.inode)
+                    ? reducedResults.get(result.inode)
+                    : dtoToContentJson(result, searcher.user);
 
             contentObject.getAsMap().computeIfAbsent(AiKeys.TITLE, k -> result.title);
 
@@ -262,7 +282,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
             reducedResults.putIfAbsent(result.inode,contentObject);
         }
 
-        final long count = APILocator.getDotAIAPI().getEmbeddingsAPI().countEmbeddings(searcher);
+        final long count = reducedResults.size();
         final JSONObject map = new JSONObject();
         map.put(AiKeys.TIME_TO_EMBEDDINGS, System.currentTimeMillis() - startTime + "ms");
         map.put(AiKeys.TOTAL, searchResults.size());
@@ -290,10 +310,40 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         return reducedResults;
     }
 
+    /**
+     * Returns the chunks matching the search that its user can READ. CMS admins and the system
+     * user get today's query unchanged, since they can read everything. Anyone else, including a
+     * {@code null} user (checked as Anonymous), gets one query over the number of candidates
+     * {@link ReadableChunkFilter#candidatesToFetch} decides (up to 1000 for logged-in callers,
+     * 200 for anonymous ones, never less than {@code limit}), filtered in rank order and cut to
+     * {@code [offset, offset + limit)} of the readable chunks.
+     *
+     * @param searcher the search request
+     * @return the readable chunks, in distance order
+     */
     @Override
     public List<EmbeddingsDTO> getEmbeddingResults(final EmbeddingsDTO searcher) {
         final EmbeddingsDTO newSearcher = getSearcher(searcher);
-        return EmbeddingsFactory.impl.get().searchEmbeddings(newSearcher);
+        if (isUnrestricted(searcher.user)) {
+            return EmbeddingsFactory.impl.get().searchEmbeddings(newSearcher);
+        }
+
+        final int candidates = ReadableChunkFilter.candidatesToFetch(searcher.user, searcher.offset,
+                searcher.limit, config.getConfigInteger(AppKeys.EMBEDDINGS_SEARCH_CANDIDATE_CAP));
+        final List<EmbeddingsDTO> ranked = EmbeddingsFactory.impl.get().searchEmbeddings(
+                EmbeddingsDTO.copy(newSearcher).withOffset(0).withLimit(candidates).build());
+
+        return new ReadableChunkFilter(APILocator.getContentletAPI(), APILocator.getPermissionAPI())
+                .filter(ranked, dto -> dto.inode, searcher.user, searcher.offset, searcher.limit);
+    }
+
+    /**
+     * Whether the user can read every contentlet, so retrieval needs no permission filtering:
+     * the system user or a CMS admin. A {@code null} user is never unrestricted.
+     */
+    private static boolean isUnrestricted(final User user) {
+        return user != null
+                && (APILocator.systemUser().getUserId().equals(user.getUserId()) || user.isAdmin());
     }
 
     @Override

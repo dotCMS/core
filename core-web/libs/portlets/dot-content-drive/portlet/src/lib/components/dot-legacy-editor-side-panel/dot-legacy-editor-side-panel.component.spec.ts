@@ -4,15 +4,12 @@ import {
     mockProvider,
     Spectator
 } from '@openng/spectator/vitest';
-import { MockPipe } from 'ng-mocks';
 import { of, Subject } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
-import { NgZone } from '@angular/core';
+import { NgZone, signal } from '@angular/core';
 
 import { ConfirmationService, ConfirmEventType, Confirmation } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
-import { Drawer, DrawerModule } from 'primeng/drawer';
 
 import {
     DotActionUrlService,
@@ -25,8 +22,7 @@ import {
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { DotFunctionInfo } from '@dotcms/dotcms-models';
-import { DotSidePanelNavController } from '@dotcms/edit-content';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotSidePanelRef } from '@dotcms/ui';
 
 import { DotLegacyEditorSidePanelComponent } from './dot-legacy-editor-side-panel.component';
 
@@ -92,24 +88,11 @@ describe('DotLegacyEditorSidePanelComponent', () => {
     beforeAll(disableIframePageLoading);
 
     let spectator: Spectator<DotLegacyEditorSidePanelComponent>;
-    let navController: { acquire: Mock; release: Mock; isTop: Mock };
+    /** The panel's ref, reduced to what the content uses. */
+    let panel: { close: Mock; contentStyleClass: ReturnType<typeof signal<string>> };
 
     const createComponent = createComponentFactory({
         component: DotLegacyEditorSidePanelComponent,
-        overrideComponents: [
-            [
-                DotLegacyEditorSidePanelComponent,
-                {
-                    set: {
-                        imports: [
-                            DrawerModule,
-                            ButtonModule,
-                            MockPipe(DotMessagePipe, (key: string) => key)
-                        ]
-                    }
-                }
-            ]
-        ],
         providers: [
             mockProvider(DotUiColorsService, { setColors: vi.fn() }),
             mockProvider(DotActionUrlService, {
@@ -130,14 +113,10 @@ describe('DotLegacyEditorSidePanelComponent', () => {
     beforeEach(() => {
         localStorage.clear();
         ran$ = new Subject<DotFunctionInfo>();
-        navController = {
-            acquire: vi.fn(),
-            release: vi.fn(),
-            isTop: vi.fn().mockReturnValue(true)
-        };
+        panel = { close: vi.fn(), contentStyleClass: signal('p-0!') };
 
         spectator = createComponent({
-            providers: [{ provide: DotSidePanelNavController, useValue: navController }]
+            providers: [{ provide: DotSidePanelRef, useValue: panel }]
         });
 
         // The factory's mocks are shared across tests: clear their calls and restore the answer a
@@ -179,11 +158,6 @@ describe('DotLegacyEditorSidePanelComponent', () => {
         doc.dispatchEvent(new CustomEvent('ng-event', { detail }));
     };
 
-    const clickButton = (testId: string): void => {
-        const button = spectator.query(byTestId(testId), { root: true })?.querySelector('button');
-        spectator.click(button as HTMLElement);
-    };
-
     describe('edit URL', () => {
         it('loads the legacy edit screen for the inode, naming Content Drive as the portlet', () => {
             open();
@@ -209,7 +183,7 @@ describe('DotLegacyEditorSidePanelComponent', () => {
             expect(getIframe()).toBeNull();
         });
 
-        it('renders nothing while closed', () => {
+        it('renders nothing before it has a request', () => {
             open(null);
 
             expect(getIframe()).toBeNull();
@@ -395,59 +369,11 @@ describe('DotLegacyEditorSidePanelComponent', () => {
             const { doc } = loadFrame();
             changeAField(doc);
             answerPrompt(answer);
-            const closed = vi.fn();
-            spectator.output('closed').subscribe(closed);
+            const closed = panel.close;
 
             spectator.component.requestClose();
 
             expect(closed).toHaveBeenCalledTimes(closes);
-        });
-
-        /** Every way out of the panel goes through the prompt (FR-017). */
-        const CLOSE_TRIGGERS: [string, (doc: Document) => void][] = [
-            ['the close button', () => clickButton('legacy-side-panel-close')],
-            [
-                'Escape in the admin page',
-                () =>
-                    document.dispatchEvent(
-                        new KeyboardEvent('keydown', {
-                            key: 'Escape',
-                            bubbles: true,
-                            cancelable: true
-                        })
-                    )
-            ],
-            [
-                'Escape inside the legacy editor',
-                (doc) =>
-                    doc.dispatchEvent(
-                        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })
-                    )
-            ],
-            [
-                'a click on its own mask',
-                () => {
-                    const mask = document.createElement('div');
-                    document.body.appendChild(mask);
-                    spectator.query(Drawer)!.mask = mask;
-                    mask.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-                    mask.remove();
-                }
-            ]
-        ];
-
-        it.each(CLOSE_TRIGGERS)('asks before closing from %s', (_label, trigger) => {
-            open();
-            const { doc } = loadFrame();
-            changeAField(doc);
-            const confirm = answerPrompt('keep');
-            const closed = vi.fn();
-            spectator.output('closed').subscribe(closed);
-
-            trigger(doc);
-
-            expect(confirm).toHaveBeenCalledTimes(1);
-            expect(closed).not.toHaveBeenCalled();
         });
 
         it('stops asking once the editor reports the form is clean again', () => {
@@ -456,8 +382,7 @@ describe('DotLegacyEditorSidePanelComponent', () => {
             changeAField(doc);
             sendLegacyEvent(doc, { name: 'edit-contentlet-data-updated', payload: false });
             const confirm = vi.spyOn(panelConfirmation(), 'confirm');
-            const closed = vi.fn();
-            spectator.output('closed').subscribe(closed);
+            const closed = panel.close;
 
             spectator.component.requestClose();
 
@@ -497,8 +422,7 @@ describe('DotLegacyEditorSidePanelComponent', () => {
             const { doc } = loadFrame();
             changeAField(doc);
             const confirm = vi.spyOn(panelConfirmation(), 'confirm');
-            const closed = vi.fn();
-            spectator.output('closed').subscribe(closed);
+            const closed = panel.close;
 
             sendLegacyEvent(doc, { name: 'close' });
 
@@ -643,9 +567,8 @@ describe('DotLegacyEditorSidePanelComponent', () => {
             open(CREATE_REQUEST);
             const { doc } = loadFrame();
             const pageEditor = vi.fn();
-            const closed = vi.fn();
+            const closed = panel.close;
             spectator.output('pageEditorRequested').subscribe(pageEditor);
-            spectator.output('closed').subscribe(closed);
 
             sendLegacyEvent(doc, {
                 name: 'close',
@@ -699,95 +622,52 @@ describe('DotLegacyEditorSidePanelComponent', () => {
         });
     });
 
-    describe('drawer', () => {
-        it('shows the request title in the header', () => {
+    describe('layout', () => {
+        it('asks the drawer for no padding and a flex row, so the iframe fills it', () => {
             open();
 
-            expect(
-                spectator.query(byTestId('legacy-side-panel-title'), { root: true })?.textContent
-            ).toContain('My legacy content');
-        });
-
-        it('opens at 80% and expands to the full width, remembering the choice', () => {
-            open();
-            const root = () =>
-                spectator.query<HTMLElement>(byTestId('legacy-editor-side-panel'), {
-                    root: true
-                });
-
-            expect(root()?.style.width).toBe('80%');
-
-            clickButton('legacy-side-panel-expand');
-            spectator.detectChanges();
-
-            expect(root()?.style.width).toBe('100%');
-            // Same key as the new-editor panel, so the author's choice carries over between the two.
-            expect(localStorage.getItem('dot-edit-content-side-panel-expanded')).toBe('true');
-        });
-
-        it('registers with the side-panel stack and leaves it when destroyed', async () => {
-            open();
-            await spectator.fixture.whenStable();
-
-            expect(navController.acquire).toHaveBeenCalledWith(spectator.component);
-
-            spectator.fixture.destroy();
-
-            expect(navController.release).toHaveBeenCalledWith(spectator.component);
+            expect(panel.contentStyleClass()).toBe('p-0! flex');
         });
     });
 
+    // The close button, Escape in the admin page and the mask belong to the drawer, which sends
+    // them to `requestClose`; they are tested with it, in `@dotcms/ui`.
     describe('closing', () => {
-        it('emits closed from the close button when nothing changed', () => {
+        it('closes the panel from requestClose when nothing changed', () => {
             open();
-            const closed = vi.fn();
-            spectator.output('closed').subscribe(closed);
-
-            clickButton('legacy-side-panel-close');
-
-            expect(closed).toHaveBeenCalledTimes(1);
-        });
-
-        it('emits closed from requestClose when nothing changed', () => {
-            open();
-            const closed = vi.fn();
-            spectator.output('closed').subscribe(closed);
 
             spectator.component.requestClose();
 
-            expect(closed).toHaveBeenCalledTimes(1);
+            expect(panel.close).toHaveBeenCalledTimes(1);
         });
 
-        it('closes on Escape pressed in the admin page', () => {
-            open();
-            const closed = vi.fn();
-            spectator.output('closed').subscribe(closed);
+        /** Every keydown on the admin page while `run` runs. */
+        const keysOnAdminPage = (run: () => void): KeyboardEvent[] => {
+            const keys: KeyboardEvent[] = [];
+            const listener = (event: Event) => keys.push(event as KeyboardEvent);
+            document.addEventListener('keydown', listener);
+            run();
+            document.removeEventListener('keydown', listener);
 
-            document.dispatchEvent(
-                new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })
-            );
+            return keys;
+        };
 
-            expect(closed).toHaveBeenCalledTimes(1);
-        });
-
-        it('closes on Escape pressed inside the legacy editor, which the admin page never sees', () => {
+        it('presses Escape again on the admin page when it is pressed inside the legacy editor, which the admin page never sees', () => {
             open();
             const { doc } = loadFrame();
-            const closed = vi.fn();
-            spectator.output('closed').subscribe(closed);
 
-            doc.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+            const keys = keysOnAdminPage(() =>
+                doc.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+            );
 
-            expect(closed).toHaveBeenCalledTimes(1);
+            expect(keys).toEqual([expect.objectContaining({ key: 'Escape', cancelable: true })]);
         });
 
         // The admin page can't see the editor's own dialogs (Dojo, TinyMCE), so an Escape one of
         // them already handled is told apart by having been consumed.
-        it('does not close on an Escape the legacy editor already handled', () => {
+        it('keeps an Escape the legacy editor already handled to itself', () => {
             open();
             const { doc } = loadFrame();
-            const closed = vi.fn();
-            spectator.output('closed').subscribe(closed);
             const handledByEditor = new KeyboardEvent('keydown', {
                 key: 'Escape',
                 bubbles: true,
@@ -795,89 +675,27 @@ describe('DotLegacyEditorSidePanelComponent', () => {
             });
             handledByEditor.preventDefault();
 
-            doc.dispatchEvent(handledByEditor);
+            const keys = keysOnAdminPage(() => doc.dispatchEvent(handledByEditor));
 
-            expect(closed).not.toHaveBeenCalled();
-        });
-
-        it('does not close on Escape when another side panel is on top', () => {
-            open();
-            const { doc } = loadFrame();
-            navController.isTop.mockReturnValue(false);
-            const closed = vi.fn();
-            spectator.output('closed').subscribe(closed);
-
-            doc.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-            document.dispatchEvent(
-                new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })
-            );
-
-            expect(closed).not.toHaveBeenCalled();
-        });
-
-        /** PrimeNG builds the mask during an animation the test DOM never runs, hence the stand-in. */
-        const clickMask = ({ ownedByPanel }: { ownedByPanel: boolean }): void => {
-            const mask = document.createElement('div');
-            mask.classList.add('p-drawer-mask');
-            document.body.appendChild(mask);
-
-            if (ownedByPanel) {
-                spectator.query(Drawer)!.mask = mask;
-            }
-
-            mask.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-            mask.remove();
-        };
-
-        it('closes on a click on its own mask when it is on top', () => {
-            open();
-            const closed = vi.fn();
-            spectator.output('closed').subscribe(closed);
-
-            clickMask({ ownedByPanel: true });
-
-            expect(closed).toHaveBeenCalledTimes(1);
-        });
-
-        it('ignores a click on its own mask when another side panel is on top', () => {
-            open();
-            navController.isTop.mockReturnValue(false);
-            const closed = vi.fn();
-            spectator.output('closed').subscribe(closed);
-
-            clickMask({ ownedByPanel: true });
-
-            expect(closed).not.toHaveBeenCalled();
-        });
-
-        it("ignores a click on another drawer's mask", () => {
-            open();
-            const closed = vi.fn();
-            spectator.output('closed').subscribe(closed);
-
-            clickMask({ ownedByPanel: false });
-
-            expect(closed).not.toHaveBeenCalled();
+            expect(keys).toEqual([]);
         });
     });
 
     describe('legacy editor events', () => {
-        it("emits closed on the editor's own close", () => {
+        it("closes the panel on the editor's own close", () => {
             open();
             const { doc } = loadFrame();
-            const closed = vi.fn();
-            spectator.output('closed').subscribe(closed);
+            const closed = panel.close;
 
             sendLegacyEvent(doc, { name: 'close' });
 
             expect(closed).toHaveBeenCalledTimes(1);
         });
 
-        it('emits closed when a page was deleted', () => {
+        it('closes the panel when a page was deleted', () => {
             open();
             const { doc } = loadFrame();
-            const closed = vi.fn();
-            spectator.output('closed').subscribe(closed);
+            const closed = panel.close;
 
             sendLegacyEvent(doc, { name: 'deleted-page', payload: {} });
 
@@ -918,9 +736,8 @@ describe('DotLegacyEditorSidePanelComponent', () => {
         it('ignores events it has no use for', () => {
             open();
             const { doc } = loadFrame();
-            const closed = vi.fn();
+            const closed = panel.close;
             const saved = vi.fn();
-            spectator.output('closed').subscribe(closed);
             spectator.output('saved').subscribe(saved);
 
             sendLegacyEvent(doc, { name: 'edit-contentlet-loaded', data: { contentType: 'Blog' } });
@@ -934,8 +751,7 @@ describe('DotLegacyEditorSidePanelComponent', () => {
             open();
             const first = loadFrame();
             const second = loadFrame();
-            const closed = vi.fn();
-            spectator.output('closed').subscribe(closed);
+            const closed = panel.close;
 
             // The old document is gone after a reload; only the current one is heard.
             sendLegacyEvent(first.doc, { name: 'close' });
