@@ -26,7 +26,7 @@ public class PngImageFilter extends ImageFilter {
 		try{
 	        final File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() + ".tmp.png");
 
-			BufferedImage src = ImageIO.read(file);
+			BufferedImage src = StrictImageReader.read(file);
 			Iterator<ImageWriter> iter = ImageIO.getImageWritersByFormatName("png");
 			ImageWriter writer = iter.next();
 			ImageWriteParam iwp = writer.getDefaultWriteParam();

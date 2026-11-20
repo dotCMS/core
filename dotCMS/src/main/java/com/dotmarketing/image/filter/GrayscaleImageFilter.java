@@ -26,11 +26,22 @@ public class GrayscaleImageFilter extends ImageFilter {
 		}
 
 		try {
-			BufferedImage src = ImageIO.read(file);
+			BufferedImage src = StrictImageReader.read(file);
 
 			BufferedImage dst = filter.filter(src, null);
-			ImageIO.write(dst, "png", resultFile);
-			dst.flush();
+			// a staging file unique to this call: concurrent renders of the same rendition never share one
+			final File tempResultFile = java.nio.file.Files.createTempFile(
+					resultFile.getAbsoluteFile().getParentFile().toPath(), resultFile.getName() + "_", ".tmp").toFile();
+			try {
+				ImageIO.write(dst, "png", tempResultFile);
+				dst.flush();
+				if (!tempResultFile.renameTo(resultFile)) {
+					throw new DotRuntimeException("unable to create file:" + resultFile);
+				}
+			} finally {
+				// already gone after a successful rename; removes a partial file on any failure
+				java.nio.file.Files.deleteIfExists(tempResultFile.toPath());
+			}
         } catch (Exception e) {
             throw new DotRuntimeException("unable to convert file:" +file + " : " +  e.getMessage(),e);
         }

@@ -18,7 +18,9 @@ import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 import org.junit.Assume;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 /**
  * Parity tests for the libvips image engine against the legacy AWT/TwelveMonkeys engine.
@@ -41,6 +43,10 @@ import org.junit.Test;
  * the libvips path wired in via {@code -Dvipsffm.libpath.args=...}.</p>
  */
 public class VipsParityTest {
+
+    /** Root for the truncated-input fixtures; JUnit deletes it, and everything under it, after the class. */
+    @ClassRule
+    public static final TemporaryFolder TRUNCATED_ROOT = new TemporaryFolder();
 
     /** Config key (env override {@code DOT_TEST_REQUIRE_LIBVIPS}) that turns skips into failures. */
     private static final String STRICT_PROPERTY = "TEST_REQUIRE_LIBVIPS";
@@ -523,6 +529,214 @@ public class VipsParityTest {
 
         assertTrue("fallback produced a result file", result.exists() && result.length() > 50);
         assertTrue("fallback output is a valid image", ImageIO.read(result) != null);
+    }
+
+    // ---- Truncated input: a failed libvips read must not publish a black/grey rendition --------
+
+    private static final String FALLBACK_PROPERTY = "IMAGE_API_LIBVIPS_FALLBACK";
+
+    /**
+     * Stage a copy of a bundled image cut to {@code keepFraction} of its bytes, named with the
+     * GENERATED_FILE prefix so {@code getResultsFile} writes alongside it in its own directory.
+     *
+     * @param src bundled image name
+     * @param ext extension of the staged copy
+     * @param keepFraction fraction of the original bytes to keep (0-1)
+     * @return the truncated copy
+     * @throws Exception if the copy cannot be written
+     */
+    private File truncated(final String src, final String ext, final double keepFraction) throws Exception {
+        final File dir = TRUNCATED_ROOT.newFolder();
+        final File in = new File(dir, "dotGenerated_truncated." + ext);
+        final byte[] bytes = java.nio.file.Files.readAllBytes(image(src).toPath());
+        java.nio.file.Files.write(in.toPath(),
+                java.util.Arrays.copyOf(bytes, (int) (bytes.length * keepFraction)));
+        return in;
+    }
+
+    /**
+     * @param input a staged input file
+     * @return every file next to {@code input} other than itself, i.e. any rendition left behind
+     */
+    private java.util.List<File> renditionsBesides(final File input) {
+        final File[] files = input.getParentFile().listFiles();
+        final java.util.List<File> others = new java.util.ArrayList<>();
+        if (files != null) {
+            for (final File f : files) {
+                if (!f.equals(input)) {
+                    others.add(f);
+                }
+            }
+        }
+        return others;
+    }
+
+    /**
+     * Resize a truncated image with {@code IMAGE_API_LIBVIPS_FALLBACK=false} and assert it fails
+     * loudly and leaves no rendition behind.
+     *
+     * @param in truncated input staged by {@link #truncated}
+     */
+    private void assertTruncatedFailsWithoutFallback(final File in) {
+        final String previous = Config.getStringProperty(FALLBACK_PROPERTY, null);
+        Config.setProperty(FALLBACK_PROPERTY, false);
+        try {
+            new VipsResizeImageFilter().runFilter(in, params("resize_w", "200", "resize_h", "150"));
+            org.junit.Assert.fail("truncated " + in.getName() + " must not render through libvips");
+        } catch (com.dotmarketing.exception.DotRuntimeException expected) {
+            assertTrue("no rendition may be cached: " + renditionsBesides(in), renditionsBesides(in).isEmpty());
+        } finally {
+            Config.setProperty(FALLBACK_PROPERTY, previous);
+        }
+    }
+
+    /**
+     * Resize a truncated image with {@code IMAGE_API_LIBVIPS_FALLBACK=true}: libvips recognises the
+     * format but cannot decode it, so the input is damaged and the legacy engine is skipped. The
+     * libvips error is raised directly (it is the cause, not a legacy decode error) and nothing is cached.
+     *
+     * @param in truncated input staged by {@link #truncated}
+     */
+    private void assertTruncatedSkipsLegacyFallback(final File in) {
+        final String previous = Config.getStringProperty(FALLBACK_PROPERTY, null);
+        Config.setProperty(FALLBACK_PROPERTY, true);
+        try {
+            new VipsResizeImageFilter().runFilter(in, params("resize_w", "200", "resize_h", "150"));
+            org.junit.Assert.fail("truncated " + in.getName() + " must not render, with or without fallback");
+        } catch (com.dotmarketing.exception.DotRuntimeException expected) {
+            assertTrue("the libvips error must be raised, not a legacy one: " + expected.getCause(),
+                    expected.getCause() != null && String.valueOf(expected.getCause().getMessage())
+                            .startsWith("libvips operation failed"));
+            assertTrue("no rendition may be cached: " + renditionsBesides(in), renditionsBesides(in).isEmpty());
+        } finally {
+            Config.setProperty(FALLBACK_PROPERTY, previous);
+        }
+    }
+
+    /**
+     * Assert the libvips resize transform itself rejects a truncated input.
+     *
+     * @param in truncated input staged by {@link #truncated}
+     * @throws Exception if the temp output cannot be created
+     */
+    private void assertTransformRejects(final File in) throws Exception {
+        final File out = tempOut("png");
+        try {
+            new VipsResizeImageFilter().transform(in, out, params("resize_w", "200", "resize_h", "150"));
+            org.junit.Assert.fail("libvips must fail on truncated " + in.getName() + " (fail_on=error)");
+        } catch (RuntimeException expected) {
+            // VipsError / DotRuntimeException: the read failed loudly instead of filling rows
+        }
+    }
+
+    @Test
+    public void transform_of_truncated_jpeg_fails_instead_of_filling_grey_rows() throws Exception {
+        assertTransformRejects(truncated("test.jpg", "jpg", 0.35));
+    }
+
+    @Test
+    public void transform_of_truncated_png_fails_instead_of_filling_black_rows() throws Exception {
+        assertTransformRejects(truncated("test.png", "png", 0.35));
+    }
+
+    @Test
+    public void runFilter_truncated_jpeg_without_fallback_throws_and_caches_nothing() throws Exception {
+        assertTruncatedFailsWithoutFallback(truncated("test.jpg", "jpg", 0.35));
+    }
+
+    @Test
+    public void runFilter_truncated_png_without_fallback_throws_and_caches_nothing() throws Exception {
+        assertTruncatedFailsWithoutFallback(truncated("test.png", "png", 0.35));
+    }
+
+    @Test
+    public void runFilter_truncated_jpeg_with_fallback_skips_legacy_engine() throws Exception {
+        assertTruncatedSkipsLegacyFallback(truncated("test.jpg", "jpg", 0.35));
+    }
+
+    @Test
+    public void runFilter_truncated_png_with_fallback_skips_legacy_engine() throws Exception {
+        assertTruncatedSkipsLegacyFallback(truncated("test.png", "png", 0.35));
+    }
+
+    @Test
+    public void runFilter_renders_once_truncated_source_is_healthy_again() throws Exception {
+        final File in = truncated("test.jpg", "jpg", 0.35);
+        assertTruncatedFailsWithoutFallback(in);
+
+        // the source is repaired: the same request must now render instead of serving a bad cache
+        java.nio.file.Files.copy(image("test.jpg").toPath(), in.toPath(),
+                java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        final File out = new VipsResizeImageFilter().runFilter(in, params("resize_w", "200", "resize_h", "150"));
+        assertEquals(new Dimension(200, 150), dims(out));
+    }
+
+    /**
+     * Stages bytes as a generated input in a fresh folder, so any rendition lands next to it.
+     *
+     * @param bytes the file content
+     * @param ext the file extension
+     * @return the staged input
+     * @throws Exception if the file cannot be written
+     */
+    private File staged(final byte[] bytes, final String ext) throws Exception {
+        final File in = new File(TRUNCATED_ROOT.newFolder(), "dotGenerated_staged." + ext);
+        java.nio.file.Files.write(in.toPath(), bytes);
+        return in;
+    }
+
+    /**
+     * Resizes the input with the legacy fallback off and asserts it renders at the requested size,
+     * so the result can only come from libvips.
+     *
+     * @param in the staged input
+     * @throws Exception if the result cannot be read
+     */
+    private void assertRendersWithoutFallback(final File in) throws Exception {
+        final String previous = Config.getStringProperty(FALLBACK_PROPERTY, null);
+        Config.setProperty(FALLBACK_PROPERTY, false);
+        try {
+            final File out = new VipsResizeImageFilter().runFilter(in, params("resize_w", "200", "resize_h", "150"));
+            assertEquals(new Dimension(200, 150), dims(out));
+        } finally {
+            Config.setProperty(FALLBACK_PROPERTY, previous);
+        }
+    }
+
+    /**
+     * Given a JPEG that holds all its image data but lacks its final EOI marker (common in camera and
+     * pipeline output; libjpeg reports it like a truncated file), when resized by libvips, then it
+     * renders: the marker is restored on a temporary copy and the transform is retried.
+     */
+    @Test
+    public void runFilter_complete_jpeg_without_eoi_marker_renders() throws Exception {
+        final byte[] bytes = java.nio.file.Files.readAllBytes(image("test.jpg").toPath());
+        assertRendersWithoutFallback(staged(java.util.Arrays.copyOf(bytes, bytes.length - 2), "jpg"));
+    }
+
+    /**
+     * Given a PNG whose first IDAT chunk has a wrong checksum but complete data (browsers and the
+     * previous engine render it), when resized by libvips, then it renders: {@code fail_on=truncated}
+     * rejects short reads only, not checksum errors. The fixture is written with several IDAT chunks,
+     * which is what makes libvips check the first one ({@code fail_on=error} rejects it).
+     */
+    @Test
+    public void runFilter_png_with_bad_idat_checksum_renders() throws Exception {
+        final BufferedImage noise = new BufferedImage(320, 240, BufferedImage.TYPE_INT_RGB);
+        for (int y = 0; y < noise.getHeight(); y++) {
+            for (int x = 0; x < noise.getWidth(); x++) {
+                noise.setRGB(x, y, (x * 7919 + y * 104729) & 0xFFFFFF);
+            }
+        }
+        final java.io.ByteArrayOutputStream png = new java.io.ByteArrayOutputStream();
+        ImageIO.write(noise, "png", png);
+        final byte[] bytes = png.toByteArray();
+        final int idat = new String(bytes, java.nio.charset.StandardCharsets.ISO_8859_1).indexOf("IDAT");
+        assertTrue("fixture has an IDAT chunk", idat > 4);
+        final int length = java.nio.ByteBuffer.wrap(bytes, idat - 4, 4).getInt();
+        final int crcLastByte = idat + 4 + length + 3;
+        bytes[crcLastByte] = (byte) (bytes[crcLastByte] ^ 0xFF);
+        assertRendersWithoutFallback(staged(bytes, "png"));
     }
 
     @Test

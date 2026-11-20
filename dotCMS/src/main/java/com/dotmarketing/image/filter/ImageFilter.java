@@ -27,6 +27,7 @@ import java.util.Optional;
 public abstract class ImageFilter implements ImageFilterIf {
 	protected static final String FILE_EXT = "png";
 	public    static final String CROP     = "crop";
+	private   static final String UUID_REGEX = "[\\w]{8}(-[\\w]{4}){3}-[\\w]{12}";
 
 
 	
@@ -95,11 +96,23 @@ public abstract class ImageFilter implements ImageFilterIf {
 			
 
 
+			// The first stage keys on the original binary's size and modification time, so a binary
+			// replaced under the same inode (push publishing, save without a new version) gets new
+			// rendition names on every node and in the shared store instead of a stale cached copy.
+			// Chained stages inherit it: their input's name already carries the previous stage's hash.
+			final String sourceVersion = file.getName().startsWith(WebKeys.GENERATED_FILE)
+					? "" : ":" + file.length() + ":" + file.lastModified();
 			MessageDigest digest = java.security.MessageDigest.getInstance("MD5");
-			digest.update((inode + sb.toString() + this.getClass() + file.getName()).getBytes());
+			digest.update((inode + sb.toString() + this.getClass() + file.getName() + sourceVersion).getBytes());
 
 			StringBuilder ret = new StringBuilder();
 			ret.append( WebKeys.GENERATED_FILE);
+			// only a real version inode goes into the name (cleanup matches on it); a fallback value
+			// (temp-file id, a chained input's whole name) stays in the digest only, otherwise each
+			// chained stage would embed the previous name and grow past the file name limit
+			if (inode.matches(UUID_REGEX)) {
+				ret.append(inode + "_");
+			}
 			ret.append(thisFilter + "_");
 			ret.append(convertToHex(digest.digest()));
 
@@ -191,20 +204,13 @@ public abstract class ImageFilter implements ImageFilterIf {
 	protected final File getResultsFile(File file, Map<String, String[]> parameters, String fileExt) {
 		String fileFolderPath = file.getParent();
 
-		String inode =null;
+		final String inode = resolveInode(file, parameters);
 
         if (file.getName().startsWith(WebKeys.GENERATED_FILE)) {
-            inode = file.getName();
             String fileNameNoExt = this.getUniqueFileName(file, parameters, inode);
             String resultFilePath = fileFolderPath + File.separator + fileNameNoExt + "." + fileExt;
             return new File(resultFilePath);
         } else {
-            try {
-                inode = RegEX.find(file.getCanonicalPath(), "[\\w]{8}(-[\\w]{4}){3}-[\\w]{12}").get(0).getMatch();
-            } catch (Exception e) {
-                inode = parameters.get("assetInodeOrIdentifier")[0];
-            }
-
             File dirs = new File(ConfigUtils.getDotGeneratedPath() + File.separator + inode.charAt(0) + File.separator
                             + inode.charAt(1));
             if (!dirs.exists()) {
@@ -216,6 +222,26 @@ public abstract class ImageFilter implements ImageFilterIf {
             return new File(resultFilePath);
         }
 
+	}
+
+	/**
+	 * Resolves the inode of the content version being rendered, which is embedded in every rendition
+	 * name so {@code FileAssetAPI#cleanThumbnailsFromFileAsset} can delete only that version's files.
+	 * A chained stage reads it back from its {@code dotGenerated_<inode>_...} input; the first stage
+	 * takes it from the binary's storage path ({@code assets/x/y/<inode>/...}). The request's
+	 * {@code assetInodeOrIdentifier} is only a last resort because it may hold an identifier.
+	 */
+	private String resolveInode(final File file, final Map<String, String[]> parameters) {
+		final String fileName = file.getName();
+		if (fileName.startsWith(WebKeys.GENERATED_FILE)) {
+			final String fromName = Try.of(() -> RegEX.find(
+							fileName.substring(WebKeys.GENERATED_FILE.length()), "^" + UUID_REGEX).get(0).getMatch())
+					.getOrNull();
+			// a generated input without an embedded inode keeps the legacy behaviour of keying on its name
+			return fromName != null ? fromName : fileName;
+		}
+		return Try.of(() -> RegEX.find(file.getCanonicalPath(), UUID_REGEX).get(0).getMatch())
+				.getOrElse(() -> parameters.get("assetInodeOrIdentifier")[0]);
 	}
 	
     public String[] getAcceptedParameters() {

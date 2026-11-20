@@ -60,18 +60,61 @@ public abstract class VipsImageFilter extends ImageFilter {
             return resultFile;
         } catch (Exception e) {
             io.vavr.control.Try.run(tempResultFile::delete);
+            final java.util.Optional<File> repaired = VipsManager.withMissingJpegEoiRepaired(file);
+            if (repaired.isPresent()) {
+                return retryWithRepairedInput(file, repaired.get(), tempResultFile, resultFile, parameters, e);
+            }
             return fallbackOrThrow(file, parameters, e);
         }
     }
 
     /**
-     * When a libvips operation fails (corrupt image, a delegate such as PDF/AVIF not built into the
-     * host libvips, etc.) degrade to the equivalent legacy filter rather than serving an error. This
-     * is enabled by default and can be disabled with {@code IMAGE_API_LIBVIPS_FALLBACK=false}.
+     * Runs the transform again on a repaired copy of the input: a JPEG that is complete but was
+     * missing its final EOI marker. The result keeps the name derived from the original input.
+     *
+     * @param file the original input
+     * @param repaired the repaired temporary copy, deleted here
+     * @param tempResultFile the staging file for the result
+     * @param resultFile the rendition to publish
+     * @param parameters the filter parameters
+     * @param original the failure of the first attempt, reported if the retry also fails
+     * @return the published rendition
+     */
+    private File retryWithRepairedInput(final File file, final File repaired, final File tempResultFile,
+            final File resultFile, final Map<String, String[]> parameters, final Exception original) {
+        try {
+            Logger.warn(this.getClass(), "libvips filter '" + getFilterName() + "': " + file
+                    + " is a complete JPEG without its end marker; rendering it with the marker restored");
+            transform(repaired, tempResultFile, parameters);
+            if (!tempResultFile.renameTo(resultFile)) {
+                throw new DotRuntimeException("unable to create file: " + resultFile);
+            }
+            return resultFile;
+        } catch (Exception retryFailure) {
+            io.vavr.control.Try.run(tempResultFile::delete);
+            return fallbackOrThrow(file, parameters, original);
+        } finally {
+            io.vavr.control.Try.run(() -> java.nio.file.Files.deleteIfExists(repaired.toPath()));
+        }
+    }
+
+    /**
+     * When a libvips operation fails because of the engine (a delegate such as PDF/AVIF not built into
+     * the host libvips, an operation bug), degrade to the equivalent legacy filter rather than serving
+     * an error. This is enabled by default and can be disabled with {@code IMAGE_API_LIBVIPS_FALLBACK=false}.
+     *
+     * <p>No fallback when the input itself is damaged: libvips recognises its format but cannot decode
+     * it ({@code fail_on=truncated}). The legacy engine would decode the same bad bytes into the JVM heap
+     * only to fail again, so the error is raised directly.</p>
      */
     private File fallbackOrThrow(final File file, final Map<String, String[]> parameters, final Exception cause) {
         final boolean fallbackEnabled =
                 com.dotmarketing.util.Config.getBooleanProperty("IMAGE_API_LIBVIPS_FALLBACK", true);
+        if (fallbackEnabled && isDamagedInput(file)) {
+            Logger.warnAndDebug(this.getClass(), "libvips filter '" + getFilterName() + "' failed for " + file
+                    + "; the input does not decode, so the legacy engine is skipped: " + cause.getMessage(), cause);
+            throw new DotRuntimeException("unable to convert file: " + file + " : " + cause.getMessage(), cause);
+        }
         if (fallbackEnabled) {
             final java.util.Optional<com.dotmarketing.image.filter.ImageFilter> legacy =
                     VipsLegacyFilters.forName(getFilterName());
@@ -84,6 +127,17 @@ public abstract class VipsImageFilter extends ImageFilter {
         }
         Logger.warnAndDebug(this.getClass(), "libvips filter failed for " + file + ": " + cause.getMessage(), cause);
         throw new DotRuntimeException("unable to convert file: " + file + " : " + cause.getMessage(), cause);
+    }
+
+    /**
+     * Tells whether a failed filter's input is damaged rather than unsupported: libvips has a loader
+     * for it but cannot decode every pixel. Runs only after a failure, entirely in native memory.
+     *
+     * @param file the input the failed filter was reading
+     * @return true when the input is in a format libvips reads and does not decode fully
+     */
+    private static boolean isDamagedInput(final File file) {
+        return VipsManager.hasLoader(file) && !VipsManager.decodesFully(file);
     }
 
     /** Parse an int parameter under this filter's prefix, with a default. */

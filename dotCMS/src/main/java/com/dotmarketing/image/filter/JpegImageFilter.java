@@ -51,7 +51,7 @@ public class JpegImageFilter extends ImageFilter {
 			if(progressive){
 			  iwp.setProgressiveMode(ImageWriteParam.MODE_DEFAULT);
 			}
-			BufferedImage src = ImageIO.read(file);
+			BufferedImage src = StrictImageReader.read(file);
 			BufferedImage dst = new BufferedImage(src.getWidth(), src.getHeight(), BufferedImage.TYPE_3BYTE_BGR);
 			Graphics2D graphics = dst.createGraphics();  
 

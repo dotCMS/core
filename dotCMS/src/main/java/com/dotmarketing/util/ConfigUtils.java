@@ -15,6 +15,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Generic class to get return configuration parameters, and any logic required
@@ -202,20 +204,43 @@ public class ConfigUtils {
         return ConfigUtils.getAbsoluteAssetsRootPath() + File.separator + "dotGenerated";
     }
 
-    /** @return true when finished renditions should be published to the shared store after generation. */
+    /** Unrecognized {@code DOTGENERATED_DEFAULT_PATH} values already reported, so each one warns only once. */
+    private static final Set<String> warnedDotGeneratedModes = ConcurrentHashMap.newKeySet();
+
+    /**
+     * @return true when finished renditions should be published to the shared store after generation.
+     * Any value of {@code DOTGENERATED_DEFAULT_PATH} other than {@code LOCAL} or {@code SHARED_COMPLETED}
+     * (case-insensitive), including the legacy {@code shared}, is treated as {@code SHARED_COMPLETED}.
+     */
     public static boolean isDotGeneratedSharedCompleted() {
-        return SHARED_COMPLETED.equalsIgnoreCase(Config.getStringProperty("DOTGENERATED_DEFAULT_PATH", LOCAL));
+        return SHARED_COMPLETED.equals(normalizedDotGeneratedMode());
     }
 
-    private static Lazy<String> dotGeneratedPath = Lazy.of(() -> {
-        final String mode = Config.getStringProperty("DOTGENERATED_DEFAULT_PATH", LOCAL);
-        // LOCAL and SHARED_COMPLETED both generate under dotsecure (fast, instance-local scratch);
-        // SHARED_COMPLETED additionally publishes the finished file to getDotGeneratedSharedPath().
-        // Any other value keeps the legacy behaviour of writing straight to the shared assets path.
-        return LOCAL.equalsIgnoreCase(mode) || SHARED_COMPLETED.equalsIgnoreCase(mode)
-                ? ConfigUtils.getDynamicContentPath()
-                : ConfigUtils.getAbsoluteAssetsRootPath();
-    });
+    /**
+     * Reads {@code DOTGENERATED_DEFAULT_PATH} live (so it can flip without a restart) and maps it to
+     * {@code LOCAL} or {@code SHARED_COMPLETED}, logging a WARN the first time an unrecognized value is seen.
+     * Surrounding spaces are ignored, so {@code "LOCAL "} (easy to get from YAML or env files) still means LOCAL.
+     */
+    private static String normalizedDotGeneratedMode() {
+        final String raw = Config.getStringProperty("DOTGENERATED_DEFAULT_PATH", LOCAL);
+        final String mode = raw == null ? null : raw.trim();
+        if (LOCAL.equalsIgnoreCase(mode)) {
+            return LOCAL;
+        }
+        if (SHARED_COMPLETED.equalsIgnoreCase(mode)) {
+            return SHARED_COMPLETED;
+        }
+        if (warnedDotGeneratedModes.add(String.valueOf(mode))) {
+            Logger.warn(ConfigUtils.class, "Unrecognized DOTGENERATED_DEFAULT_PATH value '" + mode
+                    + "'; treating as " + SHARED_COMPLETED + ". Valid values are " + LOCAL
+                    + " and " + SHARED_COMPLETED + ".");
+        }
+        return SHARED_COMPLETED;
+    }
+
+    // Every mode generates under dotsecure (fast, instance-local scratch); SHARED_COMPLETED
+    // additionally publishes the finished file to getDotGeneratedSharedPath().
+    private static Lazy<String> dotGeneratedPath = Lazy.of(ConfigUtils::getDynamicContentPath);
 
 
 	public static Tuple2<String,String> getDeclaredDefaultLanguage(){
