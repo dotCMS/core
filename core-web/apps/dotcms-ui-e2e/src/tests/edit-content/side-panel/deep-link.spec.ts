@@ -2,6 +2,8 @@ import { iFramesLocators } from '@locators/globalLocators';
 import { expect, test } from '@playwright/test';
 import { createContentlet } from '@requests/contentlets';
 import { type ContentType, createFakeContentType, deleteContentType } from '@requests/contentType';
+import { createFolder, deleteFolders } from '@requests/folders';
+import { getDefaultSite } from '@requests/sites';
 import { Portlet } from '@utils/portlets';
 import { uniqueSuffix } from '@utils/utils';
 
@@ -91,5 +93,31 @@ test.describe('Content links open the side panel over the content portlet', () =
         await sidePanel.close();
         await sidePanel.expectClosed();
         await expect(page).toHaveURL(CONTENT_PORTLET_URL);
+    });
+
+    // The folder a create link names goes with the panel: a later create from the portlet must
+    // not be read back in it on a refresh or a shared link (review R3).
+    test('drops the folder a create link names when the panel closes', async ({
+        page,
+        request
+    }) => {
+        const sidePanel = new SidePanel(page);
+        const site = await getDefaultSite(request);
+        const folderPath = `/e2e-side-panel-link-${uniqueSuffix()}`;
+        const folderInode = await createFolder(request, site.hostname, folderPath);
+
+        try {
+            await page.goto(`${Portlet.Content}/new/${typeVariable}?folder=${folderInode}`);
+
+            await sidePanel.expectOpen();
+            await expect(page).toHaveURL(new RegExp(`createContent=${typeVariable}`));
+            await expect(page).toHaveURL(new RegExp(`folder=${folderInode}`));
+
+            await sidePanel.close();
+            await sidePanel.expectClosed();
+            await expect(page).toHaveURL(CONTENT_PORTLET_URL);
+        } finally {
+            await deleteFolders(request, site.hostname, [folderPath]);
+        }
     });
 });
