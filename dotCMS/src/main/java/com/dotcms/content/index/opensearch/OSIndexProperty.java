@@ -101,6 +101,14 @@ public enum OSIndexProperty {
     /** Path to the PEM file of the CA that signed the server certificate. No ES equivalent. */
     TLS_CA_CERT("OS_TLS_CA_CERT", null),
 
+    /**
+     * What to do when the server certificate is expired: {@code ALLOW}, {@code WARN} (the default)
+     * or {@code REJECT}. Deliberately has no Elasticsearch fallback, for the same reason as
+     * {@link #TLS_CERT_REQUIRED}: the legacy client has no equivalent and must not lend its
+     * behaviour to this one.
+     */
+    TLS_ON_EXPIRED_CERT("OS_TLS_ON_EXPIRED_CERT", null),
+
     // -------------------------------------------------------------------------
     // Index management
     // -------------------------------------------------------------------------

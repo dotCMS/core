@@ -13,11 +13,12 @@ import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
 import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
 import org.apache.hc.client5.http.psl.PublicSuffixMatcherLoader;
 import org.apache.hc.client5.http.ssl.DefaultHostnameVerifier;
+import org.apache.hc.client5.http.ssl.HostnameVerificationPolicy;
 import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
 import org.apache.hc.client5.http.ssl.TrustAllStrategy;
-import org.apache.hc.client5.http.ssl.TrustSelfSignedStrategy;
 import org.apache.hc.core5.http.HttpHost;
 import org.apache.hc.core5.ssl.SSLContexts;
+import org.apache.hc.core5.ssl.TrustStrategy;
 import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.json.jackson.JacksonJsonpMapper;
 import org.opensearch.client.transport.OpenSearchTransport;
@@ -33,6 +34,8 @@ import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.security.cert.CertificateFactory;
 import java.util.Arrays;
 import java.util.List;
@@ -43,6 +46,13 @@ import java.util.List;
  * Provides a straightforward way to configure and create OpenSearch clients.
  */
 class ConfigurableOpenSearchProvider {
+
+    /** Certificates already reported by {@link #warnOnce}, so a steady state is logged once. */
+    private static final java.util.Set<String> WARNED_CERTIFICATES =
+            java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    /** Upper bound for {@link #WARNED_CERTIFICATES}, so a hostile peer cannot grow it without end. */
+    private static final int MAX_WARNED_CERTIFICATES = 128;
 
     private static final String OS_ENDPOINTS = "OS_ENDPOINTS";
 
@@ -145,6 +155,8 @@ class ConfigurableOpenSearchProvider {
         builder.tlsEnabled(tlsEnabled);
         builder.certRequired(IndexConfigHelper.getBoolean(OSIndexProperty.TLS_CERT_REQUIRED, true));
         builder.trustSelfSigned(IndexConfigHelper.getBoolean(OSIndexProperty.TLS_TRUST_SELF_SIGNED, false));
+        builder.expiredCertPolicy(ExpiredCertPolicy.from(
+                IndexConfigHelper.getString(OSIndexProperty.TLS_ON_EXPIRED_CERT, null)));
 
         String caCert = IndexConfigHelper.getString(OSIndexProperty.TLS_CA_CERT, null);
         if (UtilMethods.isSet(caCert)) {
@@ -288,11 +300,18 @@ class ConfigurableOpenSearchProvider {
             ClientTlsStrategyBuilder tlsBuilder = ClientTlsStrategyBuilder.create()
                 .setSslContext(sslContext);
             if (config.certRequired()) {
-                // Set explicitly on purpose: without a verifier the client leaves the name check to the
-                // JVM trust manager, and the trust manager installed for OS_TLS_TRUST_SELF_SIGNED skips it.
+                // Set explicitly on purpose: with no verifier, httpclient5 5.5 leaves the name check
+                // to the JDK alone (HostnameVerificationPolicy BUILTIN), and that path does not
+                // take effect on this async transport — the TLS parameters are mutated after they
+                // have been handed to the engine — so the name would not be checked at all.
                 tlsBuilder.setHostnameVerifier(new DefaultHostnameVerifier(PublicSuffixMatcherLoader.getDefault()));
             } else {
-                tlsBuilder.setHostnameVerifier(NoopHostnameVerifier.INSTANCE);
+                // The policy must be set alongside the verifier: left to its default, httpclient5
+                // asks the JDK to check the name during the handshake (HostnameVerificationPolicy
+                // BUILTIN/BOTH), so silencing the client-side verifier alone stops working from
+                // httpclient5 5.6 on, where that JDK path is no longer inert.
+                tlsBuilder.setHostnameVerifier(NoopHostnameVerifier.INSTANCE)
+                        .setHostnameVerificationPolicy(HostnameVerificationPolicy.CLIENT);
                 Logger.warn(this.getClass(), "OpenSearch TLS server certificate and hostname verification"
                     + " is turned off (OS_TLS_CERT_REQUIRED=false). Set it to true, and set OS_TLS_CA_CERT"
                     + " when the server certificate is signed by a private CA.");
@@ -331,16 +350,178 @@ class ConfigurableOpenSearchProvider {
                 .build();
         }
         if (config.caCertPath().isPresent()) {
+            final KeyStore anchors = loadCaKeyStore(config.caCertPath().get());
+            // PKIX never checks the validity dates of a trust anchor, so the pinned certificates are
+            // checked here, once, while the context is built.
+            applyExpiredCertPolicyToAnchors(config, anchors);
             return SSLContexts.custom()
-                .loadTrustMaterial(loadCaKeyStore(config.caCertPath().get()), null)
+                .loadTrustMaterial(anchors, expiryPolicyStrategy(config))
                 .build();
         }
         if (config.trustSelfSigned()) {
             return SSLContexts.custom()
-                .loadTrustMaterial(new TrustSelfSignedStrategy())
+                .loadTrustMaterial(selfAnchoredChainStrategy(config))
                 .build();
         }
+        // The JVM truststore path deliberately keeps the default context: building one here would
+        // drop the key material the JVM installs from javax.net.ssl.keyStore, so a deployment that
+        // presents a client certificate to OpenSearch that way would stop presenting it. Nothing is
+        // lost by it — the anchors are the JVM's own CAs, and PKIX date-checks everything else.
         return SSLContext.getDefault();
+    }
+
+    /**
+     * Trust decision for {@code OS_TLS_TRUST_SELF_SIGNED=true}: accept the chain the server presents
+     * when it anchors itself, meaning the last certificate is self-signed and every certificate is
+     * signed by the next one.
+     *
+     * <p>httpclient5's own {@code TrustSelfSignedStrategy} accepts a chain of exactly one
+     * certificate and nothing else, so a node that sends its signing CA alongside its own
+     * certificate — the recommended server configuration — was refused, while a certificate from an
+     * unknown private CA that happened to be sent alone was accepted. This looks at what the chain
+     * is instead of how long it is.</p>
+     *
+     * @param config the resolved client configuration, consulted for the expired-certificate policy
+     * @return the trust strategy handed to the TLS context
+     */
+    private static TrustStrategy selfAnchoredChainStrategy(final OSClientConfig config) {
+        return (chain, authType) -> {
+            applyExpiredCertPolicy(config, chain);
+            if (isSelfAnchored(chain)) {
+                return true;
+            }
+            // Refusing here only hands the chain to PKIX, which will reject it when the issuer is a
+            // private CA. Say so once, with the issuer and the way out, or the operator is left with
+            // a bare "certification path" error on a connection that OS_TLS_TRUST_SELF_SIGNED
+            // appeared to cover.
+            if (chain != null && chain.length > 0) {
+                warnOnce(chain[0], "The OpenSearch server certificate '"
+                        + chain[0].getSubjectX500Principal().getName() + "' issued by '"
+                        + chain[0].getIssuerX500Principal().getName() + "' is not self-signed, so"
+                        + " OS_TLS_TRUST_SELF_SIGNED does not cover it and the usual validation"
+                        + " applies. Set OS_TLS_CA_CERT to the PEM file of the issuing CA.");
+            }
+            return false;
+        };
+    }
+
+    /**
+     * Logs a TLS warning the first time it is seen for a given certificate and at DEBUG afterwards.
+     * The trust decision runs on every handshake, and an expired or privately-signed certificate is
+     * a steady state that lasts months, so an unguarded WARN would repeat for every connection the
+     * pool opens.
+     *
+     * @param certificate the certificate the message is about
+     * @param message the message to log
+     */
+    private static void warnOnce(final X509Certificate certificate, final String message) {
+        final String key = certificate.getIssuerX500Principal().getName()
+                + '|' + certificate.getSerialNumber();
+        if (WARNED_CERTIFICATES.size() < MAX_WARNED_CERTIFICATES && WARNED_CERTIFICATES.add(key)) {
+            Logger.warn(ConfigurableOpenSearchProvider.class, message);
+        } else {
+            Logger.debug(ConfigurableOpenSearchProvider.class, message);
+        }
+    }
+
+    /**
+     * Applies the expired-certificate policy to the trust anchors configured in
+     * {@code OS_TLS_CA_CERT}, which PKIX itself never date-checks.
+     *
+     * @param config the resolved client configuration
+     * @param anchors the trust store built from the configured PEM file
+     * @throws GeneralSecurityException when the policy is {@code REJECT} and an anchor is expired
+     */
+    private static void applyExpiredCertPolicyToAnchors(final OSClientConfig config,
+            final KeyStore anchors) throws GeneralSecurityException {
+        if (ExpiredCertPolicy.ALLOW == config.expiredCertPolicy()) {
+            return;
+        }
+        final java.util.Enumeration<String> aliases = anchors.aliases();
+        while (aliases.hasMoreElements()) {
+            final Certificate certificate = anchors.getCertificate(aliases.nextElement());
+            if (certificate instanceof X509Certificate) {
+                applyExpiredCertPolicy(config, new X509Certificate[]{(X509Certificate) certificate});
+            }
+        }
+    }
+
+    /**
+     * Trust strategy that only applies {@code OS_TLS_ON_EXPIRED_CERT} and never grants trust by
+     * itself, so the normal PKIX validation still decides whether to accept the chain. It is needed
+     * because PKIX does not check the validity dates of a trust anchor, which is exactly what a
+     * certificate pinned through {@code OS_TLS_CA_CERT} becomes.
+     *
+     * @param config the resolved client configuration
+     * @return a strategy that always defers to PKIX
+     */
+    private static TrustStrategy expiryPolicyStrategy(final OSClientConfig config) {
+        return (chain, authType) -> {
+            applyExpiredCertPolicy(config, chain);
+            return false;
+        };
+    }
+
+    /**
+     * Returns whether the chain closes on itself, which is what an operator opts into with
+     * {@code OS_TLS_TRUST_SELF_SIGNED=true}: the last certificate is self-signed, and every other
+     * certificate carries a signature made by the one after it.
+     *
+     * @param chain the certificate chain the server presented
+     * @return {@code true} when the chain is self-anchored and internally consistent
+     */
+    private static boolean isSelfAnchored(final X509Certificate[] chain) {
+        if (chain == null || chain.length == 0) {
+            return false;
+        }
+        final X509Certificate root = chain[chain.length - 1];
+        if (!root.getIssuerX500Principal().equals(root.getSubjectX500Principal())) {
+            return false;
+        }
+        try {
+            for (int i = 0; i < chain.length - 1; i++) {
+                chain[i].verify(chain[i + 1].getPublicKey());
+            }
+            root.verify(root.getPublicKey());
+        } catch (GeneralSecurityException e) {
+            Logger.debug(ConfigurableOpenSearchProvider.class,
+                    "The OpenSearch server chain is not self-anchored: " + e.getMessage());
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Applies {@code OS_TLS_ON_EXPIRED_CERT} to every certificate the server presented.
+     *
+     * @param config the resolved client configuration
+     * @param chain the certificate chain the server presented
+     * @throws CertificateException when the policy is {@code REJECT} and a certificate is expired or
+     *         not valid yet
+     */
+    private static void applyExpiredCertPolicy(final OSClientConfig config,
+            final X509Certificate[] chain) throws CertificateException {
+        if (chain == null || ExpiredCertPolicy.ALLOW == config.expiredCertPolicy()) {
+            return;
+        }
+        for (final X509Certificate certificate : chain) {
+            try {
+                certificate.checkValidity();
+            } catch (CertificateException e) {
+                final String detail = "The OpenSearch server certificate '"
+                        + certificate.getSubjectX500Principal().getName() + "' is not valid: "
+                        + e.getMessage() + ".";
+                if (ExpiredCertPolicy.REJECT == config.expiredCertPolicy()) {
+                    throw new CertificateException(detail
+                            + " The connection was refused because OS_TLS_ON_EXPIRED_CERT=REJECT.", e);
+                }
+                // Deliberately not phrased as "accepted": on the CA-file and truststore paths the
+                // normal validation still runs afterwards and may reject this very certificate.
+                warnOnce(certificate, detail
+                        + " OS_TLS_ON_EXPIRED_CERT=WARN, so the expiry alone does not refuse the"
+                        + " connection; set it to REJECT to refuse it.");
+            }
+        }
     }
 
     /**

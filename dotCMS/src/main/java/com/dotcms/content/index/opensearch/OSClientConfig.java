@@ -79,6 +79,16 @@ public abstract class OSClientConfig {
     }
 
     /**
+     * What to do when the server presents an expired certificate, from
+     * {@code OS_TLS_ON_EXPIRED_CERT}. Defaults to {@link ExpiredCertPolicy#WARN}, which keeps the
+     * connection working and makes the expiry visible in the log.
+     */
+    @Value.Default
+    public ExpiredCertPolicy expiredCertPolicy() {
+        return ExpiredCertPolicy.WARN;
+    }
+
+    /**
      * Connection timeout
      */
     @Value.Default
