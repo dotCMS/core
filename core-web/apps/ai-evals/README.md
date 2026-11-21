@@ -80,8 +80,14 @@ description: One line describing what this tests
 difficulty: easy            # easy | medium | hard
 runs: 5                     # how many times to run (recommend 5-7)
 
+max_steps: 10               # optional — most model steps per run (default 10)
+
+setup: |                     # optional — JS run before each run; returns the run's values
+  return { type: 'EvalThing' + Date.now().toString(36) + run };
+
 prompt: |
   The prompt sent to the model. Be specific about what you want.
+  Values from setup are available as {{type}}.
 
 assertions:
   - type: http_get           # check dotCMS state via GET
@@ -97,10 +103,12 @@ assertions:
 
 cleanup:                     # optional — runs after assertions, best-effort
   - method: DELETE
-    path: /api/v1/some/path
+    path: /api/v1/some/path/{{type}}
   - method: POST
     path: /api/v1/some/other
     body: { key: value }
+  - script: |                # or JS, for state a fixed path cannot name
+      await fetch(new URL(`/api/v1/other/${vars.type}`, url), { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
 
 tags: [discovery, read-only]           # optional, for filtering later
 requires_fixture: Starter site data    # optional, documents prerequisites
@@ -133,6 +141,8 @@ Inline JavaScript evaluated after the run. Gets four globals:
 | `token` | `string` | `AUTH_TOKEN` from env |
 | `fetch` | `function` | Node.js native fetch |
 
+| `vars` | `object` | The values `setup` returned for this run |
+
 Return `true` to pass, `false` to fail. Errors are caught and recorded as failures.
 
 ```yaml
@@ -155,7 +165,15 @@ Return `true` to pass, `false` to fail. Errors are caught and recorded as failur
     return fields.some((f) => f.variable?.toLowerCase() === 'title');
 ```
 
-Custom scripts have a **10-second timeout**. Hanging fetches will be killed and recorded as failures.
+Custom scripts have a **10-second timeout**; a check that polls can raise it with `timeout_ms` (at most 120000). Hanging fetches will be killed and recorded as failures.
+
+### Setup and `{{vars}}`
+
+`setup` is JavaScript run before each run, with `url`, `token`, `fetch` and `run` (the 1-based run number). It creates what the run needs and returns an object of values. Those values replace `{{name}}` in the prompt and in `http_get` and cleanup paths, and every script sees them as `vars`.
+
+Give fixtures a per-run name (`'EvalAuthor' + Date.now().toString(36) + run`). Deleting a content type finishes in the background, and its variable stays taken until it does, so reusing one fixed name across runs fails.
+
+If `setup` throws, the run is recorded as failed without calling the model. Cleanup still runs, but with no values, so a setup that creates several things should clean up after itself before rethrowing.
 
 ### Cleanup
 
@@ -231,6 +249,10 @@ apps/ai-evals/
 │   └── types.ts      # All TypeScript interfaces
 ├── tasks/            # Task YAML files — add yours here
 │   ├── count-workflow-schemes.yaml
-│   └── create-folder-at-root.yaml
+│   ├── create-folder-at-root.yaml
+│   ├── content-reuse-existing-related.yaml
+│   ├── content-relate-in-second-language.yaml
+│   ├── content-type-add-fields.yaml
+│   └── content-type-create-usable-fields.yaml
 └── README.md
 ```

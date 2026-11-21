@@ -16,7 +16,9 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -117,7 +119,7 @@ public class FieldResource implements Serializable {
 
             } else {
 
-                field = fieldAPI.save(field, user);
+                field = fieldAPI.save(withContentTypeFromPath(field, typeIdOrVarName, user), user);
 
                 response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(field).mapObject())).build();
             }
@@ -127,6 +129,29 @@ public class FieldResource implements Serializable {
         }
 
         return response;
+    }
+
+    /**
+     * The field to create on the content type named in the path. A body without
+     * {@code contentTypeId} gets the path's type; a body whose {@code contentTypeId} names another
+     * type is refused rather than saved on that other type.
+     *
+     * @throws DotStateException (400) when the body and the path name different content types
+     */
+    public static Field withContentTypeFromPath(final Field field, final String typeIdOrVarName,
+                                                final User user)
+            throws DotDataException, DotSecurityException {
+        final ContentType contentType = APILocator.getContentTypeAPI(user).find(typeIdOrVarName);
+        if (!UtilMethods.isSet(field.contentTypeId())) {
+            return FieldBuilder.builder(field).contentTypeId(contentType.id()).build();
+        }
+        if (!field.contentTypeId().equals(contentType.id())) {
+            throw new DotStateException(String.format(
+                    "The field's contentTypeId '%s' does not match the content type in the path "
+                            + "('%s', id '%s'). Omit contentTypeId: the path decides the type.",
+                    field.contentTypeId(), typeIdOrVarName, contentType.id()));
+        }
+        return field;
     }
 
     @GET

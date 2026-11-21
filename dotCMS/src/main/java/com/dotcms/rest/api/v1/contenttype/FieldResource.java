@@ -176,6 +176,8 @@ public class FieldResource implements Serializable {
 	public Response createContentTypeField(@Parameter(description = "Content type ID", required = true)
 										   @PathParam("typeId") final String typeId, 
 										   @RequestBody(description = "A SINGLE field object to create on the content type. "
+												   + "The content type is the one in the path; `contentTypeId` in the body can be "
+												   + "omitted, and a different one is rejected with 400. "
 												   + "This endpoint creates exactly one field: if you pass a JSON array, only the "
 												   + "first element is saved (it returns 200 and silently drops the rest). To add "
 												   + "multiple fields at once, use PUT /api/v1/contenttype/{typeId}/fields (which takes "
@@ -200,7 +202,8 @@ public class FieldResource implements Serializable {
 
 			} else {
 
-				field = fapi.save(field, user);
+				field = fapi.save(com.dotcms.rest.api.v2.contenttype.FieldResource
+						.withContentTypeFromPath(field, typeId, user), user);
 
 				response = Response.ok(new ResponseEntityView<>(new JsonFieldTransformer(field).mapObject())).build();
 			}
