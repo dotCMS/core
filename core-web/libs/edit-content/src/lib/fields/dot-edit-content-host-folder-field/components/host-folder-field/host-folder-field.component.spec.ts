@@ -1233,4 +1233,53 @@ describe('DotHostFolderFieldComponent', () => {
             vi.useRealTimers();
         });
     });
+
+    /**
+     * The copy action reads as a regular icon-only button: a `size="small"` button shrank around
+     * the glyph and made it look too big for it (#37958).
+     */
+    describe('copy button size', () => {
+        beforeEach(() => {
+            const site = TREE_SELECT_SITES_MOCK[0];
+            store.setPendingNode(site);
+            store.commit();
+            spectator.detectChanges();
+        });
+
+        it('should render at the default button size, not small', () => {
+            const button = spectator.query(byTestId('host-folder-copy'))?.querySelector('button');
+
+            expect(button).toBeTruthy();
+            expect(button).not.toHaveClass('p-button-sm');
+        });
+
+        it('should not size the copy glyph per instance', () => {
+            expect(spectator.query(byTestId('host-folder-copy-icon'))).not.toHaveClass('text-lg');
+        });
+
+        it('should not size the check glyph per instance after copying', () => {
+            vi.useFakeTimers();
+            spectator.component.copyPath();
+            spectator.detectChanges();
+
+            const icon = spectator.query(byTestId('host-folder-copy-icon'));
+
+            expect(icon).toHaveText('check');
+            expect(icon).not.toHaveClass('text-lg');
+            vi.useRealTimers();
+        });
+
+        /**
+         * The copy button is an input-group add-on attached to the field, so the field and its
+         * action read as one control and line up with the other fields' width (#37958).
+         */
+        it('should attach the copy button to the trigger as an input-group add-on', () => {
+            const group = spectator.query(byTestId('host-folder-trigger'))?.parentElement;
+            const addon = spectator.query(byTestId('host-folder-copy'))?.parentElement;
+
+            expect(group?.tagName).toBe('P-INPUTGROUP');
+            expect(addon?.tagName).toBe('P-INPUTGROUP-ADDON');
+            expect(addon?.parentElement).toBe(group);
+        });
+    });
 });

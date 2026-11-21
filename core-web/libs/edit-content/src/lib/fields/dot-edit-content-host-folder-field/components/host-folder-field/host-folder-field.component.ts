@@ -20,6 +20,8 @@ import { NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { IconFieldModule } from 'primeng/iconfield';
+import { InputGroupModule } from 'primeng/inputgroup';
+import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { Popover, PopoverModule } from 'primeng/popover';
@@ -62,6 +64,8 @@ import { HostFolderFiledStore } from '../../store/host-folder-field.store';
         ButtonModule,
         TooltipModule,
         IconFieldModule,
+        InputGroupModule,
+        InputGroupAddonModule,
         InputIconModule,
         InputTextModule,
         DotMessagePipe,

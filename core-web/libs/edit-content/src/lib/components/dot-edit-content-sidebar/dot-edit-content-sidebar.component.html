@@ -40,7 +40,6 @@
                 <p-button
                     icon="pi pi-times"
                     [label]="'close' | dm"
-                    [rounded]="true"
                     [outlined]="true"
                     size="small"
                     (click)="$store.exitCompareView()"
@@ -48,7 +47,6 @@
                 <p-button
                     icon="pi pi-history"
                     [label]="'edit.content.sidebar.history.restore' | dm"
-                    [rounded]="true"
                     size="small"
                     (click)="$store.restoreCurrentHistoricalVersion()"
                     data-testid="restore-compare-version-button" />
@@ -60,7 +58,6 @@
                 <p-button
                     icon="pi pi-times"
                     [label]="'close' | dm"
-                    [rounded]="true"
                     [outlined]="true"
                     size="small"
                     (click)="$store.exitHistoricalView()"
@@ -68,7 +65,6 @@
                 <p-button
                     icon="pi pi-history"
                     [label]="'edit.content.sidebar.history.restore' | dm"
-                    [rounded]="true"
                     size="small"
                     (click)="$store.restoreCurrentHistoricalVersion()"
                     data-testid="restore-historical-version-button" />

@@ -30,7 +30,9 @@ describe('DotEditContentLineDividerFieldComponent', () => {
 
         expect(divider).toBeTruthy();
         expect(divider).toHaveClass('bg-surface-100');
-        expect(title?.textContent?.trim()).toBe(field.name);
+        expect(divider).toHaveClass('mt-10');
+        // The title shows the field name in capitals.
+        expect(title?.textContent?.trim()).toBe('OPEN GRAPH (OG META TAGS)');
     });
 
     it('should not render the line divider bar when the field name is empty', () => {

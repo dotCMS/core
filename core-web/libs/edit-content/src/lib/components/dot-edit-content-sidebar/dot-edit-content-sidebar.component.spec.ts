@@ -13,9 +13,11 @@ import { vi } from 'vitest';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { Button } from 'primeng/button';
 import { DialogService } from 'primeng/dynamicdialog';
 import { Tabs, TabsModule } from 'primeng/tabs';
 
@@ -839,6 +841,25 @@ describe('DotEditContentSidebarComponent', () => {
                 expect(restoreSpy).toHaveBeenCalled();
             }));
 
+            it('should draw the Close and Restore buttons with the default corners, not as pills', fakeAsync(() => {
+                dotContentletService.getContentletByInode.mockReturnValue(
+                    of(mockHistoricalContentlet)
+                );
+                store.loadVersionContent('historical-inode');
+                tick();
+                spectator.detectChanges();
+
+                ['close-historical-version-button', 'restore-historical-version-button'].forEach(
+                    (testId) => {
+                        const button: Button = spectator.debugElement.query(
+                            By.css(`[data-testid="${testId}"]`)
+                        ).componentInstance;
+                        expect(button).toBeInstanceOf(Button);
+                        expect(button.rounded).toBeFalsy();
+                    }
+                );
+            }));
+
             it('should hide the banner after exitHistoricalView is called', fakeAsync(() => {
                 dotContentletService.getContentletByInode.mockReturnValue(
                     of(mockHistoricalContentlet)
@@ -902,6 +923,22 @@ describe('DotEditContentSidebarComponent', () => {
                 const restoreSpy = vi.spyOn(store, 'restoreCurrentHistoricalVersion');
                 spectator.click(byTestId('restore-compare-version-button'));
                 expect(restoreSpy).toHaveBeenCalled();
+            }));
+
+            it('should draw the Close and Restore buttons with the default corners, not as pills', fakeAsync(() => {
+                patchState(store as unknown as WritableStateSource<object>, {
+                    compareContentlet: mockCompareContentlet
+                });
+                tick();
+                spectator.detectChanges();
+
+                ['close-compare-button', 'restore-compare-version-button'].forEach((testId) => {
+                    const button: Button = spectator.debugElement.query(
+                        By.css(`[data-testid="${testId}"]`)
+                    ).componentInstance;
+                    expect(button).toBeInstanceOf(Button);
+                    expect(button.rounded).toBeFalsy();
+                });
             }));
 
             it('should hide the banner after exitCompareView is called', fakeAsync(() => {

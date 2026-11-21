@@ -188,6 +188,13 @@ describe('AddRelationshipsComponent — shared surface (US1)', () => {
             expect(spectator.query(byTestId('dialog-close-btn'))).toBeTruthy();
         });
 
+        /** Dialog header controls are gray (secondary), never the primary blue. */
+        it('draws the full-screen toggle gray (secondary)', () => {
+            expect(
+                spectator.query(byTestId('add-relationships-fullscreen'))?.querySelector('button')
+            ).toHaveClass('p-button-secondary');
+        });
+
         it('offers Cancel and Add Relationships in the footer', () => {
             expect(spectator.query(byTestId('add-relationships-cancel'))).toBeTruthy();
             expect(spectator.query(byTestId('add-relationships-confirm'))).toBeTruthy();

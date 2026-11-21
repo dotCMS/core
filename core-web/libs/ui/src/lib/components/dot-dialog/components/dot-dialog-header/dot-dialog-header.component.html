@@ -12,6 +12,7 @@
         <p-button
             [text]="true"
             [rounded]="true"
+            severity="secondary"
             [attr.aria-label]="$closeLabel() || null"
             [pTooltip]="$closeLabel()"
             (onClick)="close.emit()"

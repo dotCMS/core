@@ -75,7 +75,7 @@ a:visited {
 }
 
 .form .field > label {
-    @apply text-sm font-medium;
+    @apply font-medium;
 }
 
 .form .form-checkbox,
