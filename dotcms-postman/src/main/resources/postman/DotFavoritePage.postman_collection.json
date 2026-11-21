@@ -342,6 +342,384 @@
 			"response": []
 		},
 		{
+			"name": "FireDotFavoriteAsTheDialogDoesWithLimitedUser",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test(\"The favorite is saved\", function () {",
+							"    const entity = pm.response.json().entity;",
+							"    pm.expect(entity.identifier).to.be.a('string').and.not.empty;",
+							"    pm.collectionVariables.set(\"dialogFavoriteId\", entity.identifier);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{limitedUserJwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"actions",
+						"default",
+						"fire",
+						"PUBLISH"
+					],
+					"query": [
+						{
+							"key": "indexPolicy",
+							"value": "WAIT_FOR"
+						}
+					]
+				},
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"dotFavoritePage\",\n        \"title\": \"Dialog favorite\",\n        \"url\": \"/dialog-favorite?language_id=1\",\n        \"order\": 1\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "invalidateSessionBeforeAnonymousReads",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/logout",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"logout"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "AnonymousReadsWithAnonymousContentAccessAllowed",
+			"item": [
+				{
+					"name": "AnonymousCannotReadTheFavoriteById",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Anonymous gets no favorite from /api/v1/content\", function () {",
+									"    pm.expect(pm.response.code).to.not.eql(200);",
+									"    pm.expect(pm.response.text()).to.not.include(\"/dialog-favorite\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/{{dialogFavoriteId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"{{dialogFavoriteId}}"
+							]
+						}
+					},
+					"response": [],
+					"protocolProfileBehavior": {
+						"disableCookies": true
+					}
+				},
+				{
+					"name": "AnonymousCannotReadTheFavoriteByLegacyId",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Anonymous gets no favorite from /api/content/id\", function () {",
+									"    pm.expect(pm.response.text()).to.not.include(\"/dialog-favorite\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/content/id/{{dialogFavoriteId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"content",
+								"id",
+								"{{dialogFavoriteId}}"
+							]
+						}
+					},
+					"response": [],
+					"protocolProfileBehavior": {
+						"disableCookies": true
+					}
+				},
+				{
+					"name": "AnonymousCannotFindTheFavoriteByQuery",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Anonymous finds no favorite through /api/content/query\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(pm.response.json().contentlets).to.have.lengthOf(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/content/query/+contentType:dotFavoritePage%20+identifier:{{dialogFavoriteId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"content",
+								"query",
+								"+contentType:dotFavoritePage%20+identifier:{{dialogFavoriteId}}"
+							]
+						}
+					},
+					"response": [],
+					"protocolProfileBehavior": {
+						"disableCookies": true
+					}
+				},
+				{
+					"name": "AnonymousCannotFindTheFavoriteThroughGraphQL",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Anonymous finds no favorite through GraphQL search\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(pm.response.json().data.search).to.have.lengthOf(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\"query\": \"query { search(query: \\\"+contentType:dotFavoritePage +identifier:{{dialogFavoriteId}}\\\") { identifier } }\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"protocolProfileBehavior": {
+						"disableCookies": true
+					}
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Anonymous content reads are denied by default, which would make these checks pass whatever",
+							"// the favorite's permissions are. Allow anonymous READ for each request, so a denial can only",
+							"// come from the favorite's own permissions; the folder's test script restores the previous value.",
+							"const key = 'CONTENT_APIS_ALLOW_ANONYMOUS';",
+							"const systemTable = pm.environment.get('serverURL') + '/api/v1/system-table';",
+							"const headers = {Authorization: 'Bearer ' + pm.environment.get('jwt'), 'Content-Type': 'application/json'};",
+							"pm.sendRequest({url: systemTable + '/' + key, method: 'GET', header: headers}, function (error, response) {",
+							"    pm.expect(error).to.not.exist;",
+							"    pm.expect(response.code).to.be.oneOf([200, 404]);",
+							"    pm.collectionVariables.set('previousAnonymousAccess', JSON.stringify(response.code === 200 ? response.json().entity : null));",
+							"    pm.sendRequest({",
+							"        url: systemTable, method: 'POST', header: headers,",
+							"        body: {mode: 'raw', raw: JSON.stringify({key: key, value: 'READ'})}",
+							"    }, function (error, response) {",
+							"        pm.expect(error).to.not.exist;",
+							"        pm.expect(response.code).to.equal(200);",
+							"    });",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Restore before the request's assertions run, so a failed check cannot leave anonymous READ on.",
+							"const key = 'CONTENT_APIS_ALLOW_ANONYMOUS';",
+							"const previous = JSON.parse(pm.collectionVariables.get('previousAnonymousAccess'));",
+							"pm.sendRequest({",
+							"    url: pm.environment.get('serverURL') + '/api/v1/system-table' + (previous === null ? '/' + key : ''),",
+							"    method: previous === null ? 'DELETE' : 'POST',",
+							"    header: {Authorization: 'Bearer ' + pm.environment.get('jwt'), 'Content-Type': 'application/json'},",
+							"    body: {mode: 'raw', raw: JSON.stringify({key: key, value: previous})}",
+							"}, function (error, response) {",
+							"    pm.test('Previous anonymous access configuration is restored', function () {",
+							"        pm.expect(error).to.not.exist;",
+							"        pm.expect(response.code).to.equal(200);",
+							"    });",
+							"    if (!error && response.code === 200) pm.collectionVariables.unset('previousAnonymousAccess');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "OwnerReadsTheDialogFavorite",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"The owner reads the favorite\", function () {",
+							"    pm.response.to.have.status(200);",
+							"    pm.expect(pm.response.json().entity.identifier).to.eql(pm.collectionVariables.get(\"dialogFavoriteId\"));",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{limitedUserJwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/content/{{dialogFavoriteId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"content",
+						"{{dialogFavoriteId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "invalidateSessionAgain",
 			"event": [
 				{
@@ -411,6 +789,10 @@
 	"variable": [
 		{
 			"key": "firstLayoutId",
+			"value": ""
+		},
+		{
+			"key": "dialogFavoriteId",
 			"value": ""
 		}
 	]

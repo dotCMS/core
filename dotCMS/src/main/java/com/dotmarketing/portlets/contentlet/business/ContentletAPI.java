@@ -165,7 +165,9 @@ public interface ContentletAPI {
 
 	/**
 	 * Move the contentlet to a particular host and path
-	 * Indexing will be based on the {@link Contentlet#getIndexPolicy()}
+	 * Indexing will be based on the {@link Contentlet#getIndexPolicy()}.
+	 * A favorite page can only be on the System Host, so moving one anywhere else throws an
+	 * {@link IllegalArgumentException}.
 	 *
 	 * @param contentlet {@link Contentlet} existing contentlet
 	 * @param user   {@link User} user that does the action
