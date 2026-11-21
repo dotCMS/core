@@ -3,8 +3,7 @@
 #
 # SDK publishing no longer has an independent version or a manual trigger. Every dotCMS
 # release now automatically publishes the matching @dotcms/* SDK packages at the release's
-# exact version — see cicd_release-sdk.yml (triggered by `release: created`, same pattern
-# already used by cicd_release-cli.yml for @dotcms/dotcli).
+# exact version — cicd_6-release.yml calls cicd_release-sdk.yml directly.
 #
 # This workflow is kept disabled (rather than deleted outright) for a clean revert path,
 # per the ADR's "confirm before deleting" guidance. It intentionally fails immediately so
