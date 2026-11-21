@@ -142,6 +142,14 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 		return null;
 	} 
 
+	/**
+	 * Lists the folders and files at the root of the site. While a request reads the live tree, it
+	 * lists the live version of each file, so files that were never published are left out;
+	 * otherwise it lists the working versions (see {@link DotWebdavHelper#servesLiveVersions(boolean)}).
+	 *
+	 * @return the folders, files and temporary resources at the root of the site
+	 */
+	@Override
 	public List<? extends Resource> getChildren() {
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		List<Folder> folders = listFolders();
@@ -166,7 +174,9 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 			frs.add(fr);
 		}
 		try {
-			List<FileAsset> fas = APILocator.getFileAssetAPI().findFileAssetsByHost(host, user, false);
+			// working=false lists the live versions
+			final boolean working = !DotWebdavHelper.servesLiveVersions(isAutoPub);
+			List<FileAsset> fas = APILocator.getFileAssetAPI().findFileAssetsByParentable(host, null, working, false, user, false);
 			for(FileAsset fa:fas){
 			    if(!fa.isArchived()) {
 			    	if(fa.getLanguageId()==dotDavHelper.getLanguage()){
@@ -176,7 +186,7 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 			    }
 			}
 		} catch (Exception e) {
-			
+			Logger.error(this, "Could not load the files at the root of the site: " + e.getMessage(), e);
 		} 
 		/**
 		TemplateFolderResourceImpl tfrl = new TemplateFolderResourceImpl(path + "/_TEMPLATES", host);
