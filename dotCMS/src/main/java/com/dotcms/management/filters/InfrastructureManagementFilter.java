@@ -73,6 +73,12 @@ public class InfrastructureManagementFilter implements Filter {
     private boolean isManagementAccessAuthorized(HttpServletRequest request) {
         int serverPort = request.getServerPort();
         int managementPort = getManagementPortFromEnvironment();
+
+        // Newly enabled metrics must not trust a caller-supplied proxy port as connector identity.
+        if (HttpRequestDataUtil.getDispatchPath(request).startsWith(InfrastructureConstants.METRICS_PATH)) {
+            return request.getLocalPort() == managementPort
+                    || !Config.getBooleanProperty(InfrastructureConstants.Ports.STRICT_CHECK_PROPERTY, true);
+        }
         
         // Check if on management port
         if (serverPort == managementPort) {
@@ -162,7 +168,7 @@ public class InfrastructureManagementFilter implements Filter {
             requestURI.startsWith("/dotmgt/health")) {
             // Health endpoints → HealthProbeServlet
             servletPath = requestURI; // Direct mapping
-        } else if (requestURI.startsWith("/dotmgt/metrics")) {
+        } else if (requestURI.startsWith(InfrastructureConstants.METRICS_PATH)) {
             // Metrics endpoints → ManagementMetricsServlet  
             servletPath = requestURI; // Direct mapping
         } else {

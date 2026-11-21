@@ -1,6 +1,9 @@
 package com.dotcms.metrics.binders;
 
 import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.metrics.MetricsConfig;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
@@ -13,8 +16,17 @@ import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;
 
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.text.ParsePosition;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
 
 /**
  * Comprehensive metric binder for dotCMS cache-related metrics.
@@ -30,6 +42,12 @@ import java.util.Optional;
 public class CacheMetrics implements MeterBinder {
     
     private static final String METRIC_PREFIX = "dotcms.cache";
+
+    /** Raw identities keep sanitized metric labels out of snapshot lookups. */
+    private record RegionKey(String provider, String region) {}
+
+    /** Provider count includes empty providers, which cannot be inferred from the region map. */
+    private record CacheSnapshot(int providers, Map<RegionKey, CacheStats> regions) {}
     
     @Override
     public void bindTo(MeterRegistry registry) {
@@ -42,8 +60,14 @@ public class CacheMetrics implements MeterBinder {
                 .register(registry);
             
             if (cacheAdmin != null) {
-                registerProviderLevelMetrics(registry, cacheAdmin);
-                registerRegionLevelMetrics(registry, cacheAdmin);
+                // One bounded provider collection serves every aggregate and region gauge.
+                final LoadingCache<Boolean, Optional<CacheSnapshot>> current = Caffeine.newBuilder()
+                        .expireAfterWrite(Math.max(1, MetricsConfig.METRIC_CACHE_TTL_SECONDS), TimeUnit.SECONDS)
+                        .ticker(registry.config().clock()::monotonicTime)
+                        .build(ignored -> loadSnapshot(cacheAdmin));
+                final Supplier<Optional<CacheSnapshot>> snapshots = () -> current.get(Boolean.TRUE);
+                registerProviderLevelMetrics(registry, snapshots);
+                registerRegionLevelMetrics(registry, snapshots);
                 registerTransportMetrics(registry);
             }
             
@@ -120,228 +144,201 @@ public class CacheMetrics implements MeterBinder {
     /**
      * Register provider-level aggregate metrics.
      */
-    private void registerProviderLevelMetrics(MeterRegistry registry, DotCacheAdministrator cacheAdmin) {
-        // Total cache regions across all providers
-        Gauge.builder(METRIC_PREFIX + ".regions.total", this, metrics -> getTotalCacheRegions())
+    private void registerProviderLevelMetrics(MeterRegistry registry,
+            Supplier<Optional<CacheSnapshot>> snapshots) {
+        Gauge.builder(METRIC_PREFIX + ".regions.total", snapshots,
+                state -> readSnapshotValue(state, snapshot -> snapshot.regions().size()))
             .description("Total number of cache regions across all providers")
+            .strongReference(true)
             .register(registry);
-        
-        // Total cache providers
-        Gauge.builder(METRIC_PREFIX + ".providers.total", this, metrics -> getTotalCacheProviders())
+
+        Gauge.builder(METRIC_PREFIX + ".providers.total", snapshots,
+                state -> readSnapshotValue(state, CacheSnapshot::providers))
             .description("Total number of cache providers")
+            .strongReference(true)
             .register(registry);
-        
-        // Total cache hits across all providers
-        Gauge.builder(METRIC_PREFIX + ".hits.total", this, metrics -> getTotalCacheHits())
+
+        Gauge.builder(METRIC_PREFIX + ".hits.total", snapshots,
+                state -> readSnapshotValue(state, snapshot -> sumStats(snapshot, CacheStats.REGION_HITS)))
             .description("Total cache hits across all providers and regions")
+            .strongReference(true)
             .register(registry);
-        
-        // Total cache size across all providers
-        Gauge.builder(METRIC_PREFIX + ".size.total", this, metrics -> getTotalCacheSize())
+
+        Gauge.builder(METRIC_PREFIX + ".size.total", snapshots,
+                state -> readSnapshotValue(state, snapshot -> sumStats(snapshot, CacheStats.REGION_SIZE)))
             .description("Total cache size across all providers and regions")
+            .strongReference(true)
             .register(registry);
-        
-        // Overall cache hit rate
-        Gauge.builder(METRIC_PREFIX + ".hit_rate.overall", this, metrics -> getOverallHitRate())
-            .description("Overall cache hit rate across all providers and regions")
+
+        Gauge.builder(METRIC_PREFIX + ".hit_rate.overall", snapshots,
+                state -> readSnapshotValue(state, this::getOverallHitRate))
+            .description("Request-weighted cache hit rate for regions reporting native request counters")
+            .strongReference(true)
             .register(registry);
     }
-    
+
     /**
      * Register detailed metrics for each cache region.
      */
-    private void registerRegionLevelMetrics(MeterRegistry registry, DotCacheAdministrator cacheAdmin) {
-        try {
-            List<CacheProviderStats> statsList = cacheAdmin.getCacheStatsList();
-            
-            for (CacheProviderStats providerStats : statsList) {
-                String providerName = sanitizeMetricName(providerStats.getProviderName());
-                
-                for (CacheStats regionStats : providerStats.getStats()) {
-                    String regionName = sanitizeMetricName(getStatValue(regionStats, CacheStats.REGION, "unknown"));
-                    
-                    registerRegionMetrics(registry, providerName, regionName, regionStats);
-                }
-            }
-            
-        } catch (Exception e) {
-            Logger.warn(this, "Failed to register region-level metrics: " + e.getMessage());
+    private void registerRegionLevelMetrics(MeterRegistry registry,
+            Supplier<Optional<CacheSnapshot>> snapshots) {
+        // shortcut: region identities are fixed at startup; revisit for post-startup region discovery.
+        for (final RegionKey region : snapshots.get().map(CacheSnapshot::regions).orElse(Map.of()).keySet()) {
+            final Supplier<CacheStats> current =
+                    () -> snapshots.get().map(snapshot -> snapshot.regions().get(region)).orElse(null);
+            registerRegionMetrics(registry, sanitizeMetricName(region.provider()),
+                    sanitizeMetricName(region.region()), current);
         }
     }
-    
+
+    /** Collects provider and region facts once per TTL; failures stay unknown until the next retry. */
+    private Optional<CacheSnapshot> loadSnapshot(final DotCacheAdministrator cacheAdmin) {
+        try {
+            final List<CacheProviderStats> providers = cacheAdmin.getCacheStatsList();
+            final Map<RegionKey, CacheStats> current = new HashMap<>();
+            for (final CacheProviderStats provider : providers) {
+                if (!provider.isAvailable()) {
+                    return Optional.empty();
+                }
+                for (final CacheStats region : provider.getStats()) {
+                    current.put(new RegionKey(provider.getProviderName(),
+                            getStatValue(region, CacheStats.REGION, "unknown")), region);
+                }
+            }
+            return Optional.of(new CacheSnapshot(providers.size(), Map.copyOf(current)));
+        } catch (Exception e) {
+            Logger.warn(this, "Failed to collect cache metrics", e);
+            return Optional.empty();
+        }
+    }
+
     /**
      * Register metrics for a specific cache region.
      */
-    private void registerRegionMetrics(MeterRegistry registry, String providerName, String regionName, CacheStats regionStats) {
+    private void registerRegionMetrics(MeterRegistry registry, String providerName, String regionName, Supplier<CacheStats> regionStats) {
         // Cache region size (current number of objects)
         Gauge.builder(METRIC_PREFIX + ".region.size", regionStats, stats -> 
-                getStatDoubleValue(stats, CacheStats.REGION_SIZE))
+                readRegionValue(stats, current -> getStatDoubleValue(current, CacheStats.REGION_SIZE)))
             .description("Current number of objects in cache region")
             .tag("provider", providerName)
             .tag("region", regionName)
+            .strongReference(true)
             .register(registry);
         
         // Cache region hits
         Gauge.builder(METRIC_PREFIX + ".region.hits", regionStats, stats -> 
-                getStatDoubleValue(stats, CacheStats.REGION_HITS))
+                readRegionValue(stats, current -> getStatDoubleValue(current, CacheStats.REGION_HITS)))
             .description("Number of cache hits for this region")
             .tag("provider", providerName)
             .tag("region", regionName)
+            .strongReference(true)
             .register(registry);
         
         // Cache region hit rate (as percentage 0-100)
         Gauge.builder(METRIC_PREFIX + ".region.hit_rate", regionStats, stats -> 
-                getStatDoubleValue(stats, CacheStats.REGION_HIT_RATE))
+                readRegionValue(stats, current -> getStatDoubleValue(current, CacheStats.REGION_HIT_RATE)))
             .description("Cache hit rate percentage for this region")
             .tag("provider", providerName)
             .tag("region", regionName)
+            .strongReference(true)
             .register(registry);
         
         // Cache region configured size
         Gauge.builder(METRIC_PREFIX + ".region.configured_size", regionStats, stats -> 
-                getConfiguredSizeValue(stats))
+                readRegionValue(stats, this::getConfiguredSizeValue))
             .description("Maximum configured size for this cache region")
             .tag("provider", providerName)
             .tag("region", regionName)
+            .strongReference(true)
             .register(registry);
         
         // Cache region load count
         Gauge.builder(METRIC_PREFIX + ".region.loads", regionStats, stats -> 
-                getStatDoubleValue(stats, CacheStats.REGION_LOAD))
+                readRegionValue(stats, current -> getStatDoubleValue(current, CacheStats.REGION_LOAD)))
             .description("Number of cache loads for this region")
             .tag("provider", providerName)
             .tag("region", regionName)
+            .strongReference(true)
             .register(registry);
         
         // Cache region average load time
         Gauge.builder(METRIC_PREFIX + ".region.avg_load_time_ms", regionStats, stats -> 
-                getStatDoubleValue(stats, CacheStats.REGION_AVG_LOAD_TIME))
+                readRegionValue(stats, current -> getStatDoubleValue(current, CacheStats.REGION_AVG_LOAD_TIME)))
             .description("Average load time in milliseconds for this region")
             .tag("provider", providerName)
             .tag("region", regionName)
+            .strongReference(true)
             .register(registry);
         
         // Cache region evictions
         Gauge.builder(METRIC_PREFIX + ".region.evictions", regionStats, stats -> 
-                getStatDoubleValue(stats, CacheStats.REGION_EVICTIONS))
+                readRegionValue(stats, current -> getStatDoubleValue(current, CacheStats.REGION_EVICTIONS)))
             .description("Number of evictions for this cache region")
             .tag("provider", providerName)
             .tag("region", regionName)
+            .strongReference(true)
             .register(registry);
         
         // Cache region memory usage
         Gauge.builder(METRIC_PREFIX + ".region.memory_bytes", regionStats, stats -> 
-                getMemoryBytesValue(stats))
+                readRegionValue(stats, this::getMemoryBytesValue))
             .description("Total memory usage in bytes for this cache region")
             .tag("provider", providerName)
             .tag("region", regionName)
+            .strongReference(true)
             .register(registry);
         
         // Cache region memory per object
         Gauge.builder(METRIC_PREFIX + ".region.memory_per_object_bytes", regionStats, stats -> 
-                getMemoryPerObjectBytesValue(stats))
+                readRegionValue(stats, this::getMemoryPerObjectBytesValue))
             .description("Average memory per object in bytes for this cache region")
             .tag("provider", providerName)
             .tag("region", regionName)
+            .strongReference(true)
             .register(registry);
     }
     
+    /** Reads a current region snapshot, exposing unavailable regions as unknown rather than stale or zero. */
+    private double readRegionValue(final Supplier<CacheStats> snapshots,
+            final ToDoubleFunction<CacheStats> reader) {
+        final CacheStats current = snapshots.get();
+        return current == null ? Double.NaN : reader.applyAsDouble(current);
+    }
+
     // ====================================================================
     // HELPER METHODS FOR ACCESSING CACHE STATISTICS
     // ====================================================================
     
-    private double getTotalCacheRegions() {
-        try {
-            DotCacheAdministrator cacheAdmin = CacheLocator.getCacheAdministrator();
-            if (cacheAdmin != null) {
-                List<CacheProviderStats> statsList = cacheAdmin.getCacheStatsList();
-                return statsList.stream()
-                    .mapToInt(stats -> stats.getStats().size())
-                    .sum();
-            }
-            return 0;
-        } catch (Exception e) {
-            Logger.debug(this, "Failed to get total cache regions: " + e.getMessage());
-            return 0;
-        }
+    /** Preserves unknown collection state for aggregate gauges, just as for individual regions. */
+    private double readSnapshotValue(final Supplier<Optional<CacheSnapshot>> snapshots,
+            final ToDoubleFunction<CacheSnapshot> reader) {
+        return snapshots.get().map(reader::applyAsDouble).orElse(Double.NaN);
     }
-    
-    private double getTotalCacheProviders() {
-        try {
-            DotCacheAdministrator cacheAdmin = CacheLocator.getCacheAdministrator();
-            if (cacheAdmin != null) {
-                List<CacheProviderStats> statsList = cacheAdmin.getCacheStatsList();
-                return statsList.size();
-            }
-            return 0;
-        } catch (Exception e) {
-            Logger.debug(this, "Failed to get total cache providers: " + e.getMessage());
-            return 0;
-        }
+
+    /** Sums an already collected stat without scanning the providers again. */
+    private double sumStats(final CacheSnapshot snapshot, final String key) {
+        return snapshot.regions().values().stream().filter(CacheStats::isAggregateSource)
+                .mapToDouble(stats -> getStatDoubleValue(stats, key)).sum();
     }
-    
-    private double getTotalCacheHits() {
-        try {
-            DotCacheAdministrator cacheAdmin = CacheLocator.getCacheAdministrator();
-            if (cacheAdmin != null) {
-                List<CacheProviderStats> statsList = cacheAdmin.getCacheStatsList();
-                return statsList.stream()
-                    .flatMap(providerStats -> providerStats.getStats().stream())
-                    .mapToDouble(regionStats -> getStatDoubleValue(regionStats, CacheStats.REGION_HITS))
-                    .sum();
+
+    /** Uses native request counters: provider-specific "loads" are not a reliable miss count. */
+    private double getOverallHitRate(final CacheSnapshot snapshot) {
+        double totalHits = 0;
+        double totalRequests = 0;
+        for (final CacheStats region : snapshot.regions().values()) {
+            if (!region.isAggregateSource()) {
+                continue;
             }
-            return 0;
-        } catch (Exception e) {
-            Logger.debug(this, "Failed to get total cache hits: " + e.getMessage());
-            return 0;
-        }
-    }
-    
-    private double getTotalCacheSize() {
-        try {
-            DotCacheAdministrator cacheAdmin = CacheLocator.getCacheAdministrator();
-            if (cacheAdmin != null) {
-                List<CacheProviderStats> statsList = cacheAdmin.getCacheStatsList();
-                return statsList.stream()
-                    .flatMap(providerStats -> providerStats.getStats().stream())
-                    .mapToDouble(regionStats -> getStatDoubleValue(regionStats, CacheStats.REGION_SIZE))
-                    .sum();
+            final OptionalLong hits = region.getHitCount();
+            final OptionalLong requests = region.getRequestCount();
+            if (hits.isPresent() && requests.isPresent()) {
+                totalHits += hits.getAsLong();
+                totalRequests += requests.getAsLong();
             }
-            return 0;
-        } catch (Exception e) {
-            Logger.debug(this, "Failed to get total cache size: " + e.getMessage());
-            return 0;
         }
+        return totalRequests > 0 ? totalHits / totalRequests * 100 : Double.NaN;
     }
-    
-    private double getOverallHitRate() {
-        try {
-            DotCacheAdministrator cacheAdmin = CacheLocator.getCacheAdministrator();
-            if (cacheAdmin != null) {
-                List<CacheProviderStats> statsList = cacheAdmin.getCacheStatsList();
-                
-                double totalHits = 0;
-                double totalRequests = 0;
-                
-                for (CacheProviderStats providerStats : statsList) {
-                    for (CacheStats regionStats : providerStats.getStats()) {
-                        double hits = getStatDoubleValue(regionStats, CacheStats.REGION_HITS);
-                        double loads = getStatDoubleValue(regionStats, CacheStats.REGION_LOAD);
-                        
-                        totalHits += hits;
-                        totalRequests += (hits + loads); // Total requests = hits + misses (loads)
-                    }
-                }
-                
-                return totalRequests > 0 ? (totalHits / totalRequests) * 100 : 0;
-            }
-            return 0;
-        } catch (Exception e) {
-            Logger.debug(this, "Failed to calculate overall hit rate: " + e.getMessage());
-            return 0;
-        }
-    }
-    
+
     /**
      * Get a string value from cache stats with fallback.
      */
@@ -374,12 +371,7 @@ public class CacheMetrics implements MeterBinder {
                 if (sizeStr.contains(" |")) {
                     sizeStr = sizeStr.substring(0, sizeStr.indexOf(" |")); // Remove TTL part
                 }
-                // Remove commas and parse
-                sizeStr = sizeStr.replace(",", "").trim();
-                if (!sizeStr.isEmpty() && !"NaN".equalsIgnoreCase(sizeStr)) {
-                    double result = Double.parseDouble(sizeStr);
-                    return Double.isNaN(result) || Double.isInfinite(result) ? 0.0 : result;
-                }
+                return parseStatNumber(sizeStr.trim(), NumberFormat.getNumberInstance());
             } else {
                 // Handle GuavaCache format: direct NumberFormat output like "1,000"
                 return getStatDoubleValue(stats, CacheStats.REGION_CONFIGURED_SIZE);
@@ -440,14 +432,14 @@ public class CacheMetrics implements MeterBinder {
     }
     
     /**
-     * Parse pretty-formatted byte values like "1.2 MB", "512 KB", "1024 bytes"
+     * Parses byte counts and pretty units, including H22 single-letter K, M, and G suffixes.
      */
     private double parsePrettyByteValue(String value) {
         if (!UtilMethods.isSet(value)) {
             return 0.0;
         }
         
-        value = value.trim().toLowerCase();
+        value = value.trim().toLowerCase().replaceFirst("\\s+([gmk])$", " $1b");
         
         // Handle different units
         double multiplier = 1.0;
@@ -501,6 +493,12 @@ public class CacheMetrics implements MeterBinder {
             }
             
             value = value.trim();
+            if (CacheStats.REGION_HIT_RATE.equals(key)) {
+                final DecimalFormat percentFormat = new DecimalFormat("##.##%");
+                if (value.endsWith(percentFormat.getPositiveSuffix())) {
+                    return parseStatNumber(value, percentFormat) * 100;
+                }
+            }
             
             // Handle DecimalFormat outputs for invalid floating point numbers
             if ("NaN".equalsIgnoreCase(value) || 
@@ -527,9 +525,6 @@ public class CacheMetrics implements MeterBinder {
                 value = numPart;
             }
             
-            // Handle size values with commas from NumberFormat (e.g., "10,000")
-            value = value.replace(",", "");
-            
             // Handle empty values after processing
             if (value.isEmpty()) {
                 return 0.0;
@@ -542,9 +537,7 @@ public class CacheMetrics implements MeterBinder {
                 return 0.0;
             }
             
-            double result = Double.parseDouble(value);
-            // Return 0 for NaN or infinite values (additional safety)
-            return Double.isNaN(result) || Double.isInfinite(result) ? 0.0 : result;
+            return parseStatNumber(value, NumberFormat.getNumberInstance());
             
         } catch (NumberFormatException e) {
             Logger.debug(this, "Failed to parse numeric value '" + stats.getStatValue(key) + "' for key '" + key + "': " + e.getMessage());
@@ -555,6 +548,17 @@ public class CacheMetrics implements MeterBinder {
         }
     }
     
+    /** Parses the same JVM locale used by providers, rejecting incomplete or non-finite values. */
+    private double parseStatNumber(final String value, final NumberFormat format) {
+        final ParsePosition position = new ParsePosition(0);
+        final Number number = format.parse(value, position);
+        if (number == null || position.getIndex() != value.length()) {
+            return 0.0;
+        }
+        final double result = number.doubleValue();
+        return Double.isFinite(result) ? result : 0.0;
+    }
+
     /**
      * Sanitize metric names for Prometheus compatibility.
      */

@@ -173,6 +173,7 @@ public class GuavaCache extends CacheProvider {
         return keys;
     }
 
+    /** Snapshots every logical region while counting shared physical caches only once in aggregates. */
     @Override
     public CacheProviderStats getStats () {
         CacheStats providerStats = new CacheStats();
@@ -180,10 +181,10 @@ public class GuavaCache extends CacheProvider {
         Set<String> currentGroups = new HashSet<>();
         currentGroups.addAll(getGroups());
 
-        Cache defaultCache = getCache(DEFAULT_CACHE);
-        for ( String group : currentGroups ) {
-          Cache foundCache = getCache(group);
-          CacheStats stats = new CacheStats();
+        getCache(DEFAULT_CACHE);
+        final Set<Cache<String, Object>> counted = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (final String group : currentGroups) {
+          final Cache<String, Object> foundCache = getCache(group);
           
           boolean isDefault = (Config.getIntProperty("cache." + group + ".size", -1) == -1);
 
@@ -196,6 +197,10 @@ public class GuavaCache extends CacheProvider {
           
           
           com.google.common.cache.CacheStats guavaStats = foundCache.stats();
+          final CacheStats stats = new CacheStats(guavaStats.hitCount(), guavaStats.requestCount());
+          if (!counted.add(foundCache)) {
+              stats.excludeFromAggregates();
+          }
           
           NumberFormat nf = DecimalFormat.getInstance();
           DecimalFormat pf = new DecimalFormat("##.##%");
@@ -222,6 +227,7 @@ public class GuavaCache extends CacheProvider {
         isInitialized = false;
     }
 
+    /** Returns or builds a region cache with counters enabled for cache-statistics consumers. */
     private Cache<String, Object> getCache ( String cacheName ) {
 
         if ( cacheName == null ) {
@@ -266,10 +272,11 @@ public class GuavaCache extends CacheProvider {
                         }
 
                         Logger.info(this.getClass(), "***\t Building Cache : " + cacheName + ", size:" + size + ",Concurrency:" + Config.getIntProperty("cache.concurrencylevel", 32));
-                        CacheBuilder<Object, Object> cb = CacheBuilder
+                        final CacheBuilder<Object, Object> cb = CacheBuilder
                                 .newBuilder()
                                 .maximumSize(size)
-                                .concurrencyLevel(Config.getIntProperty("cache.concurrencylevel", 32));
+                                .concurrencyLevel(Config.getIntProperty("cache.concurrencylevel", 32))
+                                .recordStats();
 
 
                         cache = cb.build();

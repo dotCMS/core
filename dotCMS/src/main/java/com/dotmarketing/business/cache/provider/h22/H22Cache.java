@@ -30,7 +30,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -412,17 +414,23 @@ public class H22Cache extends CacheProvider {
 
     /**
      * Reports current row counts and write-weighted serialized sizes since initialization or the
-     * last full cache flush, not heap usage. Samples are approximate while writes are in progress.
+     * last full cache flush, not heap usage. One grouped query per table discovers and counts
+     * regions together. Samples are approximate while writes are in progress.
      */
     @Override
     public CacheProviderStats getStats() {
         CacheStats providerStats = new CacheStats();
         CacheProviderStats ret = new CacheProviderStats(providerStats,getName());
-        Set<String> currentGroups = new HashSet<>();
-        currentGroups.addAll(getGroups());
+        final Map<String, Long> counts;
+        try {
+            counts = getGroupCounts();
+        } catch (SQLException exception) {
+            Logger.warn(this, "Unable to collect H22 region counts", exception);
+            ret.markUnavailable();
+            return ret;
+        }
 
-        
-        for (String group : currentGroups) {
+        for (final String group : counts.keySet()) {
             H22GroupStats groupStats = stats.group(group);
             final long bytesWritten = groupStats.totalSize.sum();
             final long writes = groupStats.writes.sum();
@@ -437,11 +445,7 @@ public class H22Cache extends CacheProvider {
             stats.addStat(CacheStats.REGION_MEM_PER_OBJECT,
                     stats.getStatValue(CacheStats.REGION_AVG_SERIALIZED_SIZE));
             
-            try {
-              stats.addStat(CacheStats.REGION_SIZE,  _getGroupCount(group));
-            } catch (SQLException e) {
-                Logger.warn(this, "can't get h22 group data for: " + group, e);
-            }
+            stats.addStat(CacheStats.REGION_SIZE, counts.get(group));
             ret.addStatRecord(stats);
         }
         return ret;
@@ -782,31 +786,31 @@ public class H22Cache extends CacheProvider {
 
 	}
 
-	private String _getGroupCount(String groupName) throws SQLException {
-		Fqn fqn = new Fqn(groupName);
-		long ret = 0;
-		for (int db = 0; db < numberOfDbs; db++) {
-			Optional<Connection> opt = createConnection(true, db);
-			if (opt.isEmpty()) {
-				continue;
-			}
-			Connection c = opt.get();
-			for (int table = 0; table < numberOfTablesPerDb; table++) {
-				PreparedStatement stmt = c.prepareStatement("select count(*) from " + TABLE_PREFIX + table + " where cache_group = ?");
-				stmt.setString(1, fqn.group);
-				ResultSet rs = stmt.executeQuery();
-				if (rs != null) {
-					while (rs.next()) {
-						ret = ret + rs.getInt(1);
-					}
-					rs.close();
-					stmt.close();
-				}
-			}
-			c.close();
-		}
-		return Long.valueOf(ret).toString();
-	}
+    /** Discovers and sums all region row counts across shards without a query per region. */
+    private Map<String, Long> getGroupCounts() throws SQLException {
+        final Map<String, Long> counts = new HashMap<>();
+        for (int db = 0; db < numberOfDbs; db++) {
+            final Optional<Connection> connection = createConnection(true, db);
+            if (connection.isEmpty()) {
+                throw new SQLException("H22 shard connection unavailable");
+            }
+            try (Connection current = connection.get()) {
+                for (int table = 0; table < numberOfTablesPerDb; table++) {
+                    try (PreparedStatement statement = current.prepareStatement(
+                            "select cache_group, count(*) from " + TABLE_PREFIX + table + " group by cache_group"); // nosemgrep: gitlab.find_sec_bugs.CUSTOM_INJECTION-2 -- hardcoded prefix and bounded integer table index, no user input
+                            ResultSet rows = statement.executeQuery()) {
+                        while (rows.next()) {
+                            final String group = rows.getString(1);
+                            if (UtilMethods.isSet(group)) {
+                                counts.merge(group, rows.getLong(2), Long::sum);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return counts;
+    }
 
 	private int db(Fqn fqn) {
 		int hash = Math.abs(fqn.id.hashCode());
