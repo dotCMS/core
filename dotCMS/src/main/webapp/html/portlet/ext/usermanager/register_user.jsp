@@ -1,4 +1,10 @@
 <%@ include file="/html/portlet/ext/usermanager/init.jsp" %>
+<script src="/html/js/legacy-date-picker.js" type="text/javascript"></script>
+<script type="text/javascript">
+    dojo.addOnLoad(function () {
+        initializeLegacyDatePicker('dateOfBirth');
+    });
+</script>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.util.InodeUtils"%>
@@ -40,15 +46,6 @@ if (myAccountForm != null) {
 
 <%@page import="com.dotmarketing.db.HibernateUtil"%><script language="javascript">
 <!--
-	<liferay:include page="/html/js/calendar/calendar_js_box_ext.jsp" flush="true">
-		<liferay:param name="calendar_num" value="1" />
-	</liferay:include>
-	//dateOfBirth
-	function <portlet:namespace />setCalendarDate_0 (year, month, day) {
-		var textbox = document.getElementById('dateOfBirth');
-		textbox.value = month + '/' + day + '/' + year;
-	}
-
 //New functions for the events registration
 
 //Submit the form
@@ -322,7 +319,7 @@ List challengeQuestions = com.dotmarketing.util.UserUtils.getChallengeQuestionLi
 		</td>
 		<td>
 			<input type="text" name="dateOfBirth" tabindex="14" id="dateOfBirth" value="<%= (myAccountForm.getDateOfBirth()!=null)?myAccountForm.getDateOfBirth():"" %>"  class="form-text" />
-			<img align="absmiddle" border="0" hspace="0" id="<portlet:namespace />calendar_input_0_button" src="<%= COMMON_IMG %>/calendar/calendar.gif" vspace="0" onClick="<portlet:namespace />calendarOnClick_0();">
+			<img align="absmiddle" border="0" hspace="0" id="<portlet:namespace />calendar_input_0_button" src="<%= COMMON_IMG %>/calendar/calendar.gif" vspace="0" onClick="dijit.byId('dateOfBirth').toggleDropDown();">
 		</td>
 	</tr>
 	<tr>
