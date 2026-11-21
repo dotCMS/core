@@ -17,6 +17,25 @@ when libvips can't do the job.
 | `IMAGE_API_USE_LIBVIPS` | `true` | Use the libvips engine for the image exporter chain. Set to `false` to force the legacy Java2D engine. Even when `true`, the engine only activates if the native libvips library is present. |
 | `IMAGE_API_LIBVIPS_FALLBACK` | `true` | If a libvips op fails (corrupt image, missing delegate), run the legacy filter instead of erroring. |
 
+### Resize and generation limits (both engines)
+
+| Property | Default | Environment override |
+|----------|---------|----------------------|
+| `image.resize.max.width` | 5,000 px | `DOT_IMAGE_RESIZE_MAX_WIDTH` |
+| `image.resize.max.height` | 5,000 px | `DOT_IMAGE_RESIZE_MAX_HEIGHT` |
+| `image.resize.max.pixels` | 16,000,000 pixels per frame | `DOT_IMAGE_RESIZE_MAX_PIXELS` |
+| `IMAGE_GENERATION_SIMULTANEOUS_REQUESTS` | 2 generations per instance | `DOT_IMAGE_GENERATION_SIMULTANEOUS_REQUESTS` |
+
+Resize and scale fit oversized outputs proportionally. `IMAGE_MAX_PIXEL_SIZE` (5,000 px
+by default) remains an additional ceiling on both axes. Requests for the same effective
+size and otherwise identical transform settings share a rendition. The updated cache keys
+mean older resize renditions may be regenerated once after upgrading.
+
+The generation limit is shared across exporters and is read at startup. At capacity,
+new generations return `503` without queueing; cache hits and original downloads are
+unaffected. In shared-completed storage, a chain that resizes an earlier transform
+may need to regenerate that intermediate on a cold node before it can locate its rendition.
+
 ### Operation-cache tuning (optional)
 
 libvips keeps a global cache of operation *results*. dotCMS already caches finished
