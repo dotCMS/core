@@ -139,12 +139,16 @@ Use in any module POM (NO version):
 
 #### 4. Unused Dependencies
 ```bash
-# Find declared but unused dependencies
-./mvnw dependency:analyze | grep "Unused declared dependencies"
-
-# Remove unused dependencies to reduce JAR size
-./mvnw dependency:analyze -DfailOnWarning=true
+# Find declared but unused dependencies (candidates only — see warning below)
+./mvnw dependency:analyze -pl :dotcms-core -am -DskipTests | grep -A200 "Unused declared dependencies"
 ```
+
+> ⚠️ `dependency:analyze` only sees compile-time bytecode references. In `dotcms-core` most of its
+> "unused declared" hits are false positives: ImageIO/ScriptEngine/Jackson modules loaded via
+> `ServiceLoader`, Jersey/Log4j runtime jars, class names in config (cache chains, `toolbox.xml`,
+> workflow actionlets stored in the DB), and libraries required only by other repackaged
+> `com.dotcms.lib:dot.*` jars. Treat every hit as a candidate to investigate, never as proof —
+> see [Third-Party Library Policy](#third-party-library-policy).
 
 ### Dependency Resolution Best Practices
 
@@ -234,6 +238,64 @@ When a transitive dependency needs a specific version:
 ./mvnw dependency:tree -Dscope=test
 ```
 
+## Third-Party Library Policy
+
+Applies to anyone — human or coding agent — adding, upgrading or removing a third-party library.
+Every library we ship is ongoing update, CVE and supply-chain exposure for every customer, so each
+one has to earn its place.
+
+### Adding or upgrading
+- **Prefer what we already have.** Use the JDK, supported platform APIs, or a library already in
+  `bom/application/pom.xml` when it meets the need. For small, narrowly scoped functionality a short
+  local implementation can be easier to maintain than a new jar.
+- **Never hand-roll security-sensitive code.** Cryptography, authentication, JWT/SAML/OIDC, and
+  complex parsing (XML, HTML sanitizing, JSON Schema, archives) use established libraries or vetted
+  platform APIs.
+- **Inspect the resolved transitive tree** (`./mvnw dependency:tree -pl :dotcms-core`) before and
+  after. Prefer options with fewer transitive dependencies; justify any substantial increase.
+- **Watch for BOM version mismatches.** The BOM pins shared libraries (e.g. Jackson via
+  `jackson-bom`). If a new library was built against a newer version than our pin, do not bump the
+  pin as a side effect — choose a release built against our line, or prove compatibility with a test.
+- **Verify the package live, never from memory.** Confirm the exact `groupId:artifactId` and
+  publisher against the project's own repository or docs, and read versions from
+  `repo1.maven.org/.../maven-metadata.xml` (the `search.maven.org` index can be stale). Investigate
+  lookalike names, ownership changes, and unfamiliar new packages.
+- **Pick the latest stable compatible release.** Scrutinize very recent releases and unexpected
+  maintainer changes; explain any choice of an older release. Reject archived, deprecated or
+  abandoned projects — judge maintenance by support status and security responsiveness, not just
+  release frequency.
+- **Check advisories** in OSV.dev, the GitHub Advisory Database and NVD. Record the sources, the
+  date checked and whether any advisory applies. Absence of an advisory is not proof of safety.
+  If you cannot reach these sources, say so explicitly in the PR ("advisories not checked") so a
+  reviewer or CI dependency scan covers it — never describe an unchecked version as clean.
+- **Keep updates scoped.** No unrelated upgrades or forced overrides. Prefer a compatible parent
+  library update when a transitive dependency needs remediation. Review release notes for breaking
+  changes; if an upgrade turns into a migration, stop and report rather than retrying speculative fixes.
+- **If you cannot verify these requirements, stop and report the blocker.** Do not add or upgrade the
+  dependency unless the developer explicitly accepts the identified risk.
+
+### Removing
+- **Every library on the core classpath is potential public API.** OSGi plugins can import any
+  exported package (`OSGIUtil.processOsgiPackages` adds plugin imports to
+  `org.osgi.framework.system.packages.extra`), including `com.dotcms.repackage.*`. Removing a library
+  can break customer plugins we cannot see — call it out in the PR description so it reaches the
+  release notes.
+- **Confirm non-use beyond grep and `dependency:analyze`.** Check `ServiceLoader`/SPI registration,
+  reflection and `Class.forName`, class names in config and the database, OSGi export lists
+  (`dotCMS/src/main/resources/osgi/**/osgi-extra.conf`), and bytecode references from other jars.
+  Search with `rg -uu --glob '!*.class'` — some sources contain NUL bytes and are skipped as binary
+  by default. No grep finds class names assembled at runtime (string concatenation, values read
+  from config or the database), so a zero-hit search is evidence, not proof.
+- **Remove from both places**: the module `pom.xml` entry and the BOM `dependencyManagement` entry —
+  unless the BOM entry still pins a transitive version (often for a CVE fix), in which case keep it.
+- **Removing a feature is not a dependency change.** If a library backs a user-visible feature
+  (an actionlet, a Velocity tool, a cache provider), get a product decision first.
+- **Verify in CI.** Local unit tests are necessary but not sufficient: dependency removals need the
+  full CI run (integration suites, Postman), and a before/after diff of `WEB-INF/lib`.
+
+<sub>Adapted from [Trim Reaper](https://github.com/jmanico/trim-reaper) (commit `561cebe`),
+Copyright (c) 2026 Jim Manico, MIT License.</sub>
+
 ## Key Rules (NEVER VIOLATE)
 - **NEVER** add version numbers to dependencies in `dotCMS/pom.xml`
 - **NEVER** add version numbers to plugins in module POMs
@@ -241,4 +303,5 @@ When a transitive dependency needs a specific version:
 - **ALWAYS** add new plugin versions to `parent/pom.xml`
 - **ALWAYS** define global properties in `parent/pom.xml`
 - **ALWAYS** run `./mvnw dependency:analyze` before major dependency changes
+- **ALWAYS** follow the [Third-Party Library Policy](#third-party-library-policy) when adding, upgrading or removing a library
 - **ALWAYS** check dependency tree for conflicts: `./mvnw dependency:tree -Dverbose`
