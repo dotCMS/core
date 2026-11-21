@@ -2170,6 +2170,7 @@
                         <package>com.dotcms.inference.rest</package>
                         <package>com.dotcms.health</package>
                         <package>com.dotcms.auth.dotAuth.rest</package>
+                        <package>com.dotcms.cdn.rest</package>
                     </resourcePackages>
                 </configuration>
                 <executions>
