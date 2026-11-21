@@ -30,6 +30,7 @@ import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
+import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
@@ -190,7 +191,14 @@ public class StaticPublisher extends Publisher {
 
                 //Triggering static event listener when all endpoints are successfully sent.
                 localSystemEventsAPI.asyncNotify(new AllStaticPublishEndpointsSuccessEvent(config));
-                publisherAPI.deleteElementsFromPublishQueueTable(config.getId());
+                // PushPublisher runs after this one and is the publisher whose status the queue job
+                // rechecks. Deleting the queue now drops that send: getQueueBundleIdsToProcess only
+                // republishes a bundle that is still queued, so a receiver that is down or refuses the
+                // bundle is never tried again (#34434). A static-only bundle has nothing left to send,
+                // and BUNDLE_SAVED is not a pending status, so the queue entry has to go here.
+                if (!hasDynamicReceiver(environments)) {
+                    publisherAPI.deleteElementsFromPublishQueueTable(config.getId());
+                }
             } else {
                 if (failedEnvironmentCounter == environments.size()) {
                     this.publishAuditAPI.updatePublishAuditStatus(config.getId(),
@@ -369,6 +377,35 @@ public class StaticPublisher extends Publisher {
 
         return endpoints;
     } //getStaticEndpointsByEnviroment.
+
+    /**
+     * Tells whether the bundle still has an enabled dynamic receiver (http or https). Those are sent
+     * by {@link PushPublisher}, which runs after the static publisher, and a failed send is retried
+     * only while the bundle stays in the publishing queue.
+     *
+     * @param environments the environments of the bundle
+     * @return true when at least one enabled endpoint is a dynamic receiver
+     */
+    private boolean hasDynamicReceiver(final List<Environment> environments) throws DotDataException {
+        for (final Environment environment : environments) {
+            final List<PublishingEndPoint> endpoints =
+                    this.publisherEndPointAPI.findSendingEndPointsByEnvironment(environment.getId());
+            if (endpoints == null) {
+                continue;
+            }
+            for (final PublishingEndPoint endpoint : endpoints) {
+                if (!endpoint.isEnabled()) {
+                    continue;
+                }
+                final String protocol = endpoint.getProtocol();
+                if (PushPublisher.PROTOCOL_HTTP.equalsIgnoreCase(protocol)
+                        || PushPublisher.PROTOCOL_HTTPS.equalsIgnoreCase(protocol)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 
     /**
      * Tells whether the audit already holds a failed endpoint that still exists, counted the same

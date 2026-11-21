@@ -405,6 +405,22 @@ public class PublisherQueueJobTest {
     }
 
     /**
+     * Method to test: {@link PublisherQueueJob} audit pass, a static endpoint and a dynamic one.
+     * <p>
+     * Given scenario: one endpoint holds a saved static bundle and the other installed successfully.
+     * Both results are final.
+     * <p>
+     * Expected result: {@link Status#SUCCESS}. The saved static endpoint is delivered, so it must not
+     * leave the bundle at {@link Status#BUNDLE_SAVED_SUCCESSFULLY}. That status is not pending and,
+     * while the queue row remains for a dynamic receiver, the job would publish the bundle again.
+     */
+    @Test
+    public void test_status_oneSavedOneSuccess_isSuccess() throws Exception {
+        assertStatusForTwoStaticEndpoints(Status.BUNDLE_SAVED_SUCCESSFULLY, Status.SUCCESS,
+                Status.SUCCESS);
+    }
+
+    /**
      * Method to test: {@link PublisherQueueJob} audit pass, an endpoint whose send failed.
      * <p>
      * Given scenario: {@code PushPublisher} records a send that could not reach its endpoint as

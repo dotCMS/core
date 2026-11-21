@@ -567,8 +567,11 @@ public class PublisherQueueJob implements StatefulJob {
 			// If bundle was installed in some endpoints only (a saved static bundle counts as delivered)
 			bundleStatus = Status.FAILED_TO_SEND_TO_SOME_GROUPS;
 			pubAuditAPI.updatePublishAuditStatus(auditedBundleId, bundleStatus, localHistory);
-		} else if (groupPushStats.getCountGroupOk() > 0 && groupPushStats.getCountGroupOk() == totalEndpoints) {
-			// If bundle was installed in all groups
+		} else if (groupPushStats.getCountGroupOk() > 0
+				&& groupPushStats.getCountGroupOk() + groupPushStats.getCountGroupSaved() == totalEndpoints) {
+			// Every endpoint is delivered. A static endpoint is recorded as saved rather than success,
+			// so a mixed bundle whose dynamic endpoints succeeded still closes here. Leaving it at
+			// "saved" would keep a queued bundle eligible for another publish (#34434).
 			PushPublishLogger.log(this.getClass(), "Status Update: Success");
             bundleStatus =
                     (groupPushStats.getCountGroupWithWarnings() > 0) ? Status.SUCCESS_WITH_WARNINGS
