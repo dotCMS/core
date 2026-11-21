@@ -5,13 +5,52 @@ on:
     types: [ checks_requested ]
     branches: [ main, master ]
 # GitHub deletes a merge group's branch when the queue re-forms it but does not cancel its run.
-# The squash message embeds the PR number and is identical across re-formations of the same PR,
-# so keying on it cancels the orphan while runs for other PRs, which build in parallel, are untouched.
-# toJSON keeps a multi-line message (a PR body folded into the squash) on a single escaped line.
+# The key below is the merge-group head commit message. It is identical across re-formations of the
+# same PR, so keying on it cancels the orphan while runs for other PRs, which build in parallel,
+# are untouched.
+#
+# INVARIANT: the first line of that message must end in "(#N)". Only that suffix makes the key unique
+# per PR. Without it, two PRs that share a title get the same key and cancel each other's LIVE
+# groups, which fails the queue. Today the repo's merge settings (merge commit, title PR_TITLE, body
+# BLANK) append "(#N)" to every message. Anyone changing those settings must keep it that way.
+# The key is evaluated before any job runs, so it cannot reject a bad message; the
+# check-queue-key job below only warns when the suffix is missing. See #38143, #38204.
+# toJSON keeps a multi-line message on a single escaped line.
 concurrency:
   group: mq-${{ toJSON(github.event.merge_group.head_commit.message) }}
   cancel-in-progress: true
 jobs:
+  # Warn-only guard for the INVARIANT above. It never fails: a failed check would eject a live PR
+  # from the queue, and the concurrency key has already been evaluated by the time this runs.
+  check-queue-key:
+    name: Check Queue Key
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    permissions: {}
+    steps:
+      - name: Warn if the head commit message lacks a trailing (#N)
+        shell: bash
+        env:
+          # Passed through env, never interpolated into the script, because it is a PR title.
+          HEAD_MESSAGE: ${{ github.event.merge_group.head_commit.message }}
+        run: |
+          set -euo pipefail
+          title="${HEAD_MESSAGE%%$'\n'*}"
+          title="${title%$'\r'}"
+          if [[ "$title" =~ \(#[0-9]+\)[[:space:]]*$ ]]; then
+            echo "Concurrency key ends in (#N): ok"
+            exit 0
+          fi
+          echo "::warning title=Merge queue concurrency key lacks (#N)::The head commit message does not end in (#N), so this PR's concurrency key may collide with another PR's and cancel live merge groups. See the header comment in cicd_2-merge-queue.yml and #38204."
+          {
+            echo "### Merge queue concurrency key lacks a trailing (#N)"
+            echo
+            echo "The first line of the head commit message must end in \`(#N)\`; it does not. Two PRs sharing this title would cancel each other's live merge groups. Check the repository merge settings (merge_commit_title / merge_commit_message)."
+            echo
+            echo '```'
+            printf '%s\n' "$title"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
   initialize:
     name: Initialize
     uses: ./.github/workflows/cicd_comp_initialize-phase.yml
