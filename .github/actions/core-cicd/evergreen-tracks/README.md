@@ -6,8 +6,12 @@ tags plus `<version>_tainted` / `<track>_hold` markers).
 
 ## Cadence
 
-- **`latest`** moves automatically on every GA release cut (the release pipeline calls
-  `promote --tracks latest --apply`).
+- **`latest`** moves automatically on every GA release cut. Every workflow that publishes a
+  GA image (`cicd_6-release.yml`, and the legacy Maven release via
+  `legacy-release_comp_maven-build-docker-image.yml`) calls the shared
+  [`promote-latest`](promote-latest/action.yml) action, which runs
+  `promote --tracks latest --apply`. Nothing tags `latest` directly, so it only ever moves to a
+  newer CalVer: a backport of an older line is a no-op (#38473).
 - **`standard` / `trailing`** advance on a **daily cron at 06:00 ET**, unattended, via the
   `evergreen-tracks-promote` GitHub Action (`10:00 UTC` — GitHub cron has no DST, so it's
   05:00 ET in winter). Each track lands on the newest GA older than its age threshold

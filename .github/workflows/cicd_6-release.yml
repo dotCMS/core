@@ -262,10 +262,9 @@ jobs:
       tag-identifier: ${{ needs.release-prepare.outputs.release_version }}
       omit-environment-prefix: true
       artifact-run-id: ${{ github.run_id }}
-      # `latest` is no longer moved here. evergreen-tracks is the single controller
-      # of the floating latest/standard/trailing tags; the promote-latest job below
-      # repoints `latest` on-demand once the release images are published.
-      latest: false
+      # `latest` is never tagged here: evergreen-tracks is the single controller of the
+      # floating latest/standard/trailing tags; the promote-latest job below repoints
+      # `latest` (forward-only) once the release images are published.
       deploy-cli: true
       deploy-dev-image: true
       publish-npm-cli: false
@@ -292,8 +291,9 @@ jobs:
   # latest/standard/trailing tags. standard/trailing move only on a manual
   # evergreen-tracks-promote dispatch, but `latest` must move the instant a GA
   # ships — so the release pipeline invokes the same engine on-demand, scoped to
-  # the latest track only (--tracks latest).
-  # This replaces the old deploy-docker `latest: true` path (now `latest: false`).
+  # the latest track only, via the shared promote-latest action
+  # (.github/actions/core-cicd/evergreen-tracks/promote-latest) that every workflow
+  # publishing a GA image uses — nothing tags `latest` directly (#38473).
   #
   # Runs for every GA release from main on dotcms/core by default — moving latest
   # is not optional via an easy-to-miss checkbox. To intentionally skip it, the
@@ -325,26 +325,11 @@ jobs:
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: astral-sh/setup-uv@v5
-      - uses: docker/setup-buildx-action@v3
-      - name: Docker login
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
       - name: Move latest to ${{ needs.release-prepare.outputs.release_version }}
-        working-directory: .github/actions/core-cicd/evergreen-tracks
-        env:
-          # The engine reads the Hub tag list before it moves anything, and Hub
-          # refuses anonymous pagination past offset 1000 (these repos are well
-          # past it). docker/login-action above does not cover the Hub API.
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
-        run: |
-          for repo in dotcms/dotcms dotcms/dotcms-dev; do
-            echo "--- promoting latest on ${repo} ---"
-            uv run evergreen-tracks promote --repo "${repo}" --tracks latest --apply
-          done
+        uses: ./.github/actions/core-cicd/evergreen-tracks/promote-latest
+        with:
+          docker_username: ${{ secrets.DOCKER_USERNAME }}
+          docker_token: ${{ secrets.DOCKER_TOKEN }}
 
   # Bump MinSdkVersion.java on main — only after a full green release, and only when the
   # operator explicitly flagged this release as SDK-compatibility-breaking (see #36698).

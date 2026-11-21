@@ -64,3 +64,15 @@ def test_latest_threshold_zero_picks_freshest():
     moves = plan(REL, tainted=set(), held=set(),
                  tracks=[track("latest", 0, current="26.06.16-01")], today=TODAY)
     assert moves == [Move(track="latest", target_version="26.06.29-01")]
+
+def test_latest_ignores_a_backport_older_than_current():
+    # #38473: 26.11.02-02 (a backport of 26.11.02-01) shipped after 26.11.03-01. CalVer, not
+    # publish order, decides: latest stays on 26.11.03-01, and a latest already moved onto the
+    # backport is promoted back up to it.
+    rel = releases("26.11.03-01", "26.11.02-02", "26.11.02-01")
+    today = dt.date(2026, 11, 5)
+    assert plan(rel, tainted=set(), held=set(),
+                tracks=[track("latest", 0, current="26.11.03-01")], today=today) == []
+    assert plan(rel, tainted=set(), held=set(),
+                tracks=[track("latest", 0, current="26.11.02-02")], today=today) == [
+        Move(track="latest", target_version="26.11.03-01")]
