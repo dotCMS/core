@@ -1,17 +1,18 @@
 name: dotbot code review
 
+# pull_request_target, not pull_request: the job definition below always comes
+# from the default branch, so a PR cannot change how its own review runs. The
+# PR's code is never checked out (see the checkout step).
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
 
 jobs:
   review:
     # Only run when the PR carries the "PR : dotbot review" label.
     #
-    # Fork PRs are skipped: GitHub forces GITHUB_TOKEN to read-only for
-    # `pull_request` events from forks, so the action's write calls to post
-    # the review would fail. Supporting forks would require pull_request_target,
-    # which reintroduces untrusted-checkout risk.
+    # Fork PRs are skipped. pull_request_target runs fork PRs with this repo's
+    # secrets and a write token, so the head.repo.fork guard below must stay.
     #
     # Label events (`labeled`/`unlabeled`) only proceed when the changed label
     # IS "PR : dotbot review" — unrelated label churn must not re-run or
@@ -42,6 +43,11 @@ jobs:
     steps:
       # Pinned to a full commit SHA: a mutable tag could be repointed to run
       # attacker-controlled code with this job's write-scoped GITHUB_TOKEN.
+      #
+      # Checks out the base branch. Do not add `ref:` for the PR head or merge
+      # commit: this job has secrets. fetch-depth 0 also fetches the PR's
+      # branch, so the action can read the head commit by SHA (git diff/show)
+      # without checking it out.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
