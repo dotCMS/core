@@ -59,12 +59,9 @@ import com.dotcms.dotpubsub.DotPubSubProviderLocator;
 import com.dotcms.enterprise.ESSeachAPI;
 import com.dotcms.enterprise.RulesAPIProxy;
 import com.dotcms.enterprise.ServerActionAPIImplProxy;
-import com.dotcms.enterprise.achecker.ACheckerAPI;
-import com.dotcms.enterprise.achecker.impl.ACheckerAPIImpl;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPIImpl;
 import com.dotcms.enterprise.cluster.action.business.ServerActionAPI;
-import com.dotcms.enterprise.linkchecker.LinkCheckerAPIImpl;
 import com.dotcms.enterprise.priv.ESSearchProxy;
 import com.dotcms.enterprise.publishing.sitesearch.ESSiteSearchAPI;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchAPIImpl;
@@ -136,8 +133,6 @@ import com.dotmarketing.image.focalpoint.FocalPointAPI;
 import com.dotmarketing.image.focalpoint.FocalPointAPIImpl;
 import com.dotmarketing.plugin.business.PluginAPI;
 import com.dotmarketing.plugin.business.PluginAPIImpl;
-import com.dotmarketing.portlets.calendar.business.EventAPI;
-import com.dotmarketing.portlets.calendar.business.EventAPIImpl;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.business.CategoryAPIImpl;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
@@ -146,8 +141,6 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPIInterceptor;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPIImpl;
-import com.dotmarketing.portlets.dashboard.business.DashboardAPI;
-import com.dotmarketing.portlets.dashboard.business.DashboardAPIImpl;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImpl;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -162,7 +155,6 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRend
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPIImpl;
-import com.dotmarketing.portlets.linkchecker.business.LinkCheckerAPI;
 import com.dotmarketing.portlets.links.business.MenuLinkAPI;
 import com.dotmarketing.portlets.links.business.MenuLinkAPIImpl;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
@@ -387,14 +379,7 @@ public class APILocator extends Locator<APIIndex> {
 		return (LoginAsAPI) getInstance(APIIndex.LOGIN_AS_USER_API);
 	}
 
-	/**
-	 * Creates a single instance of the {@link EventAPI} class.
-	 *
-	 * @return The {@link EventAPI} class.
-	 */
-	public static EventAPI getEventAPI() {
-		return (EventAPI)getInstance(APIIndex.EVENT_API);
-	}
+
 	
     public static DotPubSubProvider getDotPubSubProvider() {
         return (DotPubSubProvider) DotPubSubProviderLocator.provider.get();
@@ -625,14 +610,6 @@ public class APILocator extends Locator<APIIndex> {
 		return (MenuLinkAPI) getInstance(APIIndex.MENULINK_API);
 	}
 
-	/**
-	 * Creates a single instance of the {@link DashboardAPI} class.
-	 *
-	 * @return The {@link DashboardAPI} class.
-	 */
-	public static DashboardAPI getDashboardAPI(){
-		return (DashboardAPI) getInstance(APIIndex.DASHBOARD_API);
-	}
 
 	/**
 	 * Creates a single instance of the {@link SiteSearchAPI} class.
@@ -765,15 +742,6 @@ public class APILocator extends Locator<APIIndex> {
 	 */
 	public static PublisherAPI getPublisherAPI() {
 	    return (PublisherAPI) getInstance(APIIndex.PUBLISHER_API);
-	}
-
-	/**
-	 * Creates a single instance of the {@link LinkCheckerAPI} class.
-	 *
-	 * @return The {@link LinkCheckerAPI} class.
-	 */
-	public static LinkCheckerAPI getLinkCheckerAPI() {
-	    return (LinkCheckerAPI) getInstance(APIIndex.LINKCHECKER_API);
 	}
 
 	/**
@@ -1238,14 +1206,7 @@ public class APILocator extends Locator<APIIndex> {
 		return (SystemAPI) getInstance(APIIndex.SYSTEM_API);
 	}
 
-	/**
-	 * Returns a singleton instance of the {@link ACheckerAPI} class.
-	 *
-	 * @return The {@link ACheckerAPI} instance.
-	 */
-	public static ACheckerAPI getACheckerAPI() {
-		return (ACheckerAPI) getInstance(APIIndex.ACHECKER_API);
-	}
+
 
 	/**
 	 * Returns a singleton instance of the {@link ContentAnalyticsAPI} class.
@@ -1354,7 +1315,6 @@ enum APIIndex
 	CONTENTLET_API,
 	CONTENTLET_API_INTERCEPTER,
 	REINDEX_QUEUE_API,
-	EVENT_API,
 	EVENT_RECURRENCE_API,
 	PERMISSION_API,
 	ROLE_API,
@@ -1381,7 +1341,6 @@ enum APIIndex
 	FILE_API,
 	HTMLPAGE_API,
 	MENULINK_API,
-	DASHBOARD_API,
 	SITESEARCH_API,
 	VERSIONABLE_API,
 	FILEASSET_API,
@@ -1392,7 +1351,6 @@ enum APIIndex
 	CONTENLET_INDEX_API,
 	PUBLISHER_API,
 	ES_INDEX_API,
-	LINKCHECKER_API,
 	TIME_MACHINE_API,
 	PUBLISHER_ENDPOINT_API,
 	STRUCTURE_API,
@@ -1443,7 +1401,6 @@ enum APIIndex
 	ANALYTICS_API,
 	CONTENT_TYPE_DESTROY_API,
 	SYSTEM_API,
-	ACHECKER_API,
 	CONTENT_ANALYTICS_API,
 	JOB_QUEUE_MANAGER_API,
     AI_VISION_API,
@@ -1462,7 +1419,6 @@ enum APIIndex
     		case USER_API: return new UserAPIImpl();
     		case LOGIN_AS_USER_API: return LoginAsAPIImpl.getInstance();
     		case LOGIN_SERVICE_API: return LoginServiceAPIFactory.getInstance().getLoginService();
-    		case EVENT_API: return new EventAPIImpl();
     		case CATEGORY_API: return new CategoryAPIImpl();
     		case CONTENTLET_API: return new  ESContentletAPIImpl();
     		case CONTENTLET_API_INTERCEPTER: return new ContentletAPIInterceptor();
@@ -1483,7 +1439,6 @@ enum APIIndex
     		case HOST_VARIABLE_API : return new HostVariableAPIImpl();
     		case FORM_API: return new FormAPIImpl();
     		case MENULINK_API: return new MenuLinkAPIImpl();
-    		case DASHBOARD_API: return new DashboardAPIImpl();
     		case SITESEARCH_API: return new SiteSearchAPIImpl();
     		case FILEASSET_API: return new FileAssetAPIImpl();
     		case VERSIONABLE_API: return new VersionableAPIImpl();
@@ -1495,7 +1450,6 @@ enum APIIndex
     		case ES_INDEX_API: return new IndexAPIImpl();
     		case PUBLISHER_API: return new PublisherAPIImpl();
     		case TIME_MACHINE_API: return new TimeMachineAPIImpl();
-    		case LINKCHECKER_API: return new LinkCheckerAPIImpl();
     		case PUBLISHER_ENDPOINT_API: return new PublishingEndPointAPIImpl(FactoryLocator.getPublisherEndPointFactory());
     		case STRUCTURE_API: return new StructureAPIImpl();
     		case SITE_SEARCH_AUDIT_API: return new SiteSearchAuditAPIImpl();
@@ -1545,7 +1499,6 @@ enum APIIndex
 			case CONTENT_TYPE_DESTROY_API: return new ContentTypeDestroyAPIImpl();
 			case SYSTEM_API: return new SystemAPIImpl();
 			case ARTIFICIAL_INTELLIGENCE_API: return new DotAIAPIFacadeImpl();
-			case ACHECKER_API: return new ACheckerAPIImpl();
 			case CONTENT_ANALYTICS_API: return CDIUtils.getBeanThrows(ContentAnalyticsAPI.class);
 			case JOB_QUEUE_MANAGER_API: return CDIUtils.getBeanThrows(JobQueueManagerAPI.class);
             case REQUEST_COST_API:

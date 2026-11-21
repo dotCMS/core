@@ -1,6 +1,6 @@
 package com.dotcms.storage;
 
-import com.dotcms.enterprise.achecker.parsing.EmptyIterable;
+
 import com.dotmarketing.exception.DotDataException;
 
 import java.io.File;
@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
@@ -193,7 +194,7 @@ public interface StoragePersistenceAPI {
      * @return The {@link Iterable} with the group objects.
      */
     default Iterable<? extends ObjectPath> toIterable(String group) {
-        return new EmptyIterable<>();
+        return Collections.emptyList();
     }
 
     /**

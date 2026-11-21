@@ -7,7 +7,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.microsoft.sqlserver.jdbc.ISQLServerConnection;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -19,7 +18,6 @@ import org.quartz.SchedulerConfigException;
 import org.quartz.Trigger;
 import org.quartz.core.SchedulingContext;
 import org.quartz.impl.jdbcjobstore.JobStoreCMT;
-import org.quartz.impl.jdbcjobstore.UpdateLockRowSemaphore;
 import org.quartz.spi.ClassLoadHelper;
 import org.quartz.spi.SchedulerSignaler;
 import org.quartz.utils.ConnectionProvider;
@@ -78,8 +76,8 @@ public class DotJobStore extends JobStoreCMT {
 				new ConnectionProvider() {
 					public Connection getConnection() throws SQLException {
 						Connection c = nonTxDataSourceToUse.getConnection();
-						if (ISQLServerConnection.TRANSACTION_READ_COMMITTED != c.getTransactionIsolation()) {
-							c.setTransactionIsolation(ISQLServerConnection.TRANSACTION_READ_COMMITTED);
+						if (Connection.TRANSACTION_READ_COMMITTED != c.getTransactionIsolation()) {
+							c.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
 						}
 						return  c;
 					}
@@ -90,29 +88,6 @@ public class DotJobStore extends JobStoreCMT {
 		);
 
 
-		//Set lock handler because of http://jira.opensymphony.com/browse/QUARTZ-497
-		if (DbConnectionFactory.isMySql()) {
-			tablePrefix = tablePrefix.toLowerCase();
-
-			setLockHandler( new DotSelectLockRowSemaphore( tablePrefix ) );
-
-		} else if (DbConnectionFactory.isMsSql()) {
-
-			//https://github.com/dotCMS/core/tree/issue-10331-fix-snapshot-isolation-exception-on-quartz
-			setLockHandler(
-				new DotSelectLockRowSemaphore(tablePrefix,
-					"SELECT * FROM {0}LOCKS WITH (UPDLOCK ROWLOCK) WHERE LOCK_NAME = ?"
-				)
-			);
-
-		} else if (DbConnectionFactory.isOracle()) {
-
-			UpdateLockRowSemaphore updateLockHandler = new UpdateLockRowSemaphore();
-			updateLockHandler.setUpdateLockRowSQL("UPDATE {0}LOCKS SET LOCK_NAME = LOCK_NAME WHERE LOCK_NAME = ?");
-			updateLockHandler.setTablePrefix(tablePrefix);
-
-			setLockHandler( updateLockHandler );
-		}
 
 
 		//Set driver delegate class because of http://jira.dotmarketing.net/browse/DOTCMS-6699
@@ -123,27 +98,9 @@ public class DotJobStore extends JobStoreCMT {
 			} catch (Exception e) {
 				Logger.info(this, e.getMessage());
 			}
-		}else if (DbConnectionFactory.isMySql()) {
-			try {
-				setDriverDelegateClass("com.dotmarketing.quartz.MySQLJDBCDelegate");
-			} catch (Exception e) {
-				Logger.info(this, e.getMessage());
-			}
 		} else if (DbConnectionFactory.isPostgres()) {
 			try {
 				setDriverDelegateClass("org.quartz.impl.jdbcjobstore.PostgreSQLDelegate");
-			} catch (Exception e) {
-				Logger.info(this, e.getMessage());
-			}
-		} else if (DbConnectionFactory.isMsSql()) {
-			try {
-				setDriverDelegateClass("org.quartz.impl.jdbcjobstore.DotMSSQLDelegate");
-			} catch (Exception e) {
-				Logger.info(this, e.getMessage());
-			}
-		} else if (DbConnectionFactory.isOracle()) {
-			try {
-				setDriverDelegateClass("org.quartz.impl.jdbcjobstore.oracle.OracleDelegate");
 			} catch (Exception e) {
 				Logger.info(this, e.getMessage());
 			}

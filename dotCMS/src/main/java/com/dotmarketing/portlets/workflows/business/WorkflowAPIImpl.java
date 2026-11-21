@@ -81,7 +81,6 @@ import com.dotmarketing.portlets.workflows.actionlet.AnalyticsFireUserEventActio
 import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.AsyncEmailActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.BatchAction;
-import com.dotmarketing.portlets.workflows.actionlet.CheckURLAccessibilityActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.CheckoutContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.CommentOnWorkflowActionlet;
@@ -264,7 +263,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
               MultipleApproverActionlet.class,
               FourEyeApproverActionlet.class,
               PushPublishActionlet.class,
-              CheckURLAccessibilityActionlet.class,
               EmailActionlet.class,
               AsyncEmailActionlet.class,
               SetValueActionlet.class,
