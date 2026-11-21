@@ -1,13 +1,13 @@
 import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 
 import { GlobalStore } from '@dotcms/store';
-import { DotCollapseBreadcrumbComponent } from '@dotcms/ui';
+import { DotCollapseBreadcrumbComponent, DotContentletStatusBadgeComponent } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-crumbtrail',
     templateUrl: './dot-crumbtrail.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DotCollapseBreadcrumbComponent]
+    imports: [DotCollapseBreadcrumbComponent, DotContentletStatusBadgeComponent]
 })
 export class DotCrumbtrailComponent {
     /** Global store instance for accessing breadcrumb state */
@@ -34,4 +34,10 @@ export class DotCrumbtrailComponent {
      * Label of the last breadcrumb, provided by the GlobalStore.
      */
     $lastBreadcrumb = this.#globalStore.selectLastBreadcrumbLabel;
+
+    /**
+     * The chip shown right after the title, or `null` for none. Only Edit Content sets it, so every
+     * other page renders exactly as before.
+     */
+    $titleStatus = this.#globalStore.titleStatus;
 }

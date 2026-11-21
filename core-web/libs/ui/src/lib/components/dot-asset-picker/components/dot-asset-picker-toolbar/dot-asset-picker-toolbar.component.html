@@ -1,9 +1,13 @@
 <div class="flex w-full items-center gap-2">
-    <dot-search-input
+    <!-- The same search bar Content Drive renders: the box with its Title / All Fields scope. This
+         host owns the state in its own store; the control only reports what was typed or picked. -->
+    <dot-search-scope-input
         class="min-w-0 flex-1"
         testId="asset-picker-search-input"
-        [value]="$searchTerm()"
-        (search)="store.setSearch($event)" />
+        [term]="$searchTerm()"
+        [scope]="$searchScope()"
+        (search)="store.setSearch($event)"
+        (scopeChange)="store.setSearchScope($event)" />
 
     <dot-upload-button
         [defaultBaseType]="$defaultBaseType()"

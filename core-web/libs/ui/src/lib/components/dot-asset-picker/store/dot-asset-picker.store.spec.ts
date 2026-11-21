@@ -1499,6 +1499,129 @@ describe('DotAssetPickerStore', () => {
     //    "is there anything worth clearing" signal the shared Clear all button needs.
     //    See specs/37174-shared-picker-toolbar/research.md R6a / R6b.
 
+    // The search bar's Title / All Fields scope. Held in the filter bag under `searchScope`, only when it
+    // differs from Title (as Content Drive does), so a fresh open and "Clear all" land on Title.
+    describe('search scope (Title / All Fields)', () => {
+        const lastRequestFilters = () =>
+            contentDriveService.search.mock.calls.at(-1)?.[0].filters as {
+                text: string;
+                filterFolders: boolean;
+                searchScope?: string;
+            };
+
+        it('should open on Title: nothing stored for the scope', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+
+            expect(store.getFilterValue('searchScope')).toBeUndefined();
+        });
+
+        it('should send Title with a term when the editor never picked a scope', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+            store.setSearch('logo');
+            spectator.flushEffects();
+
+            expect(lastRequestFilters()).toEqual({
+                text: 'logo',
+                filterFolders: true,
+                searchScope: 'TITLE'
+            });
+        });
+
+        it('should store All Fields in the filter bag and send it with a term', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+            store.setSearch('logo');
+
+            store.setSearchScope('ALL_FIELDS');
+            spectator.flushEffects();
+
+            expect(store.getFilterValue('searchScope')).toBe('ALL_FIELDS');
+            expect(lastRequestFilters().searchScope).toBe('ALL_FIELDS');
+        });
+
+        it('should store nothing again when the editor goes back to Title', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+            store.setSearchScope('ALL_FIELDS');
+
+            store.setSearchScope('TITLE');
+
+            expect(store.getFilterValue('searchScope')).toBeUndefined();
+        });
+
+        it('should send no scope when the search box is empty, whichever scope is active', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+            spectator.flushEffects();
+            expect(lastRequestFilters().searchScope).toBeUndefined();
+
+            store.setSearchScope('ALL_FIELDS');
+            spectator.flushEffects();
+
+            expect(lastRequestFilters()).toEqual({ text: '', filterFolders: true });
+        });
+
+        it('should re-run the search with the new scope when a term is typed', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+            store.setSearch('logo');
+            spectator.flushEffects();
+            const callsBefore = contentDriveService.search.mock.calls.length;
+
+            store.setSearchScope('ALL_FIELDS');
+            spectator.flushEffects();
+
+            expect(contentDriveService.search.mock.calls.length).toBeGreaterThan(callsBefore);
+            expect(lastRequestFilters()).toEqual(
+                expect.objectContaining({ text: 'logo', searchScope: 'ALL_FIELDS' })
+            );
+        });
+
+        it('should go back to the first page when the scope changes', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+            patchState(unprotected(store), {
+                pagination: { ...DEFAULT_ASSET_PICKER_PAGINATION, page: 3 }
+            });
+
+            store.setSearchScope('ALL_FIELDS');
+
+            expect(store.pagination().page).toBe(1);
+        });
+
+        it('should keep the browsed folder when only the scope changes', () => {
+            store.initPicker({ ...FILE_FIELD_CONFIG, path: '/images/' });
+
+            store.setSearchScope('ALL_FIELDS');
+
+            expect(store.path()).toBe('/images/');
+        });
+
+        it('should land on Title again when the editor clears all filters', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+            store.setSearchScope('ALL_FIELDS');
+
+            store.clearFilters();
+
+            expect(store.getFilterValue('searchScope')).toBeUndefined();
+        });
+
+        it('should open on Title even if the same store held All Fields before', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+            store.setSearchScope('ALL_FIELDS');
+
+            store.initPicker(FILE_FIELD_CONFIG);
+
+            expect(store.getFilterValue('searchScope')).toBeUndefined();
+        });
+
+        it('should count All Fields as a change to clear, and Title as the default', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+            expect(store.$hasNonDefaultFilters()).toBe(false);
+
+            store.setSearchScope('ALL_FIELDS');
+            expect(store.$hasNonDefaultFilters()).toBe(true);
+
+            store.setSearchScope('TITLE');
+            expect(store.$hasNonDefaultFilters()).toBe(false);
+        });
+    });
+
     describe('clearFilters restores the caller seeds (R6a)', () => {
         // The defect: `clearFilters` sets `filters: {}` while `initPicker` seeds `languageId` and
         // `baseType` from the config. So "Clear all" strands an Image field's editor in an

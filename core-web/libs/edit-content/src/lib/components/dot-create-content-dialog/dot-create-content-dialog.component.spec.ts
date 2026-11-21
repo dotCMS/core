@@ -30,6 +30,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { DOT_SYSTEM_CONFIG_SERVICE_MOCK } from '@dotcms/utils-testing';
 
 import { DotEditContentDialogComponent } from './dot-create-content-dialog.component';
+import { DotEditContentDialogTitleStatusService } from './dot-edit-content-dialog-title-status.service';
 
 import {
     AngularImageEditorLauncher,
@@ -262,5 +263,50 @@ describe('DotEditContentDialogComponent', () => {
         spectator.click(cancelBtn!);
 
         expect(closeDialogSpy).toHaveBeenCalledTimes(1);
+    });
+
+    describe('title status chip', () => {
+        const published = { state: { live: true, working: true, hasLiveVersion: true } };
+
+        const dialogRef = () => spectator.inject(DynamicDialogRef);
+        const titleStatus = () =>
+            spectator.inject(DotEditContentDialogTitleStatusService).for(dialogRef());
+
+        beforeEach(() => {
+            spectator.inject(DynamicDialogConfig).data = {
+                mode: 'edit',
+                contentletInode: 'inode'
+            };
+            spectator.detectChanges();
+        });
+
+        it('should start with no status for the dialog header', () => {
+            expect(titleStatus()()).toBeNull();
+        });
+
+        it('should hand the editor status to the dialog header through the dialog ref', () => {
+            spectator.inject(OverlayEditContentHost, true).setTitleStatus(published);
+            spectator.detectChanges();
+
+            expect(titleStatus()()).toEqual(published);
+        });
+
+        it('should hand "New" to the dialog header for content that has not been saved', () => {
+            spectator.inject(OverlayEditContentHost, true).setTitleStatus({ state: null });
+            spectator.detectChanges();
+
+            expect(titleStatus()()).toEqual({ state: null });
+        });
+
+        it('should hide the chip in the header when the editor clears the status', () => {
+            const host = spectator.inject(OverlayEditContentHost, true);
+            host.setTitleStatus(published);
+            spectator.detectChanges();
+
+            host.setTitleStatus(null);
+            spectator.detectChanges();
+
+            expect(titleStatus()()).toBeNull();
+        });
     });
 });

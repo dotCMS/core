@@ -104,23 +104,6 @@
                 {{ $store.contentlet()?.modDate | dotRelativeDate }}
             </span>
         } @else {
-            <!-- Status badge: the shared component derives its label + severity from the
-                 contentlet state (a brand-new contentlet has no state yet, so it shows
-                 the translated "New"). -->
-            <dot-contentlet-status-badge
-                [state]="$statusState()"
-                data-testId="content-status-tag" />
-
-            <!-- Vertical separator between the status tag and the actions -->
-            <div class="my-2 h-6 border-l border-surface-200" data-testId="status-separator"></div>
-
-            <!-- Normal actions -->
-            @if ($showPreviewLink()) {
-                <button pButton [text]="true" data-testId="preview-button" (click)="showPreview()">
-                    {{ 'edit.content.preview-link' | dm }}
-                </button>
-            }
-
             <!-- Overflow actions menu, only for existing content -->
             @if (!$store.isNew()) {
                 <dot-edit-content-command-bar-actions

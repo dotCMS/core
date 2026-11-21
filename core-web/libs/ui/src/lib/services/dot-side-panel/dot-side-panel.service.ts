@@ -6,13 +6,14 @@ import {
     Service,
     Signal,
     Type,
+    computed,
     inject,
     isSignal,
     signal
 } from '@angular/core';
 
 import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
-import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
+import { DotMessageSeverity, DotMessageType, DotTitleStatus } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
 /**
@@ -112,6 +113,26 @@ export class DotSidePanelRef {
      * drawer's padding, or a flex layout, sets its own.
      */
     readonly contentStyleClass = signal('p-0!');
+
+    readonly #titleStatusSource = signal<Signal<DotTitleStatus> | null>(null);
+
+    /**
+     * The chip shown right after the panel's heading, or `null` for none. It follows whatever source
+     * the content bound with {@link bindTitleStatus}; panels whose content binds nothing (every one
+     * but Edit Content) keep their header unchanged.
+     */
+    readonly titleStatus = computed<DotTitleStatus>(() => this.#titleStatusSource()?.() ?? null);
+
+    /**
+     * Content with a state worth showing next to its title (the Edit Content editor) hands its
+     * signal over once; the header then follows it, with nothing to copy and no effect to keep in
+     * step.
+     *
+     * @param source the content's own signal of what the chip shows
+     */
+    bindTitleStatus(source: Signal<DotTitleStatus>): void {
+        this.#titleStatusSource.set(source);
+    }
 
     /** @param remove takes the panel off the screen */
     constructor(remove: () => void) {

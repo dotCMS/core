@@ -19,6 +19,8 @@ export class AssetPickerDialog {
     readonly closeButton: Locator;
     readonly fullscreenButton: Locator;
     readonly search: Locator;
+    readonly searchScopeTrigger: Locator;
+    readonly searchScopeActive: Locator;
     readonly sidebar: Locator;
     readonly siteSelector: Locator;
     readonly folderSearch: Locator;
@@ -38,6 +40,9 @@ export class AssetPickerDialog {
         // Two search boxes are on screen at once, so each carries its own id — a shared one made
         // every selector here ambiguous and was what broke this suite in CI.
         this.search = this.root.getByTestId('asset-picker-search-input');
+        // The scope dropdown beside it is the same control Content Drive renders (Title / All Fields).
+        this.searchScopeTrigger = this.root.getByTestId('search-scope-trigger');
+        this.searchScopeActive = this.root.getByTestId('search-scope-active');
         this.sidebar = this.root.getByTestId('asset-picker-sidebar');
         // The sidebar is three stacked, single-purpose controls (#37208). It used to be one
         // "Search sites & folders" box over a tree whose roots were every browsable site; the site
@@ -78,6 +83,30 @@ export class AssetPickerDialog {
         );
         await this.search.fill(term);
         await response;
+    }
+
+    /** Picks a scope in the search bar's dropdown. The panel is body-appended, so it is read from the page. */
+    async chooseSearchScope(scope: 'TITLE' | 'ALL_FIELDS'): Promise<void> {
+        await this.searchScopeTrigger.click();
+        await this.page.getByTestId(`search-scope-option-${scope}`).click();
+    }
+
+    async expectSearchScope(label: string): Promise<void> {
+        await expect(this.searchScopeActive).toHaveText(label);
+    }
+
+    /**
+     * Types a term and waits for the drive search it triggers, returning the scope that request
+     * carried (`undefined` when it named none).
+     */
+    async searchScopeSentFor(term: string): Promise<string | undefined> {
+        const request = this.page.waitForRequest(
+            (req) => req.url().includes('/api/v1/drive/search') && req.method() === 'POST',
+            { timeout: 30000 }
+        );
+        await this.search.fill(term);
+
+        return (await request).postDataJSON()?.filters?.searchScope;
     }
 
     /** The row whose title cell contains `name`. */

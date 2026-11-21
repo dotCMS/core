@@ -125,6 +125,7 @@ test('import image URL shows Edit image button', async ({ page }) => {
 test.describe('select an existing file through the AssetPicker', () => {
     let seededAsset: Contentlet | null = null;
     let assetName: string;
+    let assetSearchTerm: string;
 
     // Seeded per test through the REST API: the picker only reads it, but a unique file name per
     // test is what lets the search find exactly this asset regardless of what else the environment
@@ -141,6 +142,12 @@ test.describe('select an existing file through the AssetPicker', () => {
             site.identifier
         );
         assetName = seededAsset.title;
+        // Searched without its extension. The picker opens on Title scope, which matches every
+        // hyphen-separated word of the term as a prefix of an indexed token, and the analyzer
+        // splits the `<random>.png` tail into two tokens whenever the random part ends in a digit
+        // (`hnk3v8.png` is stored as `hnk3v8` + `png`), so the full file name is unreachable in
+        // about a third of the runs. The row is still asserted by its full title.
+        assetSearchTerm = assetName.replace(/\.png$/, '');
     });
 
     test.afterEach(async ({ request }) => {
@@ -164,7 +171,7 @@ test.describe('select an existing file through the AssetPicker', () => {
         // Nothing picked yet, so there is nothing to confirm.
         await picker.expectConfirmDisabled();
 
-        await picker.searchFor(assetName);
+        await picker.searchFor(assetSearchTerm);
         await picker.expectRowVisible(assetName);
 
         // Clicking the title, not the row padding: the whole row is the selection target here.
@@ -191,7 +198,7 @@ test.describe('select an existing file through the AssetPicker', () => {
         await field.openSelectExistingDialog();
         await picker.waitForVisible();
 
-        await picker.searchFor(assetName);
+        await picker.searchFor(assetSearchTerm);
         await picker.selectRowByTitle(assetName);
         await picker.cancel();
 

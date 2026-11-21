@@ -26,7 +26,11 @@ import {
 } from '@dotcms/data-access';
 import { HttpCode } from '@dotcms/dotcms-js';
 import { DotContentletCanLock, DotTreeNode, FeaturedFlags } from '@dotcms/dotcms-models';
-import { DotEditContentDialogComponent, EditContentDialogData } from '@dotcms/edit-content';
+import {
+    DotEditContentDialogComponent,
+    DotEditContentDialogHeaderComponent,
+    EditContentDialogData
+} from '@dotcms/edit-content';
 import {
     DotCMSInlineEditingPayload,
     DotCMSURLContentMap,
@@ -644,7 +648,8 @@ describe('DotUveContentEditorComponent', () => {
                         contentletInode: 'contentlet-inode-123',
                         onContentSaved: expect.any(Function)
                     },
-                    header: 'Hello World'
+                    header: 'Hello World',
+                    templates: { header: DotEditContentDialogHeaderComponent }
                 });
                 expect(opened).toHaveLength(0);
             });
@@ -1020,7 +1025,8 @@ describe('DotUveContentEditorComponent', () => {
                         contentTypeId: 'test',
                         onContentSaved: expect.any(Function)
                     },
-                    header: 'Create Test'
+                    header: 'Create Test',
+                    templates: { header: DotEditContentDialogHeaderComponent }
                 });
             });
 

@@ -17,6 +17,8 @@ import { DotCMSContentlet, ComponentStatus } from '@dotcms/dotcms-models';
 import { pushFormBridge, popFormBridge } from '@dotcms/edit-content-bridge';
 import { ASSET_PICKER_LAUNCHER, AngularAssetPickerLauncher, DotMessagePipe } from '@dotcms/ui';
 
+import { DotEditContentDialogTitleStatusService } from './dot-edit-content-dialog-title-status.service';
+
 import {
     AngularImageEditorLauncher,
     IMAGE_EDITOR_LAUNCHER
@@ -110,6 +112,13 @@ export class DotEditContentDialogComponent implements OnInit, OnDestroy {
 
     constructor() {
         pushFormBridge();
+
+        // The dialog header is created apart from this body, so the editor's chip reaches it through
+        // the dialog's ref (see DotEditContentDialogTitleStatus).
+        inject(DotEditContentDialogTitleStatusService).register(
+            this.#dialogRef,
+            this.#host.titleStatus
+        );
 
         // Track saves reported by the editor through the host (replaces the old
         // (contentSaved) output binding). The callback fires on close.

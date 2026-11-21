@@ -41,7 +41,7 @@ describe('RouterEditContentHost', () => {
     let host: RouterEditContentHost;
     let router: Mocked<Pick<Router, 'navigate'>>;
     let title: Mocked<Pick<Title, 'setTitle'>>;
-    let globalStore: { addNewBreadcrumb: Mock };
+    let globalStore: { addNewBreadcrumb: Mock; setTitleStatus: Mock; clearTitleStatus: Mock };
     let relatedNav: {
         registerTitle: Mock;
         buildTrailForSavedInode: Mock;
@@ -64,7 +64,11 @@ describe('RouterEditContentHost', () => {
                 }
             }),
             mockProvider(Title, { setTitle: vi.fn() }),
-            mockProvider(GlobalStore, { addNewBreadcrumb: vi.fn() }),
+            mockProvider(GlobalStore, {
+                addNewBreadcrumb: vi.fn(),
+                setTitleStatus: vi.fn(),
+                clearTitleStatus: vi.fn()
+            }),
             mockProvider(DotRelatedContentNavigationStore, {
                 registerTitle: vi.fn(),
                 buildTrailForSavedInode: vi.fn().mockReturnValue('a,b'),
@@ -95,6 +99,8 @@ describe('RouterEditContentHost', () => {
         relatedNav.registerTitle.mockClear();
         relatedNav.buildTrailForSavedInode.mockClear();
         relatedNav.appendToTrail.mockClear();
+        globalStore.setTitleStatus.mockClear();
+        globalStore.clearTitleStatus.mockClear();
     });
 
     it('reports that it does not navigate in place', () => {
@@ -276,6 +282,40 @@ describe('RouterEditContentHost', () => {
                 queryParams: { rc: null },
                 queryParamsHandling: 'merge'
             });
+        });
+    });
+
+    describe('title status chip', () => {
+        it('should hand the status to the global header', () => {
+            const status = { state: { live: true, working: true, hasLiveVersion: true } };
+
+            host.setTitleStatus(status);
+
+            expect(globalStore.setTitleStatus).toHaveBeenCalledWith(status);
+        });
+
+        it('should hand "New" (a null state) to the global header', () => {
+            host.setTitleStatus({ state: null });
+
+            expect(globalStore.setTitleStatus).toHaveBeenCalledWith({ state: null });
+        });
+
+        it('should hide the chip in the global header when the status is null', () => {
+            host.setTitleStatus(null);
+
+            expect(globalStore.setTitleStatus).toHaveBeenCalledWith(null);
+        });
+
+        it('should clear the chip from the global header when the editor is destroyed', () => {
+            host.ngOnDestroy();
+
+            expect(globalStore.clearTitleStatus).toHaveBeenCalledTimes(1);
+        });
+
+        it('should not clear the chip on in-editor navigation, which reuses the route', () => {
+            host.goToCrumb('inode-a', ['inode-a']);
+
+            expect(globalStore.clearTitleStatus).not.toHaveBeenCalled();
         });
     });
 });

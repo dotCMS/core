@@ -4,7 +4,7 @@ import { Injectable, OnDestroy, computed, inject, signal } from '@angular/core';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotTitleStatus } from '@dotcms/dotcms-models';
 
 import {
     EditContentHost,
@@ -107,6 +107,17 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
 
     setTrail(inodes: string[]): void {
         this.#trailInodes.set(inodes);
+    }
+
+    /**
+     * The chip the overlay's own header draws next to its title (the dialog header or the side panel
+     * header). Starts hidden, so nothing shows before the editor has loaded.
+     */
+    readonly #titleStatus = signal<DotTitleStatus>(null);
+    readonly titleStatus = this.#titleStatus.asReadonly();
+
+    setTitleStatus(status: DotTitleStatus): void {
+        this.#titleStatus.set(status);
     }
 
     setContentTitle(_label: string): void {
