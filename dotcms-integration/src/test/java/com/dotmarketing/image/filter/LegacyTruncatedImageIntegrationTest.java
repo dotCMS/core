@@ -84,8 +84,11 @@ public class LegacyTruncatedImageIntegrationTest {
 
         Files.write(source.toPath(), healthy);
         final BinaryContentExporterData data = new ImageFilterExporter().exportContent(source, jpegParams());
+        // the repaired source has a new size and modification time, so it renders under a new name
+        generatedRenditions.add(data.getDataFile());
 
         assertRenders(data.getDataFile());
+        assertNothingCached(rendition);
     }
 
     /**
@@ -124,10 +127,16 @@ public class LegacyTruncatedImageIntegrationTest {
         assertNothingCached(rendition);
 
         Files.write(source.toPath(), healthy);
-        final BinaryContentExporterData data = new ImageFilterExporter().exportContent(source, cropParams());
+        final Map<String, String[]> healthyParams = cropParams();
+        final BinaryContentExporterData data = new ImageFilterExporter().exportContent(source, healthyParams);
 
-        assertEquals(rendition.getCanonicalPath(), data.getDataFile().getCanonicalPath());
+        // renditions are keyed on the source's size and modification time, so the repaired source gets
+        // a fresh rendition rather than anything left from the truncated version
+        final File healthyRendition = new CropImageFilter().getResultsFile(source, healthyParams);
+        generatedRenditions.add(healthyRendition);
+        assertEquals(healthyRendition.getCanonicalPath(), data.getDataFile().getCanonicalPath());
         assertRenders(data.getDataFile());
+        assertNothingCached(rendition);
     }
 
     private static Map<String, String[]> jpegParams() {
