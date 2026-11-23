@@ -1468,6 +1468,9 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 				.collect(Collectors.toList());
 	}
 
+	/** Resolves a {@link PermissionableProxy} to its real asset; created on first use. */
+	private final Lazy<AssetPermissionHelper> assetResolver = Lazy.of(AssetPermissionHelper::new);
+
 	/**
 	 * Decides the items the batch query could not: those with neither a cached
 	 * {@code permission_reference} row nor permissions of their own. Each one walks up to the
@@ -1497,7 +1500,6 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 		final Set<String> permitted = new HashSet<>();
 		final Set<String> evaluated = new HashSet<>();
-		final Lazy<AssetPermissionHelper> assetResolver = Lazy.of(AssetPermissionHelper::new);
 
 		for (final P permissionable : permissionables) {
 			final String permissionId = permissionable.getPermissionId();
