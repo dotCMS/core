@@ -9,6 +9,7 @@ import {
     untracked
 } from '@angular/core';
 
+import { DotContentEditor } from '@dotcms/data-access';
 import { DotSidePanelRef } from '@dotcms/ui';
 
 import { DotEditContentOpenerService } from './dot-edit-content-opener.service';
@@ -32,6 +33,9 @@ export interface DotEditContentPanelBinding extends DotEditContentPanelHandlers 
      * Remove with the legacy editor.
      */
     editor?: 'legacy';
+
+    /** The editor the panel shows, once known; see `DotEditContentOpenOptions`. */
+    editorResolved?: (editor: DotContentEditor) => void;
 }
 
 /** The panel {@link injectEditContentPanel} keeps open, as the surface sees it. */
