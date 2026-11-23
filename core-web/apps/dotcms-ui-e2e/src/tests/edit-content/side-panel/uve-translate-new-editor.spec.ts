@@ -2,7 +2,7 @@ import { UveEditorPage } from '@pages';
 import { expect, test } from '@playwright/test';
 import { findWorkingContentlet } from '@requests/contentlets';
 import { type ContentType, createPageContentType, deleteContentType } from '@requests/contentType';
-import { getLanguages, type Language } from '@requests/languages';
+import { deleteLanguage, findOrCreateSecondLanguage, type Language } from '@requests/languages';
 import { uniqueSuffix } from '@utils/utils';
 
 import { SidePanel } from './helpers/side-panel';
@@ -18,10 +18,15 @@ test.describe('The UVE translates a page in the editor its type uses', () => {
     let pageType: ContentType | null = null;
     let uvePage: UvePage | null = null;
     let otherLanguage: Language;
+    let other: Language | undefined;
+    let createdLanguage = false;
+
+    // The empty starter CI runs has only the default language: the spec adds one, and removes it.
+    test.beforeAll(async ({ request }) => {
+        ({ language: other, created: createdLanguage } = await findOrCreateSecondLanguage(request));
+    });
 
     test.beforeEach(async ({ request }) => {
-        const languages = await getLanguages(request);
-        const other = languages.find((language) => !language.defaultLanguage);
         expect(other, 'the instance needs a second language to translate into').toBeDefined();
         otherLanguage = other as Language;
 
@@ -42,6 +47,14 @@ test.describe('The UVE translates a page in the editor its type uses', () => {
         if (pageType) {
             await deleteContentType(request, pageType.id);
             pageType = null;
+        }
+    });
+
+    test.afterAll(async ({ request }) => {
+        // After every afterEach, which deletes the page type and with it the translation: a
+        // language that still has content cannot be deleted.
+        if (createdLanguage && other) {
+            await deleteLanguage(request, other.id);
         }
     });
 

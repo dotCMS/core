@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { createContentlet } from '@requests/contentlets';
 import { type ContentType, createFakeContentType, deleteContentType } from '@requests/contentType';
-import { getLanguages, type Language } from '@requests/languages';
+import { deleteLanguage, findOrCreateSecondLanguage, type Language } from '@requests/languages';
 import { uniqueSuffix } from '@utils/utils';
 
 import { SidePanel } from './helpers/side-panel';
@@ -18,10 +18,15 @@ test.describe('A panel link naming a language the content lacks', () => {
     let contentType: ContentType | null = null;
     let identifier: string;
     let otherLanguage: Language;
+    let other: Language | undefined;
+    let createdLanguage = false;
+
+    // The empty starter CI runs has only the default language: the spec adds one, and removes it.
+    test.beforeAll(async ({ request }) => {
+        ({ language: other, created: createdLanguage } = await findOrCreateSecondLanguage(request));
+    });
 
     test.beforeEach(async ({ request }) => {
-        const languages = await getLanguages(request);
-        const other = languages.find((language) => !language.defaultLanguage);
         expect(other, 'the instance needs a second language').toBeDefined();
         otherLanguage = other as Language;
 
@@ -44,6 +49,13 @@ test.describe('A panel link naming a language the content lacks', () => {
         if (contentType) {
             await deleteContentType(request, contentType.id);
             contentType = null;
+        }
+    });
+
+    test.afterAll(async ({ request }) => {
+        // After every afterEach: a language that still has content cannot be deleted.
+        if (createdLanguage && other) {
+            await deleteLanguage(request, other.id);
         }
     });
 
