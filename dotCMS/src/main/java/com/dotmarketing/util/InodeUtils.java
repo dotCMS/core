@@ -35,15 +35,16 @@ import java.util.Optional;
 public class InodeUtils {
 
 	/**
-	 * Checks whether the inodeStr isSet or not.
-	 * 
+	 * Checks whether the inodeStr isSet or not. This only tells a set value from an empty one: it
+	 * does not check the form of the value. Use {@link #hasIdFormat(String)} for that.
+	 *
 	 * @param inodeStr
 	 *            Inode.inode which is a String.
-	 * 
-	 * @return the value <code>True</code> if the inodeStr is a in valid
-	 *         UUID.toString() format or inodeStr is a positive long. else the
-	 *         value <code>False</code>.
-	 * 
+	 *
+	 * @return the value <code>False</code> if inodeStr is null, empty, or one of
+	 *         <code>null</code>, <code>0</code> and <code>''</code> (case and surrounding
+	 *         blanks ignored); <code>True</code> for any other value.
+	 *
 	 */
 	public static final boolean isSet(String inodeStr) {
 
@@ -59,6 +60,19 @@ public class InodeUtils {
 		}
 
 		return (inodeStr.length() > 0);
+	}
+
+	/**
+	 * Tells whether a value has the form of an id dotCMS generates for an inode or identifier: a
+	 * UUID, with or without its dashes, or a positive number (the form of very old inodes). Such a
+	 * value holds only hexadecimal digits and dashes, so it is safe to use as a folder name.
+	 *
+	 * @param id The value to check.
+	 * @return {@code true} if the value is a UUID or a positive number, {@code false} otherwise,
+	 * including for {@code null}.
+	 */
+	public static boolean hasIdFormat(final String id) {
+		return UUIDUtil.isUUID(id) || (id != null && id.matches("[1-9][0-9]{0,18}"));
 	}
 
 	/**

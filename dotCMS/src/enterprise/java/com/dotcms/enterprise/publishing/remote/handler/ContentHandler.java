@@ -39,6 +39,7 @@ import com.google.common.base.Strings;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.PathContainmentUtil;
 import com.dotcms.util.xstream.XStreamHandler;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -101,6 +102,7 @@ import io.vavr.control.Try;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -297,6 +299,7 @@ public class ContentHandler implements IHandler {
 				if (Host.SYSTEM_HOST.equalsIgnoreCase(wrapper.getContent().getIdentifier())) {
 					return;
 				}
+				requireIdFormat(wrapper.getContent());
 
 				content = new Contentlet(wrapper.getContent());
 
@@ -643,6 +646,44 @@ public class ContentHandler implements IHandler {
 	}
 
 	/**
+	 * Makes sure the inode and identifier of a content item read from a bundle have the form of
+	 * ids dotCMS generates. Both are used to find and create records, and the inode also names the
+	 * folders the item's binaries are read from and written to, so any other value is refused.
+	 *
+	 * @param content The {@link Contentlet} as read from the bundle.
+	 *
+	 * @throws DotPublishingException If the inode or the identifier is not a valid id.
+	 */
+	private static void requireIdFormat(final Contentlet content) throws DotPublishingException {
+		if (!InodeUtils.hasIdFormat(content.getInode()) || !InodeUtils.hasIdFormat(content.getIdentifier())) {
+			throw new DotPublishingException("The bundle has a content item whose inode or identifier is not a valid id");
+		}
+	}
+
+	/**
+	 * Returns the file a bundle carries for a binary field of a content item, which the sender puts
+	 * in {@code assets/<i0>/<i1>/<inode>/<field>/}. Only a regular file inside the bundle's
+	 * {@code assets} folder is returned.
+	 *
+	 * @param bundleFolder The folder the bundle was extracted to.
+	 * @param inode        The item's inode, already checked by {@link #requireIdFormat(Contentlet)}.
+	 * @param fieldVar     The variable name of the binary field.
+	 *
+	 * @return The file, or {@code null} if the bundle carries none for this field.
+	 */
+	private static File bundledBinary(final File bundleFolder, final String inode, final String fieldVar) {
+		final File assetsFolder = new File(bundleFolder, "assets");
+		final File binaryFolder = new File(assetsFolder, inode.charAt(0) + File.separator + inode.charAt(1)
+				+ File.separator + inode + File.separator + fieldVar);
+		final File[] files = binaryFolder.listFiles(
+				file -> Files.isRegularFile(file.toPath(), LinkOption.NOFOLLOW_LINKS));
+		if (files == null || files.length == 0 || !PathContainmentUtil.isContainedIn(assetsFolder, files[0])) {
+			return null;
+		}
+		return files[0];
+	}
+
+	/**
 	 * Returns the Identifier the pushed Contentlet has in the receiver. If its Identifier already
 	 * exists there, it's used as is. Otherwise, HTML Pages and File Assets are matched by Site and
 	 * URI, so that an existing asset created with a different Identifier is updated instead of
@@ -857,15 +898,11 @@ public class ContentHandler implements IHandler {
 	    //Copy asset files to bundle folder keeping original folders structure
         for (final Field ff : fields) {
             if(ff.getFieldType().equals(Field.FieldType.BINARY.toString())) {
-                final String folderTree = inode.charAt(0)+File.separator+inode.charAt(1)+File.separator+
-                        inode+File.separator+ff.getVelocityVarName();
-
-                final File binaryFolder = new File(folderOut+File.separator+"assets"+File.separator+folderTree);
-				final File[] filesInFolder = binaryFolder.listFiles();
-
-                if(binaryFolder.exists() && filesInFolder!=null && filesInFolder.length > 0) {
-					content.setBinary(ff.getVelocityVarName(), filesInFolder[0]);
-				}
+                // The value read from the content XML is never used: only a file the bundle carries
+                // can become the binary. Without one, the check-in falls back to the binary the
+                // receiver already stores for the item, if any.
+                content.setBinary(ff.getVelocityVarName(),
+                        bundledBinary(folderOut, inode, ff.getVelocityVarName()));
 			} else if ( ff.getFieldType().equals(Field.FieldType.TAG.toString()) ) {
 				// We don't want to rely on this value since it is not supposed to exist. So set it empty always
 				content.setStringProperty(ff.getVelocityVarName(), "");

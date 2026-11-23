@@ -76,7 +76,9 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
@@ -412,6 +414,46 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                 .find(checkout.getInode(), APILocator.systemUser(), false);
 
         assertFiles(binaryField, testFile_2, contentletFromDataBase_2);
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#checkin(Contentlet, User, boolean)}
+     * When: A new item with a binary is checked in with a caller-chosen inode that is a relative
+     * path ({@code ../<name>}) rather than a UUID
+     * Should: Refuse the check-in, save nothing, and create no folder next to the asset store,
+     * where that inode would place the item's binary folder.
+     */
+    @Test
+    public void checkinWithPathAsInodeIsRefused() throws Exception {
+        final Field binaryField = new FieldDataGen()
+                .name("binary")
+                .velocityVarName("binary")
+                .type(BinaryField.class)
+                .next();
+        final ContentType contentType = new ContentTypeDataGen()
+                .fields(list(binaryField))
+                .nextPersisted();
+        final String probeName = "ckprobe" + UUIDGenerator.shorty();
+        final File probeFolder = new File(
+                new File(APILocator.getFileAssetAPI().getRealAssetsRootPath()).getParentFile(), probeName);
+        try {
+            final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                    .setProperty(binaryField.variable(), createFile("images/test.jpg", ".jpg"))
+                    .next();
+            final String inode = "../" + probeName;
+            contentlet.setInode(inode);
+
+            assertThrows(DotContentletStateException.class,
+                    () -> new ESContentletAPIImpl().checkin(contentlet, APILocator.systemUser(), false));
+
+            assertFalse("No folder may be created outside the asset store", probeFolder.exists());
+            assertTrue("The item must not be saved",
+                    new DotConnect().setSQL("select inode from contentlet where inode = ?")
+                            .addParam(inode).loadResults().isEmpty());
+        } finally {
+            org.apache.commons.io.FileUtils.deleteQuietly(probeFolder);
+            ContentTypeDataGen.remove(contentType);
+        }
     }
 
     private void assertFiles(Field binaryField, File testFile, Contentlet contentletFromDataBase)

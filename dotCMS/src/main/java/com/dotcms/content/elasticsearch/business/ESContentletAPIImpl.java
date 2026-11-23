@@ -68,6 +68,7 @@ import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.FunctionUtils;
 import com.dotcms.util.JsonUtil;
+import com.dotcms.util.PathContainmentUtil;
 import com.dotcms.util.RelationshipUtil;
 import com.dotcms.util.ThreadContextUtil;
 import com.dotcms.util.xstream.XStreamHandler;
@@ -5942,6 +5943,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     "CONTENT_APIS_ALLOW_ANONYMOUS setting does not allow anonymous content WRITEs");
         }
 
+        // A caller may choose the inode of new content, and the inode names the folders its
+        // binaries are stored in, so it must have the form of a generated id
+        if (InodeUtils.isSet(contentlet.getInode()) && !InodeUtils.hasIdFormat(contentlet.getInode())) {
+            throw new DotContentletStateException("The content inode is not a valid id");
+        }
+
         if (contentRelationships == null) {
 
             //Obtain all relationships
@@ -6874,14 +6881,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
+     * Stores the binaries of a content version under {@code <assets root>/<i0>/<i1>/<inode>/}.
+     *
      * @param contentlet        Just Saved contentlet it is supposed to have at least an inode
-     * @param createNewVersion
+     * @param createNewVersion  Whether a new version is being created, as opposed to the current
+     *                          one being updated in place
      * @param contentType       ContentType
      * @param workingContentlet Working version of our content. If different from the actual then it
      *                          has prior version's inode
      * @param contentletRaw     incoming content loaded from the ui. This one has all the files
      * @return bool that says whether or not there were files to process
      * @throws DotDataException
+     * @throws DotContentletStateException If an inode does not name a folder inside the asset store,
+     *                                     before anything is written
      */
     private boolean handleBinaries(final Contentlet contentlet, final boolean createNewVersion,
             final ContentType contentType, final Contentlet workingContentlet,
@@ -6898,26 +6910,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final String newInode = contentlet.getInode();
         final String oldInode = workingContentlet.getInode();
 
-        File newDir = new File(APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator
-                + newInode.charAt(0)
-                + File.separator
-                + newInode.charAt(1) + File.separator + newInode);
+        final String assetsRoot = APILocator.getFileAssetAPI().getRealAssetsRootPath();
+        File newDir = inodeFolder(assetsRoot, newInode);
         newDir.mkdirs();
 
         File oldDir = null;
         if (UtilMethods.isSet(oldInode)) {
-            oldDir = new File(APILocator.getFileAssetAPI().getRealAssetsRootPath()
-                    + File.separator + oldInode.charAt(0)
-                    + File.separator + oldInode.charAt(1)
-                    + File.separator + oldInode);
+            oldDir = inodeFolder(assetsRoot, oldInode);
         }
 
         File tmpDir = null;
         if (UtilMethods.isSet(oldInode)) {
-            tmpDir = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
-                    + File.separator + oldInode.charAt(0)
-                    + File.separator + oldInode.charAt(1)
-                    + File.separator + oldInode);
+            tmpDir = inodeFolder(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary(), oldInode);
         }
 
         boolean binaryHandled = false;
@@ -9977,20 +9981,37 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     * @param con
-     * @param field
-     * @return
+     * Returns {@code <root>/<i0>/<i1>/<inode>}, the folder below {@code root} that holds the
+     * binaries of the content version with that inode, after checking that it resolves to a place
+     * inside {@code root}.
+     *
+     * @param root  The folder the binary folders live under, such as the assets root.
+     * @param inode The inode of the content version.
+     * @return The folder.
+     * @throws DotContentletStateException If the folder would not be inside {@code root}.
+     */
+    private static File inodeFolder(final String root, final String inode) {
+        final File folder = new File(root + File.separator + inode.charAt(0) + File.separator
+                + inode.charAt(1) + File.separator + inode);
+        if (!PathContainmentUtil.isContainedIn(new File(root), folder)) {
+            throw new DotContentletStateException(
+                    "The content inode does not name a folder inside the asset store");
+        }
+        return folder;
+    }
+
+    /**
+     * Returns the path of the folder holding a content version's binaries, or the binaries of one
+     * of its fields.
+     *
+     * @param con   The content version.
+     * @param field The binary field, or {@code null} for the folder of all its binaries.
+     * @return The path.
+     * @throws DotContentletStateException If the path would not be inside the asset store.
      */
     private String getContentletAssetPath(Contentlet con, Field field) {
-        String inode = con.getInode();
-
-        String result = APILocator.getFileAssetAPI().getRealAssetsRootPath()
-                + File.separator
-                + inode.charAt(0)
-                + File.separator
-                + inode.charAt(1)
-                + File.separator
-                + inode;
+        String result = inodeFolder(APILocator.getFileAssetAPI().getRealAssetsRootPath(),
+                con.getInode()).getPath();
 
         if (field != null) {
             result += File.separator + field.getVelocityVarName();
@@ -10000,22 +10021,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     * @param con
-     * @param field
-     * @return
+     * Returns the path of the folder holding a content version's resized images, or those of one
+     * of its fields.
+     *
+     * @param con   The content version.
+     * @param field The binary field, or {@code null} for the folder of all its resized images.
+     * @return The path.
+     * @throws DotContentletStateException If the path would not be inside the image cache folder.
      */
     private String getContentletCacheAssetPath(Contentlet con, Field field) {
-        String inode = con.getInode();
-
-        String result = APILocator.getFileAssetAPI().getRealAssetsRootPath()
-                + File.separator
-                + "cache"
-                + File.separator
-                + inode.charAt(0)
-                + File.separator
-                + inode.charAt(1)
-                + File.separator
-                + inode;
+        String result = inodeFolder(APILocator.getFileAssetAPI().getRealAssetsRootPath()
+                + File.separator + "cache", con.getInode()).getPath();
 
         if (field != null) {
             result += File.separator + field.getVelocityVarName();
