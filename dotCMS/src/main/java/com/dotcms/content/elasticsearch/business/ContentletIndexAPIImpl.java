@@ -721,23 +721,31 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             if (indices == null) {
                 continue;
             }
-            final List<String> targets = new ArrayList<>(2);
-            if (UtilMethods.isSet(indices.working)) {
-                targets.add(indices.working);
-            }
-            if (UtilMethods.isSet(indices.live)) {
-                targets.add(indices.live);
-            }
+            final IndexTag tag = ops == operationsES ? IndexTag.ES : IndexTag.OS;
+
+            // The reindex pair is included on purpose: content is written to it while a full
+            // reindex runs, so a field created mid-reindex would otherwise be dynamically mapped
+            // in the index that is about to become live — and dynamic mapping cannot be re-typed
+            // afterwards, which would reintroduce this very defect at switchover.
+            final List<String> targets = indices.activeIndices();
             if (targets.isEmpty()) {
+                Logger.warn(this.getClass(), String.format(
+                        "No active %s index resolved for field '%s': its mapping was not applied to"
+                        + " that provider. Check the %s index pointer store.",
+                        tag, field.name(), tag));
                 continue;
             }
-            final IndexTag tag = ops == operationsES ? IndexTag.ES : IndexTag.OS;
             try {
                 helper.addCustomMapping(field, targets, tag);
             } catch (Exception e) {
-                Logger.warnAndDebug(this.getClass(), String.format(
+                final String message = String.format(
                         "Error setting the %s mapping for field '%s' on indices %s: %s",
-                        tag, field.name(), targets, e.getMessage()), e);
+                        tag, field.name(), targets, e.getMessage());
+                if (ops == router.readProvider()) {
+                    Logger.error(this.getClass(), message, e);
+                } else {
+                    Logger.warnAndDebug(this.getClass(), message, e);
+                }
             }
         }
     }
@@ -773,9 +781,11 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      *       On any uncertainty (the count probe fails) we err toward reuse for the same reason.
      *       The mapping is re-applied because a populated index is not proof of a complete one:
      *       fields created while their mapping never reached this provider leave it populated and
-     *       incomplete (issue #36577). Re-applying is idempotent and rebuilt from the database, so
-     *       an already-complete index is unaffected. Create-time-only settings (custom analyzers)
-     *       remain unrepairable this way and need a reindex.</li>
+     *       incomplete (issue #36577). This fills in mappings that were never pushed; a field that
+     *       dynamic mapping already created cannot be re-typed, and create-time-only settings
+     *       (custom analyzers) cannot be changed at all, so both still need a reindex. Re-applying
+     *       is idempotent and rebuilt from the database, so an already-complete index is
+     *       unaffected, and a failure is logged and swallowed rather than aborting the reuse.</li>
      * </ul>
      *
      * <p>The caller's {@code point()} then registers the index in the store.</p>
@@ -846,16 +856,22 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 //
                 // The custom mapping IS re-applied, though (issue #36577). Reuse used to skip it on
                 // the assumption that a dotCMS-created index already carries the full custom
-                // mapping; that does not hold for an index populated while fields were created
-                // without their mapping reaching this provider. Re-applying is idempotent and
-                // rebuilt from the database, so an index that was already complete is unaffected.
-                // Create-time-only settings (custom analyzers) still cannot be repaired this way —
-                // those need a reindex.
+                // mapping; that does not hold for an index that was populated while fields were
+                // created without their mapping reaching this provider. What this repairs is
+                // narrow: a field that has NO mapping yet gets one. A field that dynamic mapping
+                // already created cannot be re-typed by putMapping, and create-time-only settings
+                // (custom analyzers) cannot be changed at all — both still need a reindex.
+                // Re-applying is idempotent and rebuilt from the database, so an index that was
+                // already complete is unaffected. Failures are logged and swallowed: the whole
+                // point of this branch is to not discard a populated index.
                 Logger.info(this, String.format(
                         "Bootstrap: orphaned %s index found with %s document(s); reusing in place"
                         + " (not deleting) and re-asserting the custom mapping: %s",
                         tag, docCount < 0 ? "an unknown number of" : docCount, physicalName));
-                helper.addCustomMapping(List.of(indexName), tag);
+                Try.run(() -> helper.addCustomMapping(List.of(indexName), tag))
+                        .onFailure(e -> Logger.warn(this, String.format(
+                                "Could not re-assert the custom mapping on reused %s index %s: %s",
+                                tag, physicalName, e.getMessage()), e));
                 return true;
             }
 

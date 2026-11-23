@@ -225,9 +225,15 @@ public class FieldAPIImpl implements FieldAPI {
             );
         } else {
 
-            //If saving a new indexed field, it should try to set an ES mapping for the field
+            // A new indexed field needs its mapping in the search indices. Deferred to commit:
+            // pushing it inside the transaction would leave the index carrying the mapping of a
+            // field that never existed if the transaction then rolls back, and a later field
+            // reusing that variable with another type would collide with the stale mapping. It
+            // also means the push reads committed data instead of the half-written transaction.
             if (result.indexed()) {
-                addSearchMappingForField(structure, result);
+                final Field indexedField = result;
+                HibernateUtil.addCommitListener(
+                        () -> addSearchMappingForField(structure, indexedField));
             }
             ActivityLogger.logInfo(ActivityLogger.class, "Save Field Action",
                     String.format(
@@ -408,7 +414,9 @@ public class FieldAPIImpl implements FieldAPI {
      * an Elasticsearch name to OpenSearch as well, and would stop setting the mapping altogether
      * once Elasticsearch is decommissioned.</p>
      *
-     * <p>On failure we only log a warning and let the transaction continue, as before.</p>
+     * <p>Runs after the field's transaction commits, so it never maps a field that a rollback
+     * then discards. On failure we only log a warning: a missing mapping must not surface as a
+     * failed save, and the next full reindex rebuilds it from the database.</p>
      *
      * @param structure the content type the field belongs to, used for logging
      * @param field     the {@link Field} that was just created
@@ -417,7 +425,8 @@ public class FieldAPIImpl implements FieldAPI {
         try {
             APILocator.getContentletIndexAPI().addCustomMappingForNewField(field);
             Logger.debug(this.getClass(), () -> String.format(
-                    "Search mapping set for Field: %s. Content type: %s",
+                    "Search mapping applied for Field: %s. Content type: %s — see the indexing log"
+                            + " for the per-provider outcome",
                     field.name(), structure.getName()));
         } catch (Exception e) {
             Logger.warnAndDebug(this.getClass(), String.format(

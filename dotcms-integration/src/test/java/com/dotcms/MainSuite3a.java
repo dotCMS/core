@@ -93,6 +93,7 @@ import org.junit.runners.Suite;
         Task250826AddIndexesToUniqueFieldsTableTest.class,
         SecondaryCategoryPermissionTest.class,
         RequestCostReportTest.class,
+    com.dotcms.contenttype.business.NewFieldSearchMappingTest.class,
         OpenAIVisionAPIImplTest.class,
         com.dotcms.rest.api.v1.container.ContainerResourceCallerPermissionTest.class,
         com.dotcms.rest.api.v1.container.ContainerResourceContentReadAccessTest.class,
