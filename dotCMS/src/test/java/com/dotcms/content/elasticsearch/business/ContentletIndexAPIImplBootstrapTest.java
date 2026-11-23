@@ -100,15 +100,14 @@ public class ContentletIndexAPIImplBootstrapTest {
      * Given : a POPULATED orphaned index (&gt; 0 docs) exists in the cluster but is missing from
      *         the store.
      * When  : createContentIndex() runs during bootstrap.
-     * Then  : the orphan is reused in place — NOT deleted and NOT recreated, since discarding it
-     *         would force a costly full reindex — but its custom mapping IS re-applied. Reuse used
-     *         to skip the mapping on the assumption that a dotCMS-created index already carries
-     *         it; an index populated while fields were being added without their mapping reaching
-     *         this provider (<a href="https://github.com/dotCMS/core/issues/36577">#36577</a>)
-     *         breaks that assumption, and re-applying is idempotent. The method returns true.
+     * Then  : the orphan is reused in place, untouched — it is NOT deleted, NOT recreated, and its
+     *         mapping is NOT re-applied. A putMapping-only re-assert against an index not created
+     *         with dotCMS settings is rejected and leaves it half-mapped
+     *         (<a href="https://github.com/dotCMS/core/issues/36353">#36353</a>), and discarding it
+     *         would force a costly full reindex. The method returns true.
      */
     @Test
-    public void test_populatedOrphan_reusedInPlace_notDeletedButRemapped() throws IOException {
+    public void test_populatedOrphan_reusedInPlace_notDeletedNotRemapped() throws IOException {
         final ContentletIndexOperations ops = mock(ContentletIndexOperations.class);
         final IndexAPI providerApi = mock(IndexAPI.class);
         final MappingHelper helper = mock(MappingHelper.class);
@@ -123,15 +122,14 @@ public class ContentletIndexAPIImplBootstrapTest {
         assertTrue("Populated orphan must be reused and reported as available", result);
         verify(providerApi, never()).delete(PHYSICAL_NAME);
         verify(ops, never()).createContentIndex(anyString(), anyInt());
-        verify(helper).addCustomMapping(List.of(LOGICAL_NAME), IndexTag.ES);
+        verify(helper, never()).addCustomMapping(List.of(LOGICAL_NAME), IndexTag.ES);
     }
 
     /**
      * Given : an orphan exists but the document-count probe fails (e.g. transient cluster error).
      * When  : createContentIndex() runs during bootstrap.
      * Then  : the uncertainty is treated as "has data" — the orphan is reused in place and never
-     *         deleted, so a possibly-populated index is never discarded on a flaky probe. Its
-     *         custom mapping is re-applied, exactly as on the known-populated path.
+     *         deleted, so a possibly-populated index is never discarded on a flaky probe.
      */
     @Test
     public void test_orphanDocCountProbeFails_treatedAsPopulated_reused() throws IOException {
@@ -150,7 +148,6 @@ public class ContentletIndexAPIImplBootstrapTest {
         assertTrue("Unknown doc count must be reused (never deleted)", result);
         verify(providerApi, never()).delete(PHYSICAL_NAME);
         verify(ops, never()).createContentIndex(anyString(), anyInt());
-        verify(helper).addCustomMapping(List.of(LOGICAL_NAME), IndexTag.ES);
     }
 
     /**

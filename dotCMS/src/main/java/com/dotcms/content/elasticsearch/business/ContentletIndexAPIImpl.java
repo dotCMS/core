@@ -774,18 +774,13 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      *       operationally and yields a clean index with full settings + base mapping. If the
      *       delete cannot be confirmed and the index is still present, bootstrap fails loudly
      *       rather than register a half-mapped index.</li>
-     *   <li><b>Populated orphan (&gt; 0 docs), or count unknown</b> — reused in place, with its
-     *       custom mapping re-applied. The index is never deleted here: discarding it would throw
-     *       away its contents (including partial reindex progress) and force a full reindex, which
-     *       can run for hours and degrade search consistency — not justified to clean up an orphan.
-     *       On any uncertainty (the count probe fails) we err toward reuse for the same reason.
-     *       The mapping is re-applied because a populated index is not proof of a complete one:
-     *       fields created while their mapping never reached this provider leave it populated and
-     *       incomplete (issue #36577). This fills in mappings that were never pushed; a field that
-     *       dynamic mapping already created cannot be re-typed, and create-time-only settings
-     *       (custom analyzers) cannot be changed at all, so both still need a reindex. Re-applying
-     *       is idempotent and rebuilt from the database, so an already-complete index is
-     *       unaffected, and a failure is logged and swallowed rather than aborting the reuse.</li>
+     *   <li><b>Populated orphan (&gt; 0 docs), or count unknown</b> — reused in place, untouched.
+     *       A populated orphan was created by dotCMS itself, so it already carries the full
+     *       settings + base mapping + custom mapping; nothing needs to be (re)applied. The index is
+     *       never deleted here: discarding it would throw away its contents (including partial
+     *       reindex progress) and force a full reindex, which can run for hours and degrade search
+     *       consistency — not justified to clean up an orphan. On any uncertainty (the count probe
+     *       fails) we err toward reuse for the same reason.</li>
      * </ul>
      *
      * <p>The caller's {@code point()} then registers the index in the store.</p>
@@ -854,24 +849,16 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 // Populated (or unknown): reuse in place rather than delete — deleting would force
                 // a full reindex (hours, degraded search), not justified to clean up an orphan.
                 //
-                // The custom mapping IS re-applied, though (issue #36577). Reuse used to skip it on
-                // the assumption that a dotCMS-created index already carries the full custom
-                // mapping; that does not hold for an index that was populated while fields were
-                // created without their mapping reaching this provider. What this repairs is
-                // narrow: a field that has NO mapping yet gets one. A field that dynamic mapping
-                // already created cannot be re-typed by putMapping, and create-time-only settings
-                // (custom analyzers) cannot be changed at all — both still need a reindex.
-                // Re-applying is idempotent and rebuilt from the database, so an index that was
-                // already complete is unaffected. Failures are logged and swallowed: the whole
-                // point of this branch is to not discard a populated index.
+                // The custom mapping is NOT re-applied here — see #36353. The content mapping
+                // references the custom analyzer `my_analyzer`, a static setting that can only be
+                // applied at index creation, so a putMapping-only re-assert against an index that
+                // was not created with dotCMS settings is rejected per content type and leaves the
+                // index half-mapped. QA failed TC-003 on exactly that. An index that is populated
+                // but missing field mappings is repaired by a reindex, not from here.
                 Logger.info(this, String.format(
                         "Bootstrap: orphaned %s index found with %s document(s); reusing in place"
-                        + " (not deleting) and re-asserting the custom mapping: %s",
+                        + " (not deleting, not remapping): %s",
                         tag, docCount < 0 ? "an unknown number of" : docCount, physicalName));
-                Try.run(() -> helper.addCustomMapping(List.of(indexName), tag))
-                        .onFailure(e -> Logger.warn(this, String.format(
-                                "Could not re-assert the custom mapping on reused %s index %s: %s",
-                                tag, physicalName, e.getMessage()), e));
                 return true;
             }
 

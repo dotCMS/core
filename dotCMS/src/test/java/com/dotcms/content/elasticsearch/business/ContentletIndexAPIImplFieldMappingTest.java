@@ -8,6 +8,7 @@ import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplPhaseTest
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplPhaseTest.FakeIndexAPI;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplPhaseTest.FakeIndiciesAPI;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplPhaseTest.FakeVersionedIndicesAPI;
+import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.MappingHelper;
 import com.dotcms.content.index.IndexTag;
 import com.dotcms.content.index.VersionedIndicesImpl;
@@ -37,6 +38,11 @@ public class ContentletIndexAPIImplFieldMappingTest {
     private static final String ES_LIVE    = "live_esTs";
     private static final String OS_WORKING = "working_osTs.os";
     private static final String OS_LIVE    = "live_osTs.os";
+
+    private static final String ES_REINDEX_WORKING = "reindex_working_esTs";
+    private static final String ES_REINDEX_LIVE    = "reindex_live_esTs";
+    private static final String OS_REINDEX_WORKING = "reindex_working_osTs.os";
+    private static final String OS_REINDEX_LIVE    = "reindex_live_osTs.os";
 
     @After
     public void clearPhase() {
@@ -81,12 +87,113 @@ public class ContentletIndexAPIImplFieldMappingTest {
     public void testAddCustomMappingForNewField_WhenOpenSearchOnly_ShouldStillMapOnOpenSearch() {
         setPhase(3);
         final RecordingMappingHelper helper = new RecordingMappingHelper();
-        final ContentletIndexAPIImpl api = buildApi();
+        // Empty legacy store on purpose: that is the Phase 3 shape, since pointES is no longer
+        // called once the migration is complete. With the store filled, this test would pass on
+        // the router alone and would not notice a regression back to ES-store resolution.
+        final ContentletIndexAPIImpl api = buildApi(new FakeIndiciesAPI(), versionedStore());
 
         api.addCustomMappingForNewField(newField(), helper);
 
         assertEquals("Only the OpenSearch provider is active in Phase 3", 1, helper.calls.size());
         assertEquals(List.of(OS_WORKING, OS_LIVE), helper.indexesFor(IndexTag.OS));
+    }
+
+    /**
+     * Given Scenario: Phase 0, before the migration starts, where Elasticsearch is the only
+     *                 provider that receives writes.
+     * When : the mapping for a newly created field is applied.
+     * Then : only Elasticsearch is called, with its own names and the ES tag.
+     */
+    @Test
+    public void testAddCustomMappingForNewField_WhenPhaseZero_ShouldOnlyMapOnElasticsearch() {
+        setPhase(0);
+        final RecordingMappingHelper helper = new RecordingMappingHelper();
+        final ContentletIndexAPIImpl api = buildApi();
+
+        api.addCustomMappingForNewField(newField(), helper);
+
+        assertEquals("Elasticsearch is the only write provider in Phase 0", 1, helper.calls.size());
+        assertEquals(List.of(ES_WORKING, ES_LIVE), helper.indexesFor(IndexTag.ES));
+    }
+
+    /**
+     * Given Scenario: Phase 2 with a reindex in progress, so each store holds a reindex pair on
+     *                 top of its working and live indices.
+     * When : the mapping for a newly created field is applied.
+     * Then : all four names of each provider receive it. Content is written to the reindex pair
+     *        while the reindex runs, so a field that only mapped on working and live would be
+     *        dynamically mapped in the index that is about to become live — and dynamic mapping
+     *        cannot be re-typed, which would reintroduce this defect at switchover.
+     */
+    @Test
+    public void testAddCustomMappingForNewField_WhenReindexInProgress_ShouldMapOnTheReindexPairToo() {
+        setPhase(2);
+        final RecordingMappingHelper helper = new RecordingMappingHelper();
+
+        final FakeIndiciesAPI legacy = new FakeIndiciesAPI();
+        legacy.point(new IndiciesInfo.Builder()
+                .setWorking(ES_WORKING)
+                .setLive(ES_LIVE)
+                .setReindexWorking(ES_REINDEX_WORKING)
+                .setReindexLive(ES_REINDEX_LIVE)
+                .build());
+
+        final FakeVersionedIndicesAPI versioned = new FakeVersionedIndicesAPI();
+        versioned.stored = VersionedIndicesImpl.builder()
+                .working(OS_WORKING)
+                .live(OS_LIVE)
+                .reindexWorking(OS_REINDEX_WORKING)
+                .reindexLive(OS_REINDEX_LIVE)
+                .build();
+
+        buildApi(legacy, versioned).addCustomMappingForNewField(newField(), helper);
+
+        assertEquals(List.of(ES_WORKING, ES_LIVE, ES_REINDEX_WORKING, ES_REINDEX_LIVE),
+                helper.indexesFor(IndexTag.ES));
+        assertEquals(List.of(OS_WORKING, OS_LIVE, OS_REINDEX_WORKING, OS_REINDEX_LIVE),
+                helper.indexesFor(IndexTag.OS));
+    }
+
+    /**
+     * Given Scenario: Phase 2, and the OpenSearch store holds no record at all, so its index names
+     *                 cannot be resolved.
+     * When : the mapping for a newly created field is applied.
+     * Then : that provider is skipped and Elasticsearch still receives its mapping. One search
+     *        engine being unreachable must never cost the other its mapping.
+     */
+    @Test
+    public void testAddCustomMappingForNewField_WhenOneProviderHasNoIndices_ShouldStillMapTheOther() {
+        setPhase(2);
+        final RecordingMappingHelper helper = new RecordingMappingHelper();
+
+        final FakeIndiciesAPI legacy = new FakeIndiciesAPI();
+        legacy.setWorking(ES_WORKING);
+        legacy.setLive(ES_LIVE);
+
+        buildApi(legacy, new FakeVersionedIndicesAPI())   // stored stays null
+                .addCustomMappingForNewField(newField(), helper);
+
+        assertEquals("Only the provider whose indices resolved is called", 1, helper.calls.size());
+        assertEquals(List.of(ES_WORKING, ES_LIVE), helper.indexesFor(IndexTag.ES));
+    }
+
+    /**
+     * Given Scenario: Phase 2, and applying the mapping throws for the read provider
+     *                 (OpenSearch from Phase 2 on).
+     * When : the mapping for a newly created field is applied.
+     * Then : the failure is contained and the other provider is still called. The push must never
+     *        fail the transaction that created the field, and one engine's outage must not hide
+     *        the field from the other.
+     */
+    @Test
+    public void testAddCustomMappingForNewField_WhenAProviderThrows_ShouldStillMapTheOther() {
+        setPhase(2);
+        final RecordingMappingHelper helper = new RecordingMappingHelper();
+        helper.throwFor = IndexTag.OS;
+
+        buildApi().addCustomMappingForNewField(newField(), helper);
+
+        assertEquals(List.of(ES_WORKING, ES_LIVE), helper.indexesFor(IndexTag.ES));
     }
 
     /**
@@ -97,13 +204,22 @@ public class ContentletIndexAPIImplFieldMappingTest {
         final FakeIndiciesAPI legacy = new FakeIndiciesAPI();
         legacy.setWorking(ES_WORKING);
         legacy.setLive(ES_LIVE);
+        return buildApi(legacy, versionedStore());
+    }
 
+    /** The OpenSearch store holding only the working and live pair. */
+    private static FakeVersionedIndicesAPI versionedStore() {
         final FakeVersionedIndicesAPI versioned = new FakeVersionedIndicesAPI();
         versioned.stored = VersionedIndicesImpl.builder()
                 .working(OS_WORKING)
                 .live(OS_LIVE)
                 .build();
+        return versioned;
+    }
 
+    /** Builds the API over the two pointer stores given, with a distinct fake per provider. */
+    private static ContentletIndexAPIImpl buildApi(final FakeIndiciesAPI legacy,
+            final FakeVersionedIndicesAPI versioned) {
         return new ContentletIndexAPIImpl(
                 new FakeContentletIndexOperations(),
                 new FakeContentletIndexOperations(),
@@ -127,6 +243,9 @@ public class ContentletIndexAPIImplFieldMappingTest {
 
         final List<Call> calls = new ArrayList<>();
 
+        /** When set, applying the mapping for this provider throws instead of recording. */
+        IndexTag throwFor;
+
         List<String> indexesFor(final IndexTag tag) {
             return calls.stream()
                     .filter(call -> call.tag() == tag)
@@ -138,6 +257,9 @@ public class ContentletIndexAPIImplFieldMappingTest {
         @Override
         public void addCustomMapping(final Field field, final List<String> indexes,
                 final IndexTag tag) {
+            if (tag == throwFor) {
+                throw new IllegalStateException("simulated " + tag + " mapping failure");
+            }
             calls.add(new Call(List.copyOf(indexes), tag));
         }
 

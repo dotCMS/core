@@ -230,9 +230,19 @@ public class FieldAPIImpl implements FieldAPI {
             // field that never existed if the transaction then rolls back, and a later field
             // reusing that variable with another type would collide with the stale mapping. It
             // also means the push reads committed data instead of the half-written transaction.
+            //
+            // Synchronous on purpose: a plain commit listener is queued asynchronously when
+            // ASYNC_COMMIT_LISTENERS is on (the default), so save() would return before the
+            // mapping is pushed, leaving a wide window in which content of this type indexed by
+            // another request gets dynamically mapped first — and a field dynamic mapping already
+            // created cannot be re-typed, which is the outcome this mapping exists to prevent.
+            // Sync narrows that window to the push itself, on this thread, but does NOT close it:
+            // the field row is committed and visible to other connections before the listener
+            // runs. Closing it entirely would mean teaching the indexing path to tolerate a
+            // committed field whose mapping has not landed yet, which is not part of this change.
             if (result.indexed()) {
                 final Field indexedField = result;
-                HibernateUtil.addCommitListener(
+                HibernateUtil.addSyncCommitListener(
                         () -> addSearchMappingForField(structure, indexedField));
             }
             ActivityLogger.logInfo(ActivityLogger.class, "Save Field Action",
