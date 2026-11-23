@@ -11,6 +11,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.api.v1.system.permission.AssetPermissionHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -1453,11 +1454,78 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 				.filter(UtilMethods::isSet)
 				.toList();
 
-		final Set<String> permitted = permissionFactory.getPermittedIds(permissionIds, permissionType, roleIds);
+		final PermissionFactory.BatchPermissionsResult batchResult =
+				permissionFactory.getBatchPermissions(permissionIds, permissionType, roleIds);
+		final Set<String> permitted = new HashSet<>(batchResult.getPermittedIds());
+		final Set<String> uncached = batchResult.getUncachedIds();
+
+		if (!uncached.isEmpty()) {
+			permitted.addAll(resolveUncached(permissionables, uncached, permissionType, roleIds));
+		}
 
 		return permissionables.stream()
 				.filter(p -> permitted.contains(p.getPermissionId()))
 				.collect(Collectors.toList());
+	}
+
+	/**
+	 * Decides the items the batch query could not: those with neither a cached
+	 * {@code permission_reference} row nor permissions of their own. Each one walks up to the
+	 * parent it inherits from, exactly as the one-at-a-time check does, which also writes the
+	 * missing reference row so the next request resolves the item in the batch query.
+	 * <p>
+	 * The answer follows the batch filter's rules, not {@code doesUserHavePermission}'s: a
+	 * permission counts only when one of the user's resolved roles holds the requested bit. So an
+	 * item gets the same answer whether or not it happens to be cached.
+	 * <p>
+	 * A {@link PermissionableProxy} knows nothing about its parent, so it is first resolved to the
+	 * real asset; when that fails, the walk-up finds no parent and the item stays denied, as it
+	 * is today.
+	 *
+	 * @param permissionables the whole collection being filtered
+	 * @param uncached        the permission ids the batch query found neither cached nor denied
+	 * @param permissionType  the permission bit being asked for
+	 * @param roleIds         the user's resolved role ids, the same list the batch query used
+	 * @return the uncached permission ids the user holds the permission on
+	 * @throws DotDataException if the permissions cannot be loaded
+	 */
+	private <P extends Permissionable> Set<String> resolveUncached(
+			final Collection<P> permissionables,
+			final Set<String> uncached,
+			final int permissionType,
+			final List<String> roleIds) throws DotDataException {
+
+		final Set<String> permitted = new HashSet<>();
+		final Set<String> evaluated = new HashSet<>();
+		final Lazy<AssetPermissionHelper> assetResolver = Lazy.of(AssetPermissionHelper::new);
+
+		for (final P permissionable : permissionables) {
+			final String permissionId = permissionable.getPermissionId();
+			if (permissionId == null || !uncached.contains(permissionId) || !evaluated.add(permissionId)) {
+				continue;
+			}
+
+			Permissionable target = permissionable;
+			if (permissionable instanceof PermissionableProxy) {
+				final Permissionable resolved = Try.of(() -> assetResolver.get().resolveAsset(permissionId))
+						.getOrNull();
+				if (resolved != null) {
+					target = resolved;
+				}
+			}
+
+			// A stale in-memory entry would answer without writing the reference row the batch
+			// query needs next time, so the walk-up always starts from the database.
+			removePermissionableFromCache(permissionId);
+			final List<Permission> permissions = permissionFactory.getPermissions(target, true);
+			final boolean allowed = permissions.stream().anyMatch(permission ->
+					permission.matchesPermission(permissionType)
+							&& roleIds.contains(permission.getRoleId()));
+			if (allowed) {
+				permitted.add(permissionId);
+			}
+		}
+		return permitted;
 	}
 
 	@WrapInTransaction
