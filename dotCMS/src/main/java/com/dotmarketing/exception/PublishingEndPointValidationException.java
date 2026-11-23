@@ -17,7 +17,14 @@ public class PublishingEndPointValidationException extends Exception {
 
     private List<Message> i18nmessages;
 
+    /**
+     * Creates the exception for one message. The message key is also the exception's message, so
+     * the REST error response, which translates it, tells the client what was wrong.
+     *
+     * @param i18nmessage the language key of the message
+     */
     public PublishingEndPointValidationException(final String i18nmessage) {
+        super(i18nmessage);
         this.i18nmessages = Lists.newArrayList(new Message(i18nmessage));
     }
 

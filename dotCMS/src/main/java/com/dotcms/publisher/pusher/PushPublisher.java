@@ -231,7 +231,10 @@ public class PushPublisher extends Publisher {
 						ThreadContext.put(ENDPOINT_NAME, ENDPOINT_NAME + "=" + endpoint.getServerName());
 						ThreadContext.put(BUNDLE_ID, BUNDLE_ID + "=" + bundle.getName());
 
-						if (endpoint.hasAuthKey()) {
+						final Optional<String> requestToken = endpoint.hasAuthKey()
+								? AuthCredentialPushPublishUtil.INSTANCE.getRequestToken(endpoint)
+								: Optional.empty();
+						if (requestToken.isPresent()) {
 							PushPublishLogger.log(this.getClass(), "Status Update: Sending Bundle");
 							final String filterKey = bundle.getFilterKey();
 							WebTarget webTarget = client.target(endpoint.toURL() + "/api/bundlePublisher/publish")
@@ -240,7 +243,7 @@ public class PushPublisher extends Publisher {
 
 							Response response = webTarget.request(MediaType.APPLICATION_JSON)
 									.header("Content-Disposition", contentDisposition)
-									.header("Authorization", AuthCredentialPushPublishUtil.INSTANCE.getRequestToken(endpoint).get())
+									.header("Authorization", requestToken.get())
 									.post(Entity.entity(bundleStream, MediaType.APPLICATION_OCTET_STREAM_TYPE));
 
 							if (response.getStatus() == HttpStatus.SC_OK) {
@@ -481,6 +484,15 @@ public class PushPublisher extends Publisher {
 		return key.isPresent() ? Optional.of(PublicEncryptionFactory.digestString(key.get())) : Optional.empty();
 	}
 
+	/**
+	 * Returns the key configured for an endpoint: the stored value itself, or the content of the
+	 * file it names when it is a path. An endpoint whose key is empty or made only of spaces has no
+	 * key, so push publishing neither sends a token for it nor accepts one from it.
+	 *
+	 * @param endpoint the endpoint, may be {@code null}
+	 * @return the key, or empty when the endpoint has none
+	 * @throws IOException the key file could not be read
+	 */
 	public static Optional<String> retriveEndpointKey(final PublishingEndPoint endpoint) throws IOException { // todo: create a method that allows to receives a key and use the com.dotcms.util.security.Encryptor instead PublicEncryptionFactory
 
 		if(endpoint==null || endpoint.getAuthKey() ==null) {
@@ -496,6 +508,12 @@ public class PushPublisher extends Publisher {
 				key = FileUtils.readFileToString(tokenFile, "UTF-8").trim();
 		} else {
 			key = token;
+		}
+		if (key != null && !UtilMethods.isSet(key)) {
+			Logger.warn(PushPublisher.class, String.format(
+					"Push publishing endpoint '%s' (id %s) has no key, so it is not used to send or receive bundles. Save a key for it to use it again.",
+					endpoint.getServerName(), endpoint.getId()));
+			return Optional.empty();
 		}
 		return key==null ? Optional.empty() : Optional.of(key);
 	}
