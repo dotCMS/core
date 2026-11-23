@@ -356,8 +356,8 @@ export class DotUveActionsHandlerService {
              * (or `createContentlet()` from `@dotcms/uve` in headless setups).
              *
              * Asks the content editor to create a contentlet of the given content type variable,
-             * as every other create: the content type decides between the new editor and the
-             * legacy dialog. The request carries no container position, so the newly created
+             * as every other create: it opens in the side panel, in whichever editor the content
+             * type uses (#38303). The request carries no container position, so the newly created
              * contentlet is saved to the system but is NOT inserted into the page layout — the
              * page simply reloads after save. This supports use cases like widgets that pull
              * content automatically (e.g. an events widget). Ignored outside edit mode or without

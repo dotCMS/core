@@ -667,9 +667,8 @@ describe('DotUveActionsHandlerService – CREATE_CONTENTLET', () => {
 
     it('should ask the content editor to create a contentlet of the content type', () => {
         // The same request a palette drop sends, without a container position: the contentlet is
-        // only created, and the page reloads once it is saved. The content editor picks the
-        // editor from the content type, so the SDK's createContentlet() no longer forces the
-        // legacy dialog.
+        // only created, and the page reloads once it is saved. The content editor opens it in
+        // the side panel, in whichever editor the content type uses (#38303).
         service.handleAction(
             { action: DotCMSUVEAction.CREATE_CONTENTLET, payload: { contentType: 'Event' } },
             {
@@ -736,8 +735,8 @@ describe('DotUveActionsHandlerService – REORDER_MENU', () => {
     });
 
     it("should ask the content editor to open the menu reorder for the client's start level and depth", () => {
-        // The content editor owns the legacy dialog, and builds the reorder screen's URL from the
-        // page it shows.
+        // The content editor opens the reorder screen in a legacy-screen panel, and builds its
+        // URL from the page it shows.
         service.handleAction(
             { action: DotCMSUVEAction.REORDER_MENU, payload: { startLevel: 1, depth: 2 } },
             {
