@@ -7,11 +7,11 @@ import static org.junit.Assert.assertTrue;
 import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.content.index.IndexConfigHelper.MigrationPhase;
 import com.dotcms.content.index.VersionedIndices;
-import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
-import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
@@ -70,11 +70,18 @@ public class NewFieldSearchMappingTest {
      */
     @Test
     public void testNewIndexedField_ShouldBeMappedOnTheActiveIndices() throws Exception {
-        final Field field = new FieldDataGen()
-                .type(DateTimeField.class)
-                .contentTypeId(contentType.id())
-                .indexed(true)
-                .nextPersisted();
+        // Built with FieldBuilder rather than FieldDataGen: the data generator always assigns a
+        // text default value, which a date field rejects outright (ImmutableDateTimeField invalid
+        // default Value). FieldAPITest builds its date field the same way for the same reason.
+        final String fieldName = "field" + System.currentTimeMillis();
+        final Field field = APILocator.getContentTypeFieldAPI().save(
+                FieldBuilder.builder(DateField.class)
+                        .name(fieldName)
+                        .variable(fieldName)
+                        .contentTypeId(contentType.id())
+                        .indexed(true)
+                        .build(),
+                APILocator.systemUser());
 
         final List<String> activeIndices = activeIndicesOfReadProvider();
         assertFalse("The instance must have active indices for this test to mean anything",
