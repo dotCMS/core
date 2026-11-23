@@ -48,6 +48,7 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.NoSuchRoleException;
@@ -714,6 +715,16 @@ public class UserAjax {
 		return aRecord;
 	}
 
+	/**
+	 * Turns one of a user's access flags on or off from the Users screen's checkboxes: the account's
+	 * active flag, the CMS Administrator role, or the back-end or front-end user role. The caller
+	 * needs the Users portlet or the old Users screen kept as {@code users-legacy}.
+	 *
+	 * @param params {@code userid} of the user to change, {@code access} naming the flag, and
+	 *               {@code granted} ({@code true} or {@code false})
+	 * @return the flag's new value, the flag that changed, and the changed user's data
+	 * @throws Exception if the caller may not make the change or the user cannot be saved
+	 */
 	@WrapInTransaction
   public Map<String, Object> assignUserAccess(Map<String, String> params) throws Exception {
     final WebContext ctx = WebContextFactory.get();
@@ -724,7 +735,7 @@ public class UserAjax {
     final User loggedInUser = new WebResource.InitBuilder(request,response)
         .requiredBackendUser(true)
         .requiredAnonAccess(AnonymousAccess.NONE)
-        .requiredPortlet("users")
+        .requiredPortlet(PortletID.USERS.toString(), PortletID.USERS_LEGACY.toString())
         .init()
         .getUser();
     final User userToModify = uApi.loadUserById(params.get("userid"),loggedInUser,false);
@@ -1264,17 +1275,20 @@ public class UserAjax {
 	}
 
 	/**
-	 * Verifies 
-	 * @param userId
-	 * @param roles
-	 * @return
-	 * @throws Exception
+	 * Tells whether a user holds at least one of the given roles, on behalf of the logged-in user.
+	 * Legacy DWR entry point kept as a delegate: the rule lives in
+	 * {@link RoleAPI#doesUserHaveRoles(String, List, User)}, which lets any user check their own
+	 * roles and requires the role membership privilege for another user's.
+	 *
+	 * @param userId the id of the {@link User} whose roles are checked
+	 * @param roles  the ids of the roles to look for
+	 * @return {@code true} if the user holds at least one of the roles
+	 * @throws DotSecurityException if there is no logged-in user, or if the user to check is not the
+	 *                              caller and the caller does not have the role membership privilege
+	 * @throws Exception            if the logged-in user or the roles cannot be resolved
 	 */
-	public boolean hasUserRoles(String userId, String[] roles) throws Exception {
-		// Make sure the DWR request calling this method is authenticated
-		getLoggedInUser();
-		RoleAPI roleAPI = APILocator.getRoleAPI();
-		return roleAPI.doesUserHaveRoles(userId, Arrays.asList(roles));
+	public boolean hasUserRoles(final String userId, final String[] roles) throws Exception {
+		return APILocator.getRoleAPI().doesUserHaveRoles(userId, Arrays.asList(roles), getLoggedInUser());
 	}
 
 

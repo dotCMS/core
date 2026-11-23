@@ -419,12 +419,23 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 		params.put(Config.DESTINATION_BUNDLE.name(), bundle);
 	}
 	
-	public List<Class> getPublishers() {
-		return (List<Class>) params.get(Config.PUBLISHER.name());
+	/**
+	 * The publishers this configuration runs, as the classes themselves rather than their names.
+	 * They travel inside the bundle, so XStream has to resolve each one by name on the way back.
+	 *
+	 * @return the configured publisher classes, or {@code null} when none were set
+	 */
+	@SuppressWarnings("unchecked")
+	public List<Class<? extends IPublisher>> getPublishers() {
+		return (List<Class<? extends IPublisher>>) params.get(Config.PUBLISHER.name());
 	}
 
-	public void setPublishers(List<Class> publishers) {
-		System.out.println(publishers);
+	/**
+	 * Sets the publishers this configuration runs.
+	 *
+	 * @param publishers the {@link IPublisher} implementations to run, as classes
+	 */
+	public void setPublishers(final List<Class<? extends IPublisher>> publishers) {
 		params.put(Config.PUBLISHER.name(), publishers);
 	}
 

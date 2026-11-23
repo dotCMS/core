@@ -161,8 +161,10 @@ export interface InsertPayloadFromDelete {
     pageContainers: PageContainer[];
     contentletsId: string[];
     destinationContainer: ContainerPayload;
-    pivotContentlet: ContentletPayload;
-    positionToInsert: 'before' | 'after';
+    /** Absent when the drop lands on an empty container. */
+    pivotContentlet?: ContentletPayload;
+    /** Absent when the drop lands on an empty container. */
+    positionToInsert?: 'before' | 'after';
 }
 
 export interface BasePayload {

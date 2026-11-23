@@ -97,7 +97,12 @@
         },
         "test": {
             "cache": true,
-            "inputs": ["default", "^production", { "externalDependencies": ["vitest"] }],
+            "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/tools/vitest-stub-scss.mts",
+                { "externalDependencies": ["vitest"] }
+            ],
             "outputs": [
                 "{workspaceRoot}/target/core-web-reports/{projectName}.xml",
                 "{workspaceRoot}/coverage/{projectRoot}"
@@ -146,7 +151,25 @@
         "@nx/esbuild:esbuild": {
             "cache": true,
             "dependsOn": ["^build"],
-            "inputs": ["production", "^production"]
+            "inputs": [
+                "production",
+                "^production",
+                "{workspaceRoot}/pnpm-workspace.yaml",
+                {
+                    "json": "{workspaceRoot}/package.json",
+                    "fields": [
+                        "packageManager",
+                        "pnpm.onlyBuiltDependencies",
+                        "pnpm.neverBuiltDependencies",
+                        "pnpm.allowBuilds",
+                        "pnpm.supportedArchitectures",
+                        "pnpm.patchedDependencies"
+                    ]
+                },
+                {
+                    "runtime": "node -e \"try{console.log('pnpm major '+require('child_process').execSync('pnpm --version',{stdio:['ignore','pipe','ignore']}).toString().trim().split('.')[0])}catch{console.log('pnpm major unavailable')}\""
+                }
+            ]
         }
     },
     "namedInputs": {
@@ -155,7 +178,10 @@
             "{workspaceRoot}/angular.json",
             "{workspaceRoot}/tsconfig.base.json",
             "{workspaceRoot}/nx.json",
-            "{workspaceRoot}/babel.config.json"
+            "{workspaceRoot}/pnpm-lock.yaml",
+            { "runtime": "node --version" },
+            "{workspaceRoot}/babel.config.json",
+            "{workspaceRoot}/tools/rollup/types-first.cjs"
         ],
         "production": [
             "default",
@@ -166,7 +192,14 @@
             "!{projectRoot}/jest.config.[jt]s",
             "!{projectRoot}/eslint.config.mjs",
             "!{projectRoot}/src/test-setup.[jt]s"
-        ]
+        ],
+        "warBuild": [
+            "{workspaceRoot}/pnpm-lock.yaml",
+            "{workspaceRoot}/package.json",
+            { "runtime": "node --version" }
+        ],
+        "dotcmsScss": ["{workspaceRoot}/libs/dotcms-scss/**/*"],
+        "tailwindSources": ["{workspaceRoot}/**/*"]
     },
     "plugins": [
         {

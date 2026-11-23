@@ -147,6 +147,8 @@ import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isNewFiel
  */
 public class EditContentletAction extends DotPortletAction implements DotPortletActionInterface {
 
+	private static final String CANNOT_READ_MESSAGE = "User '%s' does not have READ permissions on the selected content";
+
 	private Contentlet contentletToEdit;
 	
 	private CategoryAPI catAPI;
@@ -329,7 +331,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				_editWebAsset(req, res, config, form, user);
 
 			} catch (Exception ae) {
-				handleEditAssetException(ae, req, res, referer, httpReq);
+				handleEditAssetException(ae, req, res, referer);
 				return;
 			}
 		}
@@ -347,7 +349,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				_newContent(req, res, config, form, user);
 
 			} catch (Exception ae) {
-				handleEditAssetException(ae, req, res, referer, httpReq);
+				handleEditAssetException(ae, req, res, referer);
 				return;
 			}
 		}
@@ -761,6 +763,27 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	}
 
 	/**
+	 * Loads a contentlet with the requesting user. When the user can't read it, the exception
+	 * thrown carries a generic message, because the error page shows the message as is and the
+	 * original one describes the contentlet. The original is kept in the debug log.
+	 *
+	 * @param inode inode of the contentlet
+	 * @param user  user making the request
+	 * @return the contentlet
+	 * @throws DotDataException     if the contentlet cannot be loaded
+	 * @throws DotSecurityException if the user cannot read the contentlet
+	 */
+	private Contentlet findForUser(final String inode, final User user)
+			throws DotDataException, DotSecurityException {
+		try {
+			return conAPI.find(inode, user, false);
+		} catch (final DotSecurityException e) {
+			Logger.debug(this, e::getMessage);
+			throw new DotSecurityException(String.format(CANNOT_READ_MESSAGE, user.getUserId()));
+		}
+	}
+
+	/**
 	 * 
 	 * @param req
 	 *            - The Struts wrapper for the HTTP Request object.
@@ -791,10 +814,12 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			Boolean makeEditable = Boolean.valueOf(req.getParameter("makeEditable"));
 			Boolean populateaccept = Boolean.valueOf(req.getParameter("populateaccept"));
 			if(makeEditable && !populateaccept){
+			   // Read first, so a user who cannot read the contentlet gets the same message as below
+			   findForUser(inodeStr, user);
 			   contentlet = conAPI.checkout(inodeStr, user, false);
 			   contentlet.setInode(inodeStr);
 			}else{
-			   contentlet = conAPI.find(inodeStr, user, false);
+			   contentlet = findForUser(inodeStr, user);
 			}
 		}else {
 			/*In case of multi-language first ocurrence new contentlet*/
@@ -802,7 +827,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			String langId = req.getParameter("lang");
 
 			if(InodeUtils.isSet(sibblingInode) && !sibblingInode.equals("0")){
-				Contentlet sibblingContentlet = conAPI.find(sibblingInode,APILocator.getUserAPI().getSystemUser(), false);
+				// Loaded with the requesting user, so the sibling must be readable to be used as the source
+				Contentlet sibblingContentlet = findForUser(sibblingInode, user);
 
 				if (UtilMethods.isSet(langId) && sibblingContentlet.getLanguageId() == Long.parseLong(langId)) {
 					contentlet = sibblingContentlet;
@@ -830,7 +856,11 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			}
 		}
 
-		if(perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, false));
+		// A new contentlet or a new translation has nothing to read yet; an existing one must be readable
+		if (InodeUtils.isSet(contentlet.getInode())
+				&& !perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, false)) {
+			throw new DotSecurityException(String.format(CANNOT_READ_MESSAGE, user.getUserId()));
+		}
 		req.setAttribute(WebKeys.CONTENTLET_EDIT, contentlet);
 		contentletToEdit = contentlet;
 
@@ -3335,22 +3365,20 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		);
 	}
 
-	private void handleEditAssetException(Exception ae, ActionRequest req, ActionResponse res, String referer, HttpServletRequest httpReq) throws Exception {
+	/**
+	 * Handles an exception thrown while opening content for edit or creating it: a permission
+	 * error sends the user back to the referer, and anything else is shown as an error. Content
+	 * locked by another user does not get here; the editor opens it read-only.
+	 *
+	 * @param ae the exception thrown by the edit or new-content step
+	 * @param req the portlet request
+	 * @param res the portlet response
+	 * @param referer the page the user came from, or {@code null}
+	 * @throws Exception when sending the redirect fails
+	 */
+	private void handleEditAssetException(Exception ae, ActionRequest req, ActionResponse res, String referer) throws Exception {
 		if ((referer != null) && (referer.length() != 0)) {
-			if (ae.getMessage() != null && ae.getMessage().equals(WebKeys.EDIT_ASSET_EXCEPTION)) {
-				// The web asset edit threw an exception because it's locked so it should redirect back with message
-				java.util.Map<String, String[]> params = new java.util.HashMap<>();
-				params.put("struts_action", new String[]{"/ext/director/direct"});
-				params.put("cmd", new String[]{"editContentlet"});
-				params.put("contentlet", new String[]{req.getParameter("inode")});
-				params.put("container", new String[]{(req.getParameter("contentcontainer_inode") != null) ? req.getParameter("contentcontainer_inode") : "0"});
-				params.put("htmlPage", new String[]{(req.getParameter("htmlpage_inode") != null) ? req.getParameter("htmlpage_inode") : "0"});
-				params.put("referer", new String[]{java.net.URLEncoder.encode(referer, "UTF-8")});
-
-				String directorURL = com.dotmarketing.util.PortletURLUtil.getActionURL(httpReq, WindowState.MAXIMIZED.toString(), params);
-
-				_sendToReferral(req, res, directorURL);
-			} else if (ae.getMessage() != null && ae.getMessage().equals(WebKeys.USER_PERMISSIONS_EXCEPTION)) {
+			if (ae.getMessage() != null && ae.getMessage().equals(WebKeys.USER_PERMISSIONS_EXCEPTION)) {
 				_sendToReferral(req, res, referer);
 			} else {
 				_handleException(ae, req);

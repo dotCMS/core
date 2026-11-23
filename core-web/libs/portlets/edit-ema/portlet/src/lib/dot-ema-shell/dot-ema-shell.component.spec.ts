@@ -1,4 +1,5 @@
 import { patchState, WritableStateSource } from '@ngrx/signals';
+import { Events } from '@ngrx/signals/events';
 import {
     SpyObject,
     createComponentFactory,
@@ -7,7 +8,7 @@ import {
     mockProvider
 } from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
-import { Subject, of, throwError } from 'rxjs';
+import { Subject, Subscription, of, throwError } from 'rxjs';
 import { describe, expect, vi } from 'vitest';
 
 /**
@@ -106,6 +107,10 @@ import {
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 import { DotEmaShellComponent } from './dot-ema-shell.component';
 
+import {
+    DotUveEditContentRequest,
+    uveContentEditorEvents
+} from '../edit-ema-editor/components/dot-uve-content-editor/dot-uve-content-editor.events';
 import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
 import { UVE_STATUS } from '../shared/enums';
@@ -725,65 +730,77 @@ describe('DotEmaShellComponent', () => {
                 expect(pageToolsSpy).toHaveBeenCalled();
             });
 
-            it('routes the properties click through the active editor when the content route is mounted', () => {
-                const openContentForEdit = vi.fn();
-                spectator.component.onRouteActivate({ openContentForEdit });
+            // The content editor tells the store whether it is placed. It is placed only on the
+            // content screen with a page the user can read; on the layout, rules and experiments
+            // screens, and for a page the user cannot read (no router outlet), there is none, so
+            // the shell opens the page in the side panel itself, through the opener (#38303).
+            describe('properties and the content editor', () => {
+                let editRequests: DotUveEditContentRequest[];
+                let editRequestsSubscription: Subscription;
 
-                const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
-                spectator.triggerEventHandler(navBar, 'action', 'properties');
+                const clickProperties = () => {
+                    const navBar = spectator.debugElement.query(
+                        By.css('[data-testid="ema-nav-bar"]')
+                    );
+                    spectator.triggerEventHandler(navBar, 'action', 'properties');
+                };
 
-                expect(openContentForEdit).toHaveBeenCalledWith(
-                    expect.objectContaining({ inode: '123', identifier: '123' })
-                );
-                expect(opener.opened.length).toBe(0);
-            });
+                beforeEach(() => {
+                    editRequests = [];
+                    editRequestsSubscription = spectator
+                        .inject(Events)
+                        .on(uveContentEditorEvents.uveEditContentRequested)
+                        .subscribe(({ payload }) => editRequests.push(payload));
+                });
 
-            /**
-             * On the layout, rules and experiments routes there is no editor to ask, so the shell
-             * opens the page in the side panel itself, through the opener (#38303).
-             */
-            it('should open the page in the side panel through the opener when the properties item is clicked', () => {
-                const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
+                // The events outlive each test, so a subscription left open would record the
+                // next tests' requests too.
+                afterEach(() => editRequestsSubscription.unsubscribe());
 
-                spectator.triggerEventHandler(navBar, 'action', 'properties');
+                it('should open the page in the side panel through the opener while no content editor is placed', () => {
+                    clickProperties();
 
-                const page = openedPage();
-                expect(requestOf(page)).toEqual(
-                    expect.objectContaining({
-                        mode: 'edit',
-                        inode: '123',
-                        identifier: '123',
-                        title: 'hello world',
-                        siteId: store.pageAsset()?.site?.identifier,
-                        portletId: 'edit-page'
-                    })
-                );
-                expect(page.options.injector).toBeDefined();
-                expect(page.options.saved).toEqual(expect.any(Function));
-                expect(page.options.closed).toEqual(expect.any(Function));
-            });
+                    const page = openedPage();
+                    expect(requestOf(page)).toEqual(
+                        expect.objectContaining({
+                            mode: 'edit',
+                            inode: '123',
+                            identifier: '123',
+                            title: 'hello world',
+                            siteId: store.pageAsset()?.site?.identifier,
+                            portletId: 'edit-page'
+                        })
+                    );
+                    expect(page.options.injector).toBeDefined();
+                    expect(page.options.saved).toEqual(expect.any(Function));
+                    expect(page.options.closed).toEqual(expect.any(Function));
+                    expect(editRequests).toEqual([]);
+                });
 
-            it('opens the page through the opener once a sibling route (layout/rules/experiments) is active', () => {
-                spectator.component.onRouteActivate({ openContentForEdit: vi.fn() });
-                spectator.component.onRouteDeactivate();
+                it("should ask the content editor to edit the page's contentlet while one is placed, instead of opening it itself", () => {
+                    store.editorSetContentEditorPlaced(true);
 
-                const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
-                spectator.triggerEventHandler(navBar, 'action', 'properties');
+                    clickProperties();
 
-                expect(requestOf(openedPage())).toEqual(
-                    expect.objectContaining({ mode: 'edit', inode: '123' })
-                );
-            });
+                    expect(editRequests).toEqual([
+                        {
+                            contentlet: expect.objectContaining({ inode: '123', identifier: '123' })
+                        }
+                    ]);
+                    expect(opener.opened.length).toBe(0);
+                });
 
-            it('ignores an activated component that does not expose openContentForEdit (a sibling route)', () => {
-                spectator.component.onRouteActivate({ someOtherMethod: vi.fn() });
+                it('should open the page through the opener once the content editor is gone', () => {
+                    store.editorSetContentEditorPlaced(true);
+                    store.editorSetContentEditorPlaced(false);
 
-                const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
-                spectator.triggerEventHandler(navBar, 'action', 'properties');
+                    clickProperties();
 
-                expect(requestOf(openedPage())).toEqual(
-                    expect.objectContaining({ mode: 'edit', inode: '123' })
-                );
+                    expect(editRequests).toEqual([]);
+                    expect(requestOf(openedPage())).toEqual(
+                        expect.objectContaining({ mode: 'edit', inode: '123' })
+                    );
+                });
             });
         });
 

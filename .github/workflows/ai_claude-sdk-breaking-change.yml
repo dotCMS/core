@@ -99,13 +99,20 @@ jobs:
           (dotcms-ui) changes, test-only changes, or documentation changes unless they touch
           one of the above surfaces.
 
-        STEP 4 — If the changes break SDK compatibility, post this comment on the PR
+          A category match is not enough. Identify a concrete request or workflow that works
+          with an already-published SDK today and show how it fails or behaves incorrectly
+          against the changed server, with no compatible fallback. A new field, optional
+          parameter, or opt-in flag is not breaking if existing behavior is preserved when
+          the option is omitted. Missing out on a new feature is not a break.
+
+        STEP 4 — Only if you can show that regression, post this comment on the PR
         using: gh pr comment ${{ github.event.pull_request.number }} --body "..."
 
           Format:
           SDK Breaking Change Detected!!!
           - Category: <category ID and name, e.g. "G-1 — Removing or Renaming a Reachable GraphQL Type/Field">
-          - Why it breaks compatibility: <specific explanation tied to the actual code changed>
+          - Existing SDK request or workflow: <what works today without changes>
+          - Regression: <what fails or behaves incorrectly after this change, and why no fallback works>
           - Code that makes it breaking: <file path(s) and the specific lines or block>
           - Safer alternative (if possible): <the safer alternative from the reference, adapted to this change>
 
@@ -114,9 +121,8 @@ jobs:
           Then add the label (only if it isn't already on the PR):
           gh pr edit ${{ github.event.pull_request.number }} --add-label "SDK Breaking Change"
 
-        If the changes do NOT break SDK compatibility, do nothing — no comment, no label, and
-        do NOT remove an existing "SDK Breaking Change" label even if you disagree with it.
-        Removing that label is a human-only decision.
+        If you can't show a regression, do nothing — no comment and no label. Never remove
+        an existing "SDK Breaking Change" label; removal is a human-only decision.
 
         Be specific: quote actual file names and code lines, not generic descriptions.
       claude_args: '--allowedTools "Bash(git diff*),Bash(git log*),Bash(cat docs/core/SDK_BREAKING_CHANGE_CATEGORIES.md),Bash(gh pr comment*),Bash(gh pr edit*)"'

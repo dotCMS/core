@@ -2,10 +2,16 @@ package com.dotcms.graphql;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.LicenseTestUtil;
+import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.filters.interceptor.Result;
+import com.dotcms.rest.AnonymousAccess;
+import com.dotcms.rest.exception.SecurityException;
+import com.dotcms.test.util.ApiTokenTestUtils;
 import com.dotcms.mock.request.DotCMSMockRequest;
 import com.dotcms.mock.request.DotCMSMockRequestWithSession;
 import com.dotcms.mock.request.MockSession;
@@ -15,15 +21,22 @@ import com.dotcms.mock.response.MockHttpWriterCaptureResponse;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.util.CompanyUtils;
 import com.dotmarketing.util.Config;
+import com.liferay.portal.model.Company;
+import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 /**
@@ -34,17 +47,33 @@ import org.junit.Test;
  */
 public class GraphqlCacheWebInterceptorIntegrationTest {
 
-    private static final String TOKEN_A = "Bearer " + UUID.randomUUID();
-    private static final String TOKEN_B = "Bearer " + UUID.randomUUID();
+    @ClassRule
+    public static final ApiTokenTestUtils TOKENS = new ApiTokenTestUtils();
 
+    private static String TOKEN_A;
+    private static String TOKEN_B;
+    private String anonymousAccessBefore;
+
+    /** Initializes the real cache and two independently issued credentials for its callers. */
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
         LicenseTestUtil.getLicense();
+        TOKEN_A = TOKENS.adminBearerHeader();
+        TOKEN_B = TOKENS.adminBearerHeader();
     }
 
+    /** Anonymous-cache tests explicitly allow reads instead of relying on an application default. */
+    @Before
+    public void allowAnonymousCacheFixtures() {
+        anonymousAccessBefore = Config.getStringProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, null);
+        Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "READ");
+    }
+
+    /** Restores cache and authentication settings for the rest of the suite. */
     @After
     public void restoreConfig() {
+        Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, anonymousAccessBefore);
         Config.setProperty(GraphqlCacheWebInterceptor.GRAPHQL_CACHE_MAX_TTL_PROPERTY,
                 GraphqlCacheWebInterceptor.GRAPHQL_CACHE_MAX_TTL_DEFAULT);
     }
@@ -285,6 +314,56 @@ public class GraphqlCacheWebInterceptorIntegrationTest {
 
         assertFalse(first.hit);
         assertFalse(second.hit);
+    }
+
+    /** A password-authenticated cache entry cannot outlive the policy that accepted its credential. */
+    @Test
+    public void cachedPasswordBasicIsDeniedAfterPolicyChanges() throws Exception {
+        final String previousMode = Config.getStringProperty("ALLOW_BASIC_AUTH", null);
+        final String password = "CachePolicy-9!valid";
+        final User user = new UserDataGen().password(password)
+                .roles(APILocator.getRoleAPI().loadCMSAdminRole(), TestUserUtils.getBackendRole())
+                .nextPersisted();
+        final String login = Company.AUTH_TYPE_ID.equals(CompanyUtils.getDefaultCompany().getAuthType())
+                ? user.getUserId() : user.getEmailAddress();
+        final String basic = "Basic " + Base64.getEncoder().encodeToString(
+                (login + ":" + password).getBytes(StandardCharsets.UTF_8));
+        final String body = uniqueBody();
+        try {
+            Config.setProperty("ALLOW_BASIC_AUTH", "ALL");
+            assertFalse(serve(passwordRequest(body, basic, user.getCompanyId())).hit);
+            assertTrue(serve(passwordRequest(body, basic, user.getCompanyId())).hit);
+            for (final String mode : new String[] {"NONE", "JWT_TOKEN"}) {
+                Config.setProperty("ALLOW_BASIC_AUTH", mode);
+                final SecurityException denial = assertThrows(SecurityException.class,
+                        () -> serve(passwordRequest(body, basic, user.getCompanyId())));
+                assertEquals(401, denial.getResponse().getStatus());
+            }
+        } finally {
+            Config.setProperty("ALLOW_BASIC_AUTH", previousMode);
+            UserDataGen.remove(user);
+        }
+    }
+
+    /** Disabling anonymous reads takes effect even when the same query already has a public cache entry. */
+    @Test
+    public void cachedAnonymousResponseIsDeniedAfterPolicyChanges() throws IOException {
+        final String body = uniqueBody();
+        assertFalse(serve(anonymousRequest(body)).hit);
+        assertTrue(serve(anonymousRequest(body)).hit);
+        Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "NONE");
+
+        final SecurityException denial = assertThrows(SecurityException.class,
+                () -> serve(anonymousRequest(body)));
+        assertEquals(401, denial.getResponse().getStatus());
+    }
+
+    /** Builds a fresh, unauthenticated browser session for each legacy password login attempt. */
+    private static RequestBuilder passwordRequest(final String body, final String authorization,
+            final String companyId) {
+        final MockSession session = new MockSession(UUID.randomUUID().toString());
+        session.setAttribute(WebKeys.COMPANY_ID, companyId);
+        return new RequestBuilder(body, session).withHeader("Authorization", authorization);
     }
 
     private static String uniqueBody() {

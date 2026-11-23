@@ -38,5 +38,10 @@ export enum PALETTE_CLASSES {
 
 export enum CONTAINER_INSERT_ERROR {
     CONTAINER_LIMIT_REACHED = 'CONTAINER_LIMIT_REACHED',
-    DUPLICATE_CONTENT = 'DUPLICATE_CONTENT'
+    DUPLICATE_CONTENT = 'DUPLICATE_CONTENT',
+    /**
+     * A moved contentlet was dropped next to itself, so the contentlet to place it next to is no
+     * longer in the container. Nothing went in and there is nothing to tell the user.
+     */
+    PIVOT_NOT_FOUND = 'PIVOT_NOT_FOUND'
 }

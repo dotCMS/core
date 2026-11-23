@@ -15,7 +15,6 @@ public class CmsMaintenanceForm extends ActionForm {
 	private String cacheName = "";  
 	private String searchString="";
 	private String replaceString="";
-	private String userId="";
 
 	private String structure;
 	private String removeassetsdate;
@@ -74,20 +73,6 @@ public class CmsMaintenanceForm extends ActionForm {
 	 */
 	public void setSearchString(String searchString) {
 		this.searchString = searchString;
-	}
-	
-	/**
-	 * @return Returns the userId.
-	 */
-	public String getUserId() {
-		return userId;
-	}
-	
-	/**
-	 * @param userId The userId to set.
-	 */
-	public void setUserId(String userId) {
-		this.userId = userId;
 	}
 
 }

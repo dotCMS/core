@@ -2,7 +2,6 @@ package com.dotmarketing.filters;
 
 import com.dotcms.analytics.track.AnalyticsTrackWebInterceptor;
 import com.dotcms.business.SystemTableUpdatedKeyEvent;
-import com.dotcms.ema.EMAWebInterceptor;
 import com.dotcms.filters.interceptor.AbstractWebInterceptorSupportFilter;
 import com.dotcms.filters.interceptor.WebInterceptorDelegate;
 import com.dotcms.filters.interceptor.meta.ResponseMetaDataWebInterceptor;
@@ -51,7 +50,6 @@ public class InterceptorFilter extends AbstractWebInterceptorSupportFilter {
         // Note: RequestTrackingInterceptor replaced by RequestTrackingFilter for better performance and accuracy
         delegate.add(new MultiPartRequestSecurityWebInterceptor());
         delegate.add(new PreRenderSEOWebInterceptor());
-        delegate.add(new EMAWebInterceptor());
         // Must run before GraphqlCacheWebInterceptor: on a GraphQL cache hit that
         // interceptor writes the response and returns Result.SKIP_NO_CHAIN, breaking the
         // delegate chain before any later interceptor runs. Registering this one first

@@ -296,8 +296,21 @@ public class URLMapBundler implements IBundler {
             if (Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false) &&
                 contentlet.getLanguageId() == this.langAPI.getDefaultLanguage().getId() &&
                 !this.config.getLanguages().isEmpty()) {
+                // Replicate the default-language content only into the languages that have no
+                // version of their own: a real translation is written by its own language pass at
+                // its own localized URL, and copying the default-language content next to it leaves
+                // a stale duplicate in that language folder. See #36729.
+                final boolean live = contentlet.getInode().equals(info.get().getLiveInode());
                 for (final String languageId : this.config.getLanguages()) {
-                    writeFileToDisk(bundleOutput, contentlet, Long.valueOf(languageId), wrap, site, url);
+                    final Long targetLanguageId = Long.valueOf(languageId);
+                    if (targetLanguageId.longValue() != contentlet.getLanguageId()
+                            && hasVersionInLanguage(contentlet.getIdentifier(), targetLanguageId, live)) {
+                        Logger.debug(URLMapBundler.class, () -> "Skipping default-language copy of "
+                                + contentlet.getIdentifier() + " into language " + languageId
+                                + ": the content has its own version in that language");
+                        continue;
+                    }
+                    writeFileToDisk(bundleOutput, contentlet, targetLanguageId, wrap, site, url);
                 }
             } else {
                 writeFileToDisk(bundleOutput, contentlet, contentlet.getLanguageId(), wrap, site, url);
@@ -306,6 +319,23 @@ public class URLMapBundler implements IBundler {
             throw new DotBundleException(String.format("An error occurred when writing URL Map from Content with ID " +
                     "'%s' to disk: %s", contentlet.getIdentifier(), e.getMessage()), e);
         }
+    }
+
+    /**
+     * Checks whether the content has a version of its own in the given language, in the same state
+     * (live or working) as the artifact being written. The default-language fallback copy is only
+     * meant for languages where no translation exists.
+     *
+     * @param identifier the content identifier
+     * @param languageId the target language id
+     * @param live       {@code true} to look for a live version, {@code false} for a working one
+     * @return {@code true} when a version exists in that language and state
+     */
+    private boolean hasVersionInLanguage(final String identifier, final long languageId, final boolean live) {
+        final Optional<ContentletVersionInfo> info = APILocator.getVersionableAPI()
+                .getContentletVersionInfo(identifier, languageId);
+        return info.isPresent()
+                && UtilMethods.isSet(live ? info.get().getLiveInode() : info.get().getWorkingInode());
     }
 
     private void writeFileToDisk (BundleOutput bundleOutput, Contentlet contentlet, Long languageId, URLMapWrapper wrap, Host h, String url)

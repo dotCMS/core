@@ -69,3 +69,26 @@ export interface DotPageContainerStructure {
         contentlets?: { [key: string]: DotCMSContentlet[] };
     };
 }
+
+/**
+ * A template that uses a container, as returned by `GET /api/v1/containers/dependencies`.
+ * Values are returned as saved and must be rendered as text.
+ */
+export interface DotContainerTemplateDependency {
+    inode: string;
+    identifier: string;
+    title: string;
+    /** Host name of the template's site; null when the site is not readable for the user. */
+    siteName: string | null;
+}
+
+/**
+ * A container and the templates that use it, as returned by
+ * `GET /api/v1/containers/dependencies`. `templates` is empty when nothing uses the container.
+ */
+export interface DotContainerDependencies {
+    inode: string;
+    identifier: string;
+    title: string;
+    templates: DotContainerTemplateDependency[];
+}

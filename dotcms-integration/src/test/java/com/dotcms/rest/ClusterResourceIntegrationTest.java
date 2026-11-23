@@ -22,7 +22,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.cache.transport.NullTransport;
-import com.liferay.util.Base64;
+import com.dotcms.test.util.ApiTokenTestUtils;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
@@ -69,6 +69,7 @@ public class ClusterResourceIntegrationTest {
 
     @AfterClass
     public static void cleanup() throws Exception {
+        TOKEN_UTILS.close();
         if (createdMyServer) {
             final ServerAPI serverAPI = APILocator.getServerAPI();
             serverAPI.removeServerFromClusterTable(serverAPI.readServerId());
@@ -84,10 +85,13 @@ public class ClusterResourceIntegrationTest {
                         .request());
     }
 
+    /** Mints and owns the admin API token used by the requests below. */
+    private static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
+
     private static HttpServletRequest adminRequest() {
         final MockHeaderRequest request = (MockHeaderRequest) baseRequest();
-        request.setHeader("Authorization",
-                "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+        // Username/password Basic is disabled by default; authenticate with an API token.
+        request.setHeader("Authorization", TOKEN_UTILS.adminBearerHeader());
         return request;
     }
 

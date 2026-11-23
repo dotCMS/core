@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
@@ -17,15 +18,25 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.VersionableAPI;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.HostUtil;
@@ -49,6 +60,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Source;
 import org.junit.jupiter.api.AfterEach;
@@ -92,10 +104,13 @@ public class JsFileSystemTest {
     private MockedStatic<APILocator> apiLocator;
     private MockedStatic<CacheLocator> cacheLocator;
     private FileAssetAPI fileAssetAPI;
+    private PermissionAPI permissionAPI;
+    private User reader;
 
     /**
      * Keeps the tests hermetic: any {@link APILocator} call a test does not stub fails, so nothing here reaches the
-     * content repository, and the script cache is an empty mock.
+     * content repository, and the script cache is an empty mock. Modules are read for a mocked user who, unless a test
+     * says otherwise, can read every module.
      */
     @BeforeEach
     public void isolateFromRuntime() {
@@ -104,6 +119,16 @@ public class JsFileSystemTest {
             throw new IllegalStateException("The content repository is not available in this unit test");
         });
         apiLocator.when(APILocator::getFileAssetAPI).thenReturn(fileAssetAPI);
+        reader = mock(User.class);
+        when(reader.isBackendUser()).thenReturn(true);
+        permissionAPI = mock(PermissionAPI.class);
+        try {
+            when(permissionAPI.doesUserHavePermission(any(Permissionable.class), anyInt(), any(User.class),
+                    anyBoolean())).thenReturn(true);
+        } catch (final DotDataException e) {
+            throw new IllegalStateException(e);
+        }
+        apiLocator.when(APILocator::getPermissionAPI).thenReturn(permissionAPI);
         cacheLocator = mockStatic(CacheLocator.class);
         cacheLocator.when(CacheLocator::getJavascriptCache).thenReturn(mock(JsCache.class));
     }
@@ -714,7 +739,7 @@ public class JsFileSystemTest {
     @Test
     public void defaultSourceReportsLookupFailureWithFixedMessage() throws Exception {
         // Given the default module source, with a content repository that fails every lookup
-        final JsFileSystem fileSystem = new JsFileSystem();
+        final JsFileSystem fileSystem = new JsFileSystem(reader, true);
 
         // When newByteChannel reads a module of the current site and a module of site-b.test
         final IOException currentSiteFailure = assertThrows(IOException.class,
@@ -755,7 +780,7 @@ public class JsFileSystemTest {
         when(hostAPI.findByIdOrKey("site-b.test", systemUser, false)).thenThrow(lookupFailure);
         apiLocator.when(APILocator::systemUser).thenReturn(systemUser);
         apiLocator.when(APILocator::getHostAPI).thenReturn(hostAPI);
-        final JsFileSystem fileSystem = new JsFileSystem();
+        final JsFileSystem fileSystem = new JsFileSystem(reader, true);
 
         try (MockedStatic<Logger> logger = mockStatic(Logger.class)) {
 
@@ -786,7 +811,7 @@ public class JsFileSystemTest {
         when(hostAPI.findByIdOrKey("site-b.test", systemUser, false)).thenThrow(unexpected);
         apiLocator.when(APILocator::systemUser).thenReturn(systemUser);
         apiLocator.when(APILocator::getHostAPI).thenReturn(hostAPI);
-        final JsFileSystem fileSystem = new JsFileSystem();
+        final JsFileSystem fileSystem = new JsFileSystem(reader, true);
 
         try (MockedStatic<Logger> logger = mockStatic(Logger.class)) {
 
@@ -818,7 +843,7 @@ public class JsFileSystemTest {
         when(contentletAPI.findContentletByIdentifierAnyLanguage("current-module-id")).thenReturn(contentlet);
         apiLocator.when(APILocator::getIdentifierAPI).thenReturn(identifierAPI);
         apiLocator.when(APILocator::getContentletAPI).thenReturn(contentletAPI);
-        final JsFileSystem fileSystem = new JsFileSystem();
+        final JsFileSystem fileSystem = new JsFileSystem(reader, true);
 
         try (MockedStatic<HostUtil> hostUtil = mockStatic(HostUtil.class);
                 MockedStatic<Logger> logger = mockStatic(Logger.class)) {
@@ -848,7 +873,7 @@ public class JsFileSystemTest {
         apiLocator.when(APILocator::systemUser).thenReturn(systemUser);
         apiLocator.when(APILocator::getHostAPI).thenReturn(hostAPI);
         apiLocator.when(APILocator::getIdentifierAPI).thenReturn(identifierAPI);
-        final JsFileSystem fileSystem = new JsFileSystem();
+        final JsFileSystem fileSystem = new JsFileSystem(reader, true);
 
         // When newByteChannel reads /application/js/a.mjs of SYSTEM_HOST
         // Then a NoSuchFileException is thrown, as for an unknown site, and no module is looked up on it
@@ -865,7 +890,7 @@ public class JsFileSystemTest {
         when(hostAPI.findByIdOrKey("site-b.test", systemUser, false)).thenReturn(Optional.empty());
         apiLocator.when(APILocator::systemUser).thenReturn(systemUser);
         apiLocator.when(APILocator::getHostAPI).thenReturn(hostAPI);
-        final JsFileSystem fileSystem = new JsFileSystem();
+        final JsFileSystem fileSystem = new JsFileSystem(reader, true);
 
         // When newByteChannel reads /application/js/a.mjs of site-b.test
         // Then a NoSuchFileException is thrown, and neither a lookup by name nor the default site is used
@@ -882,7 +907,7 @@ public class JsFileSystemTest {
         when(hostAPI.findByIdOrKey("null", systemUser, false)).thenReturn(Optional.empty());
         apiLocator.when(APILocator::systemUser).thenReturn(systemUser);
         apiLocator.when(APILocator::getHostAPI).thenReturn(hostAPI);
-        final JsFileSystem fileSystem = new JsFileSystem();
+        final JsFileSystem fileSystem = new JsFileSystem(reader, true);
 
         // When newByteChannel reads /application/js/a.mjs of the site named null
         // Then the site is looked up by that name, a NoSuchFileException is thrown, and the default site is not used
@@ -898,7 +923,7 @@ public class JsFileSystemTest {
         final Contentlet contentlet = mock(Contentlet.class);
         when(contentlet.isFileAsset()).thenReturn(false);
         stubSiteBModule(contentlet);
-        final JsFileSystem fileSystem = new JsFileSystem();
+        final JsFileSystem fileSystem = new JsFileSystem(reader, true);
 
         // When newByteChannel reads it
         // Then a NoSuchFileException is thrown and no file is looked up for that content
@@ -920,7 +945,7 @@ public class JsFileSystemTest {
         when(contentletAPI.findContentletByIdentifierAnyLanguage("current-module-id")).thenReturn(contentlet);
         apiLocator.when(APILocator::getIdentifierAPI).thenReturn(identifierAPI);
         apiLocator.when(APILocator::getContentletAPI).thenReturn(contentletAPI);
-        final JsFileSystem fileSystem = new JsFileSystem();
+        final JsFileSystem fileSystem = new JsFileSystem(reader, true);
 
         try (MockedStatic<HostUtil> hostUtil = mockStatic(HostUtil.class)) {
             hostUtil.when(HostUtil::findCurrentHost).thenReturn(currentSite);
@@ -947,7 +972,7 @@ public class JsFileSystemTest {
         apiLocator.when(APILocator::getHostAPI).thenReturn(hostAPI);
         apiLocator.when(APILocator::getIdentifierAPI).thenReturn(identifierAPI);
         apiLocator.when(APILocator::getContentletAPI).thenReturn(contentletAPI);
-        final JsFileSystem fileSystem = new JsFileSystem();
+        final JsFileSystem fileSystem = new JsFileSystem(reader, true);
 
         // When newByteChannel reads it
         // Then a NoSuchFileException is thrown and no content is looked up
@@ -959,7 +984,7 @@ public class JsFileSystemTest {
     public void defaultSourceTreatsMissingContentAsNotFound() throws Exception {
         // Given the default module source, where the identifier of /application/js/a.mjs on site-b.test has no content
         stubSiteBModule(null);
-        final JsFileSystem fileSystem = new JsFileSystem();
+        final JsFileSystem fileSystem = new JsFileSystem(reader, true);
 
         // When newByteChannel reads it
         // Then a NoSuchFileException is thrown and no file is looked up
@@ -971,7 +996,7 @@ public class JsFileSystemTest {
     public void defaultSourceReportsUnreadableBinaryWithFixedMessage() throws Exception {
         // Given the default module source, where /application/js/a.mjs of site-b.test is a file whose binary is missing
         stubSiteBModule(fileAssetWithBinary(tempDir.resolve("missing.mjs").toFile()));
-        final JsFileSystem fileSystem = new JsFileSystem();
+        final JsFileSystem fileSystem = new JsFileSystem(reader, true);
 
         // When newByteChannel reads it
         final IOException failure = assertThrows(IOException.class, () -> read(fileSystem, Paths.get(SITE_B_MODULE)));
@@ -984,7 +1009,7 @@ public class JsFileSystemTest {
     public void defaultSourceReportsMissingBinaryWithFixedMessage() throws Exception {
         // Given the default module source, where /application/js/a.mjs of site-b.test is a file asset with no binary
         stubSiteBModule(fileAssetWithBinary(null));
-        final JsFileSystem fileSystem = new JsFileSystem();
+        final JsFileSystem fileSystem = new JsFileSystem(reader, true);
 
         // When newByteChannel reads it
         final IOException failure = assertThrows(IOException.class, () -> read(fileSystem, Paths.get(SITE_B_MODULE)));
@@ -999,7 +1024,7 @@ public class JsFileSystemTest {
         // Given the default module source, where /application/js/a.mjs of site-b.test is a file with a readable binary
         final Path binary = writeFile("module/d.mjs", "export const v = 'D';");
         stubSiteBModule(fileAssetWithBinary(binary.toFile()));
-        final JsFileSystem fileSystem = new JsFileSystem();
+        final JsFileSystem fileSystem = new JsFileSystem(reader, true);
 
         // When newByteChannel reads it
         final String content = assertDoesNotThrow(() -> read(fileSystem, Paths.get(SITE_B_MODULE)));
@@ -1009,10 +1034,210 @@ public class JsFileSystemTest {
     }
 
     /**
-     * Stubs the content repository so that, looked up as the system user, site-b.test exists and its
-     * {@code /application/js/a.mjs} identifier resolves to the given content.
+     * A working module saved by a non-scripting editor must not execute under a trusted entry
+     * file's secrets authority.
      */
-    private void stubSiteBModule(final Contentlet contentlet) throws Exception {
+    @Test
+    public void defaultSourceRefusesModuleSavedByNonScriptingEditor() throws Exception {
+        final Path binary = writeFile("module/untrusted.mjs", "export const v = 'UNTRUSTED';");
+        final Contentlet contentlet = fileAssetWithBinary(binary.toFile());
+        when(contentlet.getModUser()).thenReturn("untrusted-editor");
+        stubSiteBModule(contentlet);
+        final User editor = mock(User.class);
+        final UserAPI userAPI = mock(UserAPI.class);
+        when(userAPI.loadUserById(eq("untrusted-editor"), any(), eq(false))).thenReturn(editor);
+        apiLocator.when(APILocator::getUserAPI).thenReturn(userAPI);
+        final RoleAPI roleAPI = mock(RoleAPI.class);
+        when(roleAPI.loadRoleByKey(Role.SCRIPTING_DEVELOPER)).thenReturn(mock(Role.class));
+        apiLocator.when(APILocator::getRoleAPI).thenReturn(roleAPI);
+
+        assertThrows(IOException.class, () -> read(new JsFileSystem(reader, true), Paths.get(SITE_B_MODULE)));
+        verify(fileAssetAPI, never()).fromContentlet(contentlet);
+
+        when(roleAPI.doesUserHaveRole(eq(editor), any(Role.class))).thenReturn(true);
+        assertEquals("export const v = 'UNTRUSTED';", read(new JsFileSystem(reader, true), Paths.get(SITE_B_MODULE)));
+    }
+
+    @Test
+    public void defaultSourceTreatsModuleTheReaderCannotReadAsNotFound() throws Exception {
+        // Given the default module source, where /application/js/a.mjs of site-b.test is a file asset with a binary,
+        // and a reader who cannot read it
+        final Path binary = writeFile("module/unreadable.mjs", "export const v = 'UNREADABLE';");
+        final Contentlet contentlet = fileAssetWithBinary(binary.toFile());
+        stubSiteBModule(contentlet);
+        when(permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, reader, true))
+                .thenReturn(false);
+        final JsFileSystem fileSystem = new JsFileSystem(reader, true);
+
+        // When newByteChannel reads it
+        // Then a NoSuchFileException is thrown, as for a missing module, and the file is never opened
+        assertThrows(NoSuchFileException.class, () -> read(fileSystem, Paths.get(SITE_B_MODULE)));
+        verify(fileAssetAPI, never()).fromContentlet(contentlet);
+    }
+
+    @Test
+    public void defaultSourceChecksReadPermissionOfTheReader() throws Exception {
+        // Given the default module source, where /application/js/a.mjs of site-b.test is a file asset with a binary
+        final Path binary = writeFile("module/checked.mjs", "export const v = 'CHECKED';");
+        final Contentlet contentlet = fileAssetWithBinary(binary.toFile());
+        stubSiteBModule(contentlet);
+
+        // When the module is read for the reader, with and without the front-end roles
+        final String withFrontendRoles = read(new JsFileSystem(reader, true), Paths.get(SITE_B_MODULE));
+        final String withoutFrontendRoles = read(new JsFileSystem(reader, false), Paths.get(SITE_B_MODULE));
+
+        // Then the module is returned both times, after checking the reader's read permission with that setting
+        assertEquals("export const v = 'CHECKED';", withFrontendRoles);
+        assertEquals("export const v = 'CHECKED';", withoutFrontendRoles);
+        verify(permissionAPI).doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, reader, true);
+        verify(permissionAPI).doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, reader, false);
+    }
+
+    @Test
+    public void defaultSourceReadsPublishedVersionWhenReaderCannotReadWorkingVersion() throws Exception {
+        // Given a module of site-b.test whose working version the reader cannot read, and a published version, in the
+        // same language, that the reader can read
+        final Contentlet working = fileAssetWithBinary(
+                writeFile("module/working.mjs", "export const v = 'WORKING';").toFile());
+        final Contentlet published = fileAssetWithBinary(
+                writeFile("module/published.mjs", "export const v = 'PUBLISHED';").toFile());
+        when(working.getLanguageId()).thenReturn(1L);
+        final ContentletAPI contentletAPI = stubSiteBModule(working);
+        when(contentletAPI.findContentletByIdentifier(eq("module-id"), eq(true), eq(1L), any(User.class), eq(false)))
+                .thenReturn(published);
+        when(permissionAPI.doesUserHavePermission(working, PermissionAPI.PERMISSION_READ, reader, true))
+                .thenReturn(false);
+
+        // When newByteChannel reads the module for that reader
+        final String content = read(new JsFileSystem(reader, true), Paths.get(SITE_B_MODULE));
+
+        // Then the published version is returned, and the working version's file is never opened
+        assertEquals("export const v = 'PUBLISHED';", content);
+        verify(fileAssetAPI, never()).fromContentlet(working);
+    }
+
+    @Test
+    public void defaultSourceTreatsModuleAsNotFoundWhenReaderCanReadNoVersion() throws Exception {
+        // Given a module of site-b.test with a working and a published version, neither of which the reader can read
+        final Contentlet working = fileAssetWithBinary(writeFile("module/w.mjs", "export const v = 'W';").toFile());
+        final Contentlet published = fileAssetWithBinary(writeFile("module/p.mjs", "export const v = 'P';").toFile());
+        when(working.getLanguageId()).thenReturn(1L);
+        final ContentletAPI contentletAPI = stubSiteBModule(working);
+        when(contentletAPI.findContentletByIdentifier(eq("module-id"), eq(true), eq(1L), any(User.class), eq(false)))
+                .thenReturn(published);
+        when(permissionAPI.doesUserHavePermission(any(Permissionable.class), anyInt(), eq(reader), anyBoolean()))
+                .thenReturn(false);
+
+        // When newByteChannel reads the module for that reader
+        // Then a NoSuchFileException is thrown and no version's file is opened
+        assertThrows(NoSuchFileException.class, () -> read(new JsFileSystem(reader, true), Paths.get(SITE_B_MODULE)));
+        verify(fileAssetAPI, never()).fromContentlet(working);
+        verify(fileAssetAPI, never()).fromContentlet(published);
+    }
+
+    @Test
+    public void defaultSourceTreatsModuleWithoutPublishedVersionAsNotFoundWhenWorkingIsUnreadable() throws Exception {
+        // Given a module of site-b.test that was never published, whose working version the reader cannot read
+        final Contentlet working = fileAssetWithBinary(
+                writeFile("module/never.mjs", "export const v = 'NEVER';").toFile());
+        when(working.getLanguageId()).thenReturn(1L);
+        final ContentletAPI contentletAPI = stubSiteBModule(working);
+        when(contentletAPI.findContentletByIdentifier(eq("module-id"), eq(true), eq(1L), any(User.class), eq(false)))
+                .thenThrow(new DotContentletStateException("no live version"));
+        stubVersions(versionInfo(1L, null));
+        when(permissionAPI.doesUserHavePermission(working, PermissionAPI.PERMISSION_READ, reader, true))
+                .thenReturn(false);
+
+        // When newByteChannel reads the module for that reader
+        // Then a NoSuchFileException is thrown, as for a missing module, and the file is never opened
+        assertThrows(NoSuchFileException.class, () -> read(new JsFileSystem(reader, true), Paths.get(SITE_B_MODULE)));
+        verify(fileAssetAPI, never()).fromContentlet(working);
+    }
+
+    @Test
+    public void defaultSourceReadsPublishedVersionInAnotherLanguageWhenWorkingLanguageHasNone() throws Exception {
+        // Given a module of site-b.test whose working version, in language 1, the reader cannot read and was never
+        // published, and which has a published version in language 2 that the reader can read
+        final Contentlet working = fileAssetWithBinary(
+                writeFile("module/draft-1.mjs", "export const v = 'DRAFT-1';").toFile());
+        final Contentlet published = fileAssetWithBinary(
+                writeFile("module/published-2.mjs", "export const v = 'PUBLISHED-2';").toFile());
+        when(working.getLanguageId()).thenReturn(1L);
+        final ContentletAPI contentletAPI = stubSiteBModule(working);
+        when(contentletAPI.findContentletByIdentifier(eq("module-id"), eq(true), eq(1L), any(User.class), eq(false)))
+                .thenThrow(new DotContentletStateException("no live version"));
+        when(contentletAPI.findContentletByIdentifier(eq("module-id"), eq(true), eq(2L), any(User.class), eq(false)))
+                .thenReturn(published);
+        stubVersions(versionInfo(1L, null), versionInfo(2L, "published-2-inode"));
+        when(permissionAPI.doesUserHavePermission(working, PermissionAPI.PERMISSION_READ, reader, true))
+                .thenReturn(false);
+
+        // When newByteChannel reads the module for that reader
+        final String content = read(new JsFileSystem(reader, true), Paths.get(SITE_B_MODULE));
+
+        // Then the version published in language 2 is returned, and the working version's file is never opened
+        assertEquals("export const v = 'PUBLISHED-2';", content);
+        verify(fileAssetAPI, never()).fromContentlet(working);
+    }
+
+    @Test
+    public void defaultSourceLogsSiteAndModuleOfAModuleTheReaderCannotRead() throws Exception {
+        // Given a module of site-b.test that the reader cannot read
+        final Contentlet contentlet = fileAssetWithBinary(
+                writeFile("module/hidden.mjs", "export const v = 'HIDDEN';").toFile());
+        stubSiteBModule(contentlet);
+        when(permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, reader, true))
+                .thenReturn(false);
+        final JsFileSystem fileSystem = new JsFileSystem(reader, true);
+
+        try (MockedStatic<Logger> logger = mockStatic(Logger.class)) {
+
+            // When newByteChannel reads the module for that reader
+            assertThrows(NoSuchFileException.class, () -> read(fileSystem, Paths.get(SITE_B_MODULE)));
+
+            // Then the debug line names the site and the module path
+            @SuppressWarnings("unchecked")
+            final ArgumentCaptor<Supplier<String>> message = ArgumentCaptor.forClass(Supplier.class);
+            logger.verify(() -> Logger.debug(eq(JsFileSystem.class), message.capture()));
+            final String line = message.getValue().get();
+            assertTrue(line.contains("site-b.test"), line);
+            assertTrue(line.contains("/application/js/a.mjs"), line);
+        }
+    }
+
+    /**
+     * Stubs the versions the content repository lists for the module of {@link #stubSiteBModule(Contentlet)}.
+     *
+     * @param versions one entry per language the module has
+     * @throws DotDataException never, the lookup is stubbed
+     */
+    private void stubVersions(final ContentletVersionInfo... versions) throws DotDataException {
+        final VersionableAPI versionableAPI = mock(VersionableAPI.class);
+        when(versionableAPI.findContentletVersionInfos("module-id", VariantAPI.DEFAULT_VARIANT.name()))
+                .thenReturn(List.of(versions));
+        apiLocator.when(APILocator::getVersionableAPI).thenReturn(versionableAPI);
+    }
+
+    /**
+     * Returns the version information of one language of a module.
+     *
+     * @param languageId the language
+     * @param liveInode  the inode of the published version in that language, or {@code null} when there is none
+     * @return the mocked version information
+     */
+    private static ContentletVersionInfo versionInfo(final long languageId, final String liveInode) {
+        final ContentletVersionInfo info = mock(ContentletVersionInfo.class);
+        when(info.getLang()).thenReturn(languageId);
+        when(info.getLiveInode()).thenReturn(liveInode);
+        return info;
+    }
+
+    /**
+     * Stubs the content repository so that, looked up as the system user, site-b.test exists and its
+     * {@code /application/js/a.mjs} identifier resolves to the given content with no version listed in another
+     * language, and returns the stubbed content API.
+     */
+    private ContentletAPI stubSiteBModule(final Contentlet contentlet) throws Exception {
         final User systemUser = mock(User.class);
         final Host site = mock(Host.class);
         final HostAPI hostAPI = mock(HostAPI.class);
@@ -1030,14 +1255,30 @@ public class JsFileSystemTest {
         apiLocator.when(APILocator::getHostAPI).thenReturn(hostAPI);
         apiLocator.when(APILocator::getIdentifierAPI).thenReturn(identifierAPI);
         apiLocator.when(APILocator::getContentletAPI).thenReturn(contentletAPI);
+        stubVersions();
+        return contentletAPI;
     }
 
     /**
-     * Returns file content whose file asset, as given by the file asset API, has the given binary.
+     * Returns file content saved by an administrator whose file asset has the given binary.
+     *
+     * @param binary the module's binary file
+     * @return the mocked file content
+     * @throws Exception if the author lookup cannot be stubbed
      */
-    private Contentlet fileAssetWithBinary(final File binary) {
+    private Contentlet fileAssetWithBinary(final File binary) throws Exception {
         final Contentlet contentlet = mock(Contentlet.class);
         when(contentlet.isFileAsset()).thenReturn(true);
+        when(contentlet.getModUser()).thenReturn("trusted-module-editor");
+        final User editor = mock(User.class);
+        when(editor.isAdmin()).thenReturn(true);
+        final UserAPI userAPI = mock(UserAPI.class);
+        when(userAPI.loadUserById(eq("trusted-module-editor"), any(), eq(false))).thenReturn(editor);
+        apiLocator.when(APILocator::systemUser).thenReturn(mock(User.class));
+        apiLocator.when(APILocator::getUserAPI).thenReturn(userAPI);
+        final RoleAPI roleAPI = mock(RoleAPI.class);
+        when(roleAPI.loadRoleByKey(Role.SCRIPTING_DEVELOPER)).thenReturn(mock(Role.class));
+        apiLocator.when(APILocator::getRoleAPI).thenReturn(roleAPI);
         final FileAsset fileAsset = mock(FileAsset.class);
         when(fileAsset.getFileAsset()).thenReturn(binary);
         when(fileAssetAPI.fromContentlet(contentlet)).thenReturn(fileAsset);

@@ -2,19 +2,277 @@ package com.dotcms.graphql;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.cms.login.LoginServiceAPI;
+import com.dotcms.enterprise.license.LicenseManager;
+import com.dotcms.filters.interceptor.Result;
+import com.dotcms.mock.request.DotCMSMockRequest;
+import com.dotcms.mock.response.MockHttpWriterCaptureResponse;
+import com.dotcms.rest.exception.SecurityException;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.UserAPI;
+import com.liferay.portal.util.CookieKeys;
 import com.liferay.portal.util.WebKeys;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.Optional;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.ws.rs.core.Response;
+import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
 import org.junit.Test;
 
 /**
  * Tests for the TTL, mutation and resolved-user handling in {@link GraphqlCacheWebInterceptor}.
  */
 public class GraphqlCacheWebInterceptorTest {
+
+    /** Cached content must not be read or written to the response after authentication is denied. */
+    @Test
+    public void cacheHitCannotBypassAuthentication() throws Exception {
+        final GraphQLCache cache = mock(GraphQLCache.class);
+        final LicenseManager license = mock(LicenseManager.class);
+        final DotCMSMockRequest request = new DotCMSMockRequest();
+        request.setMethod("POST");
+        request.setContent("{\"query\":\"{ content { title } }\"}");
+        request.addHeader("Authorization", "Basic synthetic-credential");
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final StringWriter output = new StringWriter();
+        when(response.getWriter()).thenReturn(new PrintWriter(output));
+        when(license.isEnterprise()).thenReturn(true);
+        when(cache.get(anyString())).thenReturn(Optional.of("{\"data\":\"private-content\"}"));
+        final SecurityException denial = new SecurityException("Unauthorized", Response.Status.UNAUTHORIZED);
+
+        try (MockedStatic<CacheLocator> caches = mockStatic(CacheLocator.class);
+             MockedStatic<LicenseManager> licenses = mockStatic(LicenseManager.class);
+             MockedConstruction<DotGraphQLContextBuilder> contexts = mockConstruction(
+                     DotGraphQLContextBuilder.class, (context, ignored) ->
+                             when(context.build(any(HttpServletRequest.class), any(HttpServletResponse.class)))
+                                     .thenThrow(denial))) {
+            caches.when(CacheLocator::getGraphQLCache).thenReturn(cache);
+            licenses.when(LicenseManager::getInstance).thenReturn(license);
+
+            assertSame(denial, assertThrows(SecurityException.class,
+                    () -> new GraphqlCacheWebInterceptor().intercept(request, response)));
+            assertEquals("", output.toString());
+            verify(cache, never()).get(anyString());
+            verify(contexts.constructed().get(0)).build(request, response);
+        }
+    }
+
+    /** A remember-me-only request must reach AutoLoginFilter with its body untouched. */
+    @Test
+    public void rememberMeOnlyRequestBypassesCacheUntilAutoLogin() throws Exception {
+        final GraphQLCache cache = mock(GraphQLCache.class);
+        final LicenseManager license = mock(LicenseManager.class);
+        when(license.isEnterprise()).thenReturn(true);
+        final DotCMSMockRequest request = spy(new DotCMSMockRequest());
+        final String body = "{\"query\":\"{ content { title } }\"}";
+        request.setMethod("POST");
+        request.setContent(body);
+        when(request.getCookies()).thenReturn(new Cookie[] {
+                new Cookie(CookieKeys.REMEMBER_ME_COOKIE.get(), "synthetic-remember-me")});
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        try (MockedStatic<CacheLocator> caches = mockStatic(CacheLocator.class);
+             MockedStatic<LicenseManager> licenses = mockStatic(LicenseManager.class);
+             MockedConstruction<DotGraphQLContextBuilder> contexts = mockConstruction(
+                     DotGraphQLContextBuilder.class)) {
+            caches.when(CacheLocator::getGraphQLCache).thenReturn(cache);
+            licenses.when(LicenseManager::getInstance).thenReturn(license);
+
+            assertSame(Result.NEXT, new GraphqlCacheWebInterceptor().intercept(request, response));
+            assertTrue(contexts.constructed().isEmpty());
+            verify(cache, never()).get(anyString());
+            verify(request, never()).getReader();
+            assertEquals(body, request.getReader().readLine());
+        }
+    }
+
+    /**
+     * A request whose session is due to renew its login cookie is not answered from the cache, so
+     * it reaches AutoLoginFilter, where the renewal happens. It is still authenticated and marked
+     * as uncached, so its response is not stored either.
+     */
+    @Test
+    public void dueLoginCookieRenewalSkipsTheCache() throws Exception {
+        final GraphQLCache cache = mock(GraphQLCache.class);
+        final LicenseManager license = mock(LicenseManager.class);
+        when(license.isEnterprise()).thenReturn(true);
+        final DotCMSMockRequest request = dueRenewalRequest();
+        when(cache.get(anyString())).thenReturn(Optional.of("{\"data\":\"cached\"}"));
+
+        try (MockedStatic<CacheLocator> caches = mockStatic(CacheLocator.class);
+             MockedStatic<LicenseManager> licenses = mockStatic(LicenseManager.class);
+             MockedConstruction<DotGraphQLContextBuilder> contexts = mockConstruction(
+                     DotGraphQLContextBuilder.class)) {
+            caches.when(CacheLocator::getGraphQLCache).thenReturn(cache);
+            licenses.when(LicenseManager::getInstance).thenReturn(license);
+
+            final Result result = new GraphqlCacheWebInterceptor().intercept(request,
+                    mock(HttpServletResponse.class));
+
+            assertFalse(Result.SKIP_NO_CHAIN == result);
+            verify(cache, never()).get(anyString());
+            verify(contexts.constructed().get(0)).build(any(HttpServletRequest.class),
+                    any(HttpServletResponse.class));
+            assertEquals(Boolean.TRUE, request.getAttribute(GraphqlCacheWebInterceptor.GRAPHQL_BYPASS_CACHE));
+            assertTrue(request.getAttribute(GraphqlCacheWebInterceptor.GRAPHQL_CACHE_KEY) instanceof String);
+        }
+    }
+
+    /**
+     * A credentialed request with {@code dotcachettl=-1} still removes its cache entry when it is
+     * also due to renew the login cookie, and its response is not stored.
+     */
+    @Test
+    public void dueLoginCookieRenewal_stillInvalidatesTheEntry() throws Exception {
+        final GraphQLCache cache = mock(GraphQLCache.class);
+        final LicenseManager license = mock(LicenseManager.class);
+        when(license.isEnterprise()).thenReturn(true);
+        final DotCMSMockRequest request = dueRenewalRequest();
+        request.addHeader("dotcachettl", "-1");
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        when(response.getStatus()).thenReturn(HttpServletResponse.SC_OK);
+        when(response.getWriter()).thenReturn(new PrintWriter(new StringWriter()));
+
+        try (MockedStatic<CacheLocator> caches = mockStatic(CacheLocator.class);
+             MockedStatic<LicenseManager> licenses = mockStatic(LicenseManager.class);
+             MockedConstruction<DotGraphQLContextBuilder> contexts = mockConstruction(
+                     DotGraphQLContextBuilder.class)) {
+            caches.when(CacheLocator::getGraphQLCache).thenReturn(cache);
+            licenses.when(LicenseManager::getInstance).thenReturn(license);
+            final GraphqlCacheWebInterceptor interceptor = new GraphqlCacheWebInterceptor();
+
+            final Result result = interceptor.intercept(request, response);
+            final String key = (String) request.getAttribute(GraphqlCacheWebInterceptor.GRAPHQL_CACHE_KEY);
+            assertEquals(Boolean.TRUE, request.getAttribute(GraphqlCacheWebInterceptor.GRAPHQL_CACHE_CREDENTIALED));
+            ((MockHttpWriterCaptureResponse) result.getResponse()).writer.write("{\"data\":{\"content\":[]}}");
+            interceptor.afterIntercept(result.getRequest(), result.getResponse());
+
+            verify(cache).remove(key);
+            verify(cache, never()).put(anyString(), anyString(), anyLong());
+            verify(cache, never()).put(anyString(), anyString());
+        }
+    }
+
+    /**
+     * A request whose session names a user that did not resolve for this request (the record
+     * could not be read, so the id stays for a retry) is not answered from the cache: its key is
+     * credentialed for that user, and an entry under it may hold that user's data, which this
+     * request is not entitled to until the user resolves again. It runs uncached, like a request
+     * due to renew its login cookie, and its response is not stored either, as for any credential
+     * the servlet cannot resolve.
+     */
+    @Test
+    public void unresolvedSessionUserSkipsTheCache() throws Exception {
+        final GraphQLCache cache = mock(GraphQLCache.class);
+        final LicenseManager license = mock(LicenseManager.class);
+        when(license.isEnterprise()).thenReturn(true);
+        final DotCMSMockRequest request = sessionUserRequest();
+        when(cache.get(anyString())).thenReturn(Optional.of("{\"data\":\"cached-for-session-user\"}"));
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final StringWriter output = new StringWriter();
+        when(response.getWriter()).thenReturn(new PrintWriter(output));
+
+        try (MockedStatic<CacheLocator> caches = mockStatic(CacheLocator.class);
+             MockedStatic<LicenseManager> licenses = mockStatic(LicenseManager.class);
+             MockedConstruction<DotGraphQLContextBuilder> contexts = mockConstruction(
+                     DotGraphQLContextBuilder.class)) {
+            caches.when(CacheLocator::getGraphQLCache).thenReturn(cache);
+            licenses.when(LicenseManager::getInstance).thenReturn(license);
+
+            final Result result = new GraphqlCacheWebInterceptor().intercept(request, response);
+
+            assertFalse(Result.SKIP_NO_CHAIN == result);
+            assertEquals("", output.toString());
+            verify(cache, never()).get(anyString());
+            verify(contexts.constructed().get(0)).build(request, response);
+            assertEquals(Boolean.TRUE, request.getAttribute(GraphqlCacheWebInterceptor.GRAPHQL_BYPASS_CACHE));
+        }
+    }
+
+    /**
+     * The same request is answered from the cache once its session user resolves: the context
+     * builder marks the request with the resolved user id, as the authentication does, and the
+     * entry under the user's key is served.
+     */
+    @Test
+    public void resolvedSessionUserIsServedFromTheCache() throws Exception {
+        final GraphQLCache cache = mock(GraphQLCache.class);
+        final LicenseManager license = mock(LicenseManager.class);
+        when(license.isEnterprise()).thenReturn(true);
+        final DotCMSMockRequest request = sessionUserRequest();
+        final String cached = "{\"data\":\"cached-for-session-user\"}";
+        when(cache.get(anyString())).thenReturn(Optional.of(cached));
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final StringWriter output = new StringWriter();
+        when(response.getWriter()).thenReturn(new PrintWriter(output));
+
+        try (MockedStatic<CacheLocator> caches = mockStatic(CacheLocator.class);
+             MockedStatic<LicenseManager> licenses = mockStatic(LicenseManager.class);
+             MockedConstruction<DotGraphQLContextBuilder> contexts = mockConstruction(
+                     DotGraphQLContextBuilder.class, (context, ignored) ->
+                             when(context.build(any(HttpServletRequest.class), any(HttpServletResponse.class)))
+                                     .thenAnswer(invocation -> {
+                                         invocation.<HttpServletRequest>getArgument(0)
+                                                 .setAttribute(WebKeys.USER_ID, "session-user");
+                                         return null;
+                                     }))) {
+            caches.when(CacheLocator::getGraphQLCache).thenReturn(cache);
+            licenses.when(LicenseManager::getInstance).thenReturn(license);
+
+            final Result result = new GraphqlCacheWebInterceptor().intercept(request, response);
+
+            assertSame(Result.SKIP_NO_CHAIN, result);
+            assertEquals(cached, output.toString());
+            verify(cache).get(anyString());
+        }
+    }
+
+    /**
+     * A GraphQL POST from a session that holds a user id and no login cookie.
+     */
+    private static DotCMSMockRequest sessionUserRequest() {
+        final DotCMSMockRequest request = spy(new DotCMSMockRequest());
+        request.setMethod("POST");
+        request.setContent("{\"query\":\"{ content { title } }\"}");
+        final HttpSession session = mock(HttpSession.class);
+        when(session.getAttribute(WebKeys.USER_ID)).thenReturn("session-user");
+        when(request.getSession(false)).thenReturn(session);
+        return request;
+    }
+
+    /**
+     * A GraphQL POST from a logged-in session whose login cookie renewal is due.
+     */
+    private static DotCMSMockRequest dueRenewalRequest() {
+        final DotCMSMockRequest request = spy(new DotCMSMockRequest());
+        request.setMethod("POST");
+        request.setContent("{\"query\":\"{ content { title } }\"}");
+        final HttpSession session = mock(HttpSession.class);
+        when(session.getAttribute(WebKeys.USER_ID)).thenReturn("session-user");
+        when(session.getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT))
+                .thenReturn(System.currentTimeMillis() - 1_000L);
+        when(request.getSession(false)).thenReturn(session);
+        return request;
+    }
 
     /**
      * Method to test: {@link GraphqlCacheWebInterceptor#capTTL(int, int)}

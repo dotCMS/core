@@ -37,24 +37,23 @@ export async function getTemplate(request: APIRequestContext, identifier: string
     return responseData.entity as Template;
 }
 
-export async function deleteTemplate(request: APIRequestContext, identifiers: [string]) {
-    const endpoint = `/api/v1/templates`;
-    const response = await request.delete(endpoint, {
-        data: identifiers,
-        headers: {
-            Authorization: generateBase64Credentials(admin1.username, admin1.password)
-        }
-    });
-    expect(response.status()).toBe(200);
-}
+/**
+ * Removes a template for good: unpublish, archive, then delete, the order the API requires. Each of
+ * these bulk endpoints answers 200 even when the template fails, so the failures listed in the body
+ * are checked too. A template that pages still reference cannot be deleted: remove those pages
+ * first.
+ */
+export async function removeTemplate(request: APIRequestContext, identifier: string) {
+    const headers = { Authorization: generateBase64Credentials(admin1.username, admin1.password) };
+    const steps = [
+        () => request.put('/api/v1/templates/_unpublish', { data: [identifier], headers }),
+        () => request.put('/api/v1/templates/_archive', { data: [identifier], headers }),
+        () => request.delete('/api/v1/templates', { data: [identifier], headers })
+    ];
 
-export async function archiveTemplate(request: APIRequestContext, identifiers: [string]) {
-    const endpoint = `/api/v1/templates/_archive`;
-    const response = await request.put(endpoint, {
-        data: identifiers,
-        headers: {
-            Authorization: generateBase64Credentials(admin1.username, admin1.password)
-        }
-    });
-    expect(response.status()).toBe(200);
+    for (const step of steps) {
+        const response = await step();
+        expect(response.status()).toBe(200);
+        expect((await response.json()).entity.fails).toEqual([]);
+    }
 }

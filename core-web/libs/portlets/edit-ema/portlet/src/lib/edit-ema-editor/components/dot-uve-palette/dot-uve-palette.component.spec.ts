@@ -1,8 +1,14 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@openng/spectator/vitest';
 import { MockComponent, ngMocks } from 'ng-mocks';
 import { vi } from 'vitest';
 
-import { computed, signal } from '@angular/core';
+import { computed, reflectComponentType, signal } from '@angular/core';
 
 import { DotPageLayoutService } from '@dotcms/data-access';
 import { DotUvePaletteListComponent, DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
@@ -10,6 +16,7 @@ import { DotUvePaletteListComponent, DotUVEPaletteListTypes } from '@dotcms/port
 import { DotRowReorderComponent } from './components/dot-row-reorder/dot-row-reorder.component';
 import { DotUvePaletteComponent } from './dot-uve-palette.component';
 
+import { UveIframeMessengerService } from '../../../services/iframe-messenger/uve-iframe-messenger.service';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
 
@@ -59,12 +66,14 @@ const mockUVEStore = {
     })),
     // Expose activeContentlet for test control
     editorActiveContentlet: mockActiveContentlet,
+    editorPaletteOpen: signal(true),
     // Single source of truth in current store API
     pageAsset: signal(null)
 };
 
 describe('DotUvePaletteComponent', () => {
     let spectator: Spectator<DotUvePaletteComponent>;
+    let messenger: SpyObject<UveIframeMessengerService>;
 
     const createComponent = createComponentFactory({
         component: DotUvePaletteComponent,
@@ -95,14 +104,86 @@ describe('DotUvePaletteComponent', () => {
         // Reset activeContentlet to prevent auto-switch to STYLE_EDITOR
         // editor is now a computed that reflects mockActiveContentlet automatically
         mockActiveContentlet.set(null);
+        mockUVEStore.editorPaletteOpen.set(true);
+        mockUVEStore.pageAsset.set(null);
 
         spectator = createComponent({
-            providers: [mockProvider(UVEStore, mockUVEStore)]
+            providers: [
+                mockProvider(UVEStore, mockUVEStore),
+                mockProvider(UveIframeMessengerService, { scrollToSection: vi.fn() })
+            ]
         });
+        messenger = spectator.inject(UveIframeMessengerService);
     });
 
     it('should create', () => {
         expect(spectator.component).toBeTruthy();
+    });
+
+    it('should not hand node selections to its parent', () => {
+        const outputs = reflectComponentType(DotUvePaletteComponent)?.outputs ?? [];
+
+        expect(outputs.map(({ propName }) => propName)).not.toContain('onNodeSelect');
+    });
+
+    describe('Open state', () => {
+        it('should show at full width while the store holds the palette open', () => {
+            expect(spectator.element).toHaveClass('w-[clamp(280px,15vw,320px)]');
+            expect(spectator.element).not.toHaveClass('w-0');
+            expect(spectator.query(byTestId('palette-panel'))).not.toHaveClass('-translate-x-full');
+        });
+
+        it('should narrow to nothing and slide its panel out while the store holds the palette closed', () => {
+            mockUVEStore.editorPaletteOpen.set(false);
+            spectator.detectChanges();
+
+            expect(spectator.element).toHaveClass('w-0');
+            expect(spectator.element).not.toHaveClass('w-[clamp(280px,15vw,320px)]');
+            expect(spectator.query(byTestId('palette-panel'))).toHaveClass('-translate-x-full');
+        });
+
+        it('should open again when the store opens the palette', () => {
+            mockUVEStore.editorPaletteOpen.set(false);
+            spectator.detectChanges();
+
+            mockUVEStore.editorPaletteOpen.set(true);
+            spectator.detectChanges();
+
+            expect(spectator.element).toHaveClass('w-[clamp(280px,15vw,320px)]');
+            expect(spectator.query(byTestId('palette-panel'))).not.toHaveClass('-translate-x-full');
+        });
+    });
+
+    describe('Scroll to a section', () => {
+        beforeEach(() => {
+            triggerTabChange(spectator, UVE_PALETTE_TABS.LAYERS);
+        });
+
+        it.each([
+            ['#section-2', 2],
+            ['#dot-section-3', 3],
+            ['#section-12', 12]
+        ])(
+            'should ask the page to scroll to section %s when it is selected in the layer tree',
+            (selector, sectionIndex) => {
+                spectator.triggerEventHandler('dot-row-reorder', 'onRowSelect', {
+                    selector,
+                    type: 'row'
+                });
+
+                expect(messenger.scrollToSection).toHaveBeenCalledTimes(1);
+                expect(messenger.scrollToSection).toHaveBeenCalledWith(sectionIndex);
+            }
+        );
+
+        it('should not ask the page to scroll when the selected node is not a section', () => {
+            spectator.triggerEventHandler('dot-row-reorder', 'onRowSelect', {
+                selector: '#container-1',
+                type: 'container'
+            });
+
+            expect(messenger.scrollToSection).not.toHaveBeenCalled();
+        });
     });
 
     describe('Content Tab - Initial Render (Index 0)', () => {

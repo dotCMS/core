@@ -88,10 +88,10 @@ public interface LayoutAPI {
 	boolean doesUserHaveAccessToPortlet(String portletId, User user) throws DotDataException;
 
 	/**
-	 * Returns whether the user has access to the Users portlet under either of the two ids that identify it
-	 * during the beta period: the legacy {@link PortletID#USERS} id and the Angular {@link PortletID#USERS_BETA}
-	 * id. Both ids point at the same portlet, so every gate that means "has the Users portlet" must accept either;
-	 * this is the single definition of that check, shared so the two ids never drift apart across callers.
+	 * Returns whether the user can administer users: they hold the Angular Users portlet ({@link PortletID#USERS})
+	 * or the old Users screen kept as {@link PortletID#USERS_LEGACY}. Both screens manage the same users, so every
+	 * gate that means "has the Users portlet" must accept either; this is the single definition of that check,
+	 * shared so the two ids never drift apart across callers.
 	 *
 	 * @param user The {@link User} to check.
 	 * @return {@code true} if the user has access to the Users portlet under either id.
@@ -99,7 +99,7 @@ public interface LayoutAPI {
 	 */
 	default boolean doesUserHaveAccessToUsersPortlet(final User user) throws DotDataException {
 		return doesUserHaveAccessToPortlet(PortletID.USERS.toString(), user)
-				|| doesUserHaveAccessToPortlet(PortletID.USERS_BETA.toString(), user);
+				|| doesUserHaveAccessToPortlet(PortletID.USERS_LEGACY.toString(), user);
 	}
 
 	/**

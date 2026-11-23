@@ -54,6 +54,7 @@ import com.dotcms.variant.model.Variant;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.BulkProcessorListener;
 import com.dotmarketing.common.reindex.ReindexEntry;
@@ -2661,7 +2662,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     /**
      * Loads and null-filters the contentlet inodes for a reindex entry.
      * If no versions are found, deletes the queue entry and returns an empty map.
+     * Story Block values are loaded as stored, so the indexed document does not depend on the
+     * user of the request that happens to trigger the reindex.
      */
+    @CloseDBIfOpened
     private Map<String, Contentlet> loadVersionInodes(final ReindexEntry idx) throws Exception {
         final List<ContentletVersionInfo> versions = APILocator.getVersionableAPI()
                 .findContentletVersionInfos(idx.getIdentToIndex());
@@ -2670,10 +2674,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             final String workingInode = cvi.getWorkingInode();
             final String liveInode = cvi.getLiveInode();
             inodes.put(workingInode,
-                    APILocator.getContentletAPI().findInDb(workingInode).orElse(null));
+                    FactoryLocator.getContentletFactory().findInDb(workingInode, true).orElse(null));
             if (UtilMethods.isSet(liveInode) && !inodes.containsKey(liveInode)) {
                 inodes.put(liveInode,
-                        APILocator.getContentletAPI().findInDb(liveInode).orElse(null));
+                        FactoryLocator.getContentletFactory().findInDb(liveInode, true).orElse(null));
             }
         }
         inodes.values().removeIf(Objects::isNull);

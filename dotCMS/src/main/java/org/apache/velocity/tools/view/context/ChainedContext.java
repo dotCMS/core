@@ -112,7 +112,7 @@ public class ChainedContext extends VelocityContext implements ViewContext
         this.velocity = velocity;
         this.request = VelocityRequestWrapper.wrapVelocityRequest(request);
         this.response = response;
-        this.session = request.getSession(false);
+        this.session = this.request.getSession(false);
 
     }
 
@@ -137,7 +137,35 @@ public class ChainedContext extends VelocityContext implements ViewContext
         /* just in case the servlet toolbox manager
          * had to create a new session to hold session tools
          * let's make sure this context's session ref is current */
-        this.session = request.getSession(false);
+        this.session = this.request.getSession(false);
+    }
+
+
+    /**
+     * <p>Removes a view tool from this context's toolbox.</p>
+     *
+     * @param key the key of the tool to remove
+     * @return the removed tool, or null if there was none
+     */
+    public Object removeTool(String key)
+    {
+        return toolbox == null ? null : toolbox.remove(key);
+    }
+
+
+    /**
+     * <p>Puts a view tool in this context's toolbox, for example to restore one taken out with
+     * {@link #removeTool(String)}. Does nothing when this context has no toolbox.</p>
+     *
+     * @param key the key of the tool
+     * @param tool the tool
+     */
+    public void putTool(String key, Object tool)
+    {
+        if (toolbox != null)
+        {
+            toolbox.put(key, tool);
+        }
     }
 
 

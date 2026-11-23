@@ -219,7 +219,8 @@ export function withWorkflow() {
                                         tap((languages) => {
                                             // Both writes land in the same synchronous tap.
                                             // Angular batches them before flushing effects, so
-                                            // $translatePageEffect always sees a consistent state.
+                                            // the content editor's missing-translation prompt
+                                            // always sees a consistent state.
                                             patchState(store, {
                                                 pageLanguages: languages,
                                                 uveStatus: UVE_STATUS.LOADED,

@@ -60,11 +60,26 @@ public class EndpointResource {
 	private final PublishingEndPointAPI publisherEndPointAPI = APILocator.getPublisherEndPointAPI();
 
 	/**
-	 * Returns the endpoints for the current user
-	 * if it is admin returns all of them, otherwise returns the ones that the user has access to
+	 * Rejects users who cannot manage endpoints. Reading endpoints needs the same access as
+	 * creating, updating or deleting them: a CMS admin, or a user with the Configuration portlet.
 	 *
-	 * @throws JSONException
+	 * @param user the {@link User} making the request
+	 * @throws ForbiddenException if the user is neither an admin nor has the Configuration portlet
+	 * @throws DotDataException if the user's portlets cannot be loaded
+	 */
+	private static void checkReadAccess(final User user) throws DotDataException {
+		if (!user.isAdmin() && !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(
+				PortletID.CONFIGURATION.toString(), user)) {
+			throw new ForbiddenException(THE_USER_KEY + user.getUserId() +
+					" does not have permissions to read endpoints");
+		}
+	}
+
+	/**
+	 * Returns all endpoints. Only admins and users with the Configuration portlet may read them;
+	 * the auth key is never included.
 	 *
+	 * @throws ForbiddenException if the user cannot manage endpoints
 	 */
 	@Operation(summary = "Returns the endpoints",
 			responses = {
@@ -73,7 +88,13 @@ public class EndpointResource {
 							content = @Content(mediaType = "application/json",
 									schema = @Schema(implementation =
 											ResponseEntityEndpointsView.class)),
-							description = "Collection of environments.")
+							description = "Collection of environments."),
+					@ApiResponse(
+							responseCode = "403",
+							content = @Content(mediaType = "application/json",
+									schema = @Schema(implementation =
+											ForbiddenException.class)),
+							description = "If the user is not an admin and has no access to the Configuration portlet.")
 			})
 	@GET
 	@Produces("application/json")
@@ -89,19 +110,18 @@ public class EndpointResource {
 				.init();
 
 		final User user = initData.getUser();
-		final boolean isAdmin = user.isAdmin();
+		checkReadAccess(user);
 
-		Logger.debug(this, ()-> "Retrieving PublishingEndPoint for user: " + user.getUserId() + " isAdmin: " + isAdmin);
+		Logger.debug(this, ()-> "Retrieving PublishingEndPoint for user: " + user.getUserId());
 
 		return new ResponseEntityEndpointsView(this.publisherEndPointAPI.getAllEndPoints());
 	}
 
 	/**
-	 * Returns the endpoints for the current user
-	 * if it is admin returns all of them, otherwise returns the ones that the user has access to
+	 * Returns the sending endpoints of an environment. Only admins and users with the
+	 * Configuration portlet may read them; the auth key is never included.
 	 *
-	 * @throws JSONException
-	 *
+	 * @throws ForbiddenException if the user cannot manage endpoints
 	 */
 	@Operation(summary = "Returns the endpoints",
 			responses = {
@@ -110,7 +130,13 @@ public class EndpointResource {
 							content = @Content(mediaType = "application/json",
 									schema = @Schema(implementation =
 											ResponseEntityEndpointsView.class)),
-							description = "Collection of environments.")
+							description = "Collection of environments."),
+					@ApiResponse(
+							responseCode = "403",
+							content = @Content(mediaType = "application/json",
+									schema = @Schema(implementation =
+											ForbiddenException.class)),
+							description = "If the user is not an admin and has no access to the Configuration portlet.")
 			})
 	@GET
 	@Path("/environment/{environmentId}")
@@ -129,10 +155,10 @@ public class EndpointResource {
 				.init();
 
 		final User user = initData.getUser();
-		final boolean isAdmin = user.isAdmin();
+		checkReadAccess(user);
 
 		Logger.debug(this, ()-> "Retrieving PublishingEndPoint for user: " + user.getUserId()
-				+ " isAdmin: " + isAdmin + " environmentId: " + environmentId);
+				+ " environmentId: " + environmentId);
 
 		return new ResponseEntityEndpointsView(this.publisherEndPointAPI.findSendingEndPointsByEnvironment(environmentId));
 	}
@@ -147,11 +173,18 @@ public class EndpointResource {
 							content = @Content(mediaType = "application/json",
 									schema = @Schema(implementation =
 											ResponseEntityEndpointView.class)),
-							description = "Collection of environments.")
+							description = "Collection of environments."),
+					@ApiResponse(
+							responseCode = "403",
+							content = @Content(mediaType = "application/json",
+									schema = @Schema(implementation =
+											ForbiddenException.class)),
+							description = "If the user is not an admin and has no access to the Configuration portlet.")
 			})
 	@GET
 	@Path("/{endpointId}")
 	@Produces("application/json")
+	@NoCache
 	public ResponseEntityEndpointView getEndpoint(@Context HttpServletRequest request,
 												  @Context final HttpServletResponse response,
 									 			@PathParam("endpointId") String endpointId)
@@ -163,6 +196,7 @@ public class EndpointResource {
 				.requestAndResponse(request, response)
 				.rejectWhenNoUser(true)
 				.init();
+		checkReadAccess(initData.getUser());
 
 		Logger.debug(this, ()-> "Retrieving PublishingEndPoint for endpointId: " + endpointId);
 		final PublishingEndPoint publishingEndPoint = this.publisherEndPointAPI.findEndPointById(endpointId);

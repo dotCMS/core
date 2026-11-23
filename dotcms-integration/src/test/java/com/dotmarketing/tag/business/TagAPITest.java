@@ -5,6 +5,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.TagDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -15,6 +16,7 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -32,12 +34,15 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import com.dotmarketing.util.PortletID;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
@@ -1619,7 +1624,51 @@ public class TagAPITest extends IntegrationTestBase {
 				.getTagsInText(personaTag.getTagName()+":persona", defaultHostId);
 
 		assertEquals(personaTag.getTagName(), fetchedTags.get(0).getTagName());
+		if (!personaTag.getTagId().equals(fetchedTags.get(0).getTagId())) {
+			fail(describeDuplicateTags(personaTag, fetchedTags.get(0)));
+		}
 		assertEquals(personaTag.getTagId(), fetchedTags.get(0).getTagId());
+	}
+
+	/**
+	 * Builds the failure message for
+	 * {@link #getTagsInText_givenTagWithPersonaSuffix_shouldNotCreateDup()}: every database row
+	 * with the tag's name (id, host, persona flag, modification date), the default Site as the test
+	 * class and as the API see it now, the Site the tag was saved under, the Site the tag storage
+	 * resolves to, and the by-name lookup read from the cache and from the database. It only
+	 * reads state, so it can be called after the failing comparison without changing what is asserted.
+	 *
+	 * @param expected the tag the test saved
+	 * @param actual   the tag {@link TagAPI#getTagsInText(String, String)} returned
+	 * @return a multi-line description of the tag rows and Sites involved
+	 */
+	private String describeDuplicateTags(final Tag expected, final Tag actual) {
+		final StringBuilder message = new StringBuilder("getTagsInText returned tag ")
+				.append(actual.getTagId()).append(" (host ").append(actual.getHostId())
+				.append(") instead of the saved tag ").append(expected.getTagId())
+				.append(" (host ").append(expected.getHostId()).append(", persona ")
+				.append(expected.isPersona()).append(")");
+		final String name = expected.getTagName().toLowerCase();
+		try {
+			message.append("\nstatic defaultHostId=").append(defaultHostId)
+					.append(", findDefaultHost now=")
+					.append(hostAPI.findDefaultHost(systemUser, false).getIdentifier())
+					.append(", tag storage resolved for defaultHostId=")
+					.append(tagAPI.resolveTagStorage(defaultHostId, expected.getHostId()));
+			message.append("\ntag rows named '").append(name).append("':");
+			new DotConnect().setSQL("SELECT tag_id, tagname, host_id, persona, mod_date FROM tag WHERE tagname = ?")
+					.addParam(name).loadObjectResults()
+					.forEach(row -> message.append("\n  ").append(row));
+			final String cacheGroup = CacheLocator.getTagCache().getTagsByNameGroup();
+			final Object cached = CacheLocator.getCacheAdministrator().getNoThrow(cacheGroup + name, cacheGroup);
+			message.append("\nby-name cache entry: ").append(cached == null ? "none" : ((List<?>) cached).stream()
+					.map(tag -> ((Tag) tag).getTagId() + "@" + ((Tag) tag).getHostId()).collect(Collectors.toList()));
+			message.append("\nby-name lookup (cache or database): ").append(tagAPI.getTagsByName(name).stream()
+					.map(tag -> tag.getTagId() + "@" + tag.getHostId()).collect(Collectors.toList()));
+		} catch (final Exception e) {
+			message.append("\ncould not collect all details: ").append(e);
+		}
+		return message.toString();
 	}
 
 	/**
@@ -1686,6 +1735,268 @@ public class TagAPITest extends IntegrationTestBase {
 
 		APILocator.getTagAPI().findTopTags("");
 		fail("should not reach this section");
+	}
+
+	private static final TagTestFixtures fixtures = new TagTestFixtures();
+
+	@AfterClass
+	public static void cleanUpTagPermissionFixtures() throws Exception {
+		fixtures.cleanUp();
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#canEditUserTags(User, String)}
+	 * Given: a back-end user without portlets and their own user id
+	 * Expected: true
+	 */
+	@Test
+	public void test_canEditUserTags_ownUser_shouldReturnTrue() throws Exception {
+		final User user = fixtures.backEndUser();
+		assertTrue(APILocator.getTagAPI().canEditUserTags(user, user.getUserId()));
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#canEditUserTags(User, String)}
+	 * Given: an admin and another user's id
+	 * Expected: true
+	 */
+	@Test
+	public void test_canEditUserTags_admin_shouldReturnTrue() throws Exception {
+		final User other = fixtures.backEndUser();
+		assertTrue(APILocator.getTagAPI().canEditUserTags(TestUserUtils.getAdminUser(),
+				other.getUserId()));
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#canEditUserTags(User, String)}
+	 * Given: a user with the Users portlet and another user's id
+	 * Expected: true
+	 */
+	@Test
+	public void test_canEditUserTags_usersPortlet_shouldReturnTrue() throws Exception {
+		final User user = fixtures.backEndUser(PortletID.USERS.toString());
+		final User other = fixtures.backEndUser();
+		assertTrue(APILocator.getTagAPI().canEditUserTags(user, other.getUserId()));
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#canEditUserTags(User, String)}
+	 * Given: a user with only the legacy Users portlet and another user's id
+	 * Expected: true
+	 */
+	@Test
+	public void test_canEditUserTags_usersLegacyPortlet_shouldReturnTrue() throws Exception {
+		final User user = fixtures.backEndUser(PortletID.USERS_LEGACY.toString());
+		final User other = fixtures.backEndUser();
+		assertTrue(APILocator.getTagAPI().canEditUserTags(user, other.getUserId()));
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#canEditUserTags(User, String)}
+	 * Given: a back-end user without a Users portlet and another user's id
+	 * Expected: false
+	 */
+	@Test
+	public void test_canEditUserTags_otherUserWithoutUsersPortlet_shouldReturnFalse() throws Exception {
+		final User user = fixtures.backEndUser();
+		final User other = fixtures.backEndUser();
+		assertFalse(APILocator.getTagAPI().canEditUserTags(user, other.getUserId()));
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#canEditUserTags(User, String)}
+	 * Given: a user with the Users portlet and a contentlet inode in place of a user id
+	 * Expected: false, the Users portlet only covers user profiles
+	 */
+	@Test
+	public void test_canEditUserTags_contentInodeWithUsersPortlet_shouldReturnFalse() throws Exception {
+		final User user = fixtures.backEndUser(PortletID.USERS.toString());
+		final Contentlet contentlet = fixtures.contentWithPermission(user, 0);
+		assertFalse(APILocator.getTagAPI().canEditUserTags(user, contentlet.getInode()));
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#canEditUserTags(User, String)}
+	 * Given: a user with the Users portlet and an id that matches no user
+	 * Expected: false
+	 */
+	@Test
+	public void test_canEditUserTags_unknownUserIdWithUsersPortlet_shouldReturnFalse() throws Exception {
+		final User user = fixtures.backEndUser(PortletID.USERS.toString());
+		assertFalse(APILocator.getTagAPI().canEditUserTags(user, UUIDGenerator.generateUuid()));
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#canEditTagInodes(User, String)}
+	 * Given: a contentlet the user can edit
+	 * Expected: true
+	 */
+	@Test
+	public void test_canEditTagInodes_contentWithEdit_shouldReturnTrue() throws Exception {
+		final User user = fixtures.backEndUser();
+		final Contentlet contentlet = fixtures.contentWithPermission(user,
+				PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT);
+		assertTrue(APILocator.getTagAPI().canEditTagInodes(user, contentlet.getInode()));
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#canEditTagInodes(User, String)}
+	 * Given: a contentlet the user can only read
+	 * Expected: false
+	 */
+	@Test
+	public void test_canEditTagInodes_contentWithReadOnly_shouldReturnFalse() throws Exception {
+		final User user = fixtures.backEndUser();
+		final Contentlet contentlet = fixtures.contentWithPermission(user, PermissionAPI.PERMISSION_READ);
+		assertFalse(APILocator.getTagAPI().canEditTagInodes(user, contentlet.getInode()));
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#canEditTagInodes(User, String)}
+	 * Given: another user's id as the inode, and a user with the Users portlet
+	 * Expected: true
+	 */
+	@Test
+	public void test_canEditTagInodes_userInodeWithUsersPortlet_shouldReturnTrue() throws Exception {
+		final User user = fixtures.backEndUser(PortletID.USERS.toString());
+		final User other = fixtures.backEndUser();
+		assertTrue(APILocator.getTagAPI().canEditTagInodes(user, other.getUserId()));
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#canEditTagInodes(User, String)}
+	 * Given: another user's id as the inode, and a user without a Users portlet
+	 * Expected: false
+	 */
+	@Test
+	public void test_canEditTagInodes_otherUserInode_shouldReturnFalse() throws Exception {
+		final User user = fixtures.backEndUser();
+		final User other = fixtures.backEndUser();
+		assertFalse(APILocator.getTagAPI().canEditTagInodes(user, other.getUserId()));
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#canEditTagInodes(User, String)}
+	 * Given: an inode that is neither a contentlet nor a user, and a user who isn't an admin
+	 * Expected: false
+	 */
+	@Test
+	public void test_canEditTagInodes_unknownInode_shouldReturnFalse() throws Exception {
+		final User user = fixtures.backEndUser();
+		assertFalse(APILocator.getTagAPI().canEditTagInodes(user, UUIDGenerator.generateUuid()));
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#canReadTagInodes(User, String)}
+	 * Given: a contentlet the user can read
+	 * Expected: true
+	 */
+	@Test
+	public void test_canReadTagInodes_contentWithRead_shouldReturnTrue() throws Exception {
+		final User user = fixtures.backEndUser();
+		final Contentlet contentlet = fixtures.contentWithPermission(user, PermissionAPI.PERMISSION_READ);
+		assertTrue(APILocator.getTagAPI().canReadTagInodes(user, contentlet.getInode()));
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#canReadTagInodes(User, String)}
+	 * Given: a contentlet the user has no permission on
+	 * Expected: false
+	 */
+	@Test
+	public void test_canReadTagInodes_contentWithoutRead_shouldReturnFalse() throws Exception {
+		final User user = fixtures.backEndUser();
+		final Contentlet contentlet = fixtures.contentWithPermission(user, 0);
+		assertFalse(APILocator.getTagAPI().canReadTagInodes(user, contentlet.getInode()));
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#canReadTagInodes(User, String)}
+	 * Given: another user's id as the inode, and a user without a Users portlet
+	 * Expected: false
+	 */
+	@Test
+	public void test_canReadTagInodes_otherUserInode_shouldReturnFalse() throws Exception {
+		final User user = fixtures.backEndUser();
+		final User other = fixtures.backEndUser();
+		assertFalse(APILocator.getTagAPI().canReadTagInodes(user, other.getUserId()));
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#canEditUserTags(User, String)}
+	 * Given: the system user and another user's id
+	 * Expected: true
+	 */
+	@Test
+	public void test_canEditUserTags_systemUser_shouldReturnTrue() throws Exception {
+		final User other = fixtures.backEndUser();
+		assertTrue(APILocator.getTagAPI().canEditUserTags(APILocator.systemUser(), other.getUserId()));
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#canEditTagInodes(User, String)}
+	 * Given: an admin and an inode that is neither a contentlet nor a user
+	 * Expected: true
+	 */
+	@Test
+	public void test_canEditTagInodes_unknownInodeAsAdmin_shouldReturnTrue() throws Exception {
+		assertTrue(APILocator.getTagAPI().canEditTagInodes(TestUserUtils.getAdminUser(),
+				UUIDGenerator.generateUuid()));
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#canEditTagInodes(User, String)}
+	 * Given: an empty inode and a user who isn't an admin
+	 * Expected: false
+	 */
+	@Test
+	public void test_canEditTagInodes_emptyInode_shouldReturnFalse() throws Exception {
+		final User user = fixtures.backEndUser();
+		assertFalse(APILocator.getTagAPI().canEditTagInodes(user, ""));
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#canReadTagInodes(User, String)}
+	 * Given: another user's id as the inode, and a user with the Users portlet
+	 * Expected: true
+	 */
+	@Test
+	public void test_canReadTagInodes_userInodeWithUsersPortlet_shouldReturnTrue() throws Exception {
+		final User user = fixtures.backEndUser(PortletID.USERS.toString());
+		final User other = fixtures.backEndUser();
+		assertTrue(APILocator.getTagAPI().canReadTagInodes(user, other.getUserId()));
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#deleteTagInodesByInode(User, String)}
+	 * Given: another user's tags, removed by a user with the Users portlet
+	 * Expected: true and the tags are removed
+	 */
+	@Test
+	public void test_deleteTagInodesByInode_userInodeWithUsersPortlet_shouldRemoveTags() throws Exception {
+		final User user = fixtures.backEndUser(PortletID.USERS.toString());
+		final User other = fixtures.backEndUser();
+		APILocator.getTagAPI().addUserTagInode(fixtures.tag("user-inode"), other.getUserId());
+
+		assertTrue(APILocator.getTagAPI().canDeleteTagInodesByInode(user, other.getUserId()));
+		assertTrue(APILocator.getTagAPI().deleteTagInodesByInode(user, other.getUserId()));
+		assertTrue(APILocator.getTagAPI().getTagInodesByInode(other.getUserId()).isEmpty());
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#deleteTagInodesByInode(User, String)}
+	 * Given: another user's tags, removed by a user without a Users portlet
+	 * Expected: false and the tags are kept
+	 */
+	@Test
+	public void test_deleteTagInodesByInode_otherUserInode_shouldKeepTags() throws Exception {
+		final User user = fixtures.backEndUser();
+		final User other = fixtures.backEndUser();
+		APILocator.getTagAPI().addUserTagInode(fixtures.tag("user-inode"), other.getUserId());
+
+		assertFalse(APILocator.getTagAPI().canDeleteTagInodesByInode(user, other.getUserId()));
+		assertFalse(APILocator.getTagAPI().deleteTagInodesByInode(user, other.getUserId()));
+		assertFalse(APILocator.getTagAPI().getTagInodesByInode(other.getUserId()).isEmpty());
 	}
 
 }

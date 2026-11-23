@@ -15,9 +15,11 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DeviceSelectorChange, DeviceSelectorState } from './dot-uve-device-selector.models';
-
 import { DEFAULT_DEVICE } from '../../../../../shared/consts';
+import {
+    DeviceSelectorChange,
+    DeviceSelectorState
+} from '../../../../../store/features/editor/models';
 
 @Component({
     selector: 'dot-uve-device-selector',

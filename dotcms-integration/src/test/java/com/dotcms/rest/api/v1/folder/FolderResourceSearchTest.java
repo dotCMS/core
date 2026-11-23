@@ -1,5 +1,8 @@
 package com.dotcms.rest.api.v1.folder;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
+
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
@@ -24,7 +27,6 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-import com.liferay.util.Base64;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -38,6 +40,9 @@ import java.util.List;
  */
 public class FolderResourceSearchTest {
 
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
+
     static HttpServletResponse response;
     static FolderResource resource;
     static User adminUser;
@@ -50,8 +55,15 @@ public class FolderResourceSearchTest {
         adminUser = TestUserUtils.getAdminUser();
     }
 
+    /**
+     * Builds a request that authenticates as the given user with a Bearer API token. The password
+     * argument is retained for call-site compatibility; credentials are no longer sent on the wire.
+     *
+     * @param userEmail the fixture user to authenticate as
+     * @param password retained for call-site compatibility; not used
+     * @return the authenticated request
+     */
     private HttpServletRequest getHttpRequest(final String userEmail, final String password) {
-        final var userEmailAndPassword = userEmail + ":" + password;
         final var request = new MockHeaderRequest(
                 new MockSessionRequest(
                         new MockAttributeRequest(
@@ -59,7 +71,7 @@ public class FolderResourceSearchTest {
                                 .request())
                         .request());
         request.setHeader("Authorization",
-                "Basic " + new String(Base64.encode(userEmailAndPassword.getBytes())));
+                TOKEN_UTILS.bearerHeaderForEmail(userEmail));
         return request;
     }
 
@@ -285,7 +297,7 @@ public class FolderResourceSearchTest {
                 .roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole())
                 .nextPersisted();
         final String password = "admin";
-        limitedUser.setPassword(password);
+        limitedUser.setPassword(UserDataGen.hashPassword(password));
         APILocator.getUserAPI().save(limitedUser, APILocator.systemUser(), false);
 
         final String limitedRoleId = APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId();
@@ -653,7 +665,7 @@ public class FolderResourceSearchTest {
         final User limitedUser = new UserDataGen()
                 .roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole())
                 .nextPersisted();
-        limitedUser.setPassword(LIMITED_USER_PASSWORD);
+        limitedUser.setPassword(UserDataGen.hashPassword(LIMITED_USER_PASSWORD));
         APILocator.getUserAPI().save(limitedUser, APILocator.systemUser(), false);
 
         final String roleId = APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId();

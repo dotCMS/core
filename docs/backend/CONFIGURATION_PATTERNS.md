@@ -87,10 +87,64 @@ Only add the property to `dotmarketing-config.properties` when the default must 
 (for example when a frontend reader treats an absent property as enabled); otherwise the Javadoc
 and the read site are enough.
 
+## Interactive User Resolution — Upgrade Note
+
+A client request or session that resolves to the built-in `system` account is treated as having no
+authenticated user. Server-side flows (page rendering, jobs, workflow scripts, static publishing) are
+unchanged: they act as that account through `SystemUserScope`. API tokens already issued for the
+account stop authenticating. Other users are unaffected.
+
+`USER_RESOLUTION_EXCLUDE_SYSTEM_USER` (default `true`) is a rollback aid only. Set it to `false`
+(or `DOT_USER_RESOLUTION_EXCLUDE_SYSTEM_USER=false` in the environment) to restore the previous
+behavior; it is read on every call, so no restart is needed, and one warning is logged per JVM
+while it is off. Turning it off disables the refusal in every place that applies it: the shared
+resolver, the request/session wrapper, `WebResource.authenticate` and the credential processors.
+
 ## Config Class Resolution Order
 1. **Environment variables** (with `DOT_` prefix)
 2. **System table** (database)
 3. **Properties files** (all files are loaded)
+
+**Provisioning keys skip the System table.** The keys in `SystemTableConfigSource.PROVISIONING_KEYS`
+(the remote-call address policy: `REMOTE_CALL_SUBNET_BLACKLIST`, `REMOTE_CALL_SUBNET_ALLOWLIST`,
+`REMOTE_CALL_ALLOW_IPV6`, `REMOTE_CALL_ALLOW_REDIRECTS`, `ALLOW_ACCESS_TO_PRIVATE_SUBNETS`, and the
+download-by-URL settings `TEMP_RESOURCE_BY_URL_ADMIN_ONLY` and `TEMP_RESOURCE_BY_URL_ALLOWED_EXTENSIONS`)
+are read from the environment and the properties files only. A System table row for one of them has
+no effect, `/api/v1/system-table` refuses to store the key (it can still be read and deleted, so a
+stale row can be cleaned up), and `PUT /api/v1/configuration` refuses to set it at runtime. Add a key
+to that set when a setting must not be changeable from inside the running application;
+`SystemTableConfigSource.isProvisioningKey(key)` is the single check every path uses.
+
+## Anonymous Content API Access — Upgrade Note
+
+`CONTENT_APIS_ALLOW_ANONYMOUS` defaults to `NONE` in both the bundled configuration and
+when the property is absent. Anonymous requests to APIs governed by this setting require
+authentication; authenticated requests remain subject to their existing permissions.
+This includes content REST APIs, GraphQL, and custom `/api/vtl/*` endpoints that use the
+same access checks. Unrelated public/bootstrap endpoints are unchanged.
+
+**Breaking default change:** installations relying on the previous implicit `READ` default
+must authenticate their API clients or explicitly opt in before upgrading. To retain public
+API reads, set `CONTENT_APIS_ALLOW_ANONYMOUS=READ` in your configuration override, or
+`DOT_CONTENT_APIS_ALLOW_ANONYMOUS=READ` in the deployment environment. Anonymous content
+submission requires an explicit `WRITE` opt-in. Existing explicit `NONE`, `READ`, and `WRITE`
+overrides are preserved, and enabling anonymous access does not bypass content permissions.
+Values are case-insensitive (`none`, `read`, and `write` are accepted); use the documented
+uppercase property/environment variable names. Review headless clients and custom VTL
+endpoints when preparing an upgrade. Servers providing public content feeds, including an
+announcements feed, must explicitly opt into `READ`; instances merely consuming a remote
+public feed do not need to enable anonymous access themselves.
+
+**Rollback note:** these are compiled-in defaults, not stored settings, so rolling the binary
+back to a previous release silently restores the older, more permissive behavior (implicit
+anonymous `READ` on content APIs, and re-enabled Basic/DOTAUTH **password** credentials) without
+any operator action. An installation that must keep the hardened posture across a rollback
+should pin `DOT_CONTENT_APIS_ALLOW_ANONYMOUS=NONE` in the deployment environment instead of
+relying on the in-binary default. A previous binary without the `ALLOW_BASIC_AUTH` policy
+ignores `DOT_ALLOW_BASIC_AUTH`, so that override cannot preserve either `NONE` or `JWT_TOKEN`
+across rollback. Block password-based Basic/DOTAUTH and legacy credential access at an upstream
+gateway, or use a binary that supports the policy. Call the default-change and this rollback
+limitation out in the release notes.
 
 ## Configuration Documentation Pattern
 When adding new properties, include:

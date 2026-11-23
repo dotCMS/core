@@ -29,7 +29,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
-import com.dotmarketing.util.PortletID;
 import com.liferay.portal.model.User;
 import org.apache.commons.beanutils.BeanUtils;
 
@@ -62,7 +61,9 @@ public class RoleHelper {
     /**
      * Whether a user may see which users hold a role and which roles a user holds. Role
      * membership carries user details, so it takes an administrator, or a user with access to
-     * both the Roles and the Users portlets. The REST and the legacy DWR listings share this rule.
+     * both the Roles and the Users portlets. The rule lives in
+     * {@link RoleAPI#canReadRoleMembership(User)}, shared by the REST and the legacy DWR entry
+     * points.
      *
      * @param user the user making the request
      * @return {@code true} when the user may read role membership
@@ -70,10 +71,7 @@ public class RoleHelper {
      */
     public boolean canReadRoleMembership(final User user) throws DotDataException {
 
-        final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
-        return user.isAdmin() ||
-                (layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), user) &&
-                        layoutAPI.doesUserHaveAccessToUsersPortlet(user));
+        return this.roleAPI.canReadRoleMembership(user);
     }
 
     /**
@@ -248,6 +246,43 @@ public class RoleHelper {
         AdminLogger.log(getClass(), "Role Deleted", auditDetail);
 
         return usersAffected;
+    }
+
+    /**
+     * Locks or unlocks a role. A locked role cannot be edited or deleted until it is unlocked.
+     * Setting the state the role already has changes nothing and succeeds.
+     *
+     * @param roleId  id of the role to lock or unlock
+     * @param locked  {@code true} to lock the role, {@code false} to unlock it
+     * @param modUser authenticated user performing the change (audit logging)
+     * @return the role as stored after the change
+     * @throws DoesNotExistException if no role has that id (404)
+     */
+    public Role setRoleLocked(final String roleId, final boolean locked, final User modUser)
+            throws DotDataException {
+
+        final Role role = this.roleAPI.loadRoleById(roleId);
+        if (null == role || !UtilMethods.isSet(role.getId())) {
+            throw new DoesNotExistException("Role not found: " + roleId);
+        }
+
+        final String action = locked ? "Locking Role" : "Unlocking Role";
+        final String auditDetail = "Date: " + DateUtil.getCurrentDate()
+                + "; User:" + modUser.getUserId() + "; RoleID: " + role.getId();
+        ActivityLogger.logInfo(getClass(), action, auditDetail);
+        AdminLogger.log(getClass(), action, auditDetail);
+
+        if (locked) {
+            this.roleAPI.lock(role);
+        } else {
+            this.roleAPI.unLock(role);
+        }
+
+        final String done = locked ? "Role Locked" : "Role Unlocked";
+        ActivityLogger.logInfo(getClass(), done, auditDetail);
+        AdminLogger.log(getClass(), done, auditDetail);
+
+        return this.roleAPI.loadRoleById(roleId);
     }
 
     /**

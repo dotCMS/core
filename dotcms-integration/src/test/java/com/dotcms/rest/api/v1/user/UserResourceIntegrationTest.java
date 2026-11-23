@@ -2,6 +2,9 @@ package com.dotcms.rest.api.v1.user;
 
 import com.dotcms.api.web.WebSessionContext;
 import com.dotcms.datagen.LayoutDataGen;
+import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
+
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
@@ -13,7 +16,9 @@ import java.util.Collections;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.LayoutAPI;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PortletID;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.business.Role;
 import java.util.Date;
@@ -42,13 +47,14 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.util.ArrayList;
-import java.util.Base64;
 import static org.junit.Assert.*;
 
 import org.junit.AfterClass;
@@ -56,6 +62,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class UserResourceIntegrationTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     static HttpServletResponse response;
     static HttpServletRequest request;
@@ -124,7 +133,7 @@ public class UserResourceIntegrationTest {
         return mockRequestAs("admin@dotcms.com", "admin");
     }
 
-    /** Builds a request authenticated (Basic) as the given user. */
+    /** Builds a request authenticated as the given user with a Bearer API token. */
     private static HttpServletRequest mockRequestAs(final String email, final String password) {
         final MockHeaderRequest request = new MockHeaderRequest(
                 new MockSessionRequest(
@@ -133,7 +142,7 @@ public class UserResourceIntegrationTest {
                         .request());
 
         request.setHeader("Authorization",
-                "Basic " + Base64.getEncoder().encodeToString((email + ":" + password).getBytes()));
+                TOKEN_UTILS.bearerHeaderForEmail(email));
 
         request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST,host);
         request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID,host.getIdentifier());
@@ -221,6 +230,168 @@ public class UserResourceIntegrationTest {
         loginAs();
     }
 
+    /**
+     * Method to test: {@link UserResource#loginAs}
+     * Given Scenario: an administrator asks to Login As a user whose id is sent with surrounding
+     * spaces.
+     * ExpectedResult: the session names the user by the id stored in the user record, so the
+     * session tools and the per-request check match the session to that user.
+     */
+    @Test
+    public void test_loginAs_withPaddedUserId_storesTheStoredUserId() throws Exception {
+        final LoginAsForm loginAsForm = new LoginAsForm.Builder().userId("  " + user.getUserId() + " ").build();
+        request = mockRequest();
+
+        final Response resourceResponse = resource.loginAs(request, response, loginAsForm);
+
+        assertEquals(Status.OK.getStatusCode(), resourceResponse.getStatus());
+        assertEquals(user.getUserId(), request.getSession().getAttribute(WebKeys.USER_ID));
+        assertEquals(adminUser.getUserId(), request.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID));
+    }
+
+    /**
+     * Creates a back-end user with the Login As role, a known password and, optionally, the CMS
+     * Administrator role.
+     */
+    private static User newLoginAsUser(final String password, final boolean cmsAdmin) throws Exception {
+        final Role loginAsRole = APILocator.getRoleAPI().findRoleByFQN(Role.SYSTEM + " --> " + Role.LOGIN_AS);
+        final List<Role> roles = new ArrayList<>(List.of(loginAsRole, APILocator.getRoleAPI().loadBackEndUserRole()));
+        if (cmsAdmin) {
+            roles.add(APILocator.getRoleAPI().loadCMSAdminRole());
+        }
+        final User loginAsUser = new UserDataGen().password(password).roles(roles.toArray(new Role[0])).nextPersisted();
+        usersToClean.add(loginAsUser);
+        return loginAsUser;
+    }
+
+    /**
+     * Given: a non-admin user holding the Login As role
+     * When: they try to Login As an administrator, re-entering their own password
+     * Then: the operation is refused
+     */
+    @Test(expected = DotSecurityException.class)
+    public void test_doLoginAs_nonAdmin_cannotImpersonateAdmin() throws Exception {
+        final String password = "loginAsPwd" + System.currentTimeMillis();
+        final User nonAdmin = newLoginAsUser(password, false);
+        UserResourceHelper.getInstance().doLoginAs(nonAdmin, adminUser.getUserId(), password, host.getHostname());
+    }
+
+    /**
+     * Method to test: {@link UserResource#loginAs}
+     * Given Scenario: a non-admin user holding the Login As role asks to Login As an administrator.
+     * ExpectedResult: the answer is 403 (not 401, which makes the UI end the session) and the
+     * session still belongs to the caller: the administrator is not stored as the session
+     * user and no principal user is set.
+     */
+    @Test
+    public void test_loginAs_nonAdminToAdmin_answers403AndKeepsSession() throws Exception {
+        final String password = "loginAsPwd" + System.currentTimeMillis();
+        final User nonAdmin = newLoginAsUser(password, false);
+        final HttpServletRequest nonAdminRequest = mockRequestAs(nonAdmin.getEmailAddress(), password);
+        // the caller's back-end session, as the login in the browser leaves it
+        nonAdminRequest.getSession().setAttribute(WebKeys.USER_ID, nonAdmin.getUserId());
+        final LoginAsForm form = new LoginAsForm.Builder().userId(adminUser.getUserId()).build();
+
+        final Response result = resource.loginAs(nonAdminRequest, response, form);
+
+        assertNotNull(result);
+        assertEquals(Status.FORBIDDEN.getStatusCode(), result.getStatus());
+        assertEquals("loginas.error.adminrequired", result.getHeaderString("error-key"));
+        // a denied Login As leaves the caller's session as it was
+        assertEquals(nonAdmin.getUserId(), nonAdminRequest.getSession().getAttribute(WebKeys.USER_ID));
+        assertNull(nonAdminRequest.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID));
+    }
+
+    /**
+     * Given: a non-admin user holding the Login As role and {@code LOGIN_AS_ADMIN_REQUIRES_ADMIN=false}
+     * When: they try to Login As an administrator, re-entering their own password
+     * Then: the previous behavior is kept and the operation is allowed
+     */
+    @Test
+    public void test_doLoginAs_nonAdmin_canImpersonateAdmin_whenRestrictionDisabled() throws Exception {
+        final String password = "loginAsPwd" + System.currentTimeMillis();
+        final User nonAdmin = newLoginAsUser(password, false);
+        final boolean previous = Config.getBooleanProperty(UserResourceHelper.LOGIN_AS_ADMIN_REQUIRES_ADMIN, true);
+        Config.setProperty(UserResourceHelper.LOGIN_AS_ADMIN_REQUIRES_ADMIN, false);
+        try {
+            final Map<String, Object> sessionData = UserResourceHelper.getInstance()
+                    .doLoginAs(nonAdmin, adminUser.getUserId(), password, host.getHostname());
+            assertEquals(adminUser.getUserId(), sessionData.get(WebKeys.USER_ID));
+            assertEquals(nonAdmin.getUserId(), sessionData.get(WebKeys.PRINCIPAL_USER_ID));
+        } finally {
+            Config.setProperty(UserResourceHelper.LOGIN_AS_ADMIN_REQUIRES_ADMIN, previous);
+        }
+    }
+
+    /**
+     * Given: an administrator holding the Login As role
+     * When: they Login As another administrator, re-entering their own password
+     * Then: the operation is allowed
+     */
+    @Test
+    public void test_doLoginAs_admin_canImpersonateAdmin_withOwnPassword() throws Exception {
+        final String password = "loginAsPwd" + System.currentTimeMillis();
+        final User admin = newLoginAsUser(password, true);
+        final Map<String, Object> sessionData = UserResourceHelper.getInstance()
+                .doLoginAs(admin, adminUser.getUserId(), password, host.getHostname());
+        assertEquals(adminUser.getUserId(), sessionData.get(WebKeys.USER_ID));
+        assertEquals(admin.getUserId(), sessionData.get(WebKeys.PRINCIPAL_USER_ID));
+    }
+
+    /**
+     * Given: an administrator holding the Login As role
+     * When: they Login As another administrator with a password that is not their own
+     * Then: the operation is refused
+     */
+    @Test
+    public void test_doLoginAs_admin_wrongPassword_isRefused() throws Exception {
+        final User admin = newLoginAsUser("loginAsPwd" + System.currentTimeMillis(), true);
+        try {
+            UserResourceHelper.getInstance().doLoginAs(admin, adminUser.getUserId(), "not-the-password",
+                    host.getHostname());
+            fail("Login As an administrator with a wrong password must be refused");
+        } catch (final DotDataException e) {
+            assertEquals("loginas.error.invalidloginascredentials", e.getMessageKey());
+        }
+    }
+
+    /**
+     * Method to test: {@link UserResource#loginAs} and {@link UserResource#logoutAs}
+     * Given Scenario: an administrator logs in as user B, who also holds the Login As role. B's session then asks
+     * to Login As B itself, which is refused.
+     * ExpectedResult: the refused request answers {@code loginAs:false} and the session still acts as B with the
+     * administrator as principal, so Logout As answers 200 and brings the administrator back.
+     */
+    @Test
+    public void test_loginAs_refusedDuringLoginAs_keepsLogoutAsWorking() throws Exception {
+        final String password = "loginAsPwd" + System.currentTimeMillis();
+        final User admin = newLoginAsUser(password, true);
+        final User loginAsHolder = newLoginAsUser("loginAsPwd" + System.nanoTime(), false);
+        final Role holderRole = APILocator.getRoleAPI().getUserRole(loginAsHolder);
+        APILocator.getRoleAPI().addLayoutToRole(APILocator.getLayoutAPI().findAllLayouts().get(0), holderRole);
+        APILocator.getPermissionAPI().save(new Permission(host.getPermissionId(), holderRole.getId(),
+                PermissionAPI.PERMISSION_READ, true), host, adminUser, false);
+        final HttpServletRequest sessionRequest = loginAs(admin, password, loginAsHolder);
+        // from here on the request is authenticated by its session, which now acts as the Login As user, as a new
+        // request from the browser would be: no token, and no user cached on the request by the previous call
+        ((MockHeaderRequest) sessionRequest).setHeader("Authorization", null);
+        sessionRequest.removeAttribute(WebKeys.USER);
+        sessionRequest.removeAttribute(WebKeys.USER_ID);
+
+        final Response refused = resource.loginAs(sessionRequest, new MockHttpResponse(),
+                new LoginAsForm.Builder().userId(loginAsHolder.getUserId()).build());
+
+        assertEquals(Status.OK.getStatusCode(), refused.getStatus());
+        assertEquals(Map.of("loginAs", false), ((ResponseEntityView<?>) refused.getEntity()).getEntity());
+        assertEquals(loginAsHolder.getUserId(), sessionRequest.getSession().getAttribute(WebKeys.USER_ID));
+        assertEquals(admin.getUserId(), sessionRequest.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID));
+
+        final Response loggedOut = resource.logoutAs(sessionRequest, new MockHttpResponse());
+
+        assertEquals(Status.OK.getStatusCode(), loggedOut.getStatus());
+        assertEquals(admin.getUserId(), sessionRequest.getSession().getAttribute(WebKeys.USER_ID));
+    }
+
     @Test
     public void test_logoutAs_success() throws Exception {
         loginAs();
@@ -275,6 +446,105 @@ public class UserResourceIntegrationTest {
 
         assertEquals(Status.BAD_REQUEST.getStatusCode(), resourceResponse.getStatus());
         assertEquals(publisher.getUserId(), publisherRequest.getSession().getAttribute(WebKeys.USER_ID));
+    }
+
+    /**
+     * Method to test: {@link UserResource#loginAs}
+     * Given Scenario: an administrator logs in as an active back-end user.
+     * ExpectedResult: the session resolves to the impersonated user on the following requests
+     * and still records the administrator as the principal.
+     */
+    @Test
+    public void test_loginAs_activeUser_sessionResolvesToTheImpersonatedUser() throws Exception {
+        loginAs();
+        final HttpSession session = request.getSession();
+
+        final User resolved = PortalUtil.getUser(session);
+
+        assertNotNull("the Login As session must resolve to a user", resolved);
+        assertEquals(user.getUserId(), resolved.getUserId());
+        assertEquals(adminUser.getUserId(), session.getAttribute(WebKeys.PRINCIPAL_USER_ID));
+        assertTrue(APILocator.getLoginAsAPI().isLoginAsUser(WebSessionContext.getInstance(request)));
+    }
+
+    /**
+     * Method to test: {@link UserResource#loginAs}
+     * Given Scenario: an administrator logs in as a back-end user, who is then made inactive.
+     * ExpectedResult: the session no longer resolves to a user, and the user id, the principal
+     * and the Login As record are gone from it.
+     */
+    @Test
+    public void test_loginAs_impersonatedUserMadeInactive_signsTheSessionOut() throws Exception {
+        final String password = "loginAsPwd" + System.currentTimeMillis();
+        final User admin = newLoginAsUser(password, true);
+        final User impersonated = newImpersonableUser();
+        final HttpServletRequest adminRequest = loginAs(admin, password, impersonated);
+        final HttpSession session = adminRequest.getSession();
+        assertEquals(impersonated.getUserId(), PortalUtil.getUser(session).getUserId());
+
+        final User toSave = (User) APILocator.getUserAPI().loadUserById(impersonated.getUserId()).clone();
+        toSave.setActive(false);
+        APILocator.getUserAPI().save(toSave, APILocator.systemUser(), false);
+
+        assertNull("a session whose impersonated user was made inactive has no user", PortalUtil.getUser(session));
+        assertNull(session.getAttribute(WebKeys.USER_ID));
+        assertNull(session.getAttribute(WebKeys.PRINCIPAL_USER_ID));
+        assertFalse(APILocator.getLoginAsAPI().isLoginAsUser(WebSessionContext.getInstance(adminRequest)));
+    }
+
+    /**
+     * Method to test: {@link UserResource#loginAs}
+     * Given Scenario: an administrator logs in as a back-end user, and the administrator is then
+     * made inactive.
+     * ExpectedResult: the session no longer resolves to a user, and the user id and the principal
+     * are gone from it.
+     */
+    @Test
+    public void test_loginAs_administratorMadeInactive_signsTheSessionOut() throws Exception {
+        final String password = "loginAsPwd" + System.currentTimeMillis();
+        final User admin = newLoginAsUser(password, true);
+        final User impersonated = newImpersonableUser();
+        final HttpServletRequest adminRequest = loginAs(admin, password, impersonated);
+        final HttpSession session = adminRequest.getSession();
+        assertEquals(impersonated.getUserId(), PortalUtil.getUser(session).getUserId());
+
+        final User toSave = (User) APILocator.getUserAPI().loadUserById(admin.getUserId()).clone();
+        toSave.setActive(false);
+        APILocator.getUserAPI().save(toSave, APILocator.systemUser(), false);
+
+        assertNull("a session whose administrator was made inactive has no user", PortalUtil.getUser(session));
+        assertNull(session.getAttribute(WebKeys.USER_ID));
+        assertNull(session.getAttribute(WebKeys.PRINCIPAL_USER_ID));
+    }
+
+    /**
+     * A back-end user that Login As accepts as a target: it holds a layout and may read the test
+     * site, as Login As requires. Removed after the class.
+     */
+    private static User newImpersonableUser() throws Exception {
+        final User impersonated = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        usersToClean.add(impersonated);
+        final Role userRole = APILocator.getRoleAPI().getUserRole(impersonated);
+        APILocator.getRoleAPI().addLayoutToRole(APILocator.getLayoutAPI().findAllLayouts().get(0), userRole);
+        APILocator.getPermissionAPI().save(new Permission(host.getPermissionId(), userRole.getId(),
+                PermissionAPI.PERMISSION_READ, true), host, adminUser, false);
+        return impersonated;
+    }
+
+    /**
+     * Logs the given administrator in as the given user through the endpoint and returns the
+     * administrator's request, whose session now holds the Login As.
+     */
+    private static HttpServletRequest loginAs(final User admin, final String password, final User impersonated)
+            throws Exception {
+        final HttpServletRequest adminRequest = mockRequestAs(admin.getEmailAddress(), password);
+        final Response result = resource.loginAs(adminRequest, new MockHttpResponse(),
+                new LoginAsForm.Builder().userId(impersonated.getUserId()).build());
+        assertEquals(Status.OK.getStatusCode(), result.getStatus());
+        assertEquals(impersonated.getUserId(), adminRequest.getSession().getAttribute(WebKeys.USER_ID));
+        assertEquals(admin.getUserId(), adminRequest.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID));
+        return adminRequest;
     }
 
     @SuppressWarnings("unchecked")
@@ -445,34 +715,35 @@ public class UserResourceIntegrationTest {
 
     /**
      * Method to test: {@link UserResource#filter}
-     * Given Scenario: A back-end user who is NOT a CMS Administrator and does NOT hold the legacy
-     * Users portlet, but holds a Role whose layout carries the Roles portlet and the Angular
-     * {@link PortletID#USERS_BETA} portlet -- the beta-period alias of the Users portlet. The user
-     * filters by the CMS Administrator role key, then asks for {@code includeRoles}.
+     * Given Scenario: A back-end user who is NOT a CMS Administrator and does NOT hold the
+     * {@code users} portlet, but holds a Role whose layout carries the Roles portlet and
+     * {@link PortletID#USERS_LEGACY} -- the old Users screen, kept as an opt-in portlet after the
+     * Angular one took over {@code users}. The user filters by the CMS Administrator role key, then
+     * asks for {@code includeRoles}.
      * ExpectedResult: Both calls succeed (200), the listed CMS Administrators still carry the
      * {@code admin} flag, and {@code includeRoles} is accepted -- the Role-administrator gate honors
-     * the beta Users portlet id exactly like the legacy one, so holders of the new portlet are not
-     * rejected while the legacy portlet is being retired.
+     * the legacy Users portlet id exactly like {@code users}, so a role that kept the old screen is
+     * not locked out of it.
      */
     @Test
-    public void test_filter_byRole_rolesAndUsersBetaPortletUser_allowedWithAdminFlag() throws Exception {
+    public void test_filter_byRole_rolesAndUsersLegacyPortletUser_allowedWithAdminFlag() throws Exception {
         final String suffix = uniq();
         final String password = "pw" + suffix;
-        final Layout layout = new LayoutDataGen().name("users-beta-roles-" + suffix)
-                .portletIds(PortletID.ROLES.toString(), PortletID.USERS_BETA.toString()).nextPersisted();
+        final Layout layout = new LayoutDataGen().name("users-legacy-roles-" + suffix)
+                .portletIds(PortletID.ROLES.toString(), PortletID.USERS_LEGACY.toString()).nextPersisted();
         layoutsToClean.add(layout);
-        final Role portletRole = new RoleDataGen().key("rolesusersbeta" + suffix).nextPersisted();
+        final Role portletRole = new RoleDataGen().key("rolesuserslegacy" + suffix).nextPersisted();
         rolesToClean.add(portletRole);
         APILocator.getRoleAPI().addLayoutToRole(layout, portletRole);
-        final User caller = new UserDataGen().firstName("portletBeta").lastName("RoleFilter")
-                .emailAddress("portletbetarolefilter" + suffix + "@dotcms.com").password(password)
+        final User caller = new UserDataGen().firstName("portletLegacy").lastName("RoleFilter")
+                .emailAddress("portletlegacyrolefilter" + suffix + "@dotcms.com").password(password)
                 .roles(portletRole, TestUserUtils.getBackendRole()).nextPersisted();
         usersToClean.add(caller);
         final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
         assertFalse("precondition: caller must not be an admin", caller.isAdmin());
-        assertFalse("precondition: caller must NOT hold the legacy Users portlet",
+        assertFalse("precondition: caller must NOT hold the users portlet",
                 layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS.toString(), caller));
-        assertTrue("precondition: caller must hold the Roles portlet and the beta Users portlet",
+        assertTrue("precondition: caller must hold the Roles portlet and the legacy Users portlet",
                 layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), caller)
                         && layoutAPI.doesUserHaveAccessToUsersPortlet(caller));
 
@@ -481,11 +752,58 @@ public class UserResourceIntegrationTest {
                 null, 1, 100, null, "ASC", false, false, null, 0, List.of(cmsAdminRoleId), null, false);
         assertEquals(Status.OK.getStatusCode(), allowed.getStatus());
         final Map<String, Object> admin = itemFor(items(allowed), adminUser.getUserId());
-        assertEquals("a Roles + beta-Users portlet user keeps the admin flag", Boolean.TRUE, admin.get("admin"));
+        assertEquals("a Roles + legacy-Users portlet user keeps the admin flag", Boolean.TRUE, admin.get("admin"));
 
         final Response withRoles = resource.filter(mockRequestAs(caller.getEmailAddress(), password), response,
                 null, 1, 100, null, "ASC", false, false, null, 0, List.of(cmsAdminRoleId), null, true);
-        assertEquals("includeRoles must be accepted for a Roles + beta-Users portlet holder",
+        assertEquals("includeRoles must be accepted for a Roles + legacy-Users portlet holder",
+                Status.OK.getStatusCode(), withRoles.getStatus());
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter}
+     * Given Scenario: A back-end user who is NOT a CMS Administrator and holds neither {@code roles}
+     * nor {@code users}, only a Role whose layout carries the two old screens,
+     * {@link PortletID#ROLES_LEGACY} and {@link PortletID#USERS_LEGACY}. The user filters by the CMS
+     * Administrator role key, then asks for {@code includeRoles}.
+     * ExpectedResult: Both calls succeed (200) and the listed CMS Administrators carry the
+     * {@code admin} flag -- the Role-administrator gate takes {@code roles-legacy} in place of
+     * {@code roles}, so a role that kept both old screens is not locked out of the role filter.
+     */
+    @Test
+    public void test_filter_byRole_rolesLegacyAndUsersLegacyPortletUser_allowedWithAdminFlag() throws Exception {
+        final String suffix = uniq();
+        final String password = "pw" + suffix;
+        final Layout layout = new LayoutDataGen().name("legacy-screens-" + suffix)
+                .portletIds(PortletID.ROLES_LEGACY.toString(), PortletID.USERS_LEGACY.toString()).nextPersisted();
+        layoutsToClean.add(layout);
+        final Role portletRole = new RoleDataGen().key("legacyscreens" + suffix).nextPersisted();
+        rolesToClean.add(portletRole);
+        APILocator.getRoleAPI().addLayoutToRole(layout, portletRole);
+        final User caller = new UserDataGen().firstName("legacyScreens").lastName("RoleFilter")
+                .emailAddress("legacyscreensrolefilter" + suffix + "@dotcms.com").password(password)
+                .roles(portletRole, TestUserUtils.getBackendRole()).nextPersisted();
+        usersToClean.add(caller);
+        final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
+        assertFalse("precondition: caller must not be an admin", caller.isAdmin());
+        assertFalse("precondition: caller must NOT hold the roles portlet",
+                layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), caller));
+        assertFalse("precondition: caller must NOT hold the users portlet",
+                layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS.toString(), caller));
+        assertTrue("precondition: caller must hold roles-legacy and users-legacy",
+                layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES_LEGACY.toString(), caller)
+                        && layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS_LEGACY.toString(), caller));
+
+        final String cmsAdminRoleId = APILocator.getRoleAPI().loadCMSAdminRole().getId();
+        final Response allowed = resource.filter(mockRequestAs(caller.getEmailAddress(), password), response,
+                null, 1, 100, null, "ASC", false, false, null, 0, List.of(cmsAdminRoleId), null, false);
+        assertEquals(Status.OK.getStatusCode(), allowed.getStatus());
+        final Map<String, Object> admin = itemFor(items(allowed), adminUser.getUserId());
+        assertEquals("a roles-legacy + users-legacy user keeps the admin flag", Boolean.TRUE, admin.get("admin"));
+
+        final Response withRoles = resource.filter(mockRequestAs(caller.getEmailAddress(), password), response,
+                null, 1, 100, null, "ASC", false, false, null, 0, List.of(cmsAdminRoleId), null, true);
+        assertEquals("includeRoles must be accepted for a roles-legacy + users-legacy holder",
                 Status.OK.getStatusCode(), withRoles.getStatus());
     }
 
@@ -769,7 +1087,7 @@ public class UserResourceIntegrationTest {
                 .firstName("RoleIds")
                 .lastName("Create" + uniq())
                 .email("roleids-" + uniq() + "@dotcms.com")
-                .password("Passw0rd!".toCharArray())
+                .password("Passw0rd!-Neutral26".toCharArray())
                 .active(true);
     }
 

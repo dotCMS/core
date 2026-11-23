@@ -167,12 +167,15 @@
            remoteIpHeader and internalProxies may need to change when behind some WAF or proxy servers
            Also handles port forwarding for Docker scenarios via X-Forwarded-Port
            internalProxies regex uses \d\d?\d? instead of \d{1,3} — bare braces clash with IntrospectionUtils ${...} resolver
+           trustedProxies (CMS_REMOTEIP_TRUSTEDPROXIES, empty by default) lists further proxies, such as a CDN,
+           whose X-Forwarded-For entries are skipped. See docs/backend/CLIENT_ADDRESS_RESOLUTION.md
       -->
         <Valve
             className="org.apache.catalina.valves.RemoteIpValve"
             remoteIpHeader="${CMS_REMOTEIP_REMOTEIPHEADER:-x-forwarded-for}"
             remoteIpPortHeader="${CMS_REMOTEIP_PORTHEADER:-x-forwarded-port}"
             internalProxies="${CMS_REMOTEIP_INTERNALPROXIES:-(10|127)\.\d\d?\d?\.\d\d?\d?\.\d\d?\d?|192\.168\.\d\d?\d?\.\d\d?\d?|169\.254\.\d\d?\d?\.\d\d?\d?|172\.(1[6-9]|2\d|3[01])\.\d\d?\d?\.\d\d?\d?|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d\d?\d?\.\d\d?\d?|0:0:0:0:0:0:0:1|::1}"
+            trustedProxies="${CMS_REMOTEIP_TRUSTEDPROXIES:-}"
         />
 
         <!-- Do not show server details up on BadRequest -->

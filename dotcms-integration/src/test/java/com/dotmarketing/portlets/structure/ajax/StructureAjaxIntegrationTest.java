@@ -14,7 +14,6 @@ import com.dotcms.contenttype.model.field.SelectField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.CategoryDataGen;
-import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.RoleDataGen;
@@ -32,7 +31,6 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
-import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.language.LanguageUtil;
@@ -76,7 +74,6 @@ public class StructureAjaxIntegrationTest {
     private static ContentType readType;
     private static Field searchableField;
     private static Field selectField;
-    private static Container containerUsingReadType;
     private static Category category;
     private static ContentType categoryType;
 
@@ -102,9 +99,6 @@ public class StructureAjaxIntegrationTest {
                 .name("color" + suffix).velocityVarName("color" + suffix)
                 .values(SELECT_OPTIONS)
                 .contentTypeId(readType.id()).nextPersisted();
-        containerUsingReadType = new ContainerDataGen()
-                .withContentType(readType, "$!{" + searchableField.variable() + "}")
-                .nextPersisted();
 
         // Both the reader and the stranger can read the category, so only READ on the content
         // type decides whether getCategoriesTree returns it.
@@ -127,14 +121,11 @@ public class StructureAjaxIntegrationTest {
     }
 
     /**
-     * Removes the container, the content types and the category, then deletes the test users,
-     * handing whatever they own to the admin user, and finally the owner role.
+     * Removes the content types and the category, then deletes the test users, handing whatever
+     * they own to the admin user, and finally the owner role.
      */
     @AfterClass
     public static void cleanUp() throws Exception {
-        if (containerUsingReadType != null) {
-            ContainerDataGen.remove(containerUsingReadType);
-        }
         createdTypes.forEach(ContentTypeDataGen::remove);
         if (category != null) {
             CategoryDataGen.delete(category);
@@ -435,41 +426,6 @@ public class StructureAjaxIntegrationTest {
         final List<Map> fields = new StructureAjax().getSearchableStructureFields(readType.inode());
 
         assertTrue(fields.stream().anyMatch(field -> field.containsValue(searchableField.variable())));
-    }
-
-    /**
-     * Method to test: {@link StructureAjax#checkDependencies(String)}
-     * Given: a content type used by a container, checked by a user with no permission on the type
-     * Expected: no containers and size 0
-     */
-    @Test
-    public void checkDependencies_withoutRead_reportsNoContainers() throws Exception {
-        dwrContext.loginAs(stranger);
-
-        final Map<Object, Object> dependencies =
-                new StructureAjax().checkDependencies(readType.inode());
-
-        assertEquals(0, dependencies.get("size"));
-        assertTrue(((List<?>) dependencies.get("containers")).isEmpty());
-    }
-
-    /**
-     * Method to test: {@link StructureAjax#checkDependencies(String)}
-     * Given: a content type used by a container, checked by a user with READ on the type
-     * Expected: the container is listed
-     */
-    @Test
-    public void checkDependencies_withRead_listsContainer() throws Exception {
-        dwrContext.loginAs(reader);
-
-        final Map<Object, Object> dependencies =
-                new StructureAjax().checkDependencies(readType.inode());
-
-        final List<Map<String, String>> containers =
-                (List<Map<String, String>>) dependencies.get("containers");
-        assertTrue(containers.stream().anyMatch(container ->
-                containerUsingReadType.getIdentifier().equals(container.get("identifier"))));
-        assertEquals(containers.size(), dependencies.get("size"));
     }
 
     /**

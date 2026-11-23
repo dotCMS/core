@@ -66,6 +66,8 @@ public class SamlResponseValidator {
 
     private static final String API_PATH_PREFIX = "/api/v1";
     private static final int MAX_LOGGED_VALUE_LENGTH = 256;
+    private static final String ACS_URLS_HINT = ". To accept another exact URL, add it to '"
+            + SamlConstants.ADDITIONAL_ACS_URLS + "' on the SAML configuration";
 
     private final EndpointService endpointService;
     private final MetaDataService metaDataService;
@@ -149,7 +151,7 @@ public class SamlResponseValidator {
         if (!matchesAny(destination, acsUrls)) {
 
             throw this.fail(identityProviderConfiguration, "The SAML Response Destination '" + sanitize(destination)
-                    + "' is not this service provider's assertion consumer URL " + acsUrls);
+                    + "' is not this service provider's assertion consumer URL " + acsUrls + ACS_URLS_HINT);
         }
     }
 
@@ -274,7 +276,8 @@ public class SamlResponseValidator {
 
             final String recipient = StringUtils.trimToNull(data.getRecipient());
             if (null == recipient || !matchesAny(recipient, acsUrls)) {
-                problems.add("Recipient '" + sanitize(recipient) + "' is not this service provider's assertion consumer URL");
+                problems.add("Recipient '" + sanitize(recipient) + "' is not this service provider's assertion consumer URL"
+                        + ACS_URLS_HINT);
                 continue;
             }
 
@@ -383,7 +386,8 @@ public class SamlResponseValidator {
 
     /**
      * The assertion consumer URL published in the SP metadata and AuthnRequest, plus its /api/v1 form
-     * (the REST endpoint the public URL is rewritten to), which some IdPs are configured with directly.
+     * (the REST endpoint the public URL is rewritten to), which some IdPs are configured with directly,
+     * plus any URLs an administrator listed in {@link SamlConstants#ADDITIONAL_ACS_URLS}.
      */
     private Set<String> getAssertionConsumerUrls(final IdentityProviderConfiguration identityProviderConfiguration) {
 
@@ -399,6 +403,15 @@ public class SamlResponseValidator {
         final int pathStart = acsUrl.indexOf(SamlConstants.ASSERTION_CONSUMER_ENDPOINT_DOTSAML3SP);
         if (pathStart > 0) {
             acsUrls.add(acsUrl.substring(0, pathStart) + API_PATH_PREFIX + acsUrl.substring(pathStart));
+        }
+
+        final Object additionalUrls = identityProviderConfiguration.getOptionalProperty(SamlConstants.ADDITIONAL_ACS_URLS);
+        if (null != additionalUrls) {
+            for (final String additionalUrl : StringUtils.split(additionalUrls.toString(), SamlConstants.ARRAY_SEPARATOR_CHAR)) {
+                if (StringUtils.isNotBlank(additionalUrl)) {
+                    acsUrls.add(additionalUrl.trim());
+                }
+            }
         }
 
         return acsUrls;

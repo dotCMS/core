@@ -1,7 +1,8 @@
 import { TemplateBuilderPage } from '@pages';
 import { expect, test } from '@playwright/test';
+import { deleteContentlets } from '@requests/contentlets';
 import { createPage, getPageTemplateIdentifier, Page as PageContentlet } from '@requests/pages';
-import { createTemplate, deleteTemplate, getTemplate } from '@requests/templates';
+import { createTemplate, getTemplate, removeTemplate } from '@requests/templates';
 
 /**
  * Regression coverage for dotCMS/core#36197 — the UVE Layout tab lost container/content
@@ -22,6 +23,10 @@ import { createTemplate, deleteTemplate, getTemplate } from '@requests/templates
  */
 
 const SYSTEM_CONTAINER = 'SYSTEM_CONTAINER';
+
+// Mirrors DEBOUNCE_TIME in edit-ema-layout.component.ts: an edit does not send the layout
+// save (and so does not lock the canvas) until the builder has been idle this long.
+const LAYOUT_SAVE_DEBOUNCE_MS = 5000;
 
 // TemplateResource requires `theme` to resolve to a real Folder via FolderAPI.find
 // (dotCMS/.../rest/api/v1/template/TemplateResource.java, ~line 587 — "theme must be a
@@ -102,15 +107,22 @@ test.beforeEach(async ({ request }) => {
 test.afterEach(async ({ request }) => {
     if (!templateIdentifier) return;
 
+    // Best effort: teardown must not turn an already-failing test into a confusing second error.
     // A layout save can repoint the page at a brand-new template identifier (see the
-    // getPageTemplateIdentifier doc comment) — always resolve whatever the page currently
-    // references rather than assuming the creation-time identifier still applies. Best
-    // effort: teardown must not turn an already-failing test into a confusing second error.
-    try {
-        const currentIdentifier = await getPageTemplateIdentifier(request, pageContentlet.url);
-        await deleteTemplate(request, [currentIdentifier]);
-    } catch {
-        await deleteTemplate(request, [templateIdentifier]).catch(() => undefined);
+    // getPageTemplateIdentifier doc comment), so resolve whatever the page references now and
+    // remove that as well as the creation-time template. The page goes first: a template that a
+    // page still references cannot be deleted.
+    const identifiers = new Set([templateIdentifier]);
+    if (pageContentlet) {
+        const current = await getPageTemplateIdentifier(request, pageContentlet.url).catch(
+            () => templateIdentifier
+        );
+        identifiers.add(current);
+        await deleteContentlets(request, [pageContentlet.identifier]).catch(() => undefined);
+    }
+
+    for (const identifier of identifiers) {
+        await removeTemplate(request, identifier).catch(() => undefined);
     }
 });
 
@@ -153,8 +165,13 @@ test('editing during an in-flight layout save does not lose container content @c
 
     // Check the overlay first — confirms the deletion click really flipped
     // #layoutSaveInFlight (i.e. a save was genuinely triggered), independent of whether
-    // our route pattern below actually matches the request.
-    await expect(templateBuilder.getOverlay()).toBeVisible({ timeout: 6000 });
+    // our route pattern below actually matches the request. The overlay only appears when
+    // the debounce fires, so the wait must outlast the debounce itself: the previous flat
+    // 6 s left about 1 s for the edit to reach the debounce and for the lock to render,
+    // and failed about 1 run in 10 locally.
+    await expect(templateBuilder.getOverlay()).toBeVisible({
+        timeout: LAYOUT_SAVE_DEBOUNCE_MS + 10_000
+    });
 
     // Poll layoutPostCount rather than asserting it immediately: the DOM update above and
     // the network request reaching Playwright's routing layer travel through different

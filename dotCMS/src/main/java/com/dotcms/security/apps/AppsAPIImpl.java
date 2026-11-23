@@ -67,6 +67,13 @@ import java.util.stream.Stream;
  */
 public class AppsAPIImpl implements AppsAPI {
 
+    /**
+     * Keys of apps that dotCMS no longer ships. Settings saved for one of them stay in the secrets
+     * store and in exports taken before the app was removed; see {@link #isRetiredApp(String)}.
+     * {@code dotema-config} is Edit Mode Anywhere.
+     */
+    private static final Set<String> RETIRED_APP_KEYS = Set.of("dotema-config");
+
     private final LayoutAPI layoutAPI;
     private final HostAPI hostAPI;
     private final SecretsStore secretsStore;
@@ -505,9 +512,8 @@ public class AppsAPIImpl implements AppsAPI {
                         String.format("Error getting secret from `%s` ", key), e);
             } catch (DotRuntimeException e) {
                 // Since issue #36724 an unreadable store raises instead of silently wiping itself.
-                // That must degrade here: EMAWebInterceptor reaches this method on every /api/*
-                // request and the interceptor chain does not guard it, so raising returns a 500 for
-                // the whole API.
+                // That must degrade here: request paths reach this method (the Apps listing, the SAML
+                // configuration check), so raising turns an unreadable store into a 500 for them.
                 //
                 // Matched on the CAUSE CHAIN rather than the thrown type. SecretsStoreUnreadableException
                 // does not survive the journey: there are nine `catch (Exception e) { throw new
@@ -531,8 +537,7 @@ public class AppsAPIImpl implements AppsAPI {
                 // here, because appKeysByHost() raises while being evaluated as this method's own
                 // argument -- before this catch is ever reached.
                 // debug, not error, and deliberately so. This fires once per site per call, and
-                // EMAWebInterceptor.existsConfiguration reaches this method on every /api/* request
-                // -- measured at 32 ERROR lines from 16 requests on a two-site instance. Because the
+                // request paths call this method repeatedly. Because the
                 // condition persists until an operator fixes it, logging at ERROR here reproduces
                 // exactly the flood this PR throttles inside the helper: an actionable message
                 // repeated thousands of times stops being actionable.
@@ -1028,6 +1033,20 @@ public class AppsAPIImpl implements AppsAPI {
         return false;
     }
 
+    /**
+     * Tells whether settings stored under an app key belong to an app dotCMS no longer ships: the
+     * key is one of {@link #RETIRED_APP_KEYS} and no descriptor for it is installed. An instance
+     * that installs its own app under one of those keys keeps it, and its settings are handled
+     * like any other app's.
+     *
+     * @param appKey the app key, in any case
+     * @return {@code true} when the settings are left over from a removed app
+     */
+    private boolean isRetiredApp(final String appKey) {
+        final String appKeyLC = appKey.toLowerCase();
+        return RETIRED_APP_KEYS.contains(appKeyLC) && !getAppDescriptorMap().containsKey(appKeyLC);
+    }
+
     private void invalidateCache() {
         appsCache.invalidateDescriptorsCache();
     }
@@ -1105,12 +1124,18 @@ public class AppsAPIImpl implements AppsAPI {
 
 
     /**
-     * constructs the Import export object
-     * @param paramAppKeysBySite selection
-     * @param user user
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * Collects the stored settings to write into an export file, for each selected app on each
+     * selected site. Apps provisioned only from environment variables have nothing stored and are
+     * skipped, and so are settings left over from an app dotCMS no longer ships
+     * ({@link #isRetiredApp(String)}).
+     *
+     * @param paramAppKeysBySite the app keys to export, by site identifier
+     * @param user               the exporting user, used to look up the sites
+     * @return the settings to export, by site identifier
+     * @throws DotDataException     if the settings cannot be read
+     * @throws DotSecurityException if a site cannot be read
+     * @throws IllegalArgumentException if nothing is stored, a site does not exist, or the
+     *                                  selection leaves nothing to export
      */
     private AppsSecretsImportExport collectSecretsForExport(final Map<String, Set<String>> paramAppKeysBySite, final User user)
             throws DotDataException, DotSecurityException {
@@ -1128,6 +1153,12 @@ public class AppsAPIImpl implements AppsAPI {
                 final Set<String> appKeysBySiteId = paramAppKeysBySite.get(siteId);
                 if (isSet(appKeysBySiteId)) {
                     for (final String appKey : appKeysBySiteId) {
+                        if (isRetiredApp(appKey)) {
+                            Logger.info(AppsAPIImpl.class, () -> String.format(
+                                    "Leaving settings for `%s` on site `%s` out of the export: dotCMS no longer ships this app.",
+                                    appKey, site.getIdentifier()));
+                            continue;
+                        }
                         // Export persisted secrets only. Read the stored blob directly rather than
                         // through getSecrets(), which (since #35859) overlays env-var tiers onto the
                         // result. Env overrides belong to the target environment, not the export, and a
@@ -1165,13 +1196,18 @@ public class AppsAPIImpl implements AppsAPI {
 
     /**
      * {@inheritDoc}
-     * @param incomingFile encrypted file
-     * @param key security key
-     * @param user
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws IOException
+     * <p>Settings for an app dotCMS no longer ships (see {@link #isRetiredApp(String)}) are skipped
+     * with a warning. Any other entry that cannot be imported (an unknown site, an app with no local
+     * descriptor, empty or invalid settings) stops the import, unless
+     * {@code APPS_IMPORT_FAIL_SILENTLY} is on, in which case it is skipped too.</p>
+     *
+     * @param incomingFile the encrypted export file
+     * @param key          the key the file was encrypted with
+     * @param user         the importing user, who must be an administrator
+     * @return the number of app settings saved
+     * @throws DotDataException     if the settings cannot be read or saved
+     * @throws DotSecurityException if the user is not an administrator
+     * @throws IOException          if the file cannot be read
      */
     public int importSecretsAndSave(final Path incomingFile, final Key key, final User user)
             throws DotDataException, DotSecurityException, IOException {
@@ -1209,6 +1245,12 @@ public class AppsAPIImpl implements AppsAPI {
                 final Optional<AppDescriptor> appDescriptor = getAppDescriptor(appSecrets.getKey(),
                         user);
                 if (appDescriptor.isEmpty()) {
+                    if (isRetiredApp(appSecrets.getKey())) {
+                        Logger.warn(AppsAPIImpl.class, () -> String.format(
+                                "Skipping settings for `%s` on site `%s`: dotCMS no longer ships this app.",
+                                appSecrets.getKey(), siteId));
+                        continue;
+                    }
                     if (failSilently) {
                         Logger.warn(AppsAPIImpl.class, () -> String
                                 .format("No App Descriptor `%s` was found locally.",

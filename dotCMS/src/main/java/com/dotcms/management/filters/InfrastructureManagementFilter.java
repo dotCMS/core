@@ -1,6 +1,7 @@
 package com.dotcms.management.filters;
 
 import com.dotcms.management.config.InfrastructureConstants;
+import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
@@ -32,13 +33,18 @@ public class InfrastructureManagementFilter implements Filter {
         Logger.info(this, "InfrastructureManagementFilter initialized");
     }
 
+    /**
+     * Sends management requests (those the container dispatches under {@code /dotmgt}) straight
+     * to their servlet when they arrive on the management port, and refuses them otherwise. The
+     * decision uses the dispatched path, not the raw request URI.
+     */
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
 
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
-        String requestURI = httpRequest.getRequestURI();
+        String requestURI = HttpRequestDataUtil.getDispatchPath(httpRequest);
 
         // Only process management requests - let everything else pass through
         if (requestURI != null && requestURI.startsWith(InfrastructureConstants.MANAGEMENT_PATH_PREFIX)) {
@@ -147,7 +153,7 @@ public class InfrastructureManagementFilter implements Filter {
     private void forwardToManagementServlet(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
         
-        String requestURI = request.getRequestURI();
+        String requestURI = HttpRequestDataUtil.getDispatchPath(request);
         String servletPath;
         
         // Determine the correct servlet path based on the management endpoint

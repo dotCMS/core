@@ -77,6 +77,7 @@
 <%@ page import="com.dotmarketing.util.ConfigUtils" %>
 <%@ page import="java.util.Optional" %>
 <%@ page import="com.liferay.portal.util.ReleaseInfo" %>
+<%@ page import="com.liferay.util.Xss" %>
 <!DOCTYPE html>
 <script type='text/javascript' src='/dwr/interface/LanguageAjax.js'></script>
 
@@ -729,13 +730,13 @@
         });
 
 <%
-    final String titleFieldValue = (contentlet != null ? contentlet.getTitle() : "").replace("'", "\'");
+    final String titleFieldValue = Xss.encodeForJavaScript(contentlet != null ? contentlet.getTitle() : "");
 %>
         var customEvent = document.createEvent("CustomEvent");
         customEvent.initCustomEvent("ng-event", false, false,  {
             name: "edit-contentlet-loaded",
             data: {
-                contentType: '<%=CacheLocator.getContentTypeCache().getStructureByInode(structure.getInode() ).getName()%>',
+                contentType: '<%=Xss.encodeForJavaScript(CacheLocator.getContentTypeCache().getStructureByInode(structure.getInode() ).getName())%>',
                 pageTitle: "<%=titleFieldValue%>"
             }
         });

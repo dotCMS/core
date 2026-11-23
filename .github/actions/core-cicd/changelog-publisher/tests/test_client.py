@@ -1,4 +1,4 @@
-"""Tests for the corpsites HTTP client (`_search`).
+"""Tests for the dev-site HTTP client (`_search` and the `fire` action id).
 
 Uses `responses` to intercept HTTP so the tests run fully offline, mirroring the
 `evergreen-tracks` test idiom.
@@ -8,9 +8,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 import responses as responses_lib
 
-from changelog_publisher.client import BASE_URL, CorpsitesClient
+from changelog_publisher.client import BASE_URL, PUBLISH_ACTION_ID, CorpsitesClient
 
 _FIXTURES = Path(__file__).parent / "fixtures"
 _SEARCH_URL = f"{BASE_URL}/api/content/_search"
@@ -71,3 +72,38 @@ def test_search_sends_bearer_token_header():
     client._search("26.07.10-01")
 
     assert responses_lib.calls[0].request.headers["Authorization"] == "Bearer s3cr3t"
+
+
+@responses_lib.activate
+def test_fire_uses_action_id_from_env():
+    """The fire URL carries the DOTCMS_DEVSITE_RELEASENOTES_ACTION value, not a hardcoded id."""
+    assert PUBLISH_ACTION_ID == "test-action-id"  # set by conftest before import
+    url = f"{BASE_URL}/api/v1/workflow/actions/test-action-id/fire"
+    responses_lib.add(responses_lib.PUT, url, json={}, status=200)
+    client = CorpsitesClient(token="testtoken")
+    client.fire({"contentType": "Dotcmsbuilds", "minor": "26.07.10-01"}, apply=True)
+
+    assert client.action_id == "test-action-id"
+    assert len(responses_lib.calls) == 1
+    assert responses_lib.calls[0].request.url == url
+
+
+@responses_lib.activate
+def test_fire_action_id_param_overrides_env():
+    """The constructor `action_id` wins over the environment value."""
+    url = f"{BASE_URL}/api/v1/workflow/actions/override-action/fire"
+    responses_lib.add(responses_lib.PUT, url, json={}, status=200)
+    client = CorpsitesClient(token="testtoken", action_id="override-action")
+    client.fire({"contentType": "Dotcmsbuilds", "minor": "26.07.10-01"}, apply=True)
+
+    assert len(responses_lib.calls) == 1
+    assert responses_lib.calls[0].request.url == url
+
+
+def test_missing_action_id_raises(monkeypatch):
+    """An unset or empty action (an unset repo var renders as "") fails at construction."""
+    monkeypatch.setattr("changelog_publisher.client.PUBLISH_ACTION_ID", "")
+    with pytest.raises(RuntimeError, match="DOTCMS_DEVSITE_RELEASENOTES_ACTION is not set"):
+        CorpsitesClient(token="testtoken")
+    with pytest.raises(RuntimeError, match="DOTCMS_DEVSITE_RELEASENOTES_ACTION is not set"):
+        CorpsitesClient(token="testtoken", action_id="   ")

@@ -31,8 +31,10 @@ Two installs that now fail where they used to warn:
 Configured in `/.mcp.json`. Use these instead of guessing:
 
 - **`angular-cli`** — Angular best practices, documentation search, code examples. Use before writing Angular code.
-- **`primeng`** — PrimeNG component API, props, events, examples. Use when building UI.
 - **`chrome-devtools`** — Browser automation, screenshots, network debugging, performance tracing.
+
+PrimeNG has no MCP server here. For component API, props and events, read the installed types in
+`node_modules/primeng/types/primeng-<component>.d.ts`, which match the version the app ships.
 
 ## Essential Commands
 

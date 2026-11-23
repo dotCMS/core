@@ -3,6 +3,7 @@ package com.dotcms.graphql;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
+import com.dotcms.filters.interceptor.dotcms.DefaultAutoLoginWebInterceptor;
 import com.dotcms.mock.request.DotCMSMockRequest;
 import com.dotcms.mock.request.DotCMSMockRequestWithSession;
 import com.dotcms.mock.request.HttpRequestReaderWrapper;
@@ -18,6 +19,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import com.liferay.portal.util.CookieKeys;
+import com.liferay.portal.util.PortalUtil;
 import graphql.language.Document;
 import graphql.language.OperationDefinition;
 import graphql.parser.Parser;
@@ -92,8 +95,8 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
             LOCKS[i] = new Object();
         }
     }
-    private static final String GRAPHQL_BYPASS_CACHE = "GRAPHQL_BYPASS_CACHE";
-    private static final String GRAPHQL_CACHE_CREDENTIALED = "GRAPHQL_CACHE_CREDENTIALED";
+    static final String GRAPHQL_BYPASS_CACHE = "GRAPHQL_BYPASS_CACHE";
+    static final String GRAPHQL_CACHE_CREDENTIALED = "GRAPHQL_CACHE_CREDENTIALED";
     static final int INVALIDATE_CACHE = -1;
 
     private final GraphQLCache graphCache = CacheLocator.getGraphQLCache();
@@ -112,10 +115,29 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
         return new String[] {API_CALL + "*"};
     }
 
+    /**
+     * Authenticates before looking up cached GraphQL data, so current credential and anonymous
+     * access policies also apply to cache hits and background refresh requests. Remember-me-only
+     * requests bypass caching so the later AutoLoginFilter can establish their identity. A request
+     * whose session is due to renew its login cookie is run uncached, so it reaches that renewal.
+     * So is a request whose credential, a header, a cookie or a session user, did not resolve to a
+     * user: it neither reads nor, through {@link #afterIntercept}, stores under that credential's
+     * key.
+     *
+     * @param requestIn the incoming GraphQL request
+     * @param response the response receiving cached data or an authentication error
+     * @return the cached response, or a wrapped request for normal GraphQL execution
+     * @throws IOException if the request body or response cannot be read or written
+     */
     @Override
     public Result intercept(final HttpServletRequest requestIn, final HttpServletResponse response) throws IOException {
 
         if (!"POST".equals(requestIn.getMethod()) || !LicenseManager.getInstance().isEnterprise()) {
+            return Result.NEXT;
+        }
+        // AutoLoginFilter runs later; let it resolve remember-me-only callers before authenticating.
+        if (UtilMethods.getCookie(requestIn.getCookies(), CookieKeys.REMEMBER_ME_COOKIE.get()) != null
+                && PortalUtil.getUser(requestIn) == null) {
             return Result.NEXT;
         }
         final HttpRequestReaderWrapper wrapper = new HttpRequestReaderWrapper(requestIn);
@@ -125,12 +147,20 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
             return Result.NEXT;
         }
 
+        new DotGraphQLContextBuilder().build(requestIn, response);
+
         final GraphqlCacheKey cacheKey = GraphqlCacheKey.from(requestIn, query.get(),
                 getParamOrHeader(requestIn, GRAPHQL_CACHE_KEY_PARAM));
         final String syncKey = cacheKey.value();
 
         final int cacheTTL = getCacheTTL(requestIn);
+        // A cache hit ends the chain before AutoLoginFilter, so a request on which the login
+        // cookie renewal is due is run uncached and reaches it. A credentialed key whose
+        // credential did not resolve to a user (a session whose user record could not be read,
+        // say) is run uncached as well: an entry under that key may hold that user's data.
         final boolean bypassCache = cacheTTL <= 0
+                || DefaultAutoLoginWebInterceptor.isSessionLoginTokenRenewalDue(requestIn)
+                || (cacheKey.isCredentialed() && !resolvedToUser(requestIn))
                 || query.get().contains(INTROSPECTION_OPERATION_NAME)
                 || isMutation(query.get());
 

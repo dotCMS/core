@@ -28,9 +28,19 @@ export enum __DOTCMS_UVE_EVENT__ {
      */
     UVE_EDITOR_PONG = 'uve-editor-pong',
     /**
-     * Received scroll event trigger from the editor
+     * Received scroll event trigger from the editor: one 120px smooth step, `up` or `down`.
+     *
+     * @deprecated Use `UVE_SCROLL_VELOCITY`, which scrolls the page every frame at the speed the
+     * editor sets. The editor still sends this request, throttled, and the SDK still handles it,
+     * for pages on an older `@dotcms/uve`.
      */
     UVE_SCROLL_INSIDE_IFRAME = 'uve-scroll-inside-iframe',
+    /**
+     * Scroll the page continuously during a drag. Carries `velocity`: signed pixels per 60fps
+     * frame, negative to scroll up, `0` to stop. A page that receives it once ignores
+     * `UVE_SCROLL_INSIDE_IFRAME` from then on.
+     */
+    UVE_SCROLL_VELOCITY = 'uve-scroll-velocity',
     /**
      * TODO:
      * Set the page data - This is used to catch the "changes" event.

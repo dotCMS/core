@@ -91,7 +91,7 @@
                 <!-- Order: Edit (quick edit), Styles, Full Editor, Code, then Remove. The
                      collapsed menu below (`actionsMenuItems`) follows the same order and icons. -->
                 <p-button
-                    (click)="promoteHoverToSelected(); openQuickEdit.emit()"
+                    (click)="promoteHoverToSelected(); openQuickEdit()"
                     [disabled]="!canEditContentlet()"
                     data-testId="hover-quick-edit-button"
                     [pTooltip]="quickEditButtonTooltip() | dm"
@@ -108,7 +108,7 @@
                 </p-button>
                 @if (showStyleEditorOption()) {
                     <p-button
-                        (click)="promoteHoverToSelected(); selectContent.emit(hoverContext)"
+                        (click)="promoteHoverToSelected(); openStyleEditor()"
                         [disabled]="!canEditContentlet()"
                         data-testId="hover-palette-button"
                         [pTooltip]="styleButtonTooltip() | dm"
@@ -125,7 +125,7 @@
                     </p-button>
                 }
                 <p-button
-                    (click)="openFullEditor.emit(hoverContext)"
+                    (click)="editContent(hoverContext)"
                     [disabled]="!canEditContentlet()"
                     data-testId="hover-edit-button"
                     [pTooltip]="editButtonTooltip() | dm"

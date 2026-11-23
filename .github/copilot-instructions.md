@@ -78,11 +78,14 @@ just build-no-docker            # Same as: ./mvnw clean install -DskipTests -Ddo
 
 ### Backend Testing Strategy
 
-**CI suite placement (required):** ALL new integration-test coverage, **including methods added
-to existing classes**, MUST go in the shortest-running compatible CI suite, measured across at
-least **3 recent independent PR runs**. Never default to an example, feature grouping, or existing
-class registration. Follow [Integration Tests → Registering Tests in a MainSuite](../docs/testing/INTEGRATION_TESTS.md#registering-tests-in-a-mainsuite-ci-gate)
-and record the timing evidence in the PR.
+**CI suite placement (required):** compatibility decides first — a JUnit 5 class goes to
+`Junit5Suite1` and a test needing a live OpenSearch cluster to `OpenSearchUpgradeSuite`; neither
+competes on runtime. Every other **new test class** goes in the `MainSuite*` that
+`just suite-timings` currently names as fastest, and a **new method on an existing class stays
+with its class**. The suite name is a result of that measurement, never an input — never take it
+from an example, a nearby class or memory, and if the command finds no timings, report it and ask
+instead of picking a default. Follow [Integration Tests → Registering Tests in a MainSuite](../docs/testing/INTEGRATION_TESTS.md#registering-tests-in-a-mainsuite-ci-gate)
+and paste the command's output into the PR.
 
 **Common Test Error - Tests Silently Skipped:**
 ```bash
@@ -167,7 +170,6 @@ core/
 │       └── dotcms-models/      # TypeScript interfaces
 ├── dotcms-integration/           # Integration tests
 ├── dotcms-postman/               # Postman API tests
-├── test-karate/                  # Karate API tests
 ├── e2e/                          # E2E tests (Playwright)
 ├── bom/                          # Bill of Materials
 │   └── application/pom.xml      # ⚠️ DEPENDENCY VERSIONS GO HERE
@@ -538,7 +540,6 @@ Cannot resolve in-project dependency: com.dotcms:dotcms-core-web:war:1.0.0-SNAPS
 # Tests are skipped by default. Add explicit flags:
 -Dcoreit.test.skip=false   # For integration tests
 -Dpostman.test.skip=false  # For Postman tests
--Dkarate.test.skip=false   # For Karate tests
 
 # Example:
 ./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false

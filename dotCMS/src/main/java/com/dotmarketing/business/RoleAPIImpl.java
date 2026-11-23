@@ -4,6 +4,8 @@ import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.UtilMethods;
 import com.dotcms.business.WrapInTransaction;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.exception.DotDataException;
@@ -63,6 +65,21 @@ public class RoleAPIImpl implements RoleAPI {
 	@Override
 	public Role loadRoleById(final String roleId) throws DotDataException {
 		return roleFactory.getRoleById(roleId);
+	}
+
+	@CloseDBIfOpened
+	@Override
+	public Role loadRoleByKeyOrId(final String keyOrId) throws DotDataException {
+		if (!UtilMethods.isSet(keyOrId)) {
+			return null;
+		}
+		final boolean idFirst = UUIDUtil.isUUID(keyOrId);
+		final Role first = idFirst ? roleFactory.getRoleById(keyOrId) : roleFactory.loadRoleByKey(keyOrId);
+		if (null != first && UtilMethods.isSet(first.getId())) {
+			return first;
+		}
+		final Role second = idFirst ? roleFactory.loadRoleByKey(keyOrId) : roleFactory.getRoleById(keyOrId);
+		return null != second && UtilMethods.isSet(second.getId()) ? second : null;
 	}
 
 	@Override
@@ -622,6 +639,43 @@ public class RoleAPIImpl implements RoleAPI {
 			}
 		}
 		return false;
+	}
+
+	@Override
+	public boolean doesUserHaveRoles(final String userId, final List<String> roleIds,
+			final User requestingUser) throws DotDataException, DotSecurityException {
+
+		if (null == requestingUser) {
+			throw new DotSecurityException("A requesting user is required to check the roles of a user");
+		}
+		if (!requestingUser.getUserId().equals(userId) && !this.canReadRoleMembership(requestingUser)) {
+			SecurityLogger.logInfo(this.getClass(), "User " + requestingUser.getUserId()
+					+ " is not allowed to check the roles of another user");
+			throw new DotSecurityException("User " + requestingUser.getUserId()
+					+ " does not have permissions to check the roles of another user");
+		}
+		return this.doesUserHaveRoles(userId, roleIds);
+	}
+
+	/**
+	 * A CMS Administrator may read role membership, and so may a user who holds a Roles screen and a
+	 * Users screen. A Roles screen is the {@code roles} portlet or the old Roles &amp; Tools screen kept
+	 * as {@code roles-legacy}; a Users screen is {@code users} or {@code users-legacy}, as decided by
+	 * {@link LayoutAPI#doesUserHaveAccessToUsersPortlet(User)}. So a role that kept only the two old
+	 * screens can still list the users in a role there.
+	 *
+	 * @param user the {@link User} making the request
+	 * @return {@code true} when the user may read role membership
+	 * @throws DotDataException if the user's portlet access cannot be resolved
+	 */
+	@Override
+	public boolean canReadRoleMembership(final User user) throws DotDataException {
+
+		final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
+		return user.isAdmin() ||
+				((layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), user)
+						|| layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES_LEGACY.toString(), user))
+						&& layoutAPI.doesUserHaveAccessToUsersPortlet(user));
 	}
 
 	@CloseDBIfOpened

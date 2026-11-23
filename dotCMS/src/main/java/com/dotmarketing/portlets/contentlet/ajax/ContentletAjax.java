@@ -111,6 +111,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
@@ -139,6 +140,9 @@ public class ContentletAjax {
 	private static String VELOCITY_CODE_TEMPLATE = "#foreach($con in $dotcontent.pull(\"%s\",10,\"%s\"))<br/>%s<br/>#end";
 
 	private static final String CONTENT_TYPES_INODE_SEPARATOR = ",";
+
+	/** Name of a binary column, which is also the name of its form field: binary1, binary2, ... */
+	private static final Pattern BINARY_COLUMN = Pattern.compile("binary\\d+");
 
 	private java.text.DateFormat modDateFormat = java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.SHORT,
 			java.text.DateFormat.SHORT);
@@ -1065,7 +1069,7 @@ public class ContentletAjax {
 		try{
 			final String luceneQueryTOElasticSearch = relatedIdentifiers.isEmpty() ?
 					luceneQuery.toString() :
-					appendRelatedIdentifierToQuery(luceneQuery.toString(), relatedIdentifiers);
+					prependRelatedIdentifierToQuery(luceneQuery.toString(), relatedIdentifiers);
 
 			hits =(PaginatedArrayList)conAPI.searchIndex(luceneQueryTOElasticSearch, perPage, offset, finalSort, currentUser, false);
 
@@ -1180,14 +1184,28 @@ public class ContentletAjax {
 		return results;
 	}
 
-	private String appendRelatedIdentifierToQuery(final String luceneQuery,
+	/**
+	 * Restricts the given query to the given identifiers.
+	 * <p>
+	 * The clause is placed before the caller's query rather than after it, which is how a fixed
+	 * clause is composed everywhere else in the search code: what a clause appended at the end
+	 * means depends on how the query ends, since a query ending in an unbalanced escape consumes
+	 * the space that separates the two. The query built here ends in a variant clause written by
+	 * this class, so either order works today; prepending keeps it that way without the next
+	 * caller having to check.
+	 *
+	 * @param luceneQuery the query to restrict
+	 * @param relatedIdentifiers the identifiers the results are restricted to, never empty
+	 * @return the restriction followed by the given query
+	 */
+	private String prependRelatedIdentifierToQuery(final String luceneQuery,
 			final List<String> relatedIdentifiers) {
 
 		Preconditions.checkArgument(UtilMethods.isSet(relatedIdentifiers), "relatedIdentifiers can not be empty or null");
-		final StringBuffer result = new StringBuffer(luceneQuery);
+		final StringBuffer result = new StringBuffer("+identifier:(");
 
-		return result.append(" +identifier:(")
-				.append(String.join(" OR ", relatedIdentifiers)).append(") ")
+		return result.append(String.join(" OR ", relatedIdentifiers)).append(") ")
+				.append(luceneQuery)
 				.toString();
 	}
 
@@ -1813,11 +1831,66 @@ public class ContentletAjax {
 	}
 
 	/**
+	 * Finds the file the edit screen left for a binary field in the user's temp folder, under a
+	 * folder named after the binary column ({@code binary1}, {@code binary2}, ...).
 	 *
-	 * @param
-	 * @param
-	 * @param
-	 * @return
+	 * @param tmpRoot  the temp folder for binaries
+	 * @param userId   the id of the user saving the content
+	 * @param column   the name of the form field; only a binary column has a folder
+	 * @param fileName the name of the file, without any folder
+	 * @return the file, or empty when the field is not a binary column, the name is not a plain
+	 *         file name, or no such file sits directly in the column's folder
+	 */
+	static Optional<File> stagedBinary(final File tmpRoot, final String userId, final String column,
+			final String fileName) {
+		if (column == null || !BINARY_COLUMN.matcher(column).matches() || !isPlainFileName(fileName)) {
+			return Optional.empty();
+		}
+		final File columnFolder = new File(new File(tmpRoot, userId), column);
+		final File staged = new File(columnFolder, fileName);
+		return staged.isFile() && isDirectlyInside(columnFolder, staged)
+				? Optional.of(staged) : Optional.empty();
+	}
+
+	/**
+	 * Tells whether a value is a file name and nothing else: no slash or backslash, whatever the
+	 * platform treats as a separator, and not a reference to the current or parent folder.
+	 *
+	 * @param fileName the value to check
+	 * @return true when the value names a single file
+	 */
+	private static boolean isPlainFileName(final String fileName) {
+		return UtilMethods.isSet(fileName)
+				&& fileName.indexOf('/') < 0 && fileName.indexOf('\\') < 0
+				&& !".".equals(fileName) && !"..".equals(fileName);
+	}
+
+	/**
+	 * Tells whether a file really lives in a folder once links and relative segments are
+	 * resolved, so a name that leads somewhere else is not accepted.
+	 *
+	 * @param folder the folder the file must be in
+	 * @param file   the file to check
+	 * @return true when the folder is the file's real parent; false also when it cannot be resolved
+	 */
+	private static boolean isDirectlyInside(final File folder, final File file) {
+		try {
+			return folder.getCanonicalFile().equals(file.getCanonicalFile().getParentFile());
+		} catch (final IOException e) {
+			return false;
+		}
+	}
+
+	/**
+	 * Saves the content submitted by the legacy edit content screen.
+	 *
+	 * @param formData   the form fields, each one as name, separator and value
+	 *                   ({@link WebKeys#CONTENTLET_FORM_NAME_VALUE_SEPARATOR})
+	 * @param isAutoSave whether the save was triggered by the auto-save timer
+	 * @param isCheckin  whether the content is checked in as a new version
+	 * @param publish    whether the content is published after it is saved
+	 * @return the data the screen needs after the save: identifier, inode, lock state and any
+	 *         validation errors under {@code saveContentErrors}
 	 * @throws SystemException
 	 * @throws PortalException
 	 * @throws LanguageException
@@ -1829,7 +1902,6 @@ public class ContentletAjax {
 	  Map<String,Object> callbackData = new HashMap<>();
 	  List<String> saveContentErrors = new ArrayList<>();
 	  User user = null;
-      boolean clearBinary = true;//flag to check if the binary field needs to be cleared or not
       HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
       String newInode = "";
 
@@ -1910,52 +1982,34 @@ public class ContentletAjax {
 				elementValue = elementValue.toString().trim();
 			}
 
-			//http://jira.dotmarketing.net/browse/DOTCMS-3463
+			// A binary value is either a temp file id, resolved later by the field handler, or the
+			// name of a file the server copied into the user's tmp_binary folder for that binary
+			// column when the content was populated from another language (EditContentletAction)
 			if(elementName.startsWith("binary")){
 				String binaryFileValue = (String) elementValue;
 				File binaryFile = null;
 				if(UtilMethods.isSet(binaryFileValue) && !binaryFileValue.equals("---removed---")){
-					Contentlet binaryContentlet =  new Contentlet();
-					try{
-						binaryContentlet = conAPI.find(binaryFileValue, APILocator.getUserAPI().getSystemUser(), false);
-					}catch(Exception e){
-						Logger.error(this.getClass(), "Problems finding binary content " + binaryFileValue, e);
-					}
-					if(UtilMethods.isSet(binaryContentlet) && UtilMethods.isSet(binaryContentlet.getInode())){
-						try {
-							elementValue = binaryContentlet.getBinary(FileAssetAPI.BINARY_FIELD);
-							binaryFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
-									+ File.separator + user.getUserId() + File.separator + "binary1"
-									+ File.separator + ((File)elementValue).getName());
-							if(binaryFile.exists())
-								elementValue = binaryFile;
-						} catch (IOException e) {}
-					}else{
-						binaryFileValue = ContentletUtil.sanitizeFileName(binaryFileValue);
-						binaryFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
-								+ File.separator + user.getUserId() + File.separator + elementName
-								+ File.separator + binaryFileValue);
-						if(binaryFile.exists()) {
-	    					try {
-	    					    // https://github.com/dotCMS/dotCMS/issues/35
-	    					    // making a copy just in case the transaction fails so
-	    					    // we can have the file for possible next attempts
-	                            File acopyFolder=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
-	                                    + File.separator + user.getUserId() + File.separator + elementName
-	                                    + File.separator + UUIDGenerator.generateUuid());
-	                            if(!acopyFolder.exists())
-	                                acopyFolder.mkdir();
-	                            File acopy=new File(acopyFolder, binaryFileValue);
-	                            FileUtil.copyFile(binaryFile, acopy);
-	                            elementValue = acopy;
-	                        } catch (Exception e) {
-                                Logger.error(this, "can't make a copy of the uploaded file:" + e, e);
-                                String errorString = LanguageUtil.get(user,"message.event.recurrence.can.not.copy.uploaded.file");
-                                saveContentErrors.add(errorString);
-                                callbackData.put("saveContentErrors", saveContentErrors);
-                                return callbackData;
-                            }
-						}
+					binaryFileValue = ContentletUtil.sanitizeFileName(binaryFileValue);
+					binaryFile = stagedBinary(new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()),
+							user.getUserId(), elementName, binaryFileValue).orElse(null);
+					if(binaryFile != null) {
+    					try {
+    					    // https://github.com/dotCMS/dotCMS/issues/35
+    					    // making a copy just in case the transaction fails so
+    					    // we can have the file for possible next attempts
+                            File acopyFolder=new File(binaryFile.getParentFile(), UUIDGenerator.generateUuid());
+                            if(!acopyFolder.exists())
+                                acopyFolder.mkdir();
+                            File acopy=new File(acopyFolder, binaryFileValue);
+                            FileUtil.copyFile(binaryFile, acopy);
+                            elementValue = acopy;
+                        } catch (Exception e) {
+                            Logger.error(this, "can't make a copy of the uploaded file:" + e, e);
+                            String errorString = LanguageUtil.get(user,"message.event.recurrence.can.not.copy.uploaded.file");
+                            saveContentErrors.add(errorString);
+                            callbackData.put("saveContentErrors", saveContentErrors);
+                            return callbackData;
+                        }
 					}
 				}else{
 					elementValue = new File(binaryFileValue);
@@ -2152,23 +2206,19 @@ public class ContentletAjax {
 	  catch(DotLockException dse){
 		  String errorString = LanguageUtil.get(user,"message.content.locked");
 		  saveContentErrors.add(errorString);
-		  clearBinary = false;
 	  }
 	  catch(DotSecurityException dse){
 		  String errorString = LanguageUtil.get(user,"message.insufficient.permissions.to.save") + ". " + dse.getMessage();
 		  saveContentErrors.add(errorString);
-		  clearBinary = false;
 	  }
 	  catch ( PublishStateException pe ) {
 		  String errorString = LanguageUtil.get( user, pe.getMessage() );
 		  saveContentErrors.add( errorString );
-		  clearBinary = false;
 	  }
 	  catch ( DotLanguageException e ) {
 		  saveContentErrors.add( e.getMessage() );
 		  callbackData.put( "saveContentErrors", saveContentErrors );
 		  callbackData.put( "referer", referer );
-		  clearBinary = false;
 		  return callbackData;
 	  }
 	  catch(final Exception e){
@@ -2178,20 +2228,19 @@ public class ContentletAjax {
 
 		  if (optionalThrowable.isPresent()) {
 			  final DotContentletValidationException ve = (DotContentletValidationException) optionalThrowable.get();
-			  clearBinary = handleValidationException(user, ve, saveContentErrors);
+			  handleValidationException(user, ve, saveContentErrors);
 		  } else {
 			  final Throwable rootCause = getRootCause(e);
 			  if (rootCause instanceof DotContentletValidationException) {
 				  final DotContentletValidationException ve = DotContentletValidationException.class
 						  .cast(rootCause);
-				  clearBinary = handleValidationException(user, ve, saveContentErrors);
+				  handleValidationException(user, ve, saveContentErrors);
 			  } else {
 				  Logger.debug(this, e.getMessage(), e);
 				  Logger.error(this, e.getMessage());
 				  saveContentErrors.add(e.getMessage());
 				  callbackData.put("saveContentErrors", saveContentErrors);
 				  callbackData.put("referer", referer);
-				  clearBinary = false;
 				  return callbackData;
 			  }
 		  }
@@ -2221,34 +2270,6 @@ public class ContentletAjax {
 				SessionMessages.clear(req.getSession());
 
 			}
-		    if(clearBinary){//if an error occur with any other field (was unique, required, length, pattern or bad type) when saving the contentlet, do not clear the binary field
-			// If an error occurred, manually delete all other uploaded binary
-		    // files since they were not included in the Hibernate transaction
-			try {
-				HttpSession ses = req.getSession();
-				List<String> tempBinaryImageInodes = (List<String>) ses
-						.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
-				if (UtilMethods.isSet(tempBinaryImageInodes)
-						&& tempBinaryImageInodes.size() > 0) {
-					for (String inode : tempBinaryImageInodes) {
-						Contentlet contentlet = conAPI.find(inode, APILocator
-								.getUserAPI().getSystemUser(), false);
-						if (contentlet != null) {
-							conAPI.archive(contentlet, user, false);
-							conAPI.delete(contentlet, APILocator.getUserAPI()
-									.getSystemUser(), false, true);
-						}
-					}
-					tempBinaryImageInodes.clear();
-				}
-			} catch (DotContentletStateException e1) {
-				Logger.warn(this, "Could not delete temporary image inode", e1);
-			} catch (DotDataException e1) {
-				Logger.warn(this, "Could not delete temporary image inode", e1);
-			} catch (DotSecurityException e1) {
-				Logger.warn(this, "Could not delete temporary image inode", e1);
-			}
-		    }
 		}
 
 		if(!isAutoSave
@@ -2280,17 +2301,19 @@ public class ContentletAjax {
 	}
 
 	/**
-	 * This code has been extracted into a separate method so we can use it when original exception has been wrapped within a Runtime Exception
-	 * @param user
-	 * @param ve
-	 * @param saveContentErrors
-	 * @return
-	 * @throws LanguageException
+	 * Adds the localized message of each validation failure in the given exception to the list of
+	 * save errors. Used for the exception as thrown and when it is wrapped in another one. When the
+	 * exception reports unique-field errors, the current Hibernate transaction is rolled back. When no
+	 * specific message applies, the message of the exception itself is added.
+	 *
+	 * @param user              the user the messages are localized for
+	 * @param ve                the validation exception
+	 * @param saveContentErrors the list the messages are added to
+	 * @throws LanguageException if a message cannot be localized
 	 */
-	private boolean handleValidationException(final User user,
+	private void handleValidationException(final User user,
 			final DotContentletValidationException ve, final List<String> saveContentErrors)
 			throws LanguageException {
-		boolean clearBinary = true;
 		if (ve instanceof FileAssetValidationException) {
 			final List<Field> reqs = ve.getNotValidFields()
 					.get(DotContentletValidationException.VALIDATION_FAILED_BADTYPE);
@@ -2310,7 +2333,6 @@ public class ContentletAjax {
 					errorString = errorString.replace("{0}", field.getFieldName());
 					saveContentErrors.add(errorString);
 				}
-				clearBinary = false;
 			}
 
 			if (ve.hasPatternErrors()) {
@@ -2321,7 +2343,6 @@ public class ContentletAjax {
 					errorString = errorString.replace("{0}", field.getFieldName());
 					saveContentErrors.add(errorString);
 				}
-				clearBinary = false;
 			}
 
 			if (ve.hasBadTypeErrors()) {
@@ -2332,7 +2353,6 @@ public class ContentletAjax {
 					errorString = errorString.replace("{0}", field.getFieldName());
 					saveContentErrors.add(errorString);
 				}
-				clearBinary = false;
 			}
 
 			if (ve.hasCharLimitErrors()) {
@@ -2345,7 +2365,6 @@ public class ContentletAjax {
 							maxLimit != null ? maxLimit : 0);
 					saveContentErrors.add(errorString);
 				}
-				clearBinary = false;
 			}
 
 			if (ve.hasRelationshipErrors()) {
@@ -2393,7 +2412,6 @@ public class ContentletAjax {
 				String errorString = LanguageUtil.get(user, "message.relationship.required_ext");
 				errorString = errorString.replace("{0}", sb.toString());
 				saveContentErrors.add(errorString);
-				clearBinary = false;
 			}
 
 			if (ve.hasUniqueErrors()) {
@@ -2404,7 +2422,6 @@ public class ContentletAjax {
 					errorString = errorString.replace("{0}", field.getFieldName());
 					saveContentErrors.add(errorString);
 				}
-				clearBinary = false;
 
                 try {
                     HibernateUtil.rollbackTransaction();
@@ -2427,10 +2444,20 @@ public class ContentletAjax {
 		if (saveContentErrors.size() == 0) {
 			saveContentErrors.add(ve.getMessage());
 		}
-		return clearBinary;
 	}
 
 
+	/**
+	 * Ends the edition of a contentlet in the legacy edit screen. When the contentlet being edited
+	 * is a Site, the Site Browser goes back to the default Site. Content is looked up with the
+	 * permissions of the logged-in user.
+	 *
+	 * @param workingContentletInode the inode of the working version being edited
+	 * @param currentContentletInode the inode of the current version, unused
+	 * @param referer the URL to return to
+	 * @param language the language id to set on the returned URL
+	 * @return the URL to return to, with the language set
+	 */
 	@CloseDB
 	//http://jira.dotmarketing.net/browse/DOTCMS-2273
 	public String cancelContentEdit(String workingContentletInode,String currentContentletInode,String referer,String language){
@@ -2440,15 +2467,6 @@ public class ContentletAjax {
 			User user = com.liferay.portal.util.PortalUtil.getUser(req);
 			//contentletWebAPI.cancelContentEdit(workingContentletInode,currentContentletInode,user);
 			HttpSession ses = req.getSession();
-			List<String> tempBinaryImageInodes = (List<String>) ses.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
-
-			if(UtilMethods.isSet(tempBinaryImageInodes) && tempBinaryImageInodes.size() > 0){
-				for(String inode : tempBinaryImageInodes){
-					conAPI.delete(conAPI.find(inode, APILocator.getUserAPI().getSystemUser(), false), APILocator.getUserAPI().getSystemUser(), false, true);
-				}
-				tempBinaryImageInodes.clear();
-			}
-
 			// if we are canceling the edition of a host, let's restore the default one for the site browser
 
 			Contentlet content = conAPI.find(workingContentletInode, user, false);

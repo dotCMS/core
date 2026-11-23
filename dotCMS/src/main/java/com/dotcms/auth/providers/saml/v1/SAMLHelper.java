@@ -2,6 +2,7 @@ package com.dotcms.auth.providers.saml.v1;
 
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.company.CompanyAPI;
+import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.filters.interceptor.saml.SamlWebInterceptor;
 import com.dotcms.rest.api.v1.user.UserHelper;
 import com.dotcms.saml.Attributes;
@@ -22,7 +23,6 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
@@ -461,15 +461,24 @@ public class SAMLHelper {
         }
     }
 
+    /**
+     * Assigns the roles a SAML sign-in grants, after {@link #addRoles} has cleared the user's roles (unless the
+     * strategy is {@code staticadd}). The user gets the IdP roles (strategies {@code all} and {@code idp}), the
+     * back-end and front-end roles when {@code enableBackend} / {@code enableFrontend} are on, and the existing
+     * roles listed in {@code role.extra} (every strategy except {@code idp}). No role is created here, and no
+     * role is assigned unless one of these settings names it.
+     *
+     * @param user                          the signed-in user
+     * @param attributesBean                attributes from the assertion, including the IdP roles
+     * @param identityProviderConfiguration the SAML configuration of the site
+     * @param buildRolesStrategy            the {@code build.roles} strategy in use
+     * @throws DotDataException if a role cannot be loaded or assigned
+     */
     private void handleRoles(final User user, final Attributes attributesBean,
                              final IdentityProviderConfiguration identityProviderConfiguration,
                              final String buildRolesStrategy) throws DotDataException {
 
         this.addRolesFromIDP(user, attributesBean, identityProviderConfiguration, buildRolesStrategy);
-
-        // Add SAML User role
-        UserHelper.getInstance().addRole(user, DotSamlConstants.DOTCMS_SAML_USER_ROLE, true, true);
-        Logger.debug(this, ()->"Default SAML User role has been assigned");
 
         // System access roles based on enableBackend/enableFrontend config flags.
         // addRole dedupes against DOTCMS_SAML_OPTIONAL_USER_ROLE entries.
@@ -482,7 +491,7 @@ public class SAMLHelper {
             UserHelper.getInstance().addRole(user, Role.DOTCMS_FRONT_END_USER, false, false);
         }
 
-        // the only strategy that does not include the saml user role is the "idp"
+        // role.extra applies to every strategy except "idp", which takes its roles from the IdP alone
         if (!DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_IDP_VALUE.equalsIgnoreCase(buildRolesStrategy)) {
             // Add DOTCMS_SAML_OPTIONAL_USER_ROLE
             if (this.getSamlConfigurationService().getConfigAsString(identityProviderConfiguration,
@@ -493,15 +502,18 @@ public class SAMLHelper {
 
                 for (final String roleExtra : rolesExtra){
 
-                    UserHelper.getInstance().addRole(user, roleExtra, false, false);
-                    Logger.debug(this, () -> "Optional user role: " +
-                            this.getSamlConfigurationService().getConfigAsString(identityProviderConfiguration,
-                                    SamlName.DOTCMS_SAML_OPTIONAL_USER_ROLE) + " has been assigned");
+                    // "SAML User, Other" lists "Other", not " Other"
+                    final String roleKey = roleExtra.trim();
+                    if (roleKey.isEmpty()) {
+                        continue;
+                    }
+                    UserHelper.getInstance().addRole(user, roleKey, false, false);
+                    Logger.debug(this, () -> "Optional user role: " + roleKey + " has been processed");
                 }
             }
         } else {
 
-            Logger.info(this, "The build roles strategy is 'idp'. No saml_user_role has been added");
+            Logger.info(this, "The build roles strategy is 'idp'. The role.extra roles have not been added");
         }
     }
 
@@ -728,7 +740,16 @@ public class SAMLHelper {
         return doHash? hashIt(token): token;
     }
 
-
+    /**
+     * Creates the dotCMS user for someone signing in through the identity provider for the first
+     * time, using the attributes the provider sent. The local password is the hash of a random
+     * secret, so the account can only sign in through the identity provider.
+     *
+     * @param systemUser                    the system {@link User}, used to save the new user
+     * @param attributesBean                the attributes sent by the identity provider
+     * @param identityProviderConfiguration the configuration of that identity provider
+     * @return the new {@link User}
+     */
     protected User createNewUser(final User systemUser, final Attributes attributesBean,
                                  final IdentityProviderConfiguration identityProviderConfiguration) {
         User user = null;
@@ -752,7 +773,7 @@ public class SAMLHelper {
             user.setActive(true);
 
             user.setCreateDate(new Date());
-            user.setPassword(PublicEncryptionFactory.digestString(UUIDGenerator.generateUuid() + "/" + UUIDGenerator.generateUuid()));
+            user.setPassword(PasswordFactoryProxy.generateRandomHash());
             user.setPasswordEncrypted(true);
 
             if (Objects.nonNull(attributesBean.getAdditionalAttributes()) &&
