@@ -39,15 +39,44 @@
 
 
 
+// Saves the job through the scheduler REST endpoint, then returns to the list of user jobs
 function submitfm(form) {
-	if (validate()) {
-		form.<portlet:namespace />cmd.value = '<%=Constants.ADD%>';
-		form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/scheduler/edit_scheduler" /></portlet:actionURL>';
-		form.<portlet:namespace />redirect.value = '<portlet:renderURL><portlet:param name="struts_action" value="/ext/scheduler/edit_scheduler" /></portlet:renderURL>';
-		form.referrer.value = '<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/scheduler/view_schedulers" /><portlet:param name="group" value="user_jobs" /></portlet:renderURL>';
-		submitForm(form);
+	if (!validate()) {
+		return;
 	}
-
+	const valueOf = (name) => (form[name] && form[name].value) ? form[name].value : null;
+	const checked = (id) => document.getElementById(id) != null && document.getElementById(id).checked;
+	const properties = {};
+	for (let i = 0; i < 6; i++) {
+		const name = valueOf('propertyName' + i);
+		const value = valueOf('propertyValue' + i);
+		if (name && value) {
+			properties[name] = value;
+		}
+	}
+	const jobName = valueOf('jobName');
+	const editMode = valueOf('editMode') === 'true';
+	const job = {
+		jobName: jobName,
+		jobDescription: valueOf('jobDescription'),
+		javaClass: dijit.byId('javaClass') ? dijit.byId('javaClass').get('value') : valueOf('javaClass'),
+		cronExpression: valueOf('cronExpression'),
+		startDate: checked('haveStartDate') ? valueOf('startDate') : null,
+		endDate: checked('haveEndDate') ? valueOf('endDate') : null,
+		properties: properties
+	};
+	fetch('/api/v1/scheduler/jobs' + (editMode ? '/' + encodeURIComponent(jobName) : ''), {
+		method: editMode ? 'PUT' : 'POST',
+		headers: {'Content-Type': 'application/json'},
+		body: JSON.stringify(job)
+	}).then(async (response) => {
+		if (response.ok) {
+			self.location = '<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/scheduler/view_schedulers" /><portlet:param name="group" value="user_jobs" /></portlet:renderURL>';
+			return;
+		}
+		const body = await response.json().catch(() => ({}));
+		showDotCMSErrorMessage((body.errors && body.errors.length) ? body.errors[0].message : response.statusText);
+	}).catch((error) => showDotCMSErrorMessage(String(error)));
 }
 
 function cancelEdit() {

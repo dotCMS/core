@@ -98,6 +98,7 @@ import org.glassfish.jersey.server.ServerProperties;
 				@Tag(name = "Roles", description = "User role and permission management"),
 				@Tag(name = "Rules Engine", description = "Business rules and conditional logic management"),
 				@Tag(name = "SAML Authentication", description = "SAML SSO authentication and integration"),
+				@Tag(name = "Scheduler", description = "Jobs scheduled from the Scheduler portlet"),
 				@Tag(name = "Search", description = "Content search and query operations"),
 				@Tag(name = "Search Index", description = "Search index management and operations"),
 				@Tag(name = "Sites", description = "Multi-site management and configuration"),

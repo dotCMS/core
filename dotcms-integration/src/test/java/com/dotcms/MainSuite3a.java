@@ -91,6 +91,7 @@ import org.junit.runners.Suite;
         FixTask00090RecreateMissingFoldersInParentPathTest.class,
         AnalyticsValidatorUtilTest.class,
         Task250826AddIndexesToUniqueFieldsTableTest.class,
+    com.dotcms.rest.api.v1.scheduler.SchedulerJobResourceTest.class,
         SecondaryCategoryPermissionTest.class,
         RequestCostReportTest.class,
         OpenAIVisionAPIImplTest.class,
