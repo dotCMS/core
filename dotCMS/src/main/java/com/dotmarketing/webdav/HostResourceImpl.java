@@ -18,6 +18,7 @@ import com.bradmcevoy.http.exceptions.BadRequestException;
 import com.bradmcevoy.http.exceptions.ConflictException;
 import com.bradmcevoy.http.exceptions.NotAuthorizedException;
 import com.bradmcevoy.http.exceptions.PreConditionFailedException;
+import com.dotcms.browser.BrowserQuery;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -38,6 +39,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class HostResourceImpl extends BasicFolderResourceImpl implements Resource, CollectionResource, FolderResource, PropFindableResource, MakeCollectionableResource, LockingCollectionResource{
 
@@ -143,9 +145,8 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 	} 
 
 	/**
-	 * Lists the folders and files at the root of the site. While a request reads the live tree, it
-	 * lists the live version of each file, so files that were never published are left out;
-	 * otherwise it lists the working versions (see {@link DotWebdavHelper#servesLiveVersions(boolean)}).
+	 * Lists the folders and files at the root of the site. Files are filtered by the user's READ
+	 * permission without front-end roles, as folder listings and downloads are.
 	 *
 	 * @return the folders, files and temporary resources at the root of the site
 	 */
@@ -174,9 +175,7 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 			frs.add(fr);
 		}
 		try {
-			// working=false lists the live versions
-			final boolean working = !DotWebdavHelper.servesLiveVersions(isAutoPub);
-			List<FileAsset> fas = APILocator.getFileAssetAPI().findFileAssetsByParentable(host, null, working, false, user, false);
+			final List<FileAsset> fas = listSiteRootFiles(user);
 			for(FileAsset fa:fas){
 			    if(!fa.isArchived()) {
 			    	if(fa.getLanguageId()==dotDavHelper.getLanguage()){
@@ -228,6 +227,28 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 			}
 		}
 		return frs;
+	}
+
+	/**
+	 * Loads the working version of the files at the root of the site that the user can read,
+	 * checking READ without front-end roles.
+	 *
+	 * @param user the user listing the site
+	 * @return the files at the root of the site the user can read
+	 */
+	private List<FileAsset> listSiteRootFiles(final User user) {
+		final BrowserQuery query = BrowserQuery.builder()
+				.withHostOrFolderId(host.getIdentifier())
+				.withUser(user)
+				.showFiles(true)
+				.showWorking(true)
+				.showArchived(false)
+				.hostIdSystemFolder(host.getIdentifier())
+				.respectFrontEndRoles(false)
+				.build();
+		return APILocator.getBrowserAPI().getContentUnderParentFromDB(query).stream()
+				.map(contentlet -> APILocator.getFileAssetAPI().fromContentlet(contentlet))
+				.collect(Collectors.toList());
 	}
 
 	public Host getHost() {

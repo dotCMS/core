@@ -101,15 +101,9 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 		}
 	}
 
-	/**
-	 * Finds a child of this folder by name. A request that writes (e.g. a COPY or MOVE checking
-	 * whether its destination exists) finds files by their working version in both trees; see
-	 * {@link DotWebdavHelper#servesLiveVersions(boolean)}.
-	 *
-	 * @param childName name of the child
-	 * @return the child, or {@code null} when there is none with that name
+	/* (non-Javadoc)
+	 * @see com.bradmcevoy.http.CollectionResource#child(java.lang.String)
 	 */
-	@Override
 	public Resource child(String childName) {
 
 		if(dotDavHelper.isSameTargetAndDestinationResourceOnMove(childName)){

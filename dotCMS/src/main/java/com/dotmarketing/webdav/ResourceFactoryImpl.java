@@ -46,17 +46,6 @@ public class ResourceFactoryImpl implements ResourceFactory, Initable {
 		return getResource(davHost, url, dotDavHelper, hostAPI);
 	}
 
-	/**
-	 * Resolves the WebDAV resource at the given URL. In the live tree, a request that only reads
-	 * (GET, HEAD, PROPFIND...) resolves a file to its live version, so a file that was never
-	 * published is not found; requests that write resolve the working version in both trees.
-	 *
-	 * @param davHost      Host the WebDAV request was sent to
-	 * @param url          WebDAV URL of the resource
-	 * @param dotDavHelper Helper used to load files and folders
-	 * @param hostAPI      API used to load the site
-	 * @return the resource, or {@code null} when there is none at that URL
-	 */
 	public static Resource getResource(final String davHost, String url, final DotWebdavHelper dotDavHelper, final HostAPI hostAPI) {
 		url = url.toLowerCase();
 		Logger.debug(ResourceFactoryImpl.class, "WebDav ResourceFactory: Host is " + davHost + " and the url is " + url);
@@ -198,7 +187,7 @@ public class ResourceFactoryImpl implements ResourceFactory, Initable {
 			}
 
 			if(!isFolder && isResource){
-				IFileAsset file = dotDavHelper.loadFile(url, user, DotWebdavHelper.servesLiveVersions(live));
+				IFileAsset file = dotDavHelper.loadFile(url,user);
 				if(file == null || !InodeUtils.isSet(file.getInode())){
 					Logger.debug(ResourceFactoryImpl.class, "The file for url " + url + " returned null or not in db");
 					return null;

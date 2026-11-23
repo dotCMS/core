@@ -20,12 +20,14 @@ import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.DotCMSMockRequest;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
@@ -91,7 +93,7 @@ public class DotWebdavHelperTest {
         }
     }
 
-    /** Archives and deletes the sites the live/working tree tests created, with their folders and files. */
+    /** Archives and deletes the sites the listing tests created, with their folders and files. */
     private static void removeCreatedSites() {
         for (final Host site : createdSites) {
             try {
@@ -589,264 +591,56 @@ public class DotWebdavHelperTest {
         return entries.stream().map(entry -> entry.level + " " + entry.message).collect(Collectors.toList());
     }
 
-    // ---- Live and working trees: which version each one lists and serves ----------------------
-
-    /**
-     * Method to test: {@link DotWebdavHelper#getChildrenOfFolder(Folder, User, boolean, long)}
-     * <p>
-     * Given Scenario: A folder holds one published file and one file that was saved but never
-     * published.
-     * <p>
-     * ExpectedResult: The live tree lists only the published file.
-     */
-    @Test
-    public void Test_live_folder_listing_shows_only_published_files() throws Exception {
-        final Folder folder = new FolderDataGen().site(newSite()).nextPersisted();
-        final Contentlet published = ContentletDataGen.publish(newFileAsset(folder, "published-file.txt"));
-        final Contentlet unpublished = newFileAsset(folder, "unpublished-file.txt");
-
-        final List<String> names;
-        try (MockedStatic<HttpManager> mocked = mockRequestMethod(Request.Method.PROPFIND)) {
-            names = resourceNames(helper.getChildrenOfFolder(
-                    folder, APILocator.systemUser(), true, defaultLanguageId()));
-        }
-
-        Assert.assertTrue(names.toString(), names.contains(fileName(published)));
-        Assert.assertFalse(names.toString(), names.contains(fileName(unpublished)));
-    }
-
-    /**
-     * Method to test: {@link DotWebdavHelper#getChildrenOfFolder(Folder, User, boolean, long)}
-     * <p>
-     * Given Scenario: A folder holds one published file and one file that was saved but never
-     * published.
-     * <p>
-     * ExpectedResult: The working tree lists both files.
-     */
-    @Test
-    public void Test_working_folder_listing_shows_all_files() throws Exception {
-        final Folder folder = new FolderDataGen().site(newSite()).nextPersisted();
-        final Contentlet published = ContentletDataGen.publish(newFileAsset(folder, "published-file.txt"));
-        final Contentlet unpublished = newFileAsset(folder, "unpublished-file.txt");
-
-        final List<String> names;
-        try (MockedStatic<HttpManager> mocked = mockRequestMethod(Request.Method.PROPFIND)) {
-            names = resourceNames(helper.getChildrenOfFolder(
-                    folder, APILocator.systemUser(), false, defaultLanguageId()));
-        }
-
-        Assert.assertTrue(names.toString(), names.contains(fileName(published)));
-        Assert.assertTrue(names.toString(), names.contains(fileName(unpublished)));
-    }
-
-    /**
-     * Method to test: {@link DotWebdavHelper#getChildrenOfFolder(Folder, User, boolean, long)}
-     * <p>
-     * Given Scenario: A published file has a newer version that was saved but not published.
-     * <p>
-     * ExpectedResult: The live tree lists the file once, as its published version.
-     */
-    @Test
-    public void Test_live_folder_listing_shows_published_version_of_edited_file() throws Exception {
-        final Folder folder = new FolderDataGen().site(newSite()).nextPersisted();
-        final Contentlet published = ContentletDataGen.publish(newFileAsset(folder, "edited-file.txt"));
-        ContentletDataGen.checkin(ContentletDataGen.checkout(published));
-
-        final List<FileResourceImpl> files;
-        try (MockedStatic<HttpManager> mocked = mockRequestMethod(Request.Method.PROPFIND)) {
-            files = helper.getChildrenOfFolder(
-                            folder, APILocator.systemUser(), true, defaultLanguageId()).stream()
-                    .filter(FileResourceImpl.class::isInstance)
-                    .map(FileResourceImpl.class::cast)
-                    .collect(Collectors.toList());
-        }
-
-        Assert.assertEquals(1, files.size());
-        Assert.assertEquals(published.getInode(), files.get(0).getFile().getInode());
-    }
+    // ---- Listings for a back-end user: READ is checked without front-end roles ----------------
 
     /**
      * Method to test: {@link HostResourceImpl#getChildren()}
      * <p>
-     * Given Scenario: The root of a site holds one published file and one file that was saved but
-     * never published.
+     * Given Scenario: A back-end user can read a site and its files; one published file at the root
+     * of the site is readable by CMS Anonymous only.
      * <p>
-     * ExpectedResult: The live tree lists only the published file; the working tree lists both.
+     * ExpectedResult: The root listing shows the file the user can read and leaves out the one only
+     * CMS Anonymous can read, in both trees.
      */
     @Test
-    public void Test_site_root_listing_shows_published_files_in_live_tree() throws Exception {
+    public void Test_site_root_listing_shows_only_files_the_user_can_read() throws Exception {
         final Host site = newSite();
-        final Contentlet published = ContentletDataGen.publish(newFileAsset(site, "published-root-file.txt"));
-        final Contentlet unpublished = newFileAsset(site, "unpublished-root-file.txt");
+        final User user = newBackendUserWithReadOn(site);
+        final Contentlet readable = ContentletDataGen.publish(newFileAsset(site, "readable-root-file.txt"));
+        final Contentlet anonymousOnly = ContentletDataGen.publish(newFileAsset(site, "anonymous-root-file.txt"));
+        readableByAnonymousOnly(anonymousOnly);
 
-        try (MockedStatic<HttpManager> mocked = mockRequestMethod(Request.Method.PROPFIND)) {
-            final List<String> live = resourceNames(siteRoot(site, "live").getChildren());
-            Assert.assertTrue(live.toString(), live.contains(fileName(published)));
-            Assert.assertFalse(live.toString(), live.contains(fileName(unpublished)));
-
-            final List<String> working = resourceNames(siteRoot(site, "working").getChildren());
-            Assert.assertTrue(working.toString(), working.contains(fileName(published)));
-            Assert.assertTrue(working.toString(), working.contains(fileName(unpublished)));
-        }
-    }
-
-    /**
-     * Method to test: {@link ResourceFactoryImpl#getResource(String, String, DotWebdavHelper, HostAPI)}
-     * <p>
-     * Given Scenario: A file was saved but never published, and is read (GET) under each tree.
-     * <p>
-     * ExpectedResult: No resource is found under the live tree; under the working tree it is.
-     */
-    @Test
-    public void Test_read_in_live_tree_does_not_find_unpublished_file() throws Exception {
-        final Folder folder = new FolderDataGen().site(newSite()).nextPersisted();
-        final Contentlet unpublished = newFileAsset(folder, "unpublished-read.txt");
-
-        try (MockedStatic<HttpManager> mocked = mockRequestMethod(Request.Method.GET)) {
-            Assert.assertNull(ResourceFactoryImpl.getResource("localhost",
-                    fileUrl("live", folder, unpublished), helper, APILocator.getHostAPI()));
-            Assert.assertNotNull(ResourceFactoryImpl.getResource("localhost",
-                    fileUrl("working", folder, unpublished), helper, APILocator.getHostAPI()));
-        }
-    }
-
-    /**
-     * Method to test: {@link ResourceFactoryImpl#getResource(String, String, DotWebdavHelper, HostAPI)}
-     * <p>
-     * Given Scenario: A published file has a newer version that was saved but not published, and is
-     * read (GET) under each tree.
-     * <p>
-     * ExpectedResult: The live tree serves the published version; the working tree the newer one.
-     */
-    @Test
-    public void Test_read_serves_version_matching_the_tree() throws Exception {
-        final Folder folder = new FolderDataGen().site(newSite()).nextPersisted();
-        final Contentlet published = ContentletDataGen.publish(newFileAsset(folder, "versioned-read.txt"));
-        final Contentlet newer = ContentletDataGen.checkin(ContentletDataGen.checkout(published));
-
-        try (MockedStatic<HttpManager> mocked = mockRequestMethod(Request.Method.GET)) {
-            final Resource live = ResourceFactoryImpl.getResource("localhost",
-                    fileUrl("live", folder, published), helper, APILocator.getHostAPI());
-            Assert.assertEquals(published.getInode(), ((FileResourceImpl) live).getFile().getInode());
-
-            final Resource working = ResourceFactoryImpl.getResource("localhost",
-                    fileUrl("working", folder, published), helper, APILocator.getHostAPI());
-            Assert.assertEquals(newer.getInode(), ((FileResourceImpl) working).getFile().getInode());
-        }
-    }
-
-    /**
-     * Method to test: {@link ResourceFactoryImpl#getResource(String, String, DotWebdavHelper, HostAPI)}
-     * <p>
-     * Given Scenario: A file was saved but never published, and other read methods (HEAD, PROPFIND)
-     * address it under the live tree.
-     * <p>
-     * ExpectedResult: No resource is found, as for GET.
-     */
-    @Test
-    public void Test_other_read_methods_in_live_tree_do_not_find_unpublished_file() throws Exception {
-        final Folder folder = new FolderDataGen().site(newSite()).nextPersisted();
-        final Contentlet unpublished = newFileAsset(folder, "unpublished-head.txt");
-
-        for (final Request.Method method : new Request.Method[] {Request.Method.HEAD, Request.Method.PROPFIND}) {
-            try (MockedStatic<HttpManager> mocked = mockRequestMethod(method)) {
-                Assert.assertNull(method.name(), ResourceFactoryImpl.getResource("localhost",
-                        fileUrl("live", folder, unpublished), helper, APILocator.getHostAPI()));
+        try (MockedStatic<HttpManager> mocked = mockRequest(Request.Method.PROPFIND, user)) {
+            for (final String tree : new String[] {"live", "working"}) {
+                final List<String> names = resourceNames(siteRoot(site, tree).getChildren());
+                Assert.assertTrue(tree + " " + names, names.contains(fileName(readable)));
+                Assert.assertFalse(tree + " " + names, names.contains(fileName(anonymousOnly)));
             }
         }
     }
 
     /**
-     * Method to test: {@link ResourceFactoryImpl#getResource(String, String, DotWebdavHelper, HostAPI)}
+     * Method to test: {@link DotWebdavHelper#getChildrenOfFolder(Folder, User, boolean, long)}
      * <p>
-     * Given Scenario: A file was saved but never published, and write methods (PUT, DELETE, MOVE,
-     * COPY, LOCK) address it under the live tree.
+     * Given Scenario: A back-end user can read a site and its files; one published file in a folder
+     * is readable by CMS Anonymous only.
      * <p>
-     * ExpectedResult: The saved file is found for each of them, so writes under the live tree keep
-     * working on saved files.
+     * ExpectedResult: The folder listing shows the file the user can read and leaves out the other.
      */
     @Test
-    public void Test_write_methods_in_live_tree_find_unpublished_file() throws Exception {
-        final Folder folder = new FolderDataGen().site(newSite()).nextPersisted();
-        final Contentlet unpublished = newFileAsset(folder, "unpublished-write.txt");
+    public void Test_folder_listing_shows_only_files_the_user_can_read() throws Exception {
+        final Host site = newSite();
+        final User user = newBackendUserWithReadOn(site);
+        final Folder folder = new FolderDataGen().site(site).nextPersisted();
+        final Contentlet readable = ContentletDataGen.publish(newFileAsset(folder, "readable-file.txt"));
+        final Contentlet anonymousOnly = ContentletDataGen.publish(newFileAsset(folder, "anonymous-file.txt"));
+        readableByAnonymousOnly(anonymousOnly);
 
-        for (final Request.Method method : new Request.Method[] {Request.Method.PUT, Request.Method.DELETE,
-                Request.Method.MOVE, Request.Method.COPY, Request.Method.LOCK}) {
-            try (MockedStatic<HttpManager> mocked = mockRequestMethod(method)) {
-                final Resource resource = ResourceFactoryImpl.getResource("localhost",
-                        fileUrl("live", folder, unpublished), helper, APILocator.getHostAPI());
-                Assert.assertNotNull(method.name(), resource);
-                Assert.assertEquals(method.name(), unpublished.getInode(),
-                        ((FileResourceImpl) resource).getFile().getInode());
-            }
-        }
-    }
-
-    /**
-     * Method to test: {@link ResourceFactoryImpl#getResource(String, String, DotWebdavHelper, HostAPI)}
-     * <p>
-     * Given Scenario: A file was saved but never published, and is looked up under the live tree
-     * outside a WebDAV request.
-     * <p>
-     * ExpectedResult: The saved file is found, as before.
-     */
-    @Test
-    public void Test_lookup_outside_a_request_finds_unpublished_file() throws Exception {
-        final Folder folder = new FolderDataGen().site(newSite()).nextPersisted();
-        final Contentlet unpublished = newFileAsset(folder, "unpublished-internal.txt");
-
-        try (MockedStatic<HttpManager> mocked = Mockito.mockStatic(HttpManager.class)) {
-            mocked.when(HttpManager::request).thenReturn(null);
-            Assert.assertNotNull(ResourceFactoryImpl.getResource("localhost",
-                    fileUrl("live", folder, unpublished), helper, APILocator.getHostAPI()));
-        }
-    }
-
-    /**
-     * Method to test: {@link FolderResourceImpl#child(String)}
-     * <p>
-     * Given Scenario: A folder in the live tree holds a file that was saved but never published, and
-     * a write (COPY onto that name) asks the folder for the child.
-     * <p>
-     * ExpectedResult: The child is found, so the client's overwrite rules apply to the saved file.
-     */
-    @Test
-    public void Test_child_lookup_for_write_in_live_tree_finds_unpublished_file() throws Exception {
-        final Folder folder = new FolderDataGen().site(newSite()).nextPersisted();
-        final Contentlet unpublished = newFileAsset(folder, "unpublished-child.txt");
-        final Host site = APILocator.getHostAPI().find(folder.getHostId(), APILocator.systemUser(), false);
-        final FolderResourceImpl folderResource = new FolderResourceImpl(folder, String.format(
-                "/webdav/live/%d/%s%s", defaultLanguageId(), site.getHostname(), folder.getPath()));
-
-        try (MockedStatic<HttpManager> mocked = mockRequestMethod(Request.Method.COPY)) {
-            final Resource child = folderResource.child(fileName(unpublished));
-            Assert.assertNotNull(child);
-            Assert.assertTrue(((FileResourceImpl) child).getPath(),
-                    ((FileResourceImpl) child).getPath().startsWith("/webdav/live/"));
-        }
-    }
-
-    /**
-     * Method to test: {@link DotWebdavHelper#copyFolderToTemp(Folder, java.io.File, User, String, boolean, long)}
-     * <p>
-     * Given Scenario: A folder in the live tree holds a file that was saved but never published, and
-     * a write (COPY) copies the folder to temporary storage.
-     * <p>
-     * ExpectedResult: The saved file is copied too.
-     */
-    @Test
-    public void Test_folder_copy_in_live_tree_keeps_unpublished_file() throws Exception {
-        final Folder folder = new FolderDataGen().site(newSite()).nextPersisted();
-        final Contentlet unpublished = newFileAsset(folder, "unpublished-copy.txt");
-        final String copyName = "folder-copy-" + System.nanoTime();
-        final java.io.File copy = new java.io.File(helper.getTempDir(), copyName);
-
-        try (MockedStatic<HttpManager> mocked = mockRequestMethod(Request.Method.COPY)) {
-            helper.copyFolderToTemp(folder, helper.getTempDir(), APILocator.systemUser(), copyName,
-                    true, defaultLanguageId());
-            Assert.assertTrue(new java.io.File(copy, fileName(unpublished)).exists());
-        } finally {
-            FileUtil.deltree(copy, true);
+        try (MockedStatic<HttpManager> mocked = mockRequest(Request.Method.PROPFIND, user)) {
+            final List<String> names = resourceNames(
+                    helper.getChildrenOfFolder(folder, user, true, defaultLanguageId()));
+            Assert.assertTrue(names.toString(), names.contains(fileName(readable)));
+            Assert.assertFalse(names.toString(), names.contains(fileName(anonymousOnly)));
         }
     }
 
@@ -855,6 +649,34 @@ public class DotWebdavHelperTest {
         final Host site = new SiteDataGen().nextPersisted();
         createdSites.add(site);
         return site;
+    }
+
+    /**
+     * Creates a back-end user whose own role can read the site and, by inheritance, its folders and
+     * files. The user is removed after the class runs.
+     */
+    private static User newBackendUserWithReadOn(final Host site) throws Exception {
+        final User user = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole())
+                .nextPersisted();
+        createdUsers.add(user);
+        final String roleId = APILocator.getRoleAPI().getUserRole(user).getId();
+        APILocator.getPermissionAPI().save(List.of(
+                new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, site.getPermissionId(), roleId,
+                        PermissionAPI.PERMISSION_READ, true),
+                new Permission(Folder.class.getCanonicalName(), site.getPermissionId(), roleId,
+                        PermissionAPI.PERMISSION_READ, true),
+                new Permission(Contentlet.class.getCanonicalName(), site.getPermissionId(), roleId,
+                        PermissionAPI.PERMISSION_READ, true)),
+                site, APILocator.systemUser(), false);
+        return user;
+    }
+
+    /** Leaves CMS Anonymous as the only role that can read the file. */
+    private static void readableByAnonymousOnly(final Contentlet file) throws Exception {
+        final Role anonymous = APILocator.getRoleAPI().loadCMSAnonymousRole();
+        APILocator.getPermissionAPI().assignPermissions(List.of(new Permission(file.getPermissionId(),
+                anonymous.getId(), PermissionAPI.PERMISSION_READ, true)), file, APILocator.systemUser(), false);
     }
 
     /** Saves (without publishing) a small text file asset in the given folder. */
@@ -869,7 +691,7 @@ public class DotWebdavHelperTest {
 
     /** Creates a temporary file whose name is unique per call and ends with the given name. */
     private static java.io.File tempFile(final String name) throws IOException {
-        final java.io.File dir = java.nio.file.Files.createTempDirectory("webdav-tree").toFile();
+        final java.io.File dir = java.nio.file.Files.createTempDirectory("webdav-listing").toFile();
         dir.deleteOnExit();
         final java.io.File file = new java.io.File(dir, System.nanoTime() + "-" + name);
         FileUtil.write(file, "content of " + name);
@@ -890,23 +712,12 @@ public class DotWebdavHelperTest {
         return root;
     }
 
-    /** The WebDAV URL of a file in a folder, in the given tree ({@code live} or {@code working}). */
-    private static String fileUrl(final String tree, final Folder folder, final Contentlet file)
-            throws DotDataException, DotSecurityException {
-        final Host site = APILocator.getHostAPI().find(folder.getHostId(), APILocator.systemUser(), false);
-        return String.format("/webdav/%s/%d/%s%s%s", tree, defaultLanguageId(), site.getHostname(),
-                folder.getPath(), fileName(file));
-    }
-
-    /**
-     * Makes the current WebDAV request use the given method, sent by the system user. Close the
-     * returned mock when done.
-     */
-    private static MockedStatic<HttpManager> mockRequestMethod(final Request.Method method) {
+    /** Makes the current WebDAV request use the given method and user. Close the returned mock when done. */
+    private static MockedStatic<HttpManager> mockRequest(final Request.Method method, final User user) {
         final MockedStatic<HttpManager> mocked = Mockito.mockStatic(HttpManager.class);
         final Request request = Mockito.mock(Request.class);
         final Auth auth = Mockito.mock(Auth.class);
-        when(auth.getTag()).thenReturn(APILocator.systemUser());
+        when(auth.getTag()).thenReturn(user);
         when(request.getAuthorization()).thenReturn(auth);
         when(request.getMethod()).thenReturn(method);
         mocked.when(HttpManager::request).thenReturn(request);
