@@ -581,6 +581,9 @@ public class BrowserAjaxTest {
      */
     @Test
     public void getTree_allSitesReturnsOnlyReadableSites() throws Exception {
+        // Back-office rule, as the tree applies it: front-end role grants (e.g. CMS Anonymous) do not count
+        assertFalse("Limited user must not read " + testSite.getHostname(), APILocator.getPermissionAPI()
+                .doesUserHavePermission(testSite, PermissionAPI.PERMISSION_READ, limitedUser, false));
         APILocator.getHostAPI().findAllFromCache(APILocator.systemUser(), false);
         setUpReadPermissionContext(limitedUser, Set.of());
 
@@ -654,6 +657,31 @@ public class BrowserAjaxTest {
         assertEquals("min-info second level", List.of(readableChild.getName()), names(children));
         assertEquals("min-info third level", List.of(readableGrandchild.getName()),
                 names((List<Map>) folderNamed(children, readableChild.getName()).get("children")));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAjax#getTreeMinInfo()}</li>
+     *     <li><b>Given Scenario:</b> A user who can read only some Sites and folders loads the compact tree of all
+     *     Sites.</li>
+     *     <li><b>Expected Result:</b> Only the Sites and folders the user can read are returned, at every level.</li>
+     * </ul>
+     */
+    @Test
+    public void getTreeMinInfo_allSitesReturnsOnlyReadableFolders() throws Exception {
+        setUpReadPermissionContext(limitedUser, Set.of());
+
+        final List<Map<String, Object>> tree = new BrowserAjax().getTreeMinInfo();
+
+        final List<Object> siteIds = tree.stream().map(site -> site.get("id")).collect(Collectors.toList());
+        assertFalse("min-info all Sites must not return a Site the user cannot read",
+                siteIds.contains(testSite.getIdentifier()));
+        final Map<String, Object> site = tree.stream().filter(entry -> readSite.getIdentifier().equals(entry.get("id")))
+                .findFirst().orElseThrow(() -> new AssertionError("readable Site not returned"));
+        final List<Map> rootFolders = (List<Map>) site.get("children");
+        assertEquals("min-info root folders", List.of(readableFolder.getName()), names(rootFolders));
+        final List<Map> children = (List<Map>) folderNamed(rootFolders, readableFolder.getName()).get("children");
+        assertEquals("min-info second level", List.of(readableChild.getName()), names(children));
     }
 
     /**
