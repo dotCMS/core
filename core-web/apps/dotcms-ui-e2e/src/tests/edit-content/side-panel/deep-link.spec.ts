@@ -1,0 +1,123 @@
+import { iFramesLocators } from '@locators/globalLocators';
+import { expect, test } from '@playwright/test';
+import { createContentlet } from '@requests/contentlets';
+import { type ContentType, createFakeContentType, deleteContentType } from '@requests/contentType';
+import { createFolder, deleteFolders } from '@requests/folders';
+import { getDefaultSite } from '@requests/sites';
+import { Portlet } from '@utils/portlets';
+import { uniqueSuffix } from '@utils/utils';
+
+import { SidePanel } from './helpers/side-panel';
+
+/**
+ * #38303, US2 and US7: a content link opened on its own (`#/c/content/<inode>`,
+ * `#/c/content/new/<type>`) ends on the content portlet's own address with the panel params
+ * (FR-049), with the side panel open over the portlet. Closing the panel leaves the author on the
+ * portlet, at its own address, with no panel named.
+ */
+
+/** Where closing the panel leaves the author: the content portlet's own address. */
+const CONTENT_PORTLET_URL = /\/dotAdmin\/#\/c\/content$/;
+
+test.describe('Content links open the side panel over the content portlet', () => {
+    let contentType: ContentType | null = null;
+    let typeName: string;
+    let typeVariable: string;
+    let inode: string;
+    let identifier: string;
+    let title: string;
+
+    test.beforeEach(async ({ request }) => {
+        const suffix = uniqueSuffix();
+        // createFakeContentType gives it a Title text field and the new editor.
+        contentType = await createFakeContentType(request, {
+            name: `E2ESidePanelLink${suffix}`,
+            metadata: { CONTENT_EDITOR2_ENABLED: true }
+        });
+        typeName = contentType.name;
+        typeVariable = contentType.variable;
+
+        title = `Linked content ${suffix}`;
+        const contentlet = await createContentlet(request, {
+            contentType: contentType.variable,
+            title
+        });
+        inode = contentlet.inode;
+        identifier = contentlet.identifier;
+    });
+
+    test.afterEach(async ({ request }) => {
+        // Deleting the content type deletes its contentlet.
+        if (contentType) {
+            await deleteContentType(request, contentType.id);
+            contentType = null;
+        }
+    });
+
+    test('opens content from its link over the portlet and returns to the portlet on close @critical', async ({
+        page
+    }) => {
+        const sidePanel = new SidePanel(page);
+
+        await page.goto(`${Portlet.Content}/${inode}`);
+
+        await expect(page.locator(iFramesLocators.main_iframe)).toBeVisible({ timeout: 20000 });
+        await sidePanel.expectOpen();
+        await expect(sidePanel.title).toContainText(title);
+        // The path form is gone: the portlet's URL names the panel.
+        await expect(page).toHaveURL(
+            new RegExp(`/dotAdmin/#/c/content\\?.*editContent=${identifier}.*editContentLang=1`)
+        );
+
+        await sidePanel.close();
+        await sidePanel.expectClosed();
+        await expect(page).toHaveURL(CONTENT_PORTLET_URL);
+    });
+
+    test('opens a create form from its link over the portlet and returns to the portlet on close', async ({
+        page
+    }) => {
+        const sidePanel = new SidePanel(page);
+
+        await page.goto(`${Portlet.Content}/new/${typeVariable}`);
+
+        await expect(page.locator(iFramesLocators.main_iframe)).toBeVisible({ timeout: 20000 });
+        await sidePanel.expectOpen();
+        // A create has no title yet, so the panel is headed with the type's name.
+        await expect(sidePanel.title).toContainText(typeName);
+        await expect(sidePanel.front.getByTestId('title')).toHaveValue('');
+        await expect(page).toHaveURL(
+            new RegExp(`/dotAdmin/#/c/content\\?.*createContent=${typeVariable}`)
+        );
+
+        await sidePanel.close();
+        await sidePanel.expectClosed();
+        await expect(page).toHaveURL(CONTENT_PORTLET_URL);
+    });
+
+    // The folder a create link names goes with the panel: a later create from the portlet must
+    // not be read back in it on a refresh or a shared link (review R3).
+    test('drops the folder a create link names when the panel closes', async ({
+        page,
+        request
+    }) => {
+        const sidePanel = new SidePanel(page);
+        const site = await getDefaultSite(request);
+        const folderPath = `/e2e-side-panel-link-${uniqueSuffix()}`;
+        const folderInode = await createFolder(request, site.hostname, folderPath);
+
+        try {
+            await page.goto(`${Portlet.Content}/new/${typeVariable}?folder=${folderInode}`);
+
+            await sidePanel.expectOpen();
+            await expect(page).toHaveURL(new RegExp(`createContent=${typeVariable}`));
+            await expect(page).toHaveURL(new RegExp(`folder=${folderInode}`));
+
+            await sidePanel.close();
+            await sidePanel.expectClosed();
+            await expect(page).toHaveURL(CONTENT_PORTLET_URL);
+        } finally {
+            await deleteFolders(request, site.hostname, [folderPath]);
+        }
+    });
+});

@@ -44,4 +44,5 @@
 <!-- Toasts from the side panel the page actions' Edit opens, on this component's MessageService. -->
 <p-toast />
 
-<router-outlet (deactivate)="getPages()" />
+<!-- The deep-link children (`/pages/<inode>`, `/pages/new/<type>`) render here, then redirect. -->
+<router-outlet />

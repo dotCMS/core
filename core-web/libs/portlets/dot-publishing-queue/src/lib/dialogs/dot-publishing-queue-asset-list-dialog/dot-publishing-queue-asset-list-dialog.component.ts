@@ -29,7 +29,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotContentChangeService, DotContentEditor, DotMessageService } from '@dotcms/data-access';
 import { BundleAssetView } from '@dotcms/dotcms-models';
 import { DotEditContentOpenerService } from '@dotcms/edit-content';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -129,6 +129,12 @@ export class DotPublishingQueueAssetListDialogComponent {
             this.store.selectedBundleId();
             untracked(() => this.$assetSearch.set(''));
         });
+
+        // Every save and delete in a side panel, at any depth, reloads the asset list: content
+        // saved from a relationship inside the panel a row opened may be in it (T174).
+        inject(DotContentChangeService)
+            .changes$.pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe(() => this.store.loadAssets());
     }
 
     onSearch(value: string): void {
@@ -140,8 +146,10 @@ export class DotPublishingQueueAssetListDialogComponent {
 
     /**
      * Opens a contentlet row in the side panel over this dialog, in whichever editor its type uses
-     * (#38303, R12). Every save, and the close, reload the asset list (FR-017); the close also puts
-     * focus back on the row once the list has reloaded (FR-039). Other rows do nothing.
+     * (#38303, R12). A save or a delete reloads the list through the content change notification
+     * (T174). The close reloads it again only after the legacy editor, whose workflow actions
+     * report nothing (FR-017), and puts focus back on the row once the list has rendered (FR-039).
+     * Other rows do nothing.
      *
      * @param asset The clicked row.
      */
@@ -150,22 +158,28 @@ export class DotPublishingQueueAssetListDialogComponent {
             return;
         }
 
-        const reload = () => this.store.loadAssets();
+        let editor: DotContentEditor | null = null;
 
         this.#opener.open(
             {
                 mode: 'edit',
                 inode: asset.inode,
-                contentType: asset.content_type_name,
+                // The variable: the opener looks the type up by it to choose the editor.
+                contentType: asset.content_type_variable,
                 portletId: 'publishing-queue'
             },
             {
                 injector: this.#injector,
-                saved: reload,
+                editorResolved: (resolved) => (editor = resolved),
                 closed: () => {
-                    reload();
+                    if (editor !== 'new') {
+                        this.store.loadAssets();
+                    }
+
                     this.#focusRowAfterReload(asset.asset);
-                }
+                },
+                // In the portlet's URL: on load the portlet reopens the panel over the list (#38303).
+                url: {}
             }
         );
     }

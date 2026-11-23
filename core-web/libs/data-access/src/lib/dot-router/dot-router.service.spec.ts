@@ -195,11 +195,10 @@ describe('DotRouterService', () => {
         });
     });
 
-    it('should go to edit contentlet', () => {
-        service.goToEditContentlet('123');
-        expect(router.navigate).toHaveBeenCalledWith(['/c/hello-world/123'], {
-            queryParamsHandling: 'preserve'
-        });
+    // Content opens in the side panel, from a URL that names it with `editContent` (#38303); the
+    // route to the old edit screen had no callers left.
+    it('should have no route to the old edit content screen', () => {
+        expect('goToEditContentlet' in service).toBe(false);
     });
 
     it('should go to edit workflow task', () => {

@@ -58,17 +58,12 @@ export interface DotContentEditorChoice {
  * The caller decides what to do with the URL (open in new tab, `Router.navigate`, etc.) —
  * this service only resolves "what is the URL?".
  *
- * ## Caching
+ * ## Read fresh on every call
  *
- * The editor choice is cached per content type for the lifetime of the application (the
- * service is `providedIn: 'root'`), one cache for both methods. A list view rendering 50
- * contentlets of the same content type hits `/api/v1/contenttype/id/{type}` once, not 50 times.
- * A failed lookup is not cached, so the next call asks the server again.
- *
- * **Cache invalidation caveat:** if an admin toggles `CONTENT_EDITOR2_ENABLED` on a content
- * type during the same session, cached entries go stale until a full page reload. This
- * matches the behavior of the prior inline implementations and is acceptable because the
- * flag is rarely toggled at runtime.
+ * Nothing is cached: each call asks `/api/v1/contenttype/id/{type}` again, so a "new edit
+ * content screen" toggled on a content type (`CONTENT_EDITOR2_ENABLED`) takes effect on the next
+ * open, without a reload (#38303). Callers resolve on a click, one request per open, never per
+ * row of a list.
  *
  * ## Error fallback
  *
@@ -91,32 +86,22 @@ export interface DotContentEditorChoice {
 export class DotContentletEditUrlService {
     readonly #contentTypeService = inject(DotContentTypeService);
 
-    // Cached per content-type variable or id. Only successful lookups land here.
-    readonly #editorCache = new Map<string, DotContentEditorChoice>();
-
     /**
      * Resolves which editor opens content of a type: `'new'` when the type's metadata has
-     * `CONTENT_EDITOR2_ENABLED`, `'legacy'` otherwise. A failed lookup falls back to `'legacy'`
-     * with no content type and is not cached, so a transient error does not stick for the session.
+     * `CONTENT_EDITOR2_ENABLED`, `'legacy'` otherwise. The content type is read fresh on every
+     * call, so a toggled flag takes effect on the next open. A failed lookup falls back to
+     * `'legacy'` with no content type.
      *
      * @param contentTypeVariableOrId The content type's variable or id.
      * @returns An observable that emits the choice once and completes.
      */
     resolveEditor(contentTypeVariableOrId: string): Observable<DotContentEditorChoice> {
-        const cached = this.#editorCache.get(contentTypeVariableOrId);
-        if (cached) return of(cached);
-
         return this.#contentTypeService.getContentType(contentTypeVariableOrId).pipe(
-            map((contentType) => {
+            map((contentType): DotContentEditorChoice => {
                 const usesNewEditor =
                     !!contentType?.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED];
-                const choice: DotContentEditorChoice = {
-                    editor: usesNewEditor ? 'new' : 'legacy',
-                    contentType
-                };
-                this.#editorCache.set(contentTypeVariableOrId, choice);
 
-                return choice;
+                return { editor: usesNewEditor ? 'new' : 'legacy', contentType };
             }),
             catchError(() => of<DotContentEditorChoice>({ editor: 'legacy', contentType: null }))
         );
@@ -124,7 +109,7 @@ export class DotContentletEditUrlService {
 
     /**
      * Resolves the dotAdmin URL to open `contentlet` for editing. See the class JSDoc
-     * for the routing rules, caching behavior, and error fallback semantics.
+     * for the routing rules and the error fallback. The editor choice is read fresh on every call.
      *
      * @param contentlet The contentlet the user wants to edit. Must have at least
      *                   `inode`, `contentType`, and `baseType` populated; HTMLPAGE

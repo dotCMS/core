@@ -45,9 +45,15 @@ export type DotEditContentPanelHandlers = Partial<DotEditContentPanelEvents>;
 | `deleted` is never a `saved` | New editor: `OverlayEditContentHost` suppresses `reportSaved` after `leaveDeletedContent`, as today. Legacy: the panel sets `iframeWindow.ngEditContentletEvents = { next: (e) => … }` on every iframe load; the editor calls it with `deleted-contenlet` (`edit_contentlet_js_inc.jsp:716-720`) when the saved content no longer exists, and sends `deleted-page` for a page; both map to `deleted`, never to `saved`, and a page's hook-then-`deleted-page` is one `deleted`. The `close` or `deleted-page` that follows closes the panel, and that maps to `closed` |
 | `closed` exactly once | Taken from `DotSidePanelRef.closed`, which emits once and completes |
 
-## Surfaces refresh on `closed` as well as on `saved`
+## Surfaces refresh on `closed` as well as on every save and delete
 
 A move to another folder or a translation saved after a language switch inside the legacy editor sends no usable event, and the surface does not know which editor the opener picked, so every surface refreshes on `closed` too (spec FR-017). One quiet refresh per close.
+
+A listing does not refresh on its own panel's `saved`. It refreshes on the content change notification (`DotContentChangeService`, opener-api.md), which the opener raises for every `saved` and `deleted` of every panel it opens, at any depth, after that panel's own handler (T174). Before it, a save in a panel stacked from inside the one a row opened (a relationship's "New") went only to the field that asked, and the list stayed stale until both panels closed.
+
+The rule: **per-open handlers are for what only the opener of that panel can do; refreshing a listing is the notification's job.** Inserting the new content into a page, reloading the page editor, viewing the Workflow task again, moving the URL to a create's saved content and opening the page editor on `pageEditorRequested` stay per-open handlers; a listing's refresh on a save does not. UVE is the exception: it keeps its handlers and does not subscribe (a page is not a listing). Each surface's `closed` refresh stays.
+
+What refreshes twice: a delete, once on the notification and once on the `closed` that follows it; a save then a close, as before. The Publishing Queue shell refetches its bundle list on a save made over one of its dialogs, beside the dialog's own reload.
 
 ## Events the panel handles itself and does not forward
 

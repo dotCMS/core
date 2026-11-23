@@ -13,18 +13,23 @@ import {
     untracked
 } from '@angular/core';
 
-import { map, switchMap, takeUntil } from 'rxjs/operators';
+import { map, switchMap, takeUntil, tap } from 'rxjs/operators';
 
 import {
     DotActionUrlService,
+    DotContentChangeService,
     DotContentEditor,
     DotContentEditorChoice,
     DotContentletEditUrlService,
     DotContentletService,
+    DotContentSearchService,
     DotHttpErrorManagerService
 } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotSidePanelRef, DotSidePanelService } from '@dotcms/ui';
+import { DOT_PANEL_URL_PARAM, isDotIdentifier } from '@dotcms/utils';
+
+import { DotPanelUrlStateService } from './url/dot-panel-url-state.service';
 
 import { loadDotEditContentSidePanel } from '../components/dot-edit-content-side-panel/load-dot-edit-content-side-panel';
 import { loadDotLegacyEditorSidePanel } from '../components/dot-legacy-editor-side-panel/load-dot-legacy-editor-side-panel';
@@ -54,6 +59,44 @@ export interface DotEditContentOpenOptions extends DotEditContentPanelHandlers {
      * the legacy editor, whose workflow actions report nothing.
      */
     editorResolved?: (editor: DotContentEditor) => void;
+
+    /**
+     * The editor choice the caller already looked up for the request's content type, so the opener
+     * does not ask the server again: the UVE's translate decides which request to open from it.
+     */
+    resolved?: DotContentEditorChoice;
+
+    /**
+     * The create screen a legacy create opens on, when the caller has its own rather than the
+     * type's: the UVE's translate screen, the page's create form pre-filled from the page. The
+     * opener then does not ask the server for one.
+     */
+    createUrl?: string;
+
+    /**
+     * Writes the open panel to the surface's URL, so it can be shared, survives a refresh and
+     * closes with browser Back (#38303, FR-044). Every surface except the page editor sets it.
+     */
+    url?: DotEditContentUrlOption;
+}
+
+/**
+ * How a panel is written to the surface's URL. Every surface but the page editor passes one, most
+ * of them empty (`url: {}`): the panel's params go beside the surface's own, whatever its route.
+ */
+export interface DotEditContentUrlOption {
+    /**
+     * Params written beside the panel's own and cleared with them. Not passed on to the panels
+     * stacked from inside this one.
+     */
+    extraParams?: Record<string, string>;
+    /**
+     * Writes the panel into the current history entry instead of adding one: for a panel that
+     * takes the place of one the surface has just closed, such as Content Drive's reopen in the
+     * legacy editor, so Back still leaves it in one step. Not passed on to the panels stacked from
+     * inside this one. Remove with the legacy editor.
+     */
+    inPlace?: boolean;
 }
 
 /** What the server said about a request before any editor shows. */
@@ -70,6 +113,11 @@ interface DotResolvedRequest {
 /** The panel events a surface can handle, by the output name both panels use for each. */
 const HANDLED_OUTPUTS = ['saved', 'languageChanged', 'pageEditorRequested', 'deleted'] as const;
 
+/** Shape of the `/api/content/_search` answer the working version is read from. */
+interface DotContentSearchEntity {
+    jsonObjectView: { contentlets: DotCMSContentlet[] };
+}
+
 /**
  * Opens content in the side panel, in whichever editor its content type uses (#38303). Every
  * surface that edits or creates content goes through here, with one request shape, and hears back
@@ -82,7 +130,10 @@ export class DotEditContentOpenerService {
     readonly #editUrl = inject(DotContentletEditUrlService);
     readonly #actionUrl = inject(DotActionUrlService);
     readonly #contentlets = inject(DotContentletService);
+    readonly #contentSearch = inject(DotContentSearchService);
     readonly #httpErrorManager = inject(DotHttpErrorManagerService);
+    readonly #urlState = inject(DotPanelUrlStateService);
+    readonly #changes = inject(DotContentChangeService);
 
     /**
      * Opens the side panel for a request. Everything server-side is resolved first (the content type
@@ -94,6 +145,15 @@ export class DotEditContentOpenerService {
      * open; the editor itself is chosen once, from the request as it is now. `options.editor` skips
      * that choice and shows the legacy editor.
      *
+     * An edit may name its content by `identifier` and `languageId` instead of `inode`, as a URL
+     * does: the opener finds the working version in that language, or in any language when there is
+     * none in that one, and that version is what opens.
+     *
+     * With `options.url` the panel is written to the surface's URL: a create at once, an edit as soon
+     * as its identifier and language are known, which may take fetching the contentlet; the URL
+     * follows a language switch and a create's first save, and panels stacked from inside this one
+     * are written too.
+     *
      * @param request What to open, or a signal of it.
      * @param options The opener's injector and the events it handles.
      * @returns The panel, so the caller can route browser Back through `requestClose()`. Already
@@ -102,6 +162,24 @@ export class DotEditContentOpenerService {
     open(
         request: DotEditContentRequest | Signal<DotEditContentRequest>,
         options: DotEditContentOpenOptions
+    ): DotSidePanelRef {
+        return this.#open(request, options, 0);
+    }
+
+    /**
+     * {@link open}, at a depth: 0 for a panel a surface opened, one more for each panel stacked from
+     * inside another. The depth goes on the content change notification of the panel's saves and
+     * deletes.
+     *
+     * @param request What to open, or a signal of it.
+     * @param options The opener's injector and the events it handles.
+     * @param depth How many panels this one is stacked over.
+     * @returns The panel.
+     */
+    #open(
+        request: DotEditContentRequest | Signal<DotEditContentRequest>,
+        options: DotEditContentOpenOptions,
+        depth: number
     ): DotSidePanelRef {
         const $source = isSignal(request) ? request : signal(request).asReadonly();
         const initial = untracked($source);
@@ -112,7 +190,13 @@ export class DotEditContentOpenerService {
 
         const $contentlet = signal<DotCMSContentlet | null>(null);
         const $typeName = signal<string | null>(null);
-        const $request = computed(() => withContentlet($source(), $contentlet()));
+        // An edit named by identifier keeps the language it asked for, which the new editor
+        // offers as a translation when the version found is in another. The legacy editor offers
+        // none, so once it is the editor the request names the version it shows.
+        const $keepAskedLanguage = signal(true);
+        const $request = computed(() =>
+            withContentlet($source(), $contentlet(), $keepAskedLanguage())
+        );
 
         // Read by the outlet only once the content has loaded, so the inputs a given editor takes
         // are added below, before its component is handed over.
@@ -121,24 +205,57 @@ export class DotEditContentOpenerService {
         let showEditor: (component: Promise<Type<unknown>>) => void = () => undefined;
         const component = new Promise<Type<unknown>>((resolve) => (showEditor = resolve));
 
+        const url = options.url
+            ? new DotPanelUrlTracker(this.#urlState, options.url, initial.mode)
+            : null;
+
         const ref = this.#sidePanels.open(component, {
             heading: computed(
                 () => $request().title || $typeName() || $request().contentType || ''
             ),
             inputs,
-            outputs: this.#outputs(options),
+            outputs: this.#outputs(options, url, depth, () =>
+                untracked(() => $contentlet() ?? asContentlet($request()))
+            ),
             injector: options.injector
         });
 
         ref.closed.subscribe(() => options.closed?.());
 
-        this.#resolve(initial, options.editor)
-            .pipe(takeUntil(ref.closed))
+        // An edit named only by identifier is looked up. An edit with no title is fetched for its
+        // heading: the legacy JSP events and the Publishing Queue name the type and no title. The
+        // URL needs the identifier of an edit, so with the option a request that lacks it is fetched
+        // even when it names its content type.
+        const fetch =
+            initial.mode === 'edit' &&
+            (!initial.inode ||
+                !initial.contentType ||
+                !initial.title ||
+                (!!url && !initial.identifier));
+
+        // An edit that names its identifier is in the URL before any lookup, in the language it asked
+        // for: a link to content that cannot be opened then closes a panel the URL names, and that
+        // close takes the params out of the URL.
+        if (initial.mode === 'edit' && initial.identifier) {
+            url?.register(ref, initial);
+        }
+
+        this.#fetchContentlet(initial, fetch)
+            .pipe(
+                tap((contentlet) => url?.found(ref, withContentlet(initial, contentlet, true))),
+                switchMap((contentlet) => this.#resolve(initial, contentlet, options)),
+                takeUntil(ref.closed)
+            )
             .subscribe({
                 next: ({ editor, contentType, contentlet, createUrl }) => {
                     $contentlet.set(contentlet);
                     $typeName.set(contentType?.name ?? null);
                     options.editorResolved?.(editor);
+
+                    if (editor === 'legacy') {
+                        $keepAskedLanguage.set(false);
+                        url?.found(ref, withContentlet(initial, contentlet, false));
+                    }
 
                     if (editor === 'new') {
                         showEditor(loadDotEditContentSidePanel());
@@ -177,52 +294,103 @@ export class DotEditContentOpenerService {
     }
 
     /**
-     * Asks the server what the request needs before an editor shows: the contentlet, when an edit
-     * names no content type or no title for the heading; the content type, for its name and for
-     * which editor it uses, unless the caller forced the legacy one; and the create screen for a
-     * legacy create.
+     * The contentlet an edit needs fetched before anything else: when it names no inode, no content
+     * type, no title for the heading, or no identifier for the URL.
      *
      * @param request A request that passed {@link isOpenable}.
-     * @param forced The editor the caller forced, if any.
-     * @returns The answers, once; errors when a fetch or the create screen is refused.
+     * @param fetch Whether to fetch it.
+     * @returns The contentlet, or `null` when none was needed; errors when the fetch is refused or
+     * finds nothing.
+     */
+    #fetchContentlet(
+        request: DotEditContentRequest,
+        fetch: boolean
+    ): Observable<DotCMSContentlet | null> {
+        if (!fetch) {
+            return of(null);
+        }
+
+        return request.inode
+            ? this.#contentlets.getContentletByInode(request.inode)
+            : this.#workingVersion(request.identifier as string, request.languageId);
+    }
+
+    /**
+     * The working version of content named by identifier: in `languageId`, or in any language when
+     * it has none in that one, so a link to a language the content lacks still opens. Content
+     * Drive's lookup, moved here so every surface opening from a URL shares it (#38303, FR-049).
+     *
+     * @param identifier An identifier-shaped value: it reaches a Lucene query, trimmed, as
+     * `isDotIdentifier` tested it.
+     * @param languageId The language asked for, when one was.
+     * @returns The version; errors with a 404 when the content has no working version.
+     */
+    #workingVersion(identifier: string, languageId?: number): Observable<DotCMSContentlet> {
+        const anyLanguage = `+identifier:${identifier.trim()} +working:true`;
+        const search = (query: string): Observable<DotCMSContentlet | null> =>
+            this.#contentSearch
+                .get<DotContentSearchEntity>({ query, limit: 1 })
+                .pipe(map((entity) => entity?.jsonObjectView?.contentlets?.[0] ?? null));
+
+        const found$ = languageId
+            ? search(`${anyLanguage} +languageId:${languageId}`).pipe(
+                  switchMap((version) => (version ? of(version) : search(anyLanguage)))
+              )
+            : search(anyLanguage);
+
+        return found$.pipe(
+            map((version) => {
+                if (!version) {
+                    throw new HttpErrorResponse({ status: HttpStatusCode.NotFound });
+                }
+
+                return version;
+            })
+        );
+    }
+
+    /**
+     * Asks the server the rest of what the request needs before an editor shows: the content type,
+     * for its name and for which editor it uses, unless the caller forced the legacy one; and the
+     * create screen for a legacy create. What the caller already knows is not asked again.
+     *
+     * @param request A request that passed {@link isOpenable}.
+     * @param contentlet The contentlet fetched for it, if one was.
+     * @param options `editor`: the editor the caller forced, if any. `resolved`: the editor choice
+     * the caller already has. `createUrl`: the create screen the caller already has.
+     * @returns The answers, once; errors when the create screen is refused.
      */
     #resolve(
         request: DotEditContentRequest,
-        forced: 'legacy' | undefined
+        contentlet: DotCMSContentlet | null,
+        {
+            editor: forced,
+            resolved,
+            createUrl: givenCreateUrl
+        }: Pick<DotEditContentOpenOptions, 'editor' | 'resolved' | 'createUrl'>
     ): Observable<DotResolvedRequest> {
-        // The legacy JSP events and the Publishing Queue name the type and no title (#38303).
-        const fetch = request.mode === 'edit' && (!request.contentType || !request.title);
-        const contentlet$: Observable<DotCMSContentlet | null> = fetch
-            ? this.#contentlets.getContentletByInode(request.inode as string)
-            : of(null);
+        const variable = (request.contentType || contentlet?.contentType) as string;
+        // A forced editor still resolves the type, for the heading's name; only the choice is
+        // overridden.
+        const choice$: Observable<DotContentEditorChoice> = (
+            resolved ? of(resolved) : this.#editUrl.resolveEditor(variable)
+        ).pipe(
+            map((choice) =>
+                forced === 'legacy' ? { ...choice, editor: 'legacy' as const } : choice
+            )
+        );
 
-        return contentlet$.pipe(
-            switchMap((contentlet) => {
-                const variable = (request.contentType || contentlet?.contentType) as string;
-                // A forced editor still resolves the type, for the heading's name; only the
-                // choice is overridden.
-                const choice$: Observable<DotContentEditorChoice> = this.#editUrl
-                    .resolveEditor(variable)
-                    .pipe(
-                        map((choice) =>
-                            forced === 'legacy' ? { ...choice, editor: 'legacy' as const } : choice
-                        )
-                    );
+        return choice$.pipe(
+            switchMap(({ editor, contentType }) => {
+                const legacyCreate = editor === 'legacy' && request.mode === 'new';
+                const createUrl$: Observable<string | null> = !legacyCreate
+                    ? of(null)
+                    : givenCreateUrl
+                      ? of(givenCreateUrl)
+                      : this.#actionUrl.getCreateContentletUrl(variable, request.languageId);
 
-                return choice$.pipe(
-                    switchMap(({ editor, contentType }) => {
-                        const createUrl$: Observable<string | null> =
-                            editor === 'legacy' && request.mode === 'new'
-                                ? this.#actionUrl.getCreateContentletUrl(
-                                      variable,
-                                      request.languageId
-                                  )
-                                : of(null);
-
-                        return createUrl$.pipe(
-                            map((createUrl) => ({ editor, contentType, contentlet, createUrl }))
-                        );
-                    })
+                return createUrl$.pipe(
+                    map((createUrl) => ({ editor, contentType, contentlet, createUrl }))
                 );
             })
         );
@@ -236,16 +404,39 @@ export class DotEditContentOpenerService {
      * (open-content-from-fields.md); an event without one stacks under the caller's. `closed` is
      * not an output here: it is taken from the panel ref, so it fires even when no editor loaded.
      *
+     * With the URL option a language switch and a save also go to the URL, and the stacked panel is
+     * written to the URL too, with an entry of its own and without this panel's extra params.
+     *
+     * Every save and delete is then announced on {@link DotContentChangeService}, after the caller's
+     * handler, with the panel's depth: that is how a listing learns its content changed, whichever
+     * panel changed it (#38303, T174). A delete carries the content as it was last saved, or as the
+     * panel opened it.
+     *
      * @param options The caller's injector and handlers.
+     * @param url The panel's name in the URL, when it is written there.
+     * @param depth How many panels this one is stacked over.
+     * @param opened The content the panel opened, as far as it is known.
      * @returns The handlers, by output name.
      */
-    #outputs(options: DotEditContentOpenOptions): Record<string, (value: never) => void> {
+    #outputs(
+        options: DotEditContentOpenOptions,
+        url: DotPanelUrlTracker | null,
+        depth: number,
+        opened: () => DotCMSContentlet
+    ): Record<string, (value: never) => void> {
+        let lastSaved: DotCMSContentlet | null = null;
+
         const outputs: Record<string, (value: never) => void> = {
             openContent: (event: DotOpenContentEvent) =>
-                this.open(event.request, {
-                    injector: event.injector ?? options.injector,
-                    saved: event.onSaved
-                })
+                this.#open(
+                    event.request,
+                    {
+                        injector: event.injector ?? options.injector,
+                        saved: event.onSaved,
+                        url: options.url && {}
+                    },
+                    depth + 1
+                )
         };
 
         for (const name of HANDLED_OUTPUTS) {
@@ -256,41 +447,231 @@ export class DotEditContentOpenerService {
             }
         }
 
+        if (url) {
+            outputs['languageChanged'] = (languageId: number) => {
+                url.languageChanged(languageId);
+                options.languageChanged?.(languageId);
+            };
+        }
+
+        outputs['saved'] = (contentlet: DotCMSContentlet) => {
+            lastSaved = contentlet;
+            url?.saved(contentlet);
+            options.saved?.(contentlet);
+            this.#changes.notify({ kind: 'saved', contentlet, depth });
+        };
+        outputs['deleted'] = () => {
+            options.deleted?.();
+            this.#changes.notify({ kind: 'deleted', contentlet: lastSaved ?? opened(), depth });
+        };
+
         return outputs;
     }
 }
 
 /**
- * Whether a request names something to open: an inode to edit, or a content type to create.
+ * One panel's name in the surface's URL, kept in step with the panel through
+ * {@link DotPanelUrlStateService}: `editContent` and `editContentLang` for an edit, `createContent`
+ * for a create, with the surface's extra params beside them. The service forgets the panel when it
+ * closes.
+ */
+class DotPanelUrlTracker {
+    readonly #urlState: DotPanelUrlStateService;
+    readonly #extraParams: Record<string, string>;
+    readonly #inPlace: boolean;
+    readonly #mode: DotEditContentRequest['mode'];
+    #ref: DotSidePanelRef | null = null;
+    /** The content the URL names: an edit's from the start, a create's from its first save. */
+    #identifier: string | null = null;
+    /** The language the URL names for that content, when it names one. */
+    #languageId: number | undefined;
+
+    constructor(
+        urlState: DotPanelUrlStateService,
+        option: DotEditContentUrlOption,
+        mode: DotEditContentRequest['mode']
+    ) {
+        this.#urlState = urlState;
+        this.#extraParams = option.extraParams ?? {};
+        this.#inPlace = !!option.inPlace;
+        this.#mode = mode;
+    }
+
+    /**
+     * What the request names is known, after any lookup: names it. A panel registered before the
+     * lookup (an edit that named its identifier) is renamed in place when the version found is in
+     * another language than the one asked for; any other panel is registered now.
+     *
+     * @param ref The panel.
+     * @param request The request, completed from the contentlet fetched for it.
+     */
+    found(ref: DotSidePanelRef, request: DotEditContentRequest): void {
+        if (!this.#ref) {
+            this.register(ref, request);
+
+            return;
+        }
+
+        if (
+            request.mode === 'edit' &&
+            request.identifier &&
+            (request.identifier !== this.#identifier || request.languageId !== this.#languageId)
+        ) {
+            this.#rename(request.identifier, request.languageId);
+        }
+    }
+
+    /**
+     * Writes the panel to the URL. An edit whose identifier is still unknown is not written.
+     *
+     * @param ref The panel.
+     * @param request The request, as far as it is known.
+     */
+    register(ref: DotSidePanelRef, request: DotEditContentRequest): void {
+        if (request.mode === 'new') {
+            this.#ref = ref;
+            this.#registerWith(ref, {
+                [DOT_PANEL_URL_PARAM.CREATE_CONTENT]: request.contentType as string,
+                ...this.#extraParams
+            });
+
+            return;
+        }
+
+        if (!request.identifier) {
+            return;
+        }
+
+        this.#ref = ref;
+        this.#identifier = request.identifier;
+        this.#languageId = request.languageId;
+        this.#registerWith(ref, this.#editParams(request.identifier, request.languageId));
+    }
+
+    /** The author switched language: the URL names that version, in place. */
+    languageChanged(languageId: number): void {
+        if (this.#ref && this.#identifier) {
+            this.#rename(this.#identifier, languageId);
+        }
+    }
+
+    /**
+     * A save. A create's first save makes it an edit: the URL names the new content, in place. A
+     * save of the content the URL names, in another language, is a new translation's first save:
+     * switching to a language the content lacks reports no language, so this is the first the URL
+     * hears of it. A save of other content, such as related content opened in place, leaves the URL
+     * alone.
+     */
+    saved(contentlet: DotCMSContentlet): void {
+        if (!this.#ref || !contentlet.identifier) {
+            return;
+        }
+
+        if (!this.#identifier) {
+            if (this.#mode === 'new') {
+                this.#rename(contentlet.identifier, contentlet.languageId);
+            }
+
+            return;
+        }
+
+        if (
+            contentlet.identifier === this.#identifier &&
+            contentlet.languageId &&
+            contentlet.languageId !== this.#languageId
+        ) {
+            this.#rename(contentlet.identifier, contentlet.languageId);
+        }
+    }
+
+    /** Names the panel's content and language in place. */
+    #rename(identifier: string, languageId: number | undefined): void {
+        this.#identifier = identifier;
+        this.#languageId = languageId;
+        this.#urlState.update(
+            this.#ref as DotSidePanelRef,
+            this.#editParams(identifier, languageId)
+        );
+    }
+
+    /** Registers the panel, in place when the surface asked for it. */
+    #registerWith(ref: DotSidePanelRef, params: Record<string, string>): void {
+        if (this.#inPlace) {
+            this.#urlState.register(ref, params, { inPlace: true });
+
+            return;
+        }
+
+        this.#urlState.register(ref, params);
+    }
+
+    #editParams(identifier: string, languageId: number | undefined): Record<string, string> {
+        return {
+            [DOT_PANEL_URL_PARAM.EDIT_CONTENT]: identifier,
+            ...(languageId ? { [DOT_PANEL_URL_PARAM.EDIT_CONTENT_LANG]: String(languageId) } : {}),
+            ...this.#extraParams
+        };
+    }
+}
+
+/**
+ * Whether a request names something to open: an inode to edit, or an identifier to look the
+ * working version up by, or a content type to create. The identifier reaches a Lucene query, so
+ * only an identifier-shaped value counts.
  *
  * @param request The request.
  */
 function isOpenable(request: DotEditContentRequest): boolean {
-    return request.mode === 'edit' ? !!request.inode : !!request.contentType;
+    if (request.mode !== 'edit') {
+        return !!request.contentType;
+    }
+
+    return !!request.inode || isDotIdentifier(request.identifier);
 }
 
 /**
  * Fills what an edit request left out from the contentlet fetched for it, keeping everything the
- * request did say.
+ * request did say. An edit named only by identifier opens the version that was found, so its inode
+ * is that version's. Its language is the one the request asked for, when it asked for one and
+ * `keepAskedLanguage` is set (the new editor then offers that translation); otherwise the found
+ * version's.
  *
  * @param request The request.
  * @param contentlet The contentlet fetched for it, if one was.
+ * @param keepAskedLanguage Whether an edit named by identifier keeps the language it asked for.
  * @returns The request, completed.
  */
 function withContentlet(
     request: DotEditContentRequest,
-    contentlet: DotCMSContentlet | null
+    contentlet: DotCMSContentlet | null,
+    keepAskedLanguage: boolean
 ): DotEditContentRequest {
     if (!contentlet) {
         return request;
     }
 
+    const found = !request.inode && !(keepAskedLanguage && request.languageId);
+
     return {
         ...request,
+        inode: request.inode ?? contentlet.inode,
         contentType: request.contentType ?? contentlet.contentType,
         identifier: request.identifier ?? contentlet.identifier,
         // `||`, as the fetch rule reads it: an empty title is no heading.
         title: request.title || contentlet.title,
-        languageId: request.languageId ?? contentlet.languageId
+        languageId: found ? contentlet.languageId : (request.languageId ?? contentlet.languageId)
     };
+}
+
+/**
+ * The content a request names, as a contentlet, for a delete announced before the panel fetched or
+ * saved anything: only what the request said is set.
+ *
+ * @param request The request, completed from any contentlet fetched for it.
+ * @returns A partial contentlet.
+ */
+function asContentlet(request: DotEditContentRequest): DotCMSContentlet {
+    const { inode, identifier, contentType, title, languageId } = request;
+
+    return { inode, identifier, contentType, title, languageId } as DotCMSContentlet;
 }

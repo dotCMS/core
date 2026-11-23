@@ -1,4 +1,4 @@
-import { DestroyRef } from '@angular/core';
+import { DestroyRef, Injector } from '@angular/core';
 
 import type { DotEditContentOpenOptions, DotEditContentRequest } from '@dotcms/edit-content';
 import type { DotSidePanelRef } from '@dotcms/ui';
@@ -26,4 +26,24 @@ export async function openEditContentPanel(
     }
 
     return options.injector.get(DotEditContentOpenerService).open(request, options);
+}
+
+/**
+ * Refuses a link the author cannot have meant, through `DotPanelUrlStateService.refuse` (#38303,
+ * FR-049, T172): a screen whose URL names a panel param of the wrong shape, or more than one panel
+ * (`readPanelUrlIntent`'s `refused`), opens nothing, shows the standard not-found error, and loses
+ * the panel params and `extraKeys` in place. Loads `@dotcms/edit-content` on demand, as {@link
+ * openEditContentPanel} does; reading the URL needs no library, `readPanelUrlIntent` is in
+ * `@dotcms/utils`.
+ *
+ * @param injector The screen's injector.
+ * @param extraKeys Params of the screen's own that go with the panel params.
+ */
+export async function refusePanelUrl(
+    injector: Injector,
+    extraKeys: readonly string[] = []
+): Promise<void> {
+    const { DotPanelUrlStateService } = await import('@dotcms/edit-content');
+
+    injector.get(DotPanelUrlStateService).refuse(extraKeys);
 }

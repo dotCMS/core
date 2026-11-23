@@ -53,7 +53,6 @@ import {
 import { DotSidePanelRef } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
-    createFakeContentlet,
     DotFormatDateServiceMock,
     DotMessageDisplayServiceMock,
     MockDotRouterService
@@ -426,12 +425,11 @@ describe('DotCustomEventHandlerService', () => {
                 });
             });
 
-            it('should neither route to the legacy edit screen nor to the new editor', async () => {
+            it('should not route anywhere', async () => {
                 vi.spyOn(router, 'navigate');
 
                 await send('edit-contentlet', { inode: '123', contentType: 'Blog' });
 
-                expect((dotRouterService.goToEditContentlet as Mock).mock.calls.length).toBe(0);
                 expect((router.navigate as Mock).mock.calls.length).toBe(0);
             });
         });
@@ -447,7 +445,6 @@ describe('DotCustomEventHandlerService', () => {
                     portletId: PORTLET_ID
                 });
                 expect(request.contentType).toBeUndefined();
-                expect((dotRouterService.goToEditContentlet as Mock).mock.calls.length).toBe(0);
             });
         });
 
@@ -573,22 +570,195 @@ describe('DotCustomEventHandlerService', () => {
                 expect(openOptions().injector === sidePanelHostInjector).toBe(true);
             });
 
-            it('should reload the portlet that asked on every save', async () => {
+            // A save reloads the portlet through the content change notification, which the
+            // portlet listens to for as long as it is shown (T174): not through the panel's save.
+            it('should leave the reload on a save to the content change notification', async () => {
                 const reloadData = vi.spyOn(dotIframeService, 'reloadData');
                 await send(name, data);
 
-                openOptions().saved?.(createFakeContentlet({ inode: 'saved-inode' }));
+                openOptions().saved?.({} as never);
+
+                expect(reloadData).not.toHaveBeenCalled();
+            });
+
+            it('should reload the portlet that asked when the legacy editor closes', async () => {
+                const reloadData = vi.spyOn(dotIframeService, 'reloadData');
+                await send(name, data);
+
+                openOptions().editorResolved?.('legacy');
+                openOptions().closed?.();
 
                 expect(reloadData).toHaveBeenCalledWith(PORTLET_ID);
             });
 
-            it('should reload the portlet that asked when the panel closes', async () => {
-                const reloadData = vi.spyOn(dotIframeService, 'reloadData');
+            // The opener writes the panel to the portlet's URL, as on every surface but UVE
+            // (#38303, FR-044).
+            it('should ask the opener to write the panel to the URL', async () => {
                 await send(name, data);
 
+                expect(openOptions().url).toEqual({});
+            });
+        });
+
+        /**
+         * The legacy portlet route opens what a URL names through the same path the events use
+         * (#38303, FR-049): `IframePortletLegacyComponent` calls it with the identifier and the
+         * language, or the content type and the folder.
+         */
+        describe('openContent', () => {
+            const IDENTIFIER = '3f0c8e5a-7b2d-4c1e-9a6f-0d4b8e2c1a57';
+
+            const openContent = (request: DotEditContentRequest): Promise<void> => {
+                (
+                    service as unknown as { openContent: (r: DotEditContentRequest) => void }
+                ).openContent(request);
+
+                return vi.dynamicImportSettled();
+            };
+
+            it('should be public', () => {
+                expect(typeof (service as unknown as { openContent?: unknown }).openContent).toBe(
+                    'function'
+                );
+            });
+
+            it('should open the request for the current portlet, written to the URL', async () => {
+                await openContent({ mode: 'edit', identifier: IDENTIFIER, languageId: 2 });
+
+                expect(openedRequest()).toEqual({
+                    mode: 'edit',
+                    identifier: IDENTIFIER,
+                    languageId: 2,
+                    portletId: PORTLET_ID
+                });
+                expect(openOptions().url).toEqual({});
+                expect(openOptions().injector === sidePanelHostInjector).toBe(true);
+            });
+
+            /**
+             * A create in a folder names the folder in the portlet's URL beside `createContent`
+             * (`?folder=`, the deep link's and the Site Browser's), and the URL tracker owns it:
+             * written with the panel, gone when the panel closes, so a later create is not read
+             * back in a stale folder (#38303, review R3).
+             */
+            it('should hand the URL tracker the folder of a create in a folder', async () => {
+                await openContent({
+                    mode: 'new',
+                    contentType: 'Blog',
+                    folderInode: 'folder-inode'
+                });
+
+                expect(openOptions().url).toEqual({ extraParams: { folder: 'folder-inode' } });
+            });
+
+            it('should hand the URL tracker no folder for a create in none', async () => {
+                await openContent({ mode: 'new', contentType: 'Blog' });
+
+                expect(openOptions().url).toEqual({});
+            });
+
+            // A save reloads the portlet through the content change notification (T174), and a
+            // close after the legacy editor reloads it, for its moves and language switches that
+            // report nothing.
+            it('should reload the portlet when the legacy editor closes, and leave a save to the notification', async () => {
+                const reloadData = vi.spyOn(dotIframeService, 'reloadData');
+                await openContent({
+                    mode: 'new',
+                    contentType: 'Blog',
+                    folderInode: 'folder-inode'
+                });
+
+                openOptions().editorResolved?.('legacy');
+                openOptions().saved?.({} as never);
                 openOptions().closed?.();
 
+                expect(reloadData).toHaveBeenCalledTimes(1);
                 expect(reloadData).toHaveBeenCalledWith(PORTLET_ID);
+            });
+
+            // The new editor reports each save and delete, which the notification reloads the
+            // portlet for: its close reloads nothing more (review R5).
+            it('should not reload the portlet when the new editor closes', async () => {
+                const reloadData = vi.spyOn(dotIframeService, 'reloadData');
+                await openContent({ mode: 'edit', identifier: IDENTIFIER, languageId: 2 });
+
+                openOptions().editorResolved?.('new');
+                openOptions().saved?.({} as never);
+                openOptions().closed?.();
+
+                expect(reloadData).not.toHaveBeenCalled();
+            });
+
+            /**
+             * The Workflow Tasks detail views its task again on every save in a panel, with the
+             * panel still open, and on a close after the legacy editor, whose workflow actions
+             * report nothing; the new editor reports each one as a save. Either path opened the
+             * panel: its "Edit Content" or the task's URL, which the portlet behind reopens before
+             * the detail exists (#38303, FR-025a, stack review L7-2). The handlers are read when
+             * the panel reports, the close one after the task list behind it reloads.
+             */
+            describe('the panel handlers the portlet registers', () => {
+                type PanelHandlers = { saved: () => void; closed: () => void };
+                type WithPanelHandlers = { onPanelEvents: (handlers: PanelHandlers) => () => void };
+
+                let handlers: { saved: Mock; closed: Mock };
+
+                const register = (): (() => void) =>
+                    (service as unknown as WithPanelHandlers).onPanelEvents(handlers);
+
+                beforeEach(() => {
+                    handlers = { saved: vi.fn(), closed: vi.fn() };
+                });
+
+                it('should run saved on every save, also for a panel opened before they were registered', async () => {
+                    await openContent({ mode: 'edit', identifier: IDENTIFIER, languageId: 2 });
+                    register();
+
+                    openOptions().saved?.({} as never);
+                    openOptions().saved?.({} as never);
+
+                    expect(handlers.saved).toHaveBeenCalledTimes(2);
+                    expect(handlers.closed).not.toHaveBeenCalled();
+                });
+
+                it('should run closed after reloading the portlet when the editor was the legacy one', async () => {
+                    const reloadData = vi.spyOn(dotIframeService, 'reloadData');
+                    await openContent({ mode: 'edit', identifier: IDENTIFIER, languageId: 2 });
+                    register();
+
+                    openOptions().editorResolved?.('legacy');
+                    openOptions().closed?.();
+
+                    expect(handlers.closed).toHaveBeenCalledTimes(1);
+                    expect(reloadData.mock.invocationCallOrder[0]).toBeLessThan(
+                        handlers.closed.mock.invocationCallOrder[0]
+                    );
+                });
+
+                it('should not run closed when the editor was the new one, which reported its saves', async () => {
+                    const reloadData = vi.spyOn(dotIframeService, 'reloadData');
+                    register();
+                    await openContent({ mode: 'edit', inode: '123', contentType: 'Blog' });
+
+                    openOptions().editorResolved?.('new');
+                    openOptions().closed?.();
+
+                    expect(handlers.closed).not.toHaveBeenCalled();
+                    expect(reloadData).not.toHaveBeenCalled();
+                });
+
+                it('should stop running them once released', async () => {
+                    const release = register();
+                    await openContent({ mode: 'edit', inode: '123', contentType: 'Blog' });
+
+                    release();
+                    openOptions().editorResolved?.('legacy');
+                    openOptions().saved?.({} as never);
+                    openOptions().closed?.();
+
+                    expect(handlers.saved).not.toHaveBeenCalled();
+                    expect(handlers.closed).not.toHaveBeenCalled();
+                });
             });
         });
 

@@ -234,3 +234,38 @@ describe('injectEditContentPanel, forcing the legacy editor', () => {
         expect(open.mock.calls[1][1].editor).toBe('legacy');
     });
 });
+
+/** An opener whose panel is written to its URL, as every surface but the page editor's is. */
+@Component({ selector: 'dot-test-url-opener', template: '' })
+class TestUrlOpenerComponent {
+    readonly request = signal<DotEditContentRequest | null>(null);
+    readonly panel = injectEditContentPanel(this.request, {
+        url: { extraParams: { folder: 'f-1' } }
+    });
+}
+
+describe('injectEditContentPanel, with the panel in the URL', () => {
+    let spectator: Spectator<TestUrlOpenerComponent>;
+    let open: Mock;
+
+    const createComponent = createComponentFactory({
+        component: TestUrlOpenerComponent,
+        providers: [mockProvider(DotEditContentOpenerService, { open: vi.fn() })]
+    });
+
+    beforeEach(() => {
+        spectator = createComponent();
+        open = spectator.inject(DotEditContentOpenerService).open as Mock;
+        open.mockReset();
+        open.mockImplementation(() => new DotSidePanelRef(() => undefined));
+    });
+
+    // The surface sets the option once; the opener writes the URL (#38303, FR-050).
+    it('passes the url option to the opener', () => {
+        spectator.component.request.set(EDIT_REQUEST);
+        spectator.detectChanges();
+
+        // The option names no route (#38303).
+        expect(open.mock.calls[0][1].url).toEqual({ extraParams: { folder: 'f-1' } });
+    });
+});

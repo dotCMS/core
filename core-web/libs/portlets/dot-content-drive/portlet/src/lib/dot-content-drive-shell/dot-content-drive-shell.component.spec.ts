@@ -14,7 +14,7 @@ import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { isSignal, Signal, signal, WritableSignal } from '@angular/core';
 import { By } from '@angular/platform-browser';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, DefaultUrlSerializer } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 import { Dialog } from 'primeng/dialog';
@@ -25,6 +25,7 @@ import { ZIndexUtils } from 'primeng/utils';
 import {
     AddToBundleService,
     DotAlertConfirmService,
+    DotContentChangeService,
     DotContentSearchService,
     DotContentTypeService,
     DotCurrentUserService,
@@ -56,6 +57,7 @@ import {
     DotEditContentOpenerService,
     DotEditContentOpenOptions,
     DotEditContentRequest,
+    DotPanelUrlStateService,
     DotSourceEditorRequest
 } from '@dotcms/edit-content';
 import {
@@ -103,7 +105,6 @@ import {
     DotContentDriveActionExecution,
     DotContentDriveActionExecutionResult,
     DotContentDriveDialogDrillDown,
-    DotContentDrivePanelLocation,
     DotContentDriveSortOrder,
     DotContentDriveStatus
 } from '../shared/models';
@@ -116,9 +117,13 @@ import { DotContentDriveStore } from '../store/dot-content-drive.store';
 // editor (#38303). Typed (not cast) so tests get a compile-checked payload; reset in the shared
 // beforeEach for isolation.
 const editPanelRequestSignal: WritableSignal<DotEditContentRequest | null> = signal(null);
-// Backs the mock's `$panelLocation`: what the URL must say about the open panel. The shell's URL
-// sync and its Back guard read this, not the request (#37759).
-const panelLocationSignal: WritableSignal<DotContentDrivePanelLocation | null> = signal(null);
+/**
+ * The address bar, as the Location double below keeps it: the last URL written, as the browser
+ * does. Reset per test.
+ */
+let currentUrl = '';
+/** The panel params, which the opener and `DotPanelUrlStateService` own, never the shell (#38303). */
+const PANEL_PARAM_KEYS = ['editContent', 'editContentLang', 'createContent', 'editCode'];
 // Backs the mock's `$forceLegacyEditor`: "switch to the old editor" forces the legacy editor, and the
 // panel reopens in it (#38303).
 const forceLegacyEditorSignal = signal(false);
@@ -225,10 +230,43 @@ const createOpenerFake = () => {
 // Re-created before each test, like `sidePanels`.
 let opener: ReturnType<typeof createOpenerFake>;
 
+/** Reads a URL's query params the way the router does, whatever their encoding or order. */
+const paramsOf = (url: string): Record<string, string> =>
+    new DefaultUrlSerializer().parse(url).queryParams as Record<string, string>;
+
+/**
+ * Every URL the shell wrote, with `go` or `replaceState`, oldest first, and whether it pushed.
+ *
+ * @param location The Location double.
+ */
+const urlWrites = (location: SpyObject<Location>): { url: string; push: boolean }[] => {
+    const calls = (write: Mock, push: boolean) =>
+        write.mock.calls.map((call, index) => ({
+            url: call[0] as string,
+            push,
+            order: write.mock.invocationCallOrder[index]
+        }));
+
+    return [
+        ...calls(location.go as unknown as Mock, true),
+        ...calls(location.replaceState as unknown as Mock, false)
+    ]
+        .sort((a, b) => a.order - b.order)
+        .map(({ url, push }) => ({ url, push }));
+};
+
+/** The params of the last URL the shell wrote, with `go` or `replaceState`. */
+const lastWrittenParams = (location: SpyObject<Location>): Record<string, string> => {
+    const last = urlWrites(location).at(-1);
+
+    expect(last, 'the shell wrote the URL').toBeDefined();
+
+    return paramsOf(last?.url ?? '');
+};
+
 describe('DotContentDriveShellComponent', () => {
     let spectator: Spectator<DotContentDriveShellComponent>;
     let store: Mocked<InstanceType<typeof DotContentDriveStore>>;
-    let router: SpyObject<Router>;
     let location: SpyObject<Location>;
     let messageService: SpyObject<MessageService>;
     let uploadService: SpyObject<DotUploadFileService>;
@@ -305,12 +343,11 @@ describe('DotContentDriveShellComponent', () => {
                 createContent: vi.fn(),
                 closeEditPanel: vi.fn(),
                 openEditByIdentifier: vi.fn(),
-                panelSaved: vi.fn(),
-                panelLanguageChanged: vi.fn(),
                 $editPanelRequest: editPanelRequestSignal,
-                $forceLegacyEditor: forceLegacyEditorSignal,
-                $panelLocation: panelLocationSignal
+                $forceLegacyEditor: forceLegacyEditorSignal
             }),
+            // Edit Code registers its panel here; the Edit Content panel does so through the opener.
+            mockProvider(DotPanelUrlStateService, { register: vi.fn(), clear: vi.fn() }),
             LoggerService,
             StringUtils,
             mockProvider(PushPublishService, {
@@ -375,7 +412,7 @@ describe('DotContentDriveShellComponent', () => {
         );
         showInListFieldsSignal = signal<DotCMSContentTypeField[]>([]);
         editPanelRequestSignal.set(null);
-        panelLocationSignal.set(null);
+        currentUrl = '';
         forceLegacyEditorSignal.set(false);
         sourceEditorSignal.set(null);
         permissionsDialogClose$ = new Subject<unknown>();
@@ -505,28 +542,12 @@ describe('DotContentDriveShellComponent', () => {
                     viewType: viewTypeSignal,
                     setViewType: vi.fn()
                 }),
-                mockProvider(Router, {
-                    createUrlTree: vi.fn(
-                        (
-                            _commands: unknown[],
-                            opts: { queryParams?: Record<string, string | null> }
-                        ) => ({
-                            toString: () => {
-                                const params = Object.fromEntries(
-                                    Object.entries(opts?.queryParams ?? {}).filter(
-                                        ([, value]) => value != null
-                                    )
-                                ) as Record<string, string>;
-
-                                return '?' + new URLSearchParams(params).toString();
-                            }
-                        })
-                    )
-                }),
+                // Keeps the URL the last write left, as the browser does, so a write that keeps
+                // params the shell does not own can be told from one that drops them.
                 mockProvider(Location, {
-                    go: vi.fn(),
-                    replaceState: vi.fn(),
-                    path: vi.fn().mockReturnValue(''),
+                    go: vi.fn((url: string) => (currentUrl = url)),
+                    replaceState: vi.fn((url: string) => (currentUrl = url)),
+                    path: vi.fn(() => currentUrl),
                     // Return a real subscription so the shell's popstate listener can be captured
                     // and torn down without throwing on destroy.
                     subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
@@ -569,7 +590,6 @@ describe('DotContentDriveShellComponent', () => {
             ]
         });
         store = spectator.inject(DotContentDriveStore, true);
-        router = spectator.inject(Router);
         location = spectator.inject(Location);
         messageService = spectator.inject(MessageService);
 
@@ -1654,30 +1674,82 @@ describe('DotContentDriveShellComponent', () => {
             filtersSignal.set({ contentType: ['Blog'], baseType: ['1', '2', '3'] });
             spectator.detectChanges();
 
-            expect(router.createUrlTree).toHaveBeenCalledWith([], {
-                queryParams: {
-                    isTreeExpanded: 'false',
-                    // Always written (#37930), so a copied link keeps the view.
-                    viewType: 'list',
-                    path: '/another/path',
-                    filters: 'contentType:Blog;baseType:1,2,3',
-                    editContent: null,
-                    editContentLang: null,
-                    createContent: null,
-                    editCode: null,
-                    createFolder: null,
-                    editFolder: null,
-                    folderPermissions: null
-                },
-                queryParamsHandling: 'merge'
+            expect(lastWrittenParams(location)).toEqual({
+                isTreeExpanded: 'false',
+                // Always written (#37930), so a copied link keeps the view.
+                viewType: 'list',
+                path: '/another/path',
+                filters: 'contentType:Blog;baseType:1,2,3'
             });
 
-            // A filter write REPLACES rather than pushes. Only opening the panel pushes (AC8), so
-            // Back always leaves the portlet instead of walking back through filter URLs.
-            expect(location.replaceState).toHaveBeenCalledWith(
-                expect.stringContaining('filters=contentType%3ABlog%3BbaseType%3A1%2C2%2C3')
-            );
+            // A filter write REPLACES rather than pushes. Only a folder dialog opening and a folder
+            // move push, so Back always leaves the portlet instead of walking back through filters.
             expect(location.go).not.toHaveBeenCalled();
+        });
+
+        /**
+         * The URL holds params the shell does not own: the panel params the opener writes through
+         * `DotPanelUrlStateService`, and the menu's `mId`. The router never saw a URL written with
+         * `Location`, so a URL built from the router's would drop them; the shell reads the address
+         * bar instead and changes only its own keys (#38303, FR-044).
+         */
+        describe('params the shell does not own', () => {
+            const OPEN_PANEL_URL =
+                '/content-drive?mId=a1b2&path=%2Ftest%2Fpath&isTreeExpanded=false&viewType=list' +
+                '&editContent=4b1d7c1e-8a2f-4c3b-9d5e-6f7a8b9c0d1e&editContentLang=2';
+
+            it('keeps the open panel and the menu param when a filter changes', () => {
+                store.isTreeExpanded.mockReturnValue(false);
+                store.path.mockReturnValue('/test/path');
+                currentUrl = OPEN_PANEL_URL;
+
+                filtersSignal.set({ contentType: ['Blog'] });
+                spectator.detectChanges();
+
+                expect(location.replaceState).toHaveBeenCalled();
+                expect(location.go).not.toHaveBeenCalled();
+                expect(lastWrittenParams(location)).toEqual({
+                    mId: 'a1b2',
+                    path: '/test/path',
+                    isTreeExpanded: 'false',
+                    viewType: 'list',
+                    filters: 'contentType:Blog',
+                    editContent: '4b1d7c1e-8a2f-4c3b-9d5e-6f7a8b9c0d1e',
+                    editContentLang: '2'
+                });
+            });
+
+            it('keeps them when the author moves to another folder', () => {
+                store.isTreeExpanded.mockReturnValue(false);
+                store.path.mockReturnValue('/test/path');
+                currentUrl = OPEN_PANEL_URL;
+                filtersSignal.set({ sharedAssets: 'true' });
+                spectator.detectChanges();
+
+                store.path.mockReturnValue('/other/');
+                filtersSignal.set({ sharedAssets: 'true' });
+                spectator.detectChanges();
+
+                expect(lastWrittenParams(location)).toEqual(
+                    expect.objectContaining({
+                        mId: 'a1b2',
+                        path: '/other/',
+                        editContent: '4b1d7c1e-8a2f-4c3b-9d5e-6f7a8b9c0d1e',
+                        editContentLang: '2'
+                    })
+                );
+            });
+
+            it('keeps the path the address bar names', () => {
+                store.isTreeExpanded.mockReturnValue(false);
+                store.path.mockReturnValue('/test/path');
+                currentUrl = OPEN_PANEL_URL;
+
+                filtersSignal.set({ contentType: ['Blog'] });
+                spectator.detectChanges();
+
+                expect(urlWrites(location).at(-1)?.url.startsWith('/content-drive?')).toBe(true);
+            });
         });
 
         // The search scope rides the generic filter machinery rather than a mechanism of its own,
@@ -1689,9 +1761,7 @@ describe('DotContentDriveShellComponent', () => {
             filtersSignal.set({ title: 'pricing', searchScope: 'TITLE' });
             spectator.detectChanges();
 
-            expect(location.replaceState).toHaveBeenCalledWith(
-                expect.stringContaining('searchScope%3ATITLE')
-            );
+            expect(lastWrittenParams(location).filters).toContain('searchScope:TITLE');
         });
 
         it('should keep the default search scope out of the address', () => {
@@ -1702,9 +1772,7 @@ describe('DotContentDriveShellComponent', () => {
             filtersSignal.set({ title: 'pricing' });
             spectator.detectChanges();
 
-            expect(location.replaceState).not.toHaveBeenCalledWith(
-                expect.stringContaining('searchScope')
-            );
+            expect(urlWrites(location).some(({ url }) => url.includes('searchScope'))).toBe(false);
         });
 
         it('pushes a history entry when the user navigates to a different folder', () => {
@@ -1727,7 +1795,10 @@ describe('DotContentDriveShellComponent', () => {
             spectator.detectChanges();
             spectator.detectChanges();
 
-            expect(location.go).toHaveBeenCalledWith(expect.stringContaining('path=%2Fsecond'));
+            expect(location.go).toHaveBeenCalledTimes(1);
+            expect(paramsOf((location.go as unknown as Mock).mock.calls[0][0]).path).toBe(
+                '/second'
+            );
         });
 
         it('does not push a history entry when the default filters are seeded', () => {
@@ -1759,46 +1830,22 @@ describe('DotContentDriveShellComponent', () => {
             spectator.detectChanges();
             spectator.detectChanges();
 
-            expect(router.createUrlTree).toHaveBeenCalledWith([], {
-                queryParams: {
-                    isTreeExpanded: 'false',
-                    // Always written (#37930), so a copied link keeps the view.
-                    viewType: 'list',
-                    path: '/another/path',
-                    filters: 'contentType:Blog;baseType:1,2,3',
-                    editContent: null,
-                    editContentLang: null,
-                    createContent: null,
-                    editCode: null,
-                    createFolder: null,
-                    editFolder: null,
-                    folderPermissions: null
-                },
-                queryParamsHandling: 'merge'
+            expect(lastWrittenParams(location)).toEqual({
+                isTreeExpanded: 'false',
+                // Always written (#37930), so a copied link keeps the view.
+                viewType: 'list',
+                path: '/another/path',
+                filters: 'contentType:Blog;baseType:1,2,3'
             });
-
-            vi.clearAllMocks(); // Clear previous calls
 
             filtersSignal.set({});
             spectator.detectChanges();
             spectator.detectChanges();
 
-            expect(router.createUrlTree).toHaveBeenCalledWith([], {
-                queryParams: {
-                    isTreeExpanded: 'false',
-                    // Always written (#37930), so a copied link keeps the view.
-                    viewType: 'list',
-                    path: '/another/path',
-                    filters: null, // With merge, null removes the param
-                    editContent: null,
-                    editContentLang: null,
-                    createContent: null,
-                    editCode: null,
-                    createFolder: null,
-                    editFolder: null,
-                    folderPermissions: null
-                },
-                queryParamsHandling: 'merge'
+            expect(lastWrittenParams(location)).toEqual({
+                isTreeExpanded: 'false',
+                viewType: 'list',
+                path: '/another/path'
             });
         });
     });
@@ -5121,12 +5168,17 @@ describe('DotContentDriveShellComponent', () => {
             header: 'content-drive.dialog.folder.header'
         };
 
-        /** The last URL the shell built carries these query params, among others. */
-        const expectLastUrlParams = (params: Record<string, string | null>) =>
-            expect(router.createUrlTree).toHaveBeenLastCalledWith(
-                [],
-                expect.objectContaining({ queryParams: expect.objectContaining(params) })
-            );
+        /**
+         * The last URL the shell wrote carries these query params, among others; a `null` one is
+         * absent from it.
+         */
+        const expectLastUrlParams = (params: Record<string, string | null>) => {
+            const written = lastWrittenParams(location);
+
+            for (const [key, value] of Object.entries(params)) {
+                expect(written[key], key).toBe(value ?? undefined);
+            }
+        };
 
         describe('Edit Permissions', () => {
             it('opens the permissions JSP dialog, with the config the context menu used', () => {
@@ -5254,31 +5306,10 @@ describe('DotContentDriveShellComponent', () => {
      * reacts to the five panel events.
      */
     describe('Edit Content side panel', () => {
-        /**
-         * The location the real navigation service derives from a request: the identifier and
-         * language for an edit, the content type variable for a create.
-         */
-        const locationFor = (
-            value: DotEditContentRequest | null
-        ): DotContentDrivePanelLocation | null => {
-            if (!value) {
-                return null;
-            }
-
-            return value.mode === 'edit'
-                ? {
-                      kind: 'edit',
-                      editContent: value.identifier ?? '',
-                      editContentLang: value.languageId
-                  }
-                : { kind: 'create', createContent: value.contentType ?? '' };
-        };
-
-        // Drives the module-scope signals backing the nav service mock's readonly `$editPanelRequest`
-        // and `$panelLocation`, set together as the real service sets them on open and close.
+        // Drives the module-scope signal backing the nav service mock's readonly `$editPanelRequest`,
+        // as the real service sets it on open and close.
         const setPanelRequest = (value: DotEditContentRequest | null) => {
             editPanelRequestSignal.set(value);
-            panelLocationSignal.set(locationFor(value));
         };
 
         const EDIT_REQUEST: DotEditContentRequest = {
@@ -5332,6 +5363,51 @@ describe('DotContentDriveShellComponent', () => {
             expect(content.options.injector).toBeDefined();
         });
 
+        /**
+         * The opener writes the panel to the URL and closes it on Back (#38303, FR-044 to FR-048).
+         * Content Drive's folder for a create is its own `path` param, already in the URL, so it
+         * passes no extra params.
+         */
+        it.each([
+            ['an edit', EDIT_REQUEST],
+            ['a create', CREATE_REQUEST]
+        ])('asks the opener to write %s to the URL, with no extra params', (_label, request) => {
+            const { options } = openOn(request);
+
+            expect(options.url).toEqual({});
+        });
+
+        it('writes none of the panel params itself, from open to close', () => {
+            spectator.detectChanges();
+            const content = openOn(EDIT_REQUEST);
+            content.options.saved?.({ identifier: 'id-1', languageId: 1 } as DotCMSContentlet);
+            content.ref.close();
+            setPanelRequest(null);
+            spectator.detectChanges();
+
+            const written = urlWrites(location).map(({ url }) => paramsOf(url));
+            expect(written.length).toBeGreaterThan(0);
+            for (const params of written) {
+                expect(Object.keys(params).filter((key) => PANEL_PARAM_KEYS.includes(key))).toEqual(
+                    []
+                );
+            }
+            // No entry of its own either: the opener pushes the panel's.
+            expect(location.go).not.toHaveBeenCalled();
+        });
+
+        // Back is the service's: it restores the params and asks the panel to close (FR-047).
+        it('asks the panel nothing on Back itself', () => {
+            const { ref } = openOn(EDIT_REQUEST);
+
+            (location.subscribe as Mock).mock.calls[0][0]({ url: '/content-drive?path=/foo' });
+
+            expect(ref.requestClose).not.toHaveBeenCalled();
+            expect(location.replaceState).not.toHaveBeenCalledWith(
+                expect.stringContaining('editContent')
+            );
+        });
+
         it('opens no editor through the side-panel service itself: the opener picks and opens it', () => {
             setPanelRequest(EDIT_REQUEST);
             spectator.detectChanges();
@@ -5359,6 +5435,10 @@ describe('DotContentDriveShellComponent', () => {
             expect(first.options.editor).toBeUndefined();
             expect(openedContent().options.editor).toBe('legacy');
             expect(requestOf(openedContent())).toEqual(EDIT_REQUEST);
+            // The reopened panel takes the history entry of the one it replaces, so Back still
+            // leaves it in one step, as before the opener wrote the URL.
+            expect(first.options.url).toEqual({});
+            expect(openedContent().options.url).toEqual({ inPlace: true });
         });
 
         it('closes the panel when the request is cleared, without reporting a close', () => {
@@ -5378,25 +5458,33 @@ describe('DotContentDriveShellComponent', () => {
          * the legacy editor sends no event of its own.
          */
         describe('panel events', () => {
-            it('refreshes the list quietly on save, then hands the saved content to the navigation service', () => {
+            // A save refreshes the list through the content change notification, once, at any
+            // depth (T174), so the panel needs no handler of its own for it.
+            it('leaves the refresh on a save to the content change notification', () => {
                 const content = openOn(CREATE_REQUEST);
 
-                content.options.saved?.({
-                    identifier: 'id-9',
-                    languageId: 2,
-                    inode: 'inode-9'
-                } as DotCMSContentlet);
+                expect(content.options.saved).toBeUndefined();
+                expect(content.ref.isClosed).toBe(false);
+            });
 
-                expect(store.reloadContentDrive).toHaveBeenCalledWith({ quiet: true });
-                // So a first save of a create can switch the URL to the saved content (FR-025).
-                expect(navigationService.panelSaved).toHaveBeenCalledWith({
-                    identifier: 'id-9',
-                    languageId: 2
+            /**
+             * #38303, T174: every save and delete in a side panel, at any depth (a relationship's
+             * "New" inside the panel Content Drive opened), refreshes the list quietly, for as long
+             * as the portlet lives.
+             */
+            it.each([
+                ['a save', 'saved', 0],
+                ['a save in a stacked panel', 'saved', 1],
+                ['a delete', 'deleted', 2]
+            ] as const)('refreshes the list quietly on %s in any panel', (_label, kind, depth) => {
+                spectator.inject(DotContentChangeService).notify({
+                    kind,
+                    contentlet: { identifier: 'id-9', inode: 'inode-9' } as DotCMSContentlet,
+                    depth
                 });
-                expect((store.reloadContentDrive as Mock).mock.invocationCallOrder[0]).toBeLessThan(
-                    (navigationService.panelSaved as Mock).mock.invocationCallOrder[0]
-                );
-                // The panel stays open after a save.
+
+                expect(store.reloadContentDrive).toHaveBeenCalledTimes(1);
+                expect(store.reloadContentDrive).toHaveBeenCalledWith({ quiet: true });
                 expect(navigationService.closeEditPanel).not.toHaveBeenCalled();
             });
 
@@ -5410,16 +5498,6 @@ describe('DotContentDriveShellComponent', () => {
                 expect(
                     (navigationService.closeEditPanel as Mock).mock.invocationCallOrder[0]
                 ).toBeLessThan((store.reloadContentDrive as Mock).mock.invocationCallOrder[0]);
-            });
-
-            // A language switch moves `editContentLang`, so a refresh reopens that language
-            // (#37759, FR-020).
-            it('hands a language switch inside the editor to the navigation service', () => {
-                const content = openOn(EDIT_REQUEST);
-
-                content.options.languageChanged?.(3);
-
-                expect(navigationService.panelLanguageChanged).toHaveBeenCalledWith(3);
             });
 
             // The first save of a new page in the legacy editor names the page to open, as it does
@@ -5466,172 +5544,6 @@ describe('DotContentDriveShellComponent', () => {
 
                 expect(store.reloadContentDrive).toHaveBeenCalledTimes(1);
                 expect(store.reloadContentDrive).toHaveBeenCalledWith({ quiet: true });
-            });
-        });
-
-        it('reflects an open edit panel as its identifier and language in the URL', () => {
-            setPanelRequest(EDIT_REQUEST);
-            spectator.detectChanges();
-
-            expect(router.createUrlTree).toHaveBeenCalledWith(
-                [],
-                expect.objectContaining({
-                    queryParams: expect.objectContaining({
-                        editContent: 'id-1',
-                        editContentLang: '1',
-                        createContent: null
-                    })
-                })
-            );
-        });
-
-        it('reflects an open create panel as createContent=<type> (push), so a refresh can reopen it (FR-020)', () => {
-            setPanelRequest(CREATE_REQUEST);
-            spectator.detectChanges();
-
-            expect(router.createUrlTree).toHaveBeenCalledWith(
-                [],
-                expect.objectContaining({
-                    queryParams: expect.objectContaining({
-                        createContent: 'ct-1',
-                        editContent: null,
-                        editContentLang: null
-                    })
-                })
-            );
-            expect(location.go).toHaveBeenCalledTimes(1);
-        });
-
-        it('follows the location, not the request, so the URL can change without remounting the panel', () => {
-            setPanelRequest(CREATE_REQUEST);
-            spectator.detectChanges();
-            (router.createUrlTree as Mock).mockClear();
-            (location.go as Mock).mockClear();
-            (location.replaceState as Mock).mockClear();
-
-            // The request stays a create; only the location moves on (as after a first save).
-            panelLocationSignal.set({ kind: 'edit', editContent: 'id-9', editContentLang: 2 });
-            spectator.detectChanges();
-
-            // Same panel, new address: replaced, so Back still leaves the panel in one step (FR-025).
-            expect(location.go).not.toHaveBeenCalled();
-            expect(location.replaceState).toHaveBeenCalledTimes(1);
-
-            expect(router.createUrlTree).toHaveBeenCalledWith(
-                [],
-                expect.objectContaining({
-                    queryParams: expect.objectContaining({
-                        editContent: 'id-9',
-                        editContentLang: '2',
-                        createContent: null
-                    })
-                })
-            );
-        });
-
-        it('uses replaceState (not go) when the panel closes, and removes every panel param', () => {
-            setPanelRequest(EDIT_REQUEST);
-            spectator.detectChanges();
-            (location.go as Mock).mockClear();
-            (location.replaceState as Mock).mockClear();
-            (router.createUrlTree as Mock).mockClear();
-
-            setPanelRequest(null);
-            spectator.detectChanges();
-
-            expect(location.replaceState).toHaveBeenCalledTimes(1);
-            expect(location.go).not.toHaveBeenCalled();
-            expect(router.createUrlTree).toHaveBeenCalledWith(
-                [],
-                expect.objectContaining({
-                    queryParams: expect.objectContaining({
-                        editContent: null,
-                        editContentLang: null,
-                        createContent: null
-                    })
-                })
-            );
-        });
-
-        /** Back routes through the one panel's close guard, whichever editor it shows (FR-019). */
-        describe('browser Back (popstate)', () => {
-            const getPopstateHandler = () =>
-                (location.subscribe as Mock).mock.calls[0][0] as (event: { url: string }) => void;
-
-            /**
-             * Opens the panel on `request` and returns its close request, with the URL writes the
-             * open made cleared, so only what Back does is asserted.
-             */
-            const openPanel = (request: DotEditContentRequest): Mock => {
-                const { ref } = openOn(request);
-                (location.replaceState as Mock).mockClear();
-                (location.go as Mock).mockClear();
-                (router.createUrlTree as Mock).mockClear();
-
-                return ref.requestClose as Mock;
-            };
-
-            it('routes Back through the panel close guard (does not discard silently)', () => {
-                const requestClose = openPanel(EDIT_REQUEST);
-
-                getPopstateHandler()({ url: '/c/content-drive?path=/foo' });
-
-                // Routes through the guard instead of tearing the panel down directly.
-                expect(requestClose).toHaveBeenCalledTimes(1);
-                expect(navigationService.closeEditPanel).not.toHaveBeenCalled();
-                // Restores the param so the URL matches the still-open panel while the guard decides.
-                expect(location.replaceState).toHaveBeenCalledTimes(1);
-                expect(router.createUrlTree).toHaveBeenLastCalledWith(
-                    [],
-                    expect.objectContaining({
-                        queryParams: expect.objectContaining({ editContent: 'id-1' })
-                    })
-                );
-            });
-
-            it('keeps the panel open when Back preserves the same editContent param', () => {
-                const requestClose = openPanel(EDIT_REQUEST);
-
-                getPopstateHandler()({ url: '/c/content-drive?editContent=id-1' });
-
-                expect(requestClose).not.toHaveBeenCalled();
-                expect(navigationService.closeEditPanel).not.toHaveBeenCalled();
-            });
-
-            it('routes Back through the guard for an open create panel too (AC8)', () => {
-                const requestClose = openPanel(CREATE_REQUEST);
-
-                // Back removed `createContent` — the popstate handler must still close the create
-                // panel through the guard, not leave it open with a stale URL.
-                getPopstateHandler()({ url: '/c/content-drive?path=/foo' });
-
-                expect(requestClose).toHaveBeenCalledTimes(1);
-                expect(navigationService.closeEditPanel).not.toHaveBeenCalled();
-                expect(location.replaceState).toHaveBeenCalledTimes(1);
-                // The restored URL names the create again, not the retired `new` marker.
-                expect(router.createUrlTree).toHaveBeenLastCalledWith(
-                    [],
-                    expect.objectContaining({
-                        queryParams: expect.objectContaining({ createContent: 'ct-1' })
-                    })
-                );
-            });
-
-            it('keeps a create panel open when Back preserves its createContent param', () => {
-                const requestClose = openPanel(CREATE_REQUEST);
-
-                getPopstateHandler()({ url: '/c/content-drive?createContent=ct-1' });
-
-                expect(requestClose).not.toHaveBeenCalled();
-                expect(navigationService.closeEditPanel).not.toHaveBeenCalled();
-            });
-
-            it('closes a create panel when Back only leaves the retired editContent=new marker', () => {
-                const requestClose = openPanel(CREATE_REQUEST);
-
-                getPopstateHandler()({ url: '/c/content-drive?editContent=new' });
-
-                expect(requestClose).toHaveBeenCalledTimes(1);
             });
         });
 
@@ -5736,60 +5648,34 @@ describe('DotContentDriveShellComponent', () => {
             expect(store.closeSourceEditor).toHaveBeenCalledTimes(1);
         });
 
-        // A history entry of its own, so Back pops the panel instead of leaving Content Drive.
-        it('names the open file in the URL with a new history entry, and removes it on close', () => {
+        /**
+         * A history entry of its own, so Back pops the panel through its prompt instead of leaving
+         * Content Drive. Edit Code is not opened through the opener, so the shell registers it with
+         * the service the opener uses, which writes, restores and clears it (#38303, FR-044).
+         */
+        it('registers the open file with the panel URL service, by inode, once', () => {
             spectator.detectChanges();
-            (location.go as Mock).mockClear();
+            const panelUrl = spectator.inject(DotPanelUrlStateService);
 
             openSourcePanel();
-
-            expect(location.go).toHaveBeenCalledTimes(1);
-            expect(router.createUrlTree).toHaveBeenLastCalledWith(
-                [],
-                expect.objectContaining({
-                    queryParams: expect.objectContaining({ editCode: 'vtl-inode' })
-                })
-            );
-
-            (location.go as Mock).mockClear();
-            (location.replaceState as Mock).mockClear();
-            sourceEditorSignal.set(null);
+            sourceEditorSignal.set({ ...SOURCE_REQUEST, title: 'header (copy).vtl' });
             spectator.detectChanges();
 
-            expect(location.go).not.toHaveBeenCalled();
-            expect(location.replaceState).toHaveBeenCalledTimes(1);
-            expect(router.createUrlTree).toHaveBeenLastCalledWith(
-                [],
-                expect.objectContaining({
-                    queryParams: expect.objectContaining({ editCode: null })
-                })
-            );
+            expect(panelUrl.register).toHaveBeenCalledTimes(1);
+            const [ref, params] = (panelUrl.register as unknown as Mock).mock.calls[0];
+            expect(ref === sourcePanel()?.ref).toBe(true);
+            expect(params).toEqual({ editCode: 'vtl-inode' });
         });
 
-        it('routes browser Back through its own unsaved-changes prompt', () => {
-            openSourcePanel();
-            (location.replaceState as Mock).mockClear();
-
-            (location.subscribe as Mock).mock.calls[0][0]({ url: '/c/content-drive?path=/foo' });
-
-            expect(sourcePanel()?.ref.requestClose).toHaveBeenCalledTimes(1);
-            expect(store.closeSourceEditor).not.toHaveBeenCalled();
-            // The param is put back while the prompt decides, so the URL matches the open panel.
-            expect(location.replaceState).toHaveBeenCalledTimes(1);
-            expect(router.createUrlTree).toHaveBeenLastCalledWith(
-                [],
-                expect.objectContaining({ queryParams: { editCode: 'vtl-inode' } })
-            );
-        });
-
-        it('stays open when Back keeps its param', () => {
+        it('writes no editCode itself, and leaves Back to the service', () => {
+            spectator.detectChanges();
             openSourcePanel();
 
-            (location.subscribe as Mock).mock.calls[0][0]({
-                url: '/c/content-drive?editCode=vtl-inode'
-            });
+            (location.subscribe as Mock).mock.calls[0][0]({ url: '/content-drive?path=/foo' });
 
             expect(sourcePanel()?.ref.requestClose).not.toHaveBeenCalled();
+            expect(location.go).not.toHaveBeenCalled();
+            expect(urlWrites(location).some(({ url }) => 'editCode' in paramsOf(url))).toBe(false);
         });
     });
 

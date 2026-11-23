@@ -22,7 +22,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ConfirmationService, ConfirmEventType, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialog } from 'primeng/confirmdialog';
-import { DialogService, DynamicDialog, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DialogService } from 'primeng/dynamicdialog';
 import { MessageModule } from 'primeng/message';
 
 import {
@@ -260,6 +260,111 @@ describe('EditContentLayoutComponent', () => {
             expect(host.reportSaved).not.toHaveBeenCalled();
             expect(markFormPristineSpy).not.toHaveBeenCalled();
             expect(freshStore.clearWorkflowActionSuccess).not.toHaveBeenCalled();
+        });
+    });
+
+    /**
+     * An opener that asks for content in a language it has no version in gets the content in
+     * another language, with the asked one on the request (the UVE's translate, a deep link with
+     * `editContentLang`). The editor then offers that translation, as its own locale switch does:
+     * the populate or manual dialog, once (#38303, T178).
+     */
+    describe('A requested language the content lacks', () => {
+        const ENGLISH = {
+            id: 1,
+            isoCode: 'en-us',
+            language: 'English',
+            translated: true,
+            defaultLanguage: true
+        } as DotLanguage;
+        const SPANISH = {
+            id: 2,
+            isoCode: 'es-es',
+            language: 'Spanish',
+            translated: false
+        } as DotLanguage;
+        const FRENCH = {
+            id: 3,
+            isoCode: 'fr-fr',
+            language: 'French',
+            translated: true
+        } as DotLanguage;
+
+        /**
+         * Opens the editor on English content with the request naming a language, and lets the
+         * store load the content's locales.
+         */
+        const openAsking = (languageId?: number) => {
+            mockEditContentHost.resolveIdentity.mockReturnValue(languageId ? { languageId } : {});
+            const fresh = createComponent({ detectChanges: false });
+            const freshStore = fresh.inject(DotEditContentStore, true);
+            // Should the store load the locales again, it gets the same ones. The component
+            // provides its own DotLanguagesService, which the store uses.
+            fresh
+                .inject(DotContentletService, true)
+                .getLanguages.mockReturnValue(of([ENGLISH, SPANISH, FRENCH]));
+            vi.spyOn(fresh.inject(DotLanguagesService, true), 'getDefault').mockReturnValue(
+                of(ENGLISH)
+            );
+            const switchLocale = vi
+                .spyOn(freshStore, 'switchLocale')
+                .mockImplementation(() => undefined);
+
+            fresh.detectChanges();
+            // English content with its locales loaded, as the store leaves them.
+            const contentlet = { ...MOCK_CONTENTLET_1_TAB, languageId: ENGLISH.id };
+            patchState(unprotected(freshStore), {
+                contentlet,
+                locales: [ENGLISH, FRENCH, SPANISH],
+                currentLocale: ENGLISH,
+                currentIdentifier: contentlet.identifier,
+                localesStatus: { status: ComponentStatus.LOADED, error: '' }
+            });
+            // Twice: the first pass schedules the editor's effects on the new state, the second
+            // runs them.
+            fresh.detectChanges();
+            fresh.detectChanges();
+
+            return { fresh, freshStore, switchLocale };
+        };
+
+        it('should offer the translation into an untranslated language the request names', () => {
+            const { switchLocale } = openAsking(SPANISH.id);
+            expect(switchLocale).toHaveBeenCalledTimes(1);
+            expect(switchLocale).toHaveBeenCalledWith(expect.objectContaining({ id: SPANISH.id }));
+        });
+
+        it('should offer it once, though the locales load again', () => {
+            const { fresh, freshStore, switchLocale } = openAsking(SPANISH.id);
+
+            patchState(unprotected(freshStore), {
+                localesStatus: { status: ComponentStatus.LOADING, error: '' }
+            });
+            fresh.detectChanges();
+            patchState(unprotected(freshStore), {
+                localesStatus: { status: ComponentStatus.LOADED, error: '' }
+            });
+            fresh.detectChanges();
+
+            expect(switchLocale).toHaveBeenCalledTimes(1);
+        });
+
+        it('should not offer it when the request names the content’s own language', () => {
+            const { switchLocale } = openAsking(ENGLISH.id);
+
+            expect(switchLocale).not.toHaveBeenCalled();
+        });
+
+        it('should not offer it when the request names a language the content has', () => {
+            const { switchLocale } = openAsking(FRENCH.id);
+
+            expect(switchLocale).not.toHaveBeenCalled();
+        });
+
+        it('should not offer it when the request names no language', () => {
+            const { switchLocale } = openAsking();
+
+            expect(switchLocale).not.toHaveBeenCalled();
         });
     });
 
@@ -1016,226 +1121,6 @@ describe('EditContentLayoutComponent - navigation override from an ancestor', ()
 
         expect(openerOverride.leaveOnLoadError).toHaveBeenCalledWith({ inode: 'opened-inode' });
         expect(spectator.inject(Router).navigate).not.toHaveBeenCalled();
-    });
-});
-
-// Separate top-level describe so the outer beforeEach above (which creates a component and
-// instantiates TestBed) never runs before these tests. Provider overrides via
-// createComponent({ providers: [...] }) require a fresh TestBed — calling them after
-// TestBed is already instantiated throws "Cannot override provider when the test module
-// has already been instantiated".
-describe('EditContentLayoutComponent - Dialog Dirty-Close Guard', () => {
-    let dialogCloseMock: Mock;
-
-    const createDialogComponent = createComponentFactory({
-        component: DotEditContentLayoutComponent,
-        imports: [
-            MessageModule,
-            ButtonModule,
-            MockComponent(DotEditContentFormComponent),
-            MockComponent(DotEditContentSidebarComponent),
-            DotMessagePipe
-        ],
-        componentProviders: [
-            DotEditContentStore,
-            mockProvider(DotWorkflowsActionsService),
-            mockProvider(DotWorkflowActionsFireService),
-            mockProvider(DotEditContentService),
-            mockProvider(DotContentTypeService),
-            mockProvider(DotWorkflowService),
-            mockProvider(DotContentletService),
-            mockProvider(DotVersionableService),
-            ConfirmationService,
-            { provide: EDIT_CONTENT_HOST, useValue: mockEditContentHost }
-        ],
-        providers: [
-            mockProvider(DotHttpErrorManagerService),
-            mockProvider(MessageService),
-            mockProvider(DialogService),
-            mockProvider(DotLanguagesService),
-            mockProvider(DotSiteService, {
-                getCurrentSite: vi
-                    .fn()
-                    .mockReturnValue(of({ identifier: 'default', hostname: 'demo.dotcms.com' }))
-            }),
-            mockProvider(DotSystemConfigService, {
-                getSystemConfig: vi.fn().mockReturnValue(of({}))
-            }),
-            GlobalStore,
-            {
-                provide: DotCurrentUserService,
-                useValue: {
-                    getCurrentUser: () =>
-                        of({
-                            userId: '123',
-                            userName: 'John Doe'
-                        })
-                }
-            },
-            {
-                provide: ActivatedRoute,
-                useValue: {
-                    get snapshot() {
-                        return { params: { id: '', contentType: '' } };
-                    }
-                }
-            },
-            mockProvider(Router, {
-                navigate: vi.fn().mockReturnValue(Promise.resolve(true)),
-                url: '/test-url',
-                events: of()
-            }),
-            provideHttpClient(),
-            provideHttpClientTesting(),
-            mockProvider(DotMessageService, {
-                get: vi.fn((key: string, ...args: unknown[]) =>
-                    key === 'edit.content.locked.by.user' ? `Content is locked by ${args[0]}` : key
-                )
-            }),
-            mockProvider(DotRelatedContentNavigationStore, {
-                trail: relatedTrailSignal,
-                registerTitle: vi.fn(),
-                buildTrailForSavedInode: vi.fn().mockReturnValue(null)
-            })
-        ]
-    });
-
-    beforeEach(() => {
-        dialogCloseMock = vi.fn();
-    });
-
-    const createWithDialogRef = (extraProviders: unknown[] = []) =>
-        createDialogComponent({
-            detectChanges: false,
-            providers: [
-                { provide: DynamicDialogRef, useValue: { close: dialogCloseMock } },
-                ...extraProviders
-            ]
-        });
-
-    describe('programmatic close (dialogRef.close override)', () => {
-        it('should pass through when the form is clean', () => {
-            const ds = createWithDialogRef();
-            const dialogRef = ds.inject(DynamicDialogRef);
-            ds.detectChanges();
-
-            dialogRef.close('result');
-
-            expect(dialogCloseMock).toHaveBeenCalledWith('result');
-        });
-
-        it('should open the confirm dialog instead of closing when the form is dirty', () => {
-            const ds = createWithDialogRef();
-            const dsStore = ds.inject(DotEditContentStore, true);
-            const dsConfirmService = ds.inject(ConfirmationService, true);
-            const dialogRef = ds.inject(DynamicDialogRef);
-
-            ds.detectChanges();
-            vi.spyOn(ds.component, 'hasUnsavedChanges').mockReturnValue(true);
-            vi.spyOn(dsStore, 'workflowActionSuccess').mockReturnValue(null);
-            const confirmSpy = vi.spyOn(dsConfirmService, 'confirm');
-
-            dialogRef.close('result');
-
-            expect(confirmSpy).toHaveBeenCalledTimes(1);
-            expect(dialogCloseMock).not.toHaveBeenCalled();
-        });
-
-        it('should close after the user discards changes', () => {
-            const ds = createWithDialogRef();
-            const dsStore = ds.inject(DotEditContentStore, true);
-            const dsConfirmService = ds.inject(ConfirmationService, true);
-            const dialogRef = ds.inject(DynamicDialogRef);
-
-            ds.detectChanges();
-            vi.spyOn(ds.component, 'hasUnsavedChanges').mockReturnValue(true);
-            vi.spyOn(dsStore, 'workflowActionSuccess').mockReturnValue(null);
-
-            let rejectFn: ((type?: ConfirmEventType) => void) | undefined;
-            vi.spyOn(dsConfirmService, 'confirm').mockImplementation((opts) => {
-                rejectFn = opts.reject as (type?: ConfirmEventType) => void;
-            });
-
-            dialogRef.close('result');
-            rejectFn!(ConfirmEventType.REJECT);
-
-            expect(dialogCloseMock).toHaveBeenCalledWith('result');
-        });
-
-        it('should not close when the user chooses keep editing', () => {
-            const ds = createWithDialogRef();
-            const dsStore = ds.inject(DotEditContentStore, true);
-            const dsConfirmService = ds.inject(ConfirmationService, true);
-            const dialogRef = ds.inject(DynamicDialogRef);
-
-            ds.detectChanges();
-            vi.spyOn(ds.component, 'hasUnsavedChanges').mockReturnValue(true);
-            vi.spyOn(dsStore, 'workflowActionSuccess').mockReturnValue(null);
-
-            let acceptFn: (() => void) | undefined;
-            vi.spyOn(dsConfirmService, 'confirm').mockImplementation((opts) => {
-                acceptFn = opts.accept;
-            });
-
-            dialogRef.close('result');
-            acceptFn!();
-
-            expect(dialogCloseMock).not.toHaveBeenCalled();
-        });
-
-        it('should bypass dirty check when a workflow action has just succeeded', () => {
-            const ds = createWithDialogRef();
-            const dsStore = ds.inject(DotEditContentStore, true);
-            const dialogRef = ds.inject(DynamicDialogRef);
-
-            ds.detectChanges();
-            vi.spyOn(ds.component, 'hasUnsavedChanges').mockReturnValue(true);
-            vi.spyOn(dsStore, 'workflowActionSuccess').mockReturnValue(MOCK_CONTENTLET_1_TAB);
-
-            dialogRef.close('result');
-
-            expect(dialogCloseMock).toHaveBeenCalledWith('result');
-        });
-    });
-
-    describe('UI close (pDialog.close override)', () => {
-        it('should pass through when the form is clean', () => {
-            const pDialogCloseMock = vi.fn();
-            const mockDynamicDialog = { dialog: { close: pDialogCloseMock } };
-
-            const ds = createWithDialogRef([
-                { provide: DynamicDialog, useValue: mockDynamicDialog }
-            ]);
-            ds.detectChanges();
-
-            const mockEvent = { preventDefault: vi.fn() } as unknown as Event;
-            mockDynamicDialog.dialog.close(mockEvent);
-
-            expect(pDialogCloseMock).toHaveBeenCalledWith(mockEvent);
-        });
-
-        it('should call preventDefault and open confirm dialog when the form is dirty', () => {
-            const pDialogCloseMock = vi.fn();
-            const mockDynamicDialog = { dialog: { close: pDialogCloseMock } };
-
-            const ds = createWithDialogRef([
-                { provide: DynamicDialog, useValue: mockDynamicDialog }
-            ]);
-            const dsStore = ds.inject(DotEditContentStore, true);
-            const dsConfirmService = ds.inject(ConfirmationService, true);
-
-            ds.detectChanges();
-            vi.spyOn(ds.component, 'hasUnsavedChanges').mockReturnValue(true);
-            vi.spyOn(dsStore, 'workflowActionSuccess').mockReturnValue(null);
-            const confirmSpy = vi.spyOn(dsConfirmService, 'confirm');
-
-            const preventDefault = vi.fn();
-            mockDynamicDialog.dialog.close({ preventDefault } as unknown as Event);
-
-            expect(preventDefault).toHaveBeenCalled();
-            expect(confirmSpy).toHaveBeenCalledTimes(1);
-            expect(pDialogCloseMock).not.toHaveBeenCalled();
-        });
     });
 });
 

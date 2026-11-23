@@ -1,283 +1,179 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
+import { mockProvider } from '@openng/spectator/vitest';
+import { of, throwError } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
-import { ActivatedRoute, convertToParamMap, Params, Router } from '@angular/router';
+import { Location } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
+import { provideLocationMocks, SpyLocation } from '@angular/common/testing';
+import { Component } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { provideRouter, Router, RouterOutlet, Routes } from '@angular/router';
+import { RouterTestingHarness } from '@angular/router/testing';
 
-import { MessageService } from 'primeng/api';
-import { Toast } from 'primeng/toast';
-
-import { DotIframeService, DotRouterService } from '@dotcms/data-access';
-// The opener is the component's dependency; the app also lazy-loads the library's routes (#38303).
-// eslint-disable-next-line @nx/enforce-module-boundaries
 import {
-    DotEditContentOpenerService,
-    DotEditContentOpenOptions,
-    DotEditContentRequest
-} from '@dotcms/edit-content';
-import { DotSidePanelRef } from '@dotcms/ui';
+    DotContentletService,
+    DotHttpErrorManagerService,
+    DotRouterService
+} from '@dotcms/data-access';
+// The component must not open the panel itself; the app also lazy-loads the library (#38303).
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { DotEditContentOpenerService } from '@dotcms/edit-content';
 import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { DotEditContentDeepLinkComponent } from './dot-edit-content-deep-link.component';
 
+const IDENTIFIER = '3f0c8e5a-7b2d-4c1e-9a6f-0d4b8e2c1a57';
+const FOLDER_INODE = '7c2e9b14-5a3d-4f6e-8b1c-2d9a0e4f6b38';
+
+/** Stands in for a portlet: what the deep link redirects to renders here. */
+@Component({ selector: 'dot-test-portlet', imports: [RouterOutlet], template: '<router-outlet />' })
+class TestPortletComponent {}
+
 /**
- * #38303 (R11) — the deep links to content (`/c/:id/:asset`, `/c/content/new/:contentType`,
- * `/pages/:asset`, `/pages/new/:contentType`) keep their paths and open the side panel over the
- * portlet they belong to. The route component only opens the panel and leaves when it closes.
- *
- * The parent portlet is the one `DotRouterService.currentPortlet` names: its id goes on the request
- * and to `reloadData`, and its URL, without the asset segments, is where closing the panel returns.
+ * The deep-link routes as the admin app registers them: a legacy portlet (`/c/:id`) and the Pages
+ * portlet (`/pages`), each with its `:asset` and `new/:contentType` children.
+ */
+const ROUTES: Routes = [
+    {
+        path: 'c/:id',
+        component: TestPortletComponent,
+        children: [
+            { path: 'new/:contentType', component: DotEditContentDeepLinkComponent },
+            { path: ':asset', component: DotEditContentDeepLinkComponent }
+        ]
+    },
+    {
+        path: 'pages',
+        component: TestPortletComponent,
+        children: [
+            { path: 'new/:contentType', component: DotEditContentDeepLinkComponent },
+            { path: ':asset', component: DotEditContentDeepLinkComponent }
+        ]
+    }
+];
+
+/**
+ * #38303 (FR-026, FR-049) — the path deep links to content (`/<portlet>/<inode>`,
+ * `/<portlet>/new/<type>`) are no longer a second way to open a panel. Velocity, workflow emails
+ * and old bookmarks still emit them, so the routes stay, and the route component turns what the
+ * path names into its portlet's URL with the panel params, replacing the path form in history:
+ * the legacy portlets' `/c/<id>`, and the Pages portlet's `/pages`. The portlet then opens the
+ * panel as it does for any URL that names one.
  */
 describe('DotEditContentDeepLinkComponent', () => {
-    let spectator: Spectator<DotEditContentDeepLinkComponent>;
-    let router: { navigate: Mock };
-    let reloadData: Mock;
+    let getContentletByInode: Mock;
+    let handleError: Mock;
 
-    /** Every panel the component opened, as the fake opener returned them. */
-    let refs: DotSidePanelRef[];
+    beforeEach(() => {
+        getContentletByInode = vi
+            .fn()
+            .mockReturnValue(
+                of(createFakeContentlet({ inode: 'abc', identifier: IDENTIFIER, languageId: 2 }))
+            );
+        handleError = vi.fn();
 
-    const createComponent = createComponentFactory({
-        component: DotEditContentDeepLinkComponent,
-        detectChanges: false,
-        providers: [
-            // Stands in for a MessageService an ancestor would provide.
-            MessageService,
-            mockProvider(DotEditContentOpenerService, {
-                // Like the real opener: `closed` fires when the returned ref closes.
-                open: vi.fn(
-                    (_request: DotEditContentRequest, options: DotEditContentOpenOptions) => {
-                        const ref = new DotSidePanelRef(() => undefined);
-                        ref.closed.subscribe(() => options.closed?.());
-                        refs.push(ref);
-
-                        return ref;
-                    }
-                )
-            })
-        ]
-    });
-
-    /** Lets the component load the opener, which the admin app imports on demand, and open. */
-    const settle = async (): Promise<void> => {
-        await vi.dynamicImportSettled();
-        await new Promise((resolve) => setTimeout(resolve));
-    };
-
-    /**
-     * Mounts the component on a deep link and waits for it to open the panel.
-     *
-     * @param portlet The portlet `DotRouterService` reports as current: its id and the full URL.
-     * @param params The route params (`asset`, or `contentType`).
-     * @param queryParams The route query params (`folder` for a create).
-     */
-    const mountOn = async (
-        portlet: { id: string; url: string },
-        params: Params,
-        queryParams: Params = {}
-    ): Promise<void> => {
-        mountWithoutWaiting(portlet, params, queryParams);
-        await settle();
-    };
-
-    /** Mounts the component on a deep link; the panel opens once the opener has loaded. */
-    const mountWithoutWaiting = (
-        portlet: { id: string; url: string },
-        params: Params,
-        queryParams: Params = {}
-    ): void => {
-        refs = [];
-        router = { navigate: vi.fn().mockResolvedValue(true) };
-        reloadData = vi.fn();
-
-        spectator = createComponent({
+        TestBed.configureTestingModule({
             providers: [
-                { provide: Router, useValue: router },
-                { provide: DotRouterService, useValue: { currentPortlet: portlet } },
-                { provide: DotIframeService, useValue: { reloadData } },
-                {
-                    provide: ActivatedRoute,
-                    useValue: {
-                        snapshot: {
-                            params,
-                            queryParams,
-                            paramMap: convertToParamMap(params),
-                            queryParamMap: convertToParamMap(queryParams)
-                        }
-                    }
-                }
+                provideRouter(ROUTES),
+                provideLocationMocks(),
+                { provide: DotContentletService, useValue: { getContentletByInode } },
+                { provide: DotHttpErrorManagerService, useValue: { handle: handleError } },
+                // The portlet the admin app reports as current, which the redirect used to read.
+                { provide: DotRouterService, useValue: { currentPortlet: { id: 'content' } } },
+                mockProvider(DotEditContentOpenerService, { open: vi.fn() })
             ]
         });
-        (spectator.inject(DotEditContentOpenerService).open as Mock).mockClear();
-        spectator.detectChanges();
+    });
+
+    /**
+     * Opens `url` and waits for the redirect it leads to.
+     *
+     * @returns Where it ended: the path, and the query params.
+     */
+    const follow = async (
+        url: string
+    ): Promise<{ path: string; params: Record<string, string> }> => {
+        const harness = await RouterTestingHarness.create();
+        const router = TestBed.inject(Router);
+
+        await harness.navigateByUrl(url);
+        await vi.waitFor(() => expect(router.url).not.toBe(url));
+        await harness.fixture.whenStable();
+
+        const tree = router.parseUrl(router.url);
+        const segments = tree.root.children['primary'].segments.map((segment) => segment.path);
+
+        return {
+            path: `/${segments.join('/')}`,
+            params: tree.queryParams as Record<string, string>
+        };
     };
 
-    /** The opener's `open`, as the mock records it. */
-    const opened = () => spectator.inject(DotEditContentOpenerService).open as Mock;
+    /** Whether the last history write replaced the entry the link was opened in. */
+    const lastWriteReplaced = (): boolean => {
+        const changes = (TestBed.inject(Location) as SpyLocation).urlChanges;
 
-    /** The request the component asked for, on its only `open`. */
-    const openedRequest = (): DotEditContentRequest => {
-        expect(opened().mock.calls.length, 'the component opens one panel').toBe(1);
-
-        return opened().mock.calls[0][0] as DotEditContentRequest;
+        return changes[changes.length - 1].startsWith('replace: ');
     };
 
-    /** The options the component handed the opener, on its only `open`. */
-    const openOptions = (): DotEditContentOpenOptions => {
-        expect(opened().mock.calls.length, 'the component opens one panel').toBe(1);
+    describe('on a legacy portlet', () => {
+        it('redirects a link to content to the portlet with the content and its language, in place', async () => {
+            const landed = await follow('/c/content/abc?mId=1a2b');
 
-        return opened().mock.calls[0][1] as DotEditContentOpenOptions;
-    };
-
-    describe('an existing content (/c/:id/:asset)', () => {
-        beforeEach(() =>
-            mountOn({ id: 'content', url: '/c/content/abc-inode' }, { asset: 'abc-inode' })
-        );
-
-        it('should open the content for editing on init, naming the parent portlet', () => {
-            expect(openedRequest()).toEqual({
-                mode: 'edit',
-                inode: 'abc-inode',
-                portletId: 'content'
+            expect(getContentletByInode).toHaveBeenCalledWith('abc');
+            expect(landed).toEqual({
+                path: '/c/content',
+                params: { mId: '1a2b', editContent: IDENTIFIER, editContentLang: '2' }
             });
+            expect(lastWriteReplaced()).toBe(true);
         });
 
-        // The panel then closes with the route, not with the admin root.
-        it('should open the panel with its own injector', () => {
-            const { injector } = openOptions();
+        it('redirects a link to a create to the portlet with the content type and its folder', async () => {
+            const landed = await follow(`/c/content/new/Blog?folder=${FOLDER_INODE}`);
 
-            // Compared by identity: printing an injector runs the worker out of memory.
-            expect(
-                injector.get(DotEditContentDeepLinkComponent, null) === spectator.component
-            ).toBe(true);
-        });
-
-        // The admin root provides none (it would shadow the page editor's), so the panel's editor
-        // toasts through this one.
-        it('should open the panel with an injector that resolves a MessageService of its own', () => {
-            const own = spectator.inject(MessageService, true);
-
-            // Compared by identity: printing a MessageService on failure floods the output.
-            expect(own === spectator.inject(MessageService), 'the component provides one').toBe(
-                false
-            );
-            expect(openOptions().injector.get(MessageService, null) === own).toBe(true);
-        });
-
-        it("should render a toast for the panel's messages", () => {
-            expect(spectator.query(Toast)).not.toBeNull();
-        });
-
-        it('should reload the parent portlet on every save', () => {
-            openOptions().saved?.(createFakeContentlet({ inode: 'saved-inode' }));
-
-            expect(reloadData).toHaveBeenCalledWith('content');
-        });
-
-        it('should return to the parent portlet, keeping its query params, when the panel closes', () => {
-            refs[0].close();
-
-            expect(router.navigate).toHaveBeenCalledWith(['/c/content'], {
-                queryParamsHandling: 'preserve'
+            expect(getContentletByInode).not.toHaveBeenCalled();
+            expect(landed).toEqual({
+                path: '/c/content',
+                params: { folder: FOLDER_INODE, createContent: 'Blog' }
             });
-            expect(reloadData).toHaveBeenCalledWith('content');
+            expect(lastWriteReplaced()).toBe(true);
         });
 
-        // Leaving the route through the menu must not be bounced back to the portlet.
-        it('should close the panel when the route is left, without navigating back', () => {
-            spectator.fixture.destroy();
+        // A bad inode, a deleted contentlet or no permission: the standard error, and the portlet.
+        it('shows the standard error and goes to the portlet when the content cannot be read', async () => {
+            const error = new HttpErrorResponse({ status: 404 });
+            getContentletByInode.mockReturnValue(throwError(() => error));
 
-            expect(refs[0].isClosed).toBe(true);
-            expect(router.navigate.mock.calls.length).toBe(0);
+            const landed = await follow('/c/content/gone');
+
+            expect(handleError).toHaveBeenCalledWith(error);
+            expect(landed).toEqual({ path: '/c/content', params: {} });
         });
     });
 
-    // The opener loads on demand: a route left before it arrives opens nothing.
-    describe('a route left before the editor loads', () => {
-        it('should open no panel', async () => {
-            mountWithoutWaiting(
-                { id: 'content', url: '/c/content/abc-inode' },
-                { asset: 'abc-inode' }
-            );
-            spectator.fixture.destroy();
+    // FR-026: main had these Pages links, and they keep working (T158).
+    describe('on the Pages portlet', () => {
+        it('redirects a link to a page to the Pages portlet with the page and its language, in place', async () => {
+            const landed = await follow('/pages/abc');
 
-            await settle();
+            expect(landed).toEqual({
+                path: '/pages',
+                params: { editContent: IDENTIFIER, editContentLang: '2' }
+            });
+            expect(lastWriteReplaced()).toBe(true);
+        });
 
-            expect(opened().mock.calls.length).toBe(0);
-            expect(router.navigate.mock.calls.length).toBe(0);
+        it('redirects a link to a create to the Pages portlet with the content type, in place', async () => {
+            const landed = await follow('/pages/new/htmlpageasset');
+
+            expect(landed).toEqual({ path: '/pages', params: { createContent: 'htmlpageasset' } });
+            expect(lastWriteReplaced()).toBe(true);
         });
     });
 
-    describe('a new content (/c/content/new/:contentType)', () => {
-        it('should open a create of the content type on init, naming the parent portlet', async () => {
-            await mountOn({ id: 'content', url: '/c/content/new/Blog' }, { contentType: 'Blog' });
+    it('opens no panel itself: the portlet opens what its URL names', async () => {
+        await follow('/c/content/abc');
 
-            expect(openedRequest()).toEqual({
-                mode: 'new',
-                contentType: 'Blog',
-                portletId: 'content'
-            });
-        });
-
-        // Content Drive and the Site Browser pass the folder to create in as `?folder=<inode>`.
-        it('should pre-select the folder the link names', async () => {
-            await mountOn(
-                { id: 'content', url: '/c/content/new/Blog?folder=folder-inode' },
-                { contentType: 'Blog' },
-                { folder: 'folder-inode' }
-            );
-
-            expect(openedRequest()).toEqual({
-                mode: 'new',
-                contentType: 'Blog',
-                folderInode: 'folder-inode',
-                portletId: 'content'
-            });
-        });
-
-        it('should return to the parent portlet when the panel closes', async () => {
-            await mountOn({ id: 'content', url: '/c/content/new/Blog' }, { contentType: 'Blog' });
-
-            refs[0].close();
-
-            expect(router.navigate).toHaveBeenCalledWith(['/c/content'], {
-                queryParamsHandling: 'preserve'
-            });
-            expect(reloadData).toHaveBeenCalledWith('content');
-        });
-    });
-
-    describe('the Pages portlet (/pages/:asset, /pages/new/:contentType)', () => {
-        it('should open the page for editing, naming the Pages portlet', async () => {
-            await mountOn({ id: 'pages', url: '/pages/page-inode' }, { asset: 'page-inode' });
-
-            expect(openedRequest()).toEqual({
-                mode: 'edit',
-                inode: 'page-inode',
-                portletId: 'pages'
-            });
-        });
-
-        it('should return to the Pages portlet and reload it when the panel closes', async () => {
-            await mountOn({ id: 'pages', url: '/pages/page-inode' }, { asset: 'page-inode' });
-
-            refs[0].close();
-
-            expect(router.navigate).toHaveBeenCalledWith(['/pages'], {
-                queryParamsHandling: 'preserve'
-            });
-            expect(reloadData).toHaveBeenCalledWith('pages');
-        });
-
-        it('should return to the Pages portlet after a create', async () => {
-            await mountOn(
-                { id: 'pages', url: '/pages/new/htmlpageasset' },
-                { contentType: 'htmlpageasset' }
-            );
-
-            refs[0].close();
-
-            expect(router.navigate).toHaveBeenCalledWith(['/pages'], {
-                queryParamsHandling: 'preserve'
-            });
-        });
+        expect(TestBed.inject(DotEditContentOpenerService).open).not.toHaveBeenCalled();
     });
 });
