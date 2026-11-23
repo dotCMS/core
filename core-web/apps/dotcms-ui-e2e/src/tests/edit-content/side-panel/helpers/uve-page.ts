@@ -7,7 +7,7 @@ import {
     createPage,
     type Page as PageContentlet
 } from '@requests/pages';
-import { createTemplate, deleteTemplate } from '@requests/templates';
+import { createTemplate, removeTemplate } from '@requests/templates';
 
 /** The one container instance on the template below. */
 const CONTAINER_UUID = '1';
@@ -141,7 +141,9 @@ export async function removeUvePage(request: APIRequestContext, uvePage: UvePage
         'Archive',
         'Destroy'
     ]).catch(() => undefined);
-    await deleteTemplate(request, [uvePage.templateIdentifier]).catch(() => undefined);
+    // After the page is destroyed: a template a page still references cannot be deleted. Its
+    // failed assertions are caught too, so the test's own failure is the one reported.
+    await removeTemplate(request, uvePage.templateIdentifier).catch(() => undefined);
     // After the template that uses it.
     await deleteContainer(request, uvePage.containerIdentifier);
 }
