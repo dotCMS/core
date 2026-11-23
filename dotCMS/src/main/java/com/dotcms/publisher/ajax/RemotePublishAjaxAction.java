@@ -505,7 +505,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 
         final Optional<File> bundle = BundlerUtil.findBundleArchive( bid );
         if ( bundle.isEmpty() ) {
-            response.sendError( 404, "No Bundle Found" );
+            response.sendError( HttpServletResponse.SC_NOT_FOUND, "No Bundle Found" );
             return;
         }
 
