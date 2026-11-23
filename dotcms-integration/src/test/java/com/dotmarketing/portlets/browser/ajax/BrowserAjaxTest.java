@@ -13,6 +13,9 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.ajax.DwrUtil;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -27,6 +30,8 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.servlet.SessionMessages;
+import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -37,6 +42,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
@@ -61,6 +67,27 @@ public class BrowserAjaxTest {
 
     private static HttpSession session = null;
 
+    // Folder tree used by the read-permission tests:
+    //
+    // |_ readSite
+    //      |_ readable                (limitedUser: READ; children inherit READ + WRITE)
+    //          |_ readable-child
+    //              |_ readable-grandchild
+    //          |_ restricted-child    (only fullReadUser)
+    //              |_ restricted-grandchild
+    //          |_ write-only-child    (limitedUser: WRITE without READ; fullReadUser: READ)
+    //      |_ restricted-root         (only fullReadUser)
+    private static Host readSite = null;
+    private static Folder readableFolder = null;
+    private static Folder readableChild = null;
+    private static Folder readableGrandchild = null;
+    private static Folder restrictedChild = null;
+    private static Folder restrictedGrandchild = null;
+    private static Folder writeOnlyChild = null;
+    private static Folder restrictedRoot = null;
+    private static User limitedUser = null;
+    private static User fullReadUser = null;
+
     /**
      * Set up the DWR context and data for this test. The Site's folder tree looks like this:
      *
@@ -69,6 +96,8 @@ public class BrowserAjaxTest {
      *          |_child-one
      *              |_child-two
      *      |_parent-two
+     *
+     * The read-permission tests use a second Site, described next to the {@code readSite} field.
      *
      * @throws Exception An error occurred during the setup.
      */
@@ -85,7 +114,112 @@ public class BrowserAjaxTest {
         childFolderOne = new FolderDataGen().site(testSite).parent(parentFolderOne).name("child-one").nextPersisted();
         childFolderTwo = new FolderDataGen().site(testSite).parent(childFolderOne).name("child-two").nextPersisted();
 
+        prepareReadPermissionTree(time);
         setUpDwrContext(TestUserUtils.getAdminUser());
+    }
+
+    /**
+     * Creates the Site, Folders and Users used by the read-permission tests. The limited user can read the Site and
+     * the {@code readable} folder branch only; the full-read user can read every folder.
+     *
+     * @param time Suffix that keeps the Site and User names unique.
+     */
+    private static void prepareReadPermissionTree(final long time) throws DotDataException, DotSecurityException {
+        final Role backEndRole = APILocator.getRoleAPI().loadBackEndUserRole();
+        limitedUser = new UserDataGen().firstName("limited" + time).roles(backEndRole).nextPersisted();
+        fullReadUser = new UserDataGen().firstName("fullread" + time).roles(backEndRole).nextPersisted();
+        final Role limitedRole = APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId());
+        final Role fullReadRole = APILocator.getRoleAPI().loadRoleByKey(fullReadUser.getUserId());
+
+        readSite = new SiteDataGen().name("browserajaxread." + time).nextPersisted();
+        readableFolder = new FolderDataGen().site(readSite).name("readable").nextPersisted();
+        readableChild = new FolderDataGen().site(readSite).parent(readableFolder).name("readable-child").nextPersisted();
+        readableGrandchild = new FolderDataGen().site(readSite).parent(readableChild).name("readable-grandchild")
+                .nextPersisted();
+        restrictedChild = new FolderDataGen().site(readSite).parent(readableFolder).name("restricted-child")
+                .nextPersisted();
+        restrictedGrandchild = new FolderDataGen().site(readSite).parent(restrictedChild)
+                .name("restricted-grandchild").nextPersisted();
+        writeOnlyChild = new FolderDataGen().site(readSite).parent(readableFolder).name("write-only-child")
+                .nextPersisted();
+        restrictedRoot = new FolderDataGen().site(readSite).name("restricted-root").nextPersisted();
+
+        final String folderType = Folder.class.getCanonicalName();
+        final int read = PermissionAPI.PERMISSION_READ;
+        final int readWrite = PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE;
+        for (final Role role : List.of(limitedRole, fullReadRole)) {
+            grant(readSite, role, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, read);
+            grant(readableFolder, role, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, read);
+            grant(readableFolder, role, folderType, readWrite);
+        }
+        for (final Folder folder : List.of(restrictedChild, restrictedRoot)) {
+            grant(folder, fullReadRole, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, read);
+            grant(folder, fullReadRole, folderType, read);
+        }
+        grant(writeOnlyChild, limitedRole, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_WRITE);
+        grant(writeOnlyChild, fullReadRole, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, read);
+
+        // The tests are only meaningful if the fixture grants exactly what the tree above describes
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        for (final Folder folder : List.of(readableFolder, readableChild, readableGrandchild)) {
+            assertTrue("Limited user must read " + folder.getPath(),
+                    permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, limitedUser));
+        }
+        // Same check through the role-based lookup the Site Browser tree uses
+        final List<Integer> readableChildPermissions = permissionAPI.getPermissionIdsFromRoles(readableChild,
+                DwrUtil.getUserRoles(limitedUser), limitedUser);
+        assertTrue("Limited user must read and edit " + readableChild.getPath(),
+                readableChildPermissions.containsAll(List.of(PermissionAPI.PERMISSION_READ,
+                        PermissionAPI.PERMISSION_WRITE)));
+        for (final Folder folder : List.of(restrictedChild, restrictedGrandchild, writeOnlyChild, restrictedRoot)) {
+            assertFalse("Limited user must not read " + folder.getPath(),
+                    permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, limitedUser));
+            assertTrue("Full-read user must read " + folder.getPath(),
+                    permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, fullReadUser));
+        }
+    }
+
+    /**
+     * Saves one permission row on the given asset for the given Role.
+     *
+     * @param permissionable The Site or Folder receiving the permission.
+     * @param role           The Role being granted.
+     * @param type           {@link PermissionAPI#INDIVIDUAL_PERMISSION_TYPE} for the asset itself, or the class name
+     *                       of the children that inherit it.
+     * @param permission     The permission bits.
+     */
+    private static void grant(final Permissionable permissionable, final Role role, final String type,
+                              final int permission) throws DotDataException, DotSecurityException {
+        APILocator.getPermissionAPI().save(
+                new Permission(type, permissionable.getPermissionId(), role.getId(), permission, true),
+                permissionable, APILocator.systemUser(), false);
+    }
+
+    /**
+     * Removes the Site, Folders and Users created for the read-permission tests.
+     */
+    @AfterClass
+    public static void cleanUpReadPermissionTree() {
+        if (null != restrictedRoot) {
+            FolderDataGen.remove(restrictedRoot);
+        }
+        if (null != readableFolder) {
+            FolderDataGen.remove(readableFolder);
+        }
+        if (null != limitedUser) {
+            UserDataGen.remove(limitedUser, true);
+        }
+        if (null != fullReadUser) {
+            UserDataGen.remove(fullReadUser, true);
+        }
+        if (null != readSite) {
+            try {
+                APILocator.getHostAPI().archive(readSite, APILocator.systemUser(), false);
+                APILocator.getHostAPI().delete(readSite, APILocator.systemUser(), false);
+            } catch (final Exception e) {
+                // Best effort: a leftover Site does not affect other tests
+            }
+        }
     }
 
     /**
@@ -398,5 +532,254 @@ public class BrowserAjaxTest {
                 + results.get("total"), ((Integer) results.get("total")) > 0);
         assertTrue("The Page must be listed for an '" + DOTPAGE_MIME_TYPE + "' browse",
                 contentList.stream().anyMatch(item -> page.getIdentifier().equals(item.get("identifier"))));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAjax#openFolderTree(String)}</li>
+     *     <li><b>Given Scenario:</b> A user who can read a folder expands it in the Site Browser. Of its sub-folders,
+     *     the user can read one, has no permission on another, and can only edit the third.</li>
+     *     <li><b>Expected Result:</b> Only the sub-folder the user can read is returned.</li>
+     * </ul>
+     */
+    @Test
+    public void openFolderTree_returnsOnlyReadableSubfolders() throws Exception {
+        setUpReadPermissionContext(limitedUser, Set.of());
+
+        final List<Map> children = new BrowserAjax().openFolderTree(readableFolder.getIdentifier());
+
+        assertEquals("openFolderTree", List.of(readableChild.getName()), names(children));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAjax#getTree(String)}</li>
+     *     <li><b>Given Scenario:</b> A user who can read the Site, and only one of its two root folders, loads the
+     *     Site's folder tree.</li>
+     *     <li><b>Expected Result:</b> Only the root folder the user can read is returned.</li>
+     * </ul>
+     */
+    @Test
+    public void getTree_returnsOnlyReadableRootFolders() throws Exception {
+        setUpReadPermissionContext(limitedUser, Set.of());
+
+        final List<Map> siteTree = new BrowserAjax().getTree(readSite.getIdentifier());
+
+        assertEquals("getTree sites", 1, siteTree.size());
+        assertEquals("getTree root folders", List.of(readableFolder.getName()),
+                names((List<Map>) siteTree.get(0).get("childrenFolders")));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAjax#getTree(String)}</li>
+     *     <li><b>Given Scenario:</b> A user who can read only some Sites loads the tree of all Sites while the Site
+     *     cache is already loaded.</li>
+     *     <li><b>Expected Result:</b> Only the Sites the user can read are returned.</li>
+     * </ul>
+     */
+    @Test
+    public void getTree_allSitesReturnsOnlyReadableSites() throws Exception {
+        APILocator.getHostAPI().findAllFromCache(APILocator.systemUser(), false);
+        setUpReadPermissionContext(limitedUser, Set.of());
+
+        final List<Map> siteTree = new BrowserAjax().getTree("allHosts");
+
+        final List<Object> siteIds = siteTree.stream().map(site -> site.get("identifier"))
+                .collect(Collectors.toList());
+        assertTrue("getTree(allHosts) must return the readable Site", siteIds.contains(readSite.getIdentifier()));
+        assertFalse("getTree(allHosts) must not return a Site the user cannot read",
+                siteIds.contains(testSite.getIdentifier()));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAjax#openHostTree(String)}</li>
+     *     <li><b>Given Scenario:</b> A user who can read the Site, and only one of its two root folders, expands the
+     *     Site in the Site Browser.</li>
+     *     <li><b>Expected Result:</b> Only the root folder the user can read is returned.</li>
+     * </ul>
+     */
+    @Test
+    public void openHostTree_returnsOnlyReadableRootFolders() throws Exception {
+        setUpReadPermissionContext(limitedUser, Set.of());
+
+        final List<Map> rootFolders = new BrowserAjax().openHostTree(readSite.getIdentifier());
+
+        assertEquals("openHostTree", List.of(readableFolder.getName()), names(rootFolders));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAjax#getTree(String)}</li>
+     *     <li><b>Given Scenario:</b> The session marks as open a folder the user can read, a sub-folder the user cannot
+     *     read, and that sub-folder's own child.</li>
+     *     <li><b>Expected Result:</b> The readable folder is expanded with its readable sub-folder only; the folders
+     *     the user cannot read are not returned.</li>
+     * </ul>
+     */
+    @Test
+    public void getTree_expandsOnlyReadableOpenFolders() throws Exception {
+        setUpReadPermissionContext(limitedUser, Set.of(readableFolder.getIdentifier(),
+                restrictedChild.getIdentifier(), restrictedGrandchild.getIdentifier()));
+
+        final List<Map> siteTree = new BrowserAjax().getTree(readSite.getIdentifier());
+
+        final List<Map> rootFolders = (List<Map>) siteTree.get(0).get("childrenFolders");
+        assertEquals("getTree root folders", List.of(readableFolder.getName()), names(rootFolders));
+        final Map readable = folderNamed(rootFolders, readableFolder.getName());
+        assertTrue("open folder must be expanded", (boolean) readable.get("open"));
+        assertEquals("getTree open folder children", List.of(readableChild.getName()),
+                names((List<Map>) readable.get("childrenFolders")));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAjax#getTreeMinInfoByHostId(String)}</li>
+     *     <li><b>Given Scenario:</b> A user loads the compact folder tree of a Site where some nested folders are not
+     *     readable by the user.</li>
+     *     <li><b>Expected Result:</b> Every level of the tree holds only the folders the user can read.</li>
+     * </ul>
+     */
+    @Test
+    public void getTreeMinInfoByHostId_returnsOnlyReadableNestedFolders() throws Exception {
+        setUpReadPermissionContext(limitedUser, Set.of());
+
+        final List<Map<String, Object>> tree = new BrowserAjax().getTreeMinInfoByHostId(readSite.getIdentifier());
+
+        final List<Map> rootFolders = (List<Map>) tree.get(0).get("children");
+        assertEquals("min-info root folders", List.of(readableFolder.getName()), names(rootFolders));
+        final List<Map> children = (List<Map>) folderNamed(rootFolders, readableFolder.getName()).get("children");
+        assertEquals("min-info second level", List.of(readableChild.getName()), names(children));
+        assertEquals("min-info third level", List.of(readableGrandchild.getName()),
+                names((List<Map>) folderNamed(children, readableChild.getName()).get("children")));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAjax#openFolderTree(String)}</li>
+     *     <li><b>Given Scenario:</b> A user who can read and edit a sub-folder expands its parent.</li>
+     *     <li><b>Expected Result:</b> The returned sub-folder still carries every permission the user holds on it,
+     *     which the Site Browser uses to enable its actions.</li>
+     * </ul>
+     */
+    @Test
+    public void openFolderTree_keepsPermissionIdsOfReturnedFolders() throws Exception {
+        setUpReadPermissionContext(limitedUser, Set.of());
+
+        final List<Map> children = new BrowserAjax().openFolderTree(readableFolder.getIdentifier());
+
+        final List<Integer> permissions =
+                (List<Integer>) folderNamed(children, readableChild.getName()).get("permissions");
+        assertTrue("READ must be listed", permissions.contains(PermissionAPI.PERMISSION_READ));
+        assertTrue("WRITE must be listed", permissions.contains(PermissionAPI.PERMISSION_WRITE));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAjax#openFolderTree(String)}</li>
+     *     <li><b>Given Scenario:</b> A user without the CMS Administrator role who can read every folder of the Site
+     *     expands a folder.</li>
+     *     <li><b>Expected Result:</b> Every sub-folder is returned.</li>
+     * </ul>
+     */
+    @Test
+    public void openFolderTree_returnsAllSubfoldersForUserWithReadOnAll() throws Exception {
+        setUpReadPermissionContext(fullReadUser, Set.of());
+
+        final List<Map> children = new BrowserAjax().openFolderTree(readableFolder.getIdentifier());
+
+        assertEquals("openFolderTree",
+                List.of(readableChild.getName(), restrictedChild.getName(), writeOnlyChild.getName()),
+                names(children));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAjax#getTree(String)}</li>
+     *     <li><b>Given Scenario:</b> A user without the CMS Administrator role who can read every folder of the Site
+     *     loads the Site's folder tree.</li>
+     *     <li><b>Expected Result:</b> Every root folder is returned.</li>
+     * </ul>
+     */
+    @Test
+    public void getTree_returnsAllRootFoldersForUserWithReadOnAll() throws Exception {
+        setUpReadPermissionContext(fullReadUser, Set.of());
+
+        final List<Map> siteTree = new BrowserAjax().getTree(readSite.getIdentifier());
+
+        assertEquals("getTree root folders", List.of(readableFolder.getName(), restrictedRoot.getName()),
+                names((List<Map>) siteTree.get(0).get("childrenFolders")));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAjax#getTreeMinInfoByHostId(String)}</li>
+     *     <li><b>Given Scenario:</b> A user without the CMS Administrator role who can read every folder of the Site
+     *     loads the compact folder tree.</li>
+     *     <li><b>Expected Result:</b> Every folder is returned, at every level.</li>
+     * </ul>
+     */
+    @Test
+    public void getTreeMinInfoByHostId_returnsAllFoldersForUserWithReadOnAll() throws Exception {
+        setUpReadPermissionContext(fullReadUser, Set.of());
+
+        final List<Map<String, Object>> tree = new BrowserAjax().getTreeMinInfoByHostId(readSite.getIdentifier());
+
+        final List<Map> rootFolders = (List<Map>) tree.get(0).get("children");
+        assertEquals("min-info root folders", List.of(readableFolder.getName(), restrictedRoot.getName()),
+                names(rootFolders));
+        final List<Map> children = (List<Map>) folderNamed(rootFolders, readableFolder.getName()).get("children");
+        assertEquals("min-info second level",
+                List.of(readableChild.getName(), restrictedChild.getName(), writeOnlyChild.getName()),
+                names(children));
+        assertEquals("min-info third level", List.of(restrictedGrandchild.getName()),
+                names((List<Map>) folderNamed(children, restrictedChild.getName()).get("children")));
+    }
+
+    /**
+     * Restores the admin DWR context after every test, so a test that switches users does not affect the next one.
+     */
+    @After
+    public void restoreAdminContext() throws Exception {
+        setUpDwrContext(TestUserUtils.getAdminUser());
+    }
+
+    /**
+     * Sets the DWR context to the given user and stubs the Site Browser session attributes: no active folder, and
+     * the given folders marked as open.
+     *
+     * @param user          The user the DWR calls run as.
+     * @param openFolderIds The identifiers of the folders the session marks as open.
+     */
+    private static void setUpReadPermissionContext(final User user, final Set<String> openFolderIds)
+            throws DotDataException, DotSecurityException {
+        setUpDwrContext(user);
+        when(session.getAttribute(BrowserTreeHelper.ACTIVE_FOLDER_ID)).thenReturn(null);
+        when(session.getAttribute(BrowserTreeHelper.OPEN_FOLDER_IDS)).thenReturn(new HashSet<>(openFolderIds));
+    }
+
+    /**
+     * Returns the {@code name} of each folder map, sorted, so assertions don't depend on the order of the lookup.
+     *
+     * @param folders The folder maps returned by a tree method.
+     *
+     * @return The sorted folder names.
+     */
+    private static List<String> names(final List<? extends Map> folders) {
+        return folders.stream().map(folder -> (String) folder.get("name")).sorted().collect(Collectors.toList());
+    }
+
+    /**
+     * Returns the folder map with the given name, failing the test if it is missing.
+     *
+     * @param folders The folder maps returned by a tree method.
+     * @param name    The folder name to look for.
+     *
+     * @return The matching folder map.
+     */
+    private static Map folderNamed(final List<? extends Map> folders, final String name) {
+        return folders.stream().filter(folder -> name.equals(folder.get("name"))).findFirst()
+                .orElseThrow(() -> new AssertionError("Folder '" + name + "' not returned"));
     }
 }
