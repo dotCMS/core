@@ -40,6 +40,8 @@ import java.util.List;
 import java.util.UUID;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotcms.datagen.SiteDataGen;
 
 /**
  * @author nollymar
@@ -312,6 +314,66 @@ public class RelationshipUtilTest {
 
         assertNotNull(results);
         assertTrue(results.isEmpty());
+    }
+
+    /**
+     * AC-011: getRelatedContentFromQuery includes related contentlets that inherit READ
+     * permissions and have no cached permission_reference row.
+     */
+    @Test
+    public void test_getRelatedContentFromQuery_includesUncachedInheritingContent_AC011()
+            throws DotSecurityException, DotDataException {
+
+        final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+
+        final ContentType parentType = createContentType("RelParentAC11" + System.currentTimeMillis());
+        final ContentType childType = createContentType("RelChildAC11" + System.currentTimeMillis());
+        final Role limitedRole = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(limitedRole).nextPersisted();
+
+        Field relationshipField = FieldBuilder.builder(RelationshipField.class)
+                .name("rel11").variable("rel11").contentTypeId(parentType.id())
+                .values(String.valueOf(
+                        WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
+                .relationType(childType.variable()).build();
+        relationshipField = contentTypeFieldAPI.save(relationshipField, user);
+        final Relationship relationship = relationshipAPI.byTypeValue(
+                parentType.variable() + "." + relationshipField.variable());
+
+        // Content inherits from the site it lives in, so grant limitedRole READ on the content
+        // under a dedicated site (inheritable, not individual) and create the child there
+        final Host site = new SiteDataGen().nextPersisted();
+        permissionAPI.save(
+                new Permission(Contentlet.class.getCanonicalName(), site.getPermissionId(),
+                        limitedRole.getId(), PermissionAPI.PERMISSION_READ, true),
+                site, user, false);
+
+        final Contentlet child = new ContentletDataGen(childType.id())
+                .host(site).languageId(defaultLang).nextPersisted();
+
+        try {
+            // Make child uncached
+            new DotConnect()
+                    .setSQL("DELETE FROM permission_reference WHERE asset_id = ?")
+                    .addParam(child.getPermissionId()).loadResult();
+            permissionAPI.removePermissionableFromCache(child.getPermissionId());
+
+            final List<Contentlet> results = RelationshipUtil.getRelatedContentFromQuery(
+                    relationship, parentType, defaultLang, child.getIdentifier(), limitedUser);
+
+            assertNotNull(results);
+            assertEquals(1, results.size());
+            assertEquals(child.getIdentifier(), results.get(0).getIdentifier());
+        } finally {
+            if (child.getInode() != null) {
+                ContentletDataGen.remove(child);
+            }
+            UserDataGen.remove(limitedUser);
+            RoleDataGen.remove(limitedRole);
+            contentTypeAPI.delete(parentType);
+            contentTypeAPI.delete(childType);
+        }
     }
 
 
