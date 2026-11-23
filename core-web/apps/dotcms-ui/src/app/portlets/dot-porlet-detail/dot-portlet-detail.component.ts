@@ -31,7 +31,7 @@ export class DotPortletDetailComponent implements OnInit {
      * #38303), so a change from `/c/workflow/<task>` to `/c/content/<inode>` keeps this component.
      */
     ngOnInit() {
-        this.route.parent.params
+        this.route.parent?.params
             .pipe(
                 map((params) => params['id']),
                 distinctUntilChanged(),

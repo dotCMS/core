@@ -27,11 +27,11 @@ interface DotTaskView {
 export class DotWorkflowTaskDetailService {
     private dotMenuService = inject(DotMenuService);
 
-    private data: BehaviorSubject<DotTaskView> = new BehaviorSubject(null);
+    private data = new BehaviorSubject<DotTaskView | null>(null);
     private _header: BehaviorSubject<string> = new BehaviorSubject('');
 
     get viewUrl$(): Observable<string> {
-        return this.data.pipe(mergeMap((view: DotTaskView) => this.getViewUrl(view)));
+        return this.data.pipe(mergeMap((view: DotTaskView | null) => this.getViewUrl(view)));
     }
 
     get header$(): Observable<string> {
@@ -75,7 +75,7 @@ export class DotWorkflowTaskDetailService {
      *
      * @param view The task to show, or `null` for none.
      */
-    private getViewUrl(view: DotTaskView): Observable<string> {
+    private getViewUrl(view: DotTaskView | null): Observable<string> {
         return view === null
             ? of('')
             : this.dotMenuService.getDotMenuId('workflow').pipe(

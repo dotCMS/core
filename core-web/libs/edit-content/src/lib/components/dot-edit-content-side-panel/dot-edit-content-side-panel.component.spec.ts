@@ -208,7 +208,9 @@ describe('DotEditContentSidePanelComponent', () => {
         expect(event.request).toEqual(request);
         expect(event.onSaved === onSaved).toBe(true);
         // The panel's own injector: it resolves the panel's ref.
-        expect(event.injector?.get(DotSidePanelRef) === panel).toBe(true);
+        expect(event.injector?.get(DotSidePanelRef) === (panel as unknown as DotSidePanelRef)).toBe(
+            true
+        );
     });
 
     /**

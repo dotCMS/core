@@ -487,9 +487,11 @@ describe('DotWorkflowTaskComponent', () => {
         it('should not open it once the task dialog has shown', () => {
             TestBed.resetTestingModule();
             setup(messageServiceMock, () => {
-                vi.spyOn(TestBed.inject(Router), 'lastSuccessfulNavigation', 'get').mockReturnValue(
-                    signal({ trigger: 'popstate' } as Navigation)
-                );
+                vi.spyOn(
+                    TestBed.inject(Router) as unknown as { lastSuccessfulNavigation: unknown },
+                    'lastSuccessfulNavigation',
+                    'get'
+                ).mockReturnValue(signal({ trigger: 'popstate' } as Navigation));
                 queryParams$.next({
                     editContent: '3f0c8e5a-7b2d-4c1e-9a6f-0d4b8e2c1a57',
                     editContentLang: '2'

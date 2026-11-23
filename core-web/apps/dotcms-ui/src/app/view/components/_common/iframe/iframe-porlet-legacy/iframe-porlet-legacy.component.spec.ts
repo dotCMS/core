@@ -211,7 +211,11 @@ describe('IframePortletLegacyComponent — the panel in the URL', () => {
      */
     it('opens nothing for a URL a Back or Forward showed, read after that navigation ended', async () => {
         const lastSuccessfulNavigation = vi
-            .spyOn(Router.prototype, 'lastSuccessfulNavigation', 'get')
+            .spyOn(
+                Router.prototype as unknown as { lastSuccessfulNavigation: unknown },
+                'lastSuccessfulNavigation',
+                'get'
+            )
             .mockReturnValue(signal({ trigger: 'popstate' } as Navigation));
 
         mount({ editContent: IDENTIFIER, editContentLang: '2' });

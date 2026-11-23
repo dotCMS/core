@@ -885,7 +885,7 @@ describe('DotPageActionsService', () => {
 
         it('should handle complete edit workflow', async () => {
             const items = await firstValueFrom(
-                spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET, vi.fn())
+                spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET)
             );
 
             // Step 1: User clicks edit

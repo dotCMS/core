@@ -1777,7 +1777,7 @@ describe('DotContentDriveShellComponent', () => {
             filtersSignal.set({ title: 'pricing', searchScope: 'TITLE' });
             spectator.detectChanges();
 
-            expect(lastWrittenParams(location).filters).toContain('searchScope:TITLE');
+            expect(lastWrittenParams(location)['filters']).toContain('searchScope:TITLE');
         });
 
         it('should keep the default search scope out of the address', () => {
@@ -1812,7 +1812,7 @@ describe('DotContentDriveShellComponent', () => {
             spectator.detectChanges();
 
             expect(location.go).toHaveBeenCalledTimes(1);
-            expect(paramsOf((location.go as unknown as Mock).mock.calls[0][0]).path).toBe(
+            expect(paramsOf((location.go as unknown as Mock).mock.calls[0][0])['path']).toBe(
                 '/second'
             );
         });

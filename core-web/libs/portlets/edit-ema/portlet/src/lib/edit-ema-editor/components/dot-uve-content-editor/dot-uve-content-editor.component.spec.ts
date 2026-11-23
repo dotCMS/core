@@ -736,7 +736,7 @@ describe('DotUveContentEditorComponent', () => {
             });
 
             it('should reload the page when the content is deleted', () => {
-                editPanel().options.deleted?.(CONTENTLET);
+                editPanel().options.deleted?.();
 
                 expect(store.pageReload).toHaveBeenCalled();
             });

@@ -98,7 +98,12 @@ const contentTypeMock: DotCMSContentType = {
 };
 
 /** The contentlet a block editor's "Edit" names. */
-const CONTENTLET_EDIT = { inode: 'embedded-inode', contentType: 'Activity' };
+const CONTENTLET_EDIT = {
+    identifier: 'embedded-identifier',
+    inode: 'embedded-inode',
+    contentType: 'Activity',
+    title: 'Embedded activity'
+};
 
 describe('DotBlockEditorSidebarComponent', () => {
     let spectator: Spectator<DotBlockEditorSidebarComponent>;
@@ -263,7 +268,7 @@ describe('DotBlockEditorSidebarComponent', () => {
         const contentletEdit = vi.fn();
         spectator.output('contentletEdit').subscribe(contentletEdit);
 
-        spectator.query(DotCMSEditorComponent).contentletEdit.emit(CONTENTLET_EDIT);
+        spectator.query(DotCMSEditorComponent)?.contentletEdit.emit(CONTENTLET_EDIT);
 
         expect(contentletEdit).toHaveBeenCalledTimes(1);
         expect(contentletEdit).toHaveBeenCalledWith(CONTENTLET_EDIT);
@@ -324,7 +329,7 @@ describe('DotBlockEditorSidebarComponent with the legacy block editor', () => {
         const contentletEdit = vi.fn();
         spectator.output('contentletEdit').subscribe(contentletEdit);
 
-        spectator.query(MockOldBlockEditorComponent).contentletEdit.emit(CONTENTLET_EDIT);
+        spectator.query(MockOldBlockEditorComponent)?.contentletEdit.emit(CONTENTLET_EDIT);
 
         expect(contentletEdit).toHaveBeenCalledTimes(1);
         expect(contentletEdit).toHaveBeenCalledWith(CONTENTLET_EDIT);
