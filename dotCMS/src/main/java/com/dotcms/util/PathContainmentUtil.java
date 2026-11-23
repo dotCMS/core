@@ -4,6 +4,7 @@ import com.dotmarketing.util.Logger;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Optional;
 
 /**
@@ -57,6 +58,31 @@ public final class PathContainmentUtil {
             Logger.error(PathContainmentUtil.class, "A path could not be canonicalized", e);
             return false;
         }
+    }
+
+    /**
+     * Tells whether a file is strictly inside a directory, judged from the paths alone. Both paths
+     * are made absolute and normalized, so {@code .} and {@code ..} segments are collapsed, and the
+     * candidate must then start with the root, compared segment by segment (a sibling directory
+     * that shares the name prefix of the root is not inside it, and the root itself is not inside
+     * itself).
+     * <p>Nothing is read from the file system, so this is cheap enough for paths built on every
+     * write, but symbolic links are not followed: a link inside the root that points elsewhere
+     * passes. Use {@link #isContainedIn(File, File)} when the files below the root can come from
+     * outside, such as an extracted archive.
+     *
+     * @param root      The directory that must contain the file.
+     * @param candidate The file to check.
+     * @return {@code true} if the candidate's normalized path is below the root's, {@code false}
+     * otherwise, including when either argument is null.
+     */
+    public static boolean isLexicallyContainedIn(final File root, final File candidate) {
+        if (root == null || candidate == null) {
+            return false;
+        }
+        final Path normalizedRoot = root.toPath().toAbsolutePath().normalize();
+        final Path normalizedCandidate = candidate.toPath().toAbsolutePath().normalize();
+        return normalizedCandidate.startsWith(normalizedRoot) && !normalizedCandidate.equals(normalizedRoot);
     }
 
     /**

@@ -677,6 +677,8 @@ public class ContentHandler implements IHandler {
 				+ File.separator + inode + File.separator + fieldVar);
 		final File[] files = binaryFolder.listFiles(
 				file -> Files.isRegularFile(file.toPath(), LinkOption.NOFOLLOW_LINKS));
+		// The files come from an uploaded archive, so the check resolves the real location of the
+		// file (following any link in the folders above it) rather than judging the path alone
 		if (files == null || files.length == 0 || !PathContainmentUtil.isContainedIn(assetsFolder, files[0])) {
 			return null;
 		}

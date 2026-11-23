@@ -9982,8 +9982,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     /**
      * Returns {@code <root>/<i0>/<i1>/<inode>}, the folder below {@code root} that holds the
-     * binaries of the content version with that inode, after checking that it resolves to a place
-     * inside {@code root}.
+     * binaries of the content version with that inode, after checking that it stays inside
+     * {@code root}.
+     * <p>The check is made on the path alone ({@link PathContainmentUtil#isLexicallyContainedIn}):
+     * it refuses an inode whose {@code .} or {@code ..} segments, or absolute form, would place the
+     * folder outside {@code root}, and it reads nothing from the file system, since it runs on
+     * every check-in and removal. It does not follow symbolic links, so a link inside the asset
+     * store is out of its scope. Inodes of new content are already limited to the form of a
+     * generated id by {@link InodeUtils#hasIdFormat(String)}; this check also covers inodes that
+     * come from anywhere else.
      *
      * @param root  The folder the binary folders live under, such as the assets root.
      * @param inode The inode of the content version.
@@ -9993,7 +10000,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private static File inodeFolder(final String root, final String inode) {
         final File folder = new File(root + File.separator + inode.charAt(0) + File.separator
                 + inode.charAt(1) + File.separator + inode);
-        if (!PathContainmentUtil.isContainedIn(new File(root), folder)) {
+        if (!PathContainmentUtil.isLexicallyContainedIn(new File(root), folder)) {
             throw new DotContentletStateException(
                     "The content inode does not name a folder inside the asset store");
         }
