@@ -32,7 +32,8 @@ public interface AbstractSchedulerJobForm {
     /** The fully qualified name of the Quartz job class to run. */
     @Nullable
     @Schema(description = "The fully qualified name of the job class to run. Users who are not CMS "
-            + "Administrators can only choose a class from the list the Scheduler form offers.",
+            + "Administrators can only choose a class from the list the Scheduler form offers, "
+            + "other than the content import job.",
             example = "com.dotmarketing.quartz.job.ContentImportThread")
     String javaClass();
 
@@ -54,11 +55,9 @@ public interface AbstractSchedulerJobForm {
             example = "2027-12-01 01:00")
     String endDate();
 
-    /** The name and value parameters handed to the job when it runs. */
-    @Value.Default
+    /** The name and value parameters handed to the job when it runs; none when left out or null. */
+    @Nullable
     @Schema(description = "The name and value parameters handed to the job when it runs",
             example = "{\"structure\": \"Product\", \"path\": \"/imports/products.csv\"}")
-    default Map<String, String> properties() {
-        return Map.of();
-    }
+    Map<String, String> properties();
 }

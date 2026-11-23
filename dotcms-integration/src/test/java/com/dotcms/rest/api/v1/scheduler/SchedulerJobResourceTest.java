@@ -12,6 +12,7 @@ import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
@@ -39,12 +40,16 @@ import org.quartz.SchedulerException;
  */
 public class SchedulerJobResourceTest {
 
-    /** Never fires: 1 January 2099 is a Thursday, and the year has to match too. */
+    /** Fires only at 01:00 on 1 January 2099, so no job runs during the test. */
     private static final String NEVER = "0 0 1 1 1 ? 2099";
+
+    /** A class on the Scheduler form's list that takes no file paths. */
+    private static final String LISTED = "com.dotmarketing.quartz.job.BinaryCleanupJob";
 
     private static SchedulerJobResource resource;
     private static User jobsPortletUser;
     private static User noPortletUser;
+    private static User admin;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -52,6 +57,89 @@ public class SchedulerJobResourceTest {
         resource = new SchedulerJobResource();
         jobsPortletUser = backendUser(PortletID.JOBS.toString());
         noPortletUser = backendUser();
+        admin = APILocator.getUserAPI().loadUserById("dotcms.org.1");
+    }
+
+    /**
+     * Method to test: {@link SchedulerJobResource#createJob}
+     * Given: a Scheduler portlet user who is not a CMS Administrator, and the content import job,
+     * whose parameters are file paths on the server
+     * Expected: 403, and no job is created
+     */
+    @Test
+    public void test_createJob_contentImport_byNonAdmin_shouldBeRefused() {
+        final String jobName = "scheduler-job-" + UUID.randomUUID();
+        try {
+            assertStatus(Response.Status.FORBIDDEN, () -> resource.createJob(requestFor(jobsPortletUser),
+                    new MockHttpResponse().response(), form(jobName, ContentImportThread.class.getName())));
+            assertFalse(exists(jobName));
+        } finally {
+            remove(jobName);
+        }
+    }
+
+    /**
+     * Method to test: {@link SchedulerJobResource#updateJob}
+     * Given: a content import job saved by a CMS Administrator, saved again by a Scheduler portlet user
+     * who is not a CMS Administrator
+     * Expected: 403, and the job still runs as the administrator
+     */
+    @Test
+    public void test_updateJob_contentImport_byNonAdmin_shouldBeRefused() throws Exception {
+        final String jobName = "scheduler-job-" + UUID.randomUUID();
+        try {
+            resource.createJob(requestFor(admin), new MockHttpResponse().response(),
+                    form(jobName, ContentImportThread.class.getName()));
+
+            assertStatus(Response.Status.FORBIDDEN, () -> resource.updateJob(requestFor(jobsPortletUser),
+                    new MockHttpResponse().response(), jobName, form(jobName, ContentImportThread.class.getName())));
+            assertEquals(admin.getUserId(), saved(jobName).getProperties().get(ScheduledTask.SCHEDULED_BY_USER_ID));
+        } finally {
+            remove(jobName);
+        }
+    }
+
+    /**
+     * Method to test: {@link SchedulerJobResource#createJob}
+     * Given: a CMS Administrator and the content import job
+     * Expected: the job is scheduled and runs as the administrator
+     */
+    @Test
+    public void test_createJob_contentImport_byAdmin_shouldBeScheduled() throws Exception {
+        final String jobName = "scheduler-job-" + UUID.randomUUID();
+        try {
+            resource.createJob(requestFor(admin), new MockHttpResponse().response(),
+                    form(jobName, ContentImportThread.class.getName()));
+
+            final ScheduledTask job = saved(jobName);
+            assertEquals(ContentImportThread.class.getName(), job.getJavaClassName());
+            assertEquals(admin.getUserId(), job.getProperties().get(ScheduledTask.SCHEDULED_BY_USER_ID));
+        } finally {
+            remove(jobName);
+        }
+    }
+
+    /**
+     * Method to test: {@link SchedulerJobResource#createJob}
+     * Given: a JSON body, read with the REST object mapper, whose {@code properties} is null
+     * Expected: the body is accepted and the job is scheduled with no parameters other than the
+     * user it runs as
+     */
+    @Test
+    public void test_createJob_nullProperties_shouldBeScheduled() throws Exception {
+        final String jobName = "scheduler-job-" + UUID.randomUUID();
+        try {
+            final SchedulerJobForm form = DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
+                    .readValue("{\"jobName\":\"" + jobName + "\",\"javaClass\":\"" + LISTED
+                            + "\",\"cronExpression\":\"" + NEVER + "\",\"properties\":null}", SchedulerJobForm.class);
+
+            resource.createJob(requestFor(jobsPortletUser), new MockHttpResponse().response(), form);
+
+            assertEquals(Map.of(ScheduledTask.SCHEDULED_BY_USER_ID, jobsPortletUser.getUserId()),
+                    saved(jobName).getProperties());
+        } finally {
+            remove(jobName);
+        }
     }
 
     /**
@@ -83,11 +171,11 @@ public class SchedulerJobResourceTest {
         final String jobName = "scheduler-job-" + UUID.randomUUID();
         try {
             resource.createJob(requestFor(jobsPortletUser), new MockHttpResponse().response(),
-                    form(jobName, ContentImportThread.class.getName()));
+                    form(jobName, LISTED));
 
             assertStatus(Response.Status.FORBIDDEN, () -> resource.updateJob(requestFor(jobsPortletUser),
                     new MockHttpResponse().response(), jobName, form(jobName, UpdatePageTemplatePathJob.class.getName())));
-            assertEquals(ContentImportThread.class.getName(), saved(jobName).getJavaClassName());
+            assertEquals(LISTED, saved(jobName).getJavaClassName());
         } finally {
             remove(jobName);
         }
@@ -122,7 +210,7 @@ public class SchedulerJobResourceTest {
         final String jobName = "scheduler-job-" + UUID.randomUUID();
         try {
             final SchedulerJobForm form = SchedulerJobForm.builder()
-                    .from(form(jobName, ContentImportThread.class.getName()))
+                    .from(form(jobName, LISTED))
                     .properties(Map.of("structure", "SomeType", ScheduledTask.SCHEDULED_BY_USER_ID, "another-user"))
                     .build();
 
@@ -149,10 +237,10 @@ public class SchedulerJobResourceTest {
         final User otherUser = backendUser(PortletID.JOBS.toString());
         try {
             resource.createJob(requestFor(jobsPortletUser), new MockHttpResponse().response(),
-                    form(jobName, ContentImportThread.class.getName()));
+                    form(jobName, LISTED));
 
             resource.updateJob(requestFor(otherUser), new MockHttpResponse().response(), jobName,
-                    SchedulerJobForm.builder().from(form(jobName, ContentImportThread.class.getName()))
+                    SchedulerJobForm.builder().from(form(jobName, LISTED))
                             .cronExpression("0 0 2 1 1 ? 2099").build());
 
             final ScheduledTask job = saved(jobName);
@@ -173,11 +261,11 @@ public class SchedulerJobResourceTest {
         final String jobName = "scheduler-job-" + UUID.randomUUID();
         try {
             resource.createJob(requestFor(jobsPortletUser), new MockHttpResponse().response(),
-                    form(jobName, ContentImportThread.class.getName()));
+                    form(jobName, LISTED));
 
             assertStatus(Response.Status.CONFLICT, () -> resource.createJob(requestFor(jobsPortletUser),
                     new MockHttpResponse().response(),
-                    SchedulerJobForm.builder().from(form(jobName, ContentImportThread.class.getName()))
+                    SchedulerJobForm.builder().from(form(jobName, LISTED))
                             .cronExpression("0 0 2 1 1 ? 2099").build()));
             assertEquals(NEVER, ((com.dotmarketing.quartz.CronScheduledTask) saved(jobName)).getCronExpression());
         } finally {
@@ -195,7 +283,7 @@ public class SchedulerJobResourceTest {
         final String jobName = "scheduler-job-" + UUID.randomUUID();
         try {
             assertStatus(Response.Status.NOT_FOUND, () -> resource.updateJob(requestFor(jobsPortletUser),
-                    new MockHttpResponse().response(), jobName, form(jobName, ContentImportThread.class.getName())));
+                    new MockHttpResponse().response(), jobName, form(jobName, LISTED)));
             assertFalse(exists(jobName));
         } finally {
             remove(jobName);
@@ -210,7 +298,7 @@ public class SchedulerJobResourceTest {
     @Test
     public void test_createJob_invalidSettings_shouldBeRefused() {
         final String jobName = "scheduler-job-" + UUID.randomUUID();
-        final SchedulerJobForm valid = form(jobName, ContentImportThread.class.getName());
+        final SchedulerJobForm valid = form(jobName, LISTED);
         try {
             assertStatus(Response.Status.BAD_REQUEST, () -> resource.createJob(requestFor(jobsPortletUser),
                     new MockHttpResponse().response(),
@@ -234,7 +322,7 @@ public class SchedulerJobResourceTest {
         final String jobName = "scheduler-job-" + UUID.randomUUID();
         try {
             resource.createJob(requestFor(noPortletUser), new MockHttpResponse().response(),
-                    form(jobName, ContentImportThread.class.getName()));
+                    form(jobName, LISTED));
             fail("the request must be rejected");
         } catch (final SecurityException expected) {
             assertFalse(exists(jobName));

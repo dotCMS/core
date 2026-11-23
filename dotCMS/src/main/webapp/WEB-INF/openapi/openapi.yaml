@@ -17354,10 +17354,11 @@ paths:
       - Roles
   /v1/scheduler/jobs:
     post:
-      description: Schedules a new job in the Scheduler portlet's User Job group.
-        The caller needs the Scheduler portlet. Users who are not CMS Administrators
-        can only schedule a class from the list the Scheduler form offers. The job
-        runs as the user who saved it.
+      description: "Schedules a new job in the Scheduler portlet's User Job group.\
+        \ The caller needs the Scheduler portlet. Users who are not CMS Administrators\
+        \ can only schedule a class from the list the Scheduler form offers, and not\
+        \ the content import job (ContentImportThread), whose parameters are file\
+        \ paths on the server. The job runs as the user who saved it."
       operationId: createSchedulerJob
       requestBody:
         content:
@@ -17386,8 +17387,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: The caller is not a CMS Administrator and chose a class outside
-            the list
+          description: "The caller is not a CMS Administrator and chose a class outside\
+            \ the list, or the content import job"
         "409":
           content:
             application/json: {}
@@ -17435,8 +17436,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: The caller is not a CMS Administrator and chose a class outside
-            the list
+          description: "The caller is not a CMS Administrator and chose a class outside\
+            \ the list, or the content import job"
         "404":
           content:
             application/json: {}
@@ -39957,9 +39958,9 @@ components:
           example: 2027-12-01 01:00
         javaClass:
           type: string
-          description: The fully qualified name of the job class to run. Users who
-            are not CMS Administrators can only choose a class from the list the Scheduler
-            form offers.
+          description: "The fully qualified name of the job class to run. Users who\
+            \ are not CMS Administrators can only choose a class from the list the\
+            \ Scheduler form offers, other than the content import job."
           example: com.dotmarketing.quartz.job.ContentImportThread
         jobDescription:
           type: string

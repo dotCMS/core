@@ -10,6 +10,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.quartz.CronScheduledTask;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.ScheduledTask;
+import com.dotmarketing.quartz.job.ContentImportThread;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.SchedulerJobLocator;
@@ -30,6 +31,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -47,7 +49,8 @@ import org.quartz.SchedulerException;
 /**
  * Saves the jobs people schedule from the Scheduler portlet, in its {@code User Job} group. The
  * caller needs the Scheduler portlet. A job class must come from the list the Scheduler form offers
- * ({@link SchedulerJobLocator#getJobClassess()}) unless the caller is a CMS Administrator.
+ * ({@link SchedulerJobLocator#getJobClassess()}) and not be one of {@link #ADMIN_ONLY_CLASSES}, unless
+ * the caller is a CMS Administrator.
  */
 @Path("/v1/scheduler/jobs")
 @Tag(name = "Scheduler", description = "Jobs scheduled from the Scheduler portlet")
@@ -55,6 +58,13 @@ public class SchedulerJobResource {
 
     /** The group the Scheduler portlet lists and saves people's jobs in. */
     static final String USER_JOB_GROUP = "User Job";
+
+    /**
+     * Classes on the Scheduler form's list whose parameters are file paths on the server, so only CMS
+     * Administrators may schedule them. {@link ContentImportThread} reads the files under {@code path},
+     * writes result files under {@code logpath}, and moves each imported file aside.
+     */
+    static final Set<String> ADMIN_ONLY_CLASSES = Set.of(ContentImportThread.class.getName());
 
     private static final String DATE_FORMAT = "yyyy-MM-dd HH:mm";
 
@@ -78,8 +88,9 @@ public class SchedulerJobResource {
             summary = "Schedule a job",
             description = "Schedules a new job in the Scheduler portlet's User Job group. The caller "
                     + "needs the Scheduler portlet. Users who are not CMS Administrators can only "
-                    + "schedule a class from the list the Scheduler form offers. The job runs as "
-                    + "the user who saved it.",
+                    + "schedule a class from the list the Scheduler form offers, and not the content "
+                    + "import job (ContentImportThread), whose parameters are file paths on the "
+                    + "server. The job runs as the user who saved it.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Job scheduled",
                             content = @Content(mediaType = "application/json",
@@ -91,7 +102,7 @@ public class SchedulerJobResource {
                             + "user, or the user lacks the Scheduler portlet",
                             content = @Content(mediaType = "application/json")),
                     @ApiResponse(responseCode = "403", description = "The caller is not a CMS "
-                            + "Administrator and chose a class outside the list",
+                            + "Administrator and chose a class outside the list, or the content import job",
                             content = @Content(mediaType = "application/json")),
                     @ApiResponse(responseCode = "409", description = "A job with this name already exists",
                             content = @Content(mediaType = "application/json"))
@@ -146,7 +157,7 @@ public class SchedulerJobResource {
                             + "user, or the user lacks the Scheduler portlet",
                             content = @Content(mediaType = "application/json")),
                     @ApiResponse(responseCode = "403", description = "The caller is not a CMS "
-                            + "Administrator and chose a class outside the list",
+                            + "Administrator and chose a class outside the list, or the content import job",
                             content = @Content(mediaType = "application/json")),
                     @ApiResponse(responseCode = "404", description = "No job with this name in the User Job group",
                             content = @Content(mediaType = "application/json"))
@@ -197,8 +208,9 @@ public class SchedulerJobResource {
         if (form == null || !UtilMethods.isSet(form.javaClass())) {
             throw refused(Response.Status.BAD_REQUEST, user, "message.Scheduler.invalidJavaClass");
         }
-        if (!SchedulerJobLocator.getJobClassess().contains(form.javaClass())
-                && !APILocator.getUserAPI().isCMSAdmin(user)) {
+        final boolean openToSchedulerUsers = SchedulerJobLocator.getJobClassess().contains(form.javaClass())
+                && !ADMIN_ONLY_CLASSES.contains(form.javaClass());
+        if (!openToSchedulerUsers && !APILocator.getUserAPI().isCMSAdmin(user)) {
             throw refused(Response.Status.FORBIDDEN, user, "message.Scheduler.javaClassNotAllowed");
         }
         if (!UtilMethods.isSet(form.cronExpression())) {
@@ -219,7 +231,8 @@ public class SchedulerJobResource {
         }
 
         // The job runs as whoever saved it last; a submitted value is ignored
-        final Map<String, String> parameters = new HashMap<>(form.properties());
+        final Map<String, String> parameters = form.properties() == null ? new HashMap<>()
+                : new HashMap<>(form.properties());
         parameters.remove(ScheduledTask.SCHEDULED_BY_USER_ID);
         final Map<String, Object> properties = new HashMap<>(parameters);
         properties.put(ScheduledTask.SCHEDULED_BY_USER_ID, user.getUserId());
