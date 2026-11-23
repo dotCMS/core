@@ -150,21 +150,20 @@ public class WidgetRenderer {
         // The widget's own code is about to run, so say who wrote it: the view tools it calls
         // decide from this and not from the Velocity resource name, which the code itself
         // chooses through #parse.
-        final Object previousAuthor = RestrictedViewToolAccess.announceRenderingAuthor(request,
-                widget.getModUser());
-        try {
-            VelocityUtil.getEngine().evaluate(context, firstEval, "", widgetExecuteCode.toString());
-            final String firstPass = firstEval.toString();
-            if (!rendersFieldVelocity(widget)) {
-                return new Rendering(firstPass, fieldValuesHoldVelocity(widget));
-            }
+        final Context widgetContext = context;
+        return RestrictedViewToolAccess.withRenderingAuthorReturn(request, widget.getModUser(),
+                () -> {
+                    VelocityUtil.getEngine().evaluate(widgetContext, firstEval, "",
+                            widgetExecuteCode.toString());
+                    final String firstPass = firstEval.toString();
+                    if (!rendersFieldVelocity(widget)) {
+                        return new Rendering(firstPass, fieldValuesHoldVelocity(widget));
+                    }
 
-            final StringWriter secondEval = new StringWriter();
-            VelocityUtil.getEngine().evaluate(context, secondEval, "", firstPass);
-            return new Rendering(secondEval.toString(), false);
-        } finally {
-            RestrictedViewToolAccess.restoreRenderingAuthor(request, previousAuthor);
-        }
+                    final StringWriter secondEval = new StringWriter();
+                    VelocityUtil.getEngine().evaluate(widgetContext, secondEval, "", firstPass);
+                    return new Rendering(secondEval.toString(), false);
+                });
     }
 
     /**
