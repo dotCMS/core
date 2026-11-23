@@ -7,6 +7,9 @@ import {
 } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
+import { MessageService } from 'primeng/api';
+import { ToastModule } from 'primeng/toast';
+
 import { DotContentCompareDialogComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotSidePanelOutletComponent } from '@dotcms/ui';
 
@@ -27,6 +30,10 @@ import { DotToolbarComponent } from '../dot-toolbar/dot-toolbar.component';
     selector: 'dot-main-component',
     templateUrl: './main-legacy.component.html',
     changeDetection: ChangeDetectionStrategy.Eager,
+    // PrimeNG's MessageService for the <p-toast> beside the outlet (#38303). Only a panel opened with
+    // an injector under this component reaches it: the outlet resolves a panel's content through the
+    // injector it was opened with, so the root injector of a root service never passes through here.
+    providers: [MessageService],
     imports: [
         RouterOutlet,
         DotCreateContentletComponent,
@@ -39,7 +46,8 @@ import { DotToolbarComponent } from '../dot-toolbar/dot-toolbar.component';
         DotWizardComponent,
         DotGenerateSecurePasswordComponent,
         DotContentCompareDialogComponent,
-        DotSidePanelOutletComponent
+        DotSidePanelOutletComponent,
+        ToastModule
     ]
 })
 export class MainComponentLegacyComponent implements OnInit {

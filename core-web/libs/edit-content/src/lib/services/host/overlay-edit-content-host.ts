@@ -72,7 +72,8 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
 
     /**
      * The content to open, read from the dialog config: an inode to edit, or a content type to
-     * create, with the folder and the language a new content starts in when the opener gave them.
+     * create, with the folder and the language a new content starts in, and the experiment
+     * variant, when the opener gave them.
      */
     resolveIdentity(): EditContentIdentity {
         const data = this.#config?.data as EditContentDialogData | undefined;
@@ -81,7 +82,8 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
             inode: data?.contentletInode,
             contentTypeId: data?.contentTypeId,
             folderPath: data?.folderPath,
-            languageId: data?.languageId
+            languageId: data?.languageId,
+            variantName: data?.variantName
         };
     }
 
