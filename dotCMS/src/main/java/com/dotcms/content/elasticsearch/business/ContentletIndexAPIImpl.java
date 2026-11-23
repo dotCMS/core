@@ -46,6 +46,7 @@ import com.dotcms.content.index.opensearch.ContentletIndexOperationsOS;
 import com.dotcms.content.model.annotation.IndexLibraryIndependent;
 import com.dotcms.content.model.annotation.IndexRouter;
 import com.dotcms.content.model.annotation.IndexRouter.IndexAccess;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
@@ -683,6 +684,64 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         return primaryResult;
     }
 
+    /**
+     * Applies the custom index mapping of a newly created field to the indices that are currently
+     * live, asking each search provider for the names that it owns.
+     *
+     * <p>The providers do not share index names. Elasticsearch names come from the legacy pointer
+     * store and OpenSearch names from the versioned one, and on an instance whose Elasticsearch
+     * indices already existed before the migration the two differ in timestamp as well as in the
+     * {@code .os} marker, so a name taken from one store cannot be translated into the other's.
+     * Resolving the name per provider is what keeps the mapping on the right index — and it is
+     * also what makes the mapping arrive at all once Elasticsearch is decommissioned and its
+     * pointer store is no longer maintained.</p>
+     *
+     * <p>A provider that cannot be reached is logged and skipped, so a problem on one search
+     * engine neither blocks the other nor fails the transaction that created the field.</p>
+     *
+     * @param field the {@link Field} that was just created
+     */
+    @Override
+    public void addCustomMappingForNewField(final Field field) {
+        addCustomMappingForNewField(field, MappingHelper.getInstance());
+    }
+
+    /**
+     * Same as {@link #addCustomMappingForNewField(Field)}, with the mapping helper supplied by the
+     * caller so that tests can observe which indices each provider was handed without needing a
+     * running cluster or the {@link MappingHelper} singleton.
+     *
+     * @param field  the {@link Field} that was just created
+     * @param helper the helper that applies the field's mapping to a provider's indices
+     */
+    @VisibleForTesting
+    void addCustomMappingForNewField(final Field field, final MappingHelper helper) {
+        for (final ContentletIndexOperations ops : router.writeProviders()) {
+            final ProviderIndices indices = loadProviderIndicesQuietly(ops);
+            if (indices == null) {
+                continue;
+            }
+            final List<String> targets = new ArrayList<>(2);
+            if (UtilMethods.isSet(indices.working)) {
+                targets.add(indices.working);
+            }
+            if (UtilMethods.isSet(indices.live)) {
+                targets.add(indices.live);
+            }
+            if (targets.isEmpty()) {
+                continue;
+            }
+            final IndexTag tag = ops == operationsES ? IndexTag.ES : IndexTag.OS;
+            try {
+                helper.addCustomMapping(field, targets, tag);
+            } catch (Exception e) {
+                Logger.warnAndDebug(this.getClass(), String.format(
+                        "Error setting the %s mapping for field '%s' on indices %s: %s",
+                        tag, field.name(), targets, e.getMessage()), e);
+            }
+        }
+    }
+
 
     /**
      * Create an index exclusively in one of the SE Providers.
@@ -707,13 +766,16 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      *       operationally and yields a clean index with full settings + base mapping. If the
      *       delete cannot be confirmed and the index is still present, bootstrap fails loudly
      *       rather than register a half-mapped index.</li>
-     *   <li><b>Populated orphan (&gt; 0 docs), or count unknown</b> — reused in place, untouched.
-     *       A populated orphan was created by dotCMS itself, so it already carries the full
-     *       settings + base mapping + custom mapping; nothing needs to be (re)applied. The index is
-     *       never deleted here: discarding it would throw away its contents (including partial
-     *       reindex progress) and force a full reindex, which can run for hours and degrade search
-     *       consistency — not justified to clean up an orphan. On any uncertainty (the count probe
-     *       fails) we err toward reuse for the same reason.</li>
+     *   <li><b>Populated orphan (&gt; 0 docs), or count unknown</b> — reused in place, with its
+     *       custom mapping re-applied. The index is never deleted here: discarding it would throw
+     *       away its contents (including partial reindex progress) and force a full reindex, which
+     *       can run for hours and degrade search consistency — not justified to clean up an orphan.
+     *       On any uncertainty (the count probe fails) we err toward reuse for the same reason.
+     *       The mapping is re-applied because a populated index is not proof of a complete one:
+     *       fields created while their mapping never reached this provider leave it populated and
+     *       incomplete (issue #36577). Re-applying is idempotent and rebuilt from the database, so
+     *       an already-complete index is unaffected. Create-time-only settings (custom analyzers)
+     *       remain unrepairable this way and need a reindex.</li>
      * </ul>
      *
      * <p>The caller's {@code point()} then registers the index in the store.</p>
@@ -779,14 +841,21 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                     .getOrElse(-1L);
 
             if (docCount != 0L) {
-                // Populated (or unknown): reuse in place, untouched. A dotCMS-created index already
-                // carries the full settings + base mapping + custom mapping, so nothing needs to be
-                // (re)applied. Deleting it would force a full reindex (hours, degraded search) —
-                // not justified to clean up an orphan.
+                // Populated (or unknown): reuse in place rather than delete — deleting would force
+                // a full reindex (hours, degraded search), not justified to clean up an orphan.
+                //
+                // The custom mapping IS re-applied, though (issue #36577). Reuse used to skip it on
+                // the assumption that a dotCMS-created index already carries the full custom
+                // mapping; that does not hold for an index populated while fields were created
+                // without their mapping reaching this provider. Re-applying is idempotent and
+                // rebuilt from the database, so an index that was already complete is unaffected.
+                // Create-time-only settings (custom analyzers) still cannot be repaired this way —
+                // those need a reindex.
                 Logger.info(this, String.format(
                         "Bootstrap: orphaned %s index found with %s document(s); reusing in place"
-                        + " (not deleting, not remapping): %s",
+                        + " (not deleting) and re-asserting the custom mapping: %s",
                         tag, docCount < 0 ? "an unknown number of" : docCount, physicalName));
+                helper.addCustomMapping(List.of(indexName), tag);
                 return true;
             }
 

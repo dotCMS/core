@@ -8,8 +8,6 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.cdi.CDIUtils;
-import com.dotcms.content.elasticsearch.business.IndiciesInfo;
-import com.dotcms.content.elasticsearch.util.ESMappingUtilHelper;
 import com.dotcms.contenttype.business.uniquefields.UniqueFieldValidationStrategyResolver;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -229,7 +227,7 @@ public class FieldAPIImpl implements FieldAPI {
 
             //If saving a new indexed field, it should try to set an ES mapping for the field
             if (result.indexed()) {
-                addESMappingForField(structure, result);
+                addSearchMappingForField(structure, result);
             }
             ActivityLogger.logInfo(ActivityLogger.class, "Save Field Action",
                     String.format(
@@ -403,34 +401,27 @@ public class FieldAPIImpl implements FieldAPI {
     }
 
     /**
-     * This method tries to set an ES mapping for the field.
-     * In case of failure, we just log a warning and continue with the transaction
-     * @param field
+     * Tries to set the search-index mapping for a newly created field.
+     *
+     * <p>Which indices receive it is decided by the indexing API, which asks each search provider
+     * for the names it owns — resolving them here from the Elasticsearch pointer store would send
+     * an Elasticsearch name to OpenSearch as well, and would stop setting the mapping altogether
+     * once Elasticsearch is decommissioned.</p>
+     *
+     * <p>On failure we only log a warning and let the transaction continue, as before.</p>
+     *
+     * @param structure the content type the field belongs to, used for logging
+     * @param field     the {@link Field} that was just created
      */
-    private void addESMappingForField(final Structure structure, final Field field) {
+    private void addSearchMappingForField(final Structure structure, final Field field) {
         try {
-            final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
-            if (indiciesInfo != null){
-                if (UtilMethods.isSet(indiciesInfo.getLive())) {
-                    ESMappingUtilHelper.getInstance().addCustomMapping(field, indiciesInfo.getLive());
-                    Logger.debug(this.getClass(), () -> String.format(
-                            "Elasticsearch mapping set for Field: %s. Content type: %s on Index: %s",
-                            field.name(), structure.getName(), APILocator.getESIndexAPI()
-                                    .removeClusterIdFromName(indiciesInfo.getLive())));
-                }
-
-                if (UtilMethods.isSet(indiciesInfo.getWorking())) {
-                    ESMappingUtilHelper.getInstance().addCustomMapping(field, indiciesInfo.getWorking());
-                    Logger.debug(this.getClass(), () -> String.format(
-                            "Elasticsearch mapping set for Field: %s. Content type: %s on Index: %s",
-                            field.name(), structure.getName(), APILocator.getESIndexAPI()
-                                    .removeClusterIdFromName(indiciesInfo.getWorking())));
-                }
-            }
-
+            APILocator.getContentletIndexAPI().addCustomMappingForNewField(field);
+            Logger.debug(this.getClass(), () -> String.format(
+                    "Search mapping set for Field: %s. Content type: %s",
+                    field.name(), structure.getName()));
         } catch (Exception e) {
             Logger.warnAndDebug(this.getClass(), String.format(
-                    "Error trying to set Elasticsearch mapping for Field: %s. Content type: %s",
+                    "Error trying to set the search mapping for Field: %s. Content type: %s",
                     field.name(), structure.getName()), e);
         }
     }
