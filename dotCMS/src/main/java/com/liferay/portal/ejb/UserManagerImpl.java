@@ -587,8 +587,11 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
                 // User authenticated, reset failed attempts
                 Logger.debug(this, String.format("Setting failed login attempts for user '%s' to zero.",
                         user.getUserId()));
-                user.setFailedLoginAttempts(0);
-                UserUtil.update(user);
+                try {
+                    FactoryLocator.getUserFactory().resetFailedLoginAttempts(user.getUserId());
+                } catch (final DotDataException e) {
+                    throw new SystemException(e);
+                }
             }
             // Earlier attempts from this address no longer count toward a lock
             LoginLockout.getInstance().succeeded(attempt);
@@ -696,7 +699,8 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 
     /**
      * Verifies whether the User's password has expired or not. If it has, then such a User must be updated for dotCMS
-     * to force them to rest their password the next time they log in.
+     * to force them to reset their password the next time they log in. Only the password reset flag is written, so
+     * the other user fields keep what is stored.
      *
      * @param login The User's email or ID.
      * @param user  The {@link User} being checked.
@@ -706,8 +710,11 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
     private void checkPasswordExpiration(final String login, final User user) throws SystemException {
         if (null != user && user.isPasswordExpired()) {
             Logger.debug(this, String.format("Password for user '%s' has expired.", login));
-            user.setPasswordReset(true);
-            UserUtil.update(user);
+            try {
+                FactoryLocator.getUserFactory().requirePasswordReset(user.getUserId());
+            } catch (final DotDataException e) {
+                throw new SystemException(e);
+            }
         }
     }
 
@@ -770,6 +777,8 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
      *     <li>If the maximum number of failed login attempts has been reached, it executes the custom handlers for
      *     maximum failed login attempts.</li>
      * </ul>
+     * The count is stored with single-column updates after the delay, never by saving {@code user}: that object was
+     * loaded before the delay, so saving it would put back any change made to the user in the meantime.
      *
      * @param user           The {@link User} that tried to log into dotCMS.
      * @param login          The User's email or ID.
@@ -783,26 +792,26 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
     private void handleFailedLoginAttempt(final User user, final String login, final String companyId,
                                           final boolean byEmailAddress, final LoginLockout.Attempt attempt)
             throws SystemException {
-        int failedLoginAttempts = user.getFailedLoginAttempts();
-        Logger.debug(this, String.format("Current failed login attempts for user '%s' is %s", login,
-                failedLoginAttempts));
         this.delayFailedLogin(user, login, attempt);
-        user.setFailedLoginAttempts(++failedLoginAttempts);
-        Logger.debug(this, String.format("Setting failed login attempts for user '%s' to %s", login,
-                user.getFailedLoginAttempts()));
-        UserUtil.update(user);
-        final int maxFailures = GetterUtil.get(PropsUtil.get(PropsUtil.AUTH_MAX_FAILURES_LIMIT), 0);
-        Logger.debug(this, String.format("Maximum failed login attempts is %s", maxFailures));
-        final boolean lockoutEnabled = LoginLockout.getInstance().isEnabled(maxFailures);
-        if ((failedLoginAttempts >= maxFailures) && (maxFailures != 0)) {
-            Logger.debug(this, String.format("User '%s' failed to authenticate via '%s' after %s failed attempts",
-                    login, byEmailAddress ? "email" : "user ID", failedLoginAttempts));
-            if (lockoutEnabled) {
-                // Locks are decided per address by LoginLockout. This account-wide count only paces the delay and
-                // the handlers below, so it starts over rather than growing with every failure from anywhere.
-                user.setFailedLoginAttempts(0);
-                UserUtil.update(user);
+        try {
+            final int failedLoginAttempts = FactoryLocator.getUserFactory()
+                    .incrementFailedLoginAttempts(user.getUserId());
+            Logger.debug(this, String.format("Failed login attempts for user '%s' is now %s", login,
+                    failedLoginAttempts));
+            final int maxFailures = GetterUtil.get(PropsUtil.get(PropsUtil.AUTH_MAX_FAILURES_LIMIT), 0);
+            Logger.debug(this, String.format("Maximum failed login attempts is %s", maxFailures));
+            final boolean lockoutEnabled = LoginLockout.getInstance().isEnabled(maxFailures);
+            if ((failedLoginAttempts >= maxFailures) && (maxFailures != 0)) {
+                Logger.debug(this, String.format("User '%s' failed to authenticate via '%s' after %s failed attempts",
+                        login, byEmailAddress ? "email" : "user ID", failedLoginAttempts));
+                if (lockoutEnabled) {
+                    // Locks are decided per address by LoginLockout. This account-wide count only paces the delay
+                    // and the handlers below, so it starts over rather than growing with every failure from anywhere.
+                    FactoryLocator.getUserFactory().resetFailedLoginAttempts(user.getUserId());
+                }
             }
+        } catch (final DotDataException e) {
+            throw new SystemException(e);
         }
     }
 
