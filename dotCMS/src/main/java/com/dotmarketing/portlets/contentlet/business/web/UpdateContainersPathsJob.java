@@ -182,8 +182,9 @@ public class UpdateContainersPathsJob extends DotStatefulJob  {
                 ).getOrNull();
             }
 
-            final String newDrawBody = drawedBody.replaceAll("//" + oldHostName + "/", "//" + newHostName + "/");
-            final String newBody = body != null ? body.replaceAll("//" + oldHostName + "/", "//" + newHostName + "/") : null;
+            // Literal replacement: a site name is not a regular expression
+            final String newDrawBody = drawedBody.replace("//" + oldHostName + "/", "//" + newHostName + "/");
+            final String newBody = body != null ? body.replace("//" + oldHostName + "/", "//" + newHostName + "/") : null;
 
             Params templateParams = new Params.Builder()
                     .add(newDrawBody, newBody, template.get("inode"))

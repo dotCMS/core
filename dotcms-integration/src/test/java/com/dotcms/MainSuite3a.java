@@ -128,6 +128,7 @@ import org.junit.runners.Suite;
         Task260615AlterClusterIdLengthTest.class,
         ImportContentletsActionSmokeTest.class,
         TreeFactoryTest.class,
+    com.dotmarketing.portlets.contentlet.business.web.UpdatePageTemplatePathJobTest.class,
     com.dotmarketing.portlets.user.ajax.UserAjaxHasUserRolesIntegrationTest.class,
     com.dotcms.rest.api.v1.user.UserResourcePasswordIntegrationTest.class,
     com.dotmarketing.portlets.workflows.action.WorkflowTaskAccessTest.class,
