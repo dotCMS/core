@@ -556,11 +556,10 @@
                                     -->
                                     <useMavenLogger>false</useMavenLogger>
                                     <!--
-                                      10 minutes. Measured runtime scales with the number of
-                                      project configs the diff touches: 8-12s for a typical pull
-                                      request, and about two to three minutes for a diff spanning
-                                      29 of them (PR #38305). So the ceiling is 10 minutes, which
-                                      still catches the one pathological case: the harness's
+                                      3 minutes. Measured runtime is 8.4-9.4s typical, 12s at the
+                                      tail, against the 10s budget the spike set. This ceiling is
+                                      ~15x the tail, so a slow-but-healthy run can never reach it;
+                                      only a pathological case can, chiefly the harness's
                                       unshallow git-fetch fallback when the base ref cannot be
                                       resolved (a full fetch here is ~1.1GB / ~20min). Timing out
                                       fails the build through the plugin's watchdog, which throws
@@ -568,7 +567,7 @@
                                       a success code to "allow timeouts" would have no effect. An
                                       unfinished check is not a passing one.
                                     -->
-                                    <timeout>600000</timeout>
+                                    <timeout>180000</timeout>
                                     <arguments>
                                         <argument>exec</argument>
                                         <argument>node</argument>
