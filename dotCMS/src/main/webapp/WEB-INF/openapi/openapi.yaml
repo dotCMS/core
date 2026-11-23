@@ -9204,7 +9204,7 @@ paths:
     get:
       description: "Returns a content type based on the provided ID or Velocity variable\
         \ name. Additionally, the Velocity code in all of its custom fields will be\
-        \ parsed."
+        \ parsed. Requires a logged-in back-end user."
       operationId: getContentTypeRenderedCustomFieldIdVar
       parameters:
       - description: |-
@@ -9274,6 +9274,8 @@ paths:
                   totalEntries: 0
                 permissions: []
           description: Content type retrieved successfully
+        "401":
+          description: Unauthorized
         "403":
           description: Forbidden
         "404":
