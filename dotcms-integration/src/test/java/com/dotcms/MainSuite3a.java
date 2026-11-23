@@ -112,6 +112,7 @@ import org.junit.runners.Suite;
         com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest.class,
         com.dotcms.rendering.velocity.viewtools.content.util.ContentUtilsTest.class,
         com.dotcms.browser.BrowserAPITest.class,
+    com.dotmarketing.portlets.folders.business.FolderSearchPermissionsIT.class,
         com.dotcms.rest.api.v1.content.search.strategies.GlobalSearchAttributeStrategyMatchingTest.class,
     com.dotmarketing.portlets.contentlet.action.ContentImportAccessTest.class,
         com.dotcms.contenttype.test.ContentResourceTest.class,
