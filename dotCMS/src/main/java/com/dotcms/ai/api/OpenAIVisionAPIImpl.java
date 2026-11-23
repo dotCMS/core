@@ -13,6 +13,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.business.exporter.ImageFilterExporter;
+import com.dotmarketing.portlets.contentlet.business.exporter.ImageGenerationBusyException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -299,7 +300,16 @@ public class OpenAIVisionAPIImpl implements AIVisionAPI {
 
         final String visionModel = getAiVisionModel(contentlet.getHost());
         final String maxTokens = getAiVisionMaxTokens(contentlet.getHost());
-        final String base64Image = base64EncodeImage(fileToProcess.get());
+        final String base64Image;
+        try {
+            base64Image = base64EncodeImage(fileToProcess.get());
+        } catch (DotRuntimeException e) {
+            if (!(e.getCause() instanceof ImageGenerationBusyException)) {
+                throw e;
+            }
+            // Optional enrichment must not abort a save or publish when rendering is busy.
+            return Optional.empty();
+        }
 
         final String prompt = Try.of(() -> {
                     try (SystemUserScope ignored = SystemUserScope.open()) {

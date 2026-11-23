@@ -5,6 +5,7 @@ import io.vavr.control.Try;
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.imageio.ImageIO;
 
@@ -28,7 +29,7 @@ public class ResizeImageFilter extends ImageFilter {
         final Dimension source = ImageFilterAPI.apiInstance.get().getWidthHeight(metadataSource);
         final Dimension target = ResizeCalc.target(source, getPrefix(), parameters);
         ResizeCalc.normalize(target, getPrefix(), parameters);
-        return source.equals(target) && !isGif(file) ? file : getResultsFile(file, parameters);
+        return isNoOp(file, source, target, parameters) ? file : getResultsFile(file, parameters);
     }
 
     /** Generate the bounded rendition, using the GIF encoder when animation must be preserved. */
@@ -36,11 +37,16 @@ public class ResizeImageFilter extends ImageFilter {
     public File runFilter(final File file, final Map<String, String[]> parameters) {
         final Dimension original = ImageFilterAPI.apiInstance.get().getWidthHeight(file);
         final Dimension target = ResizeCalc.target(original, getPrefix(), parameters);
-        if (original.equals(target) && !isGif(file)) {
+        if (isNoOp(file, original, target, parameters)) {
             return file;
         }
-        final File result = getResultsFile(file, parameters);
-        if (!overwrite(result, parameters)) {
+
+        // Direct callers must use the bounded cache key too.
+        final Map<String, String[]> normalized = new LinkedHashMap<>(parameters);
+        normalized.putIfAbsent("filter", new String[]{getFilterName()});
+        ResizeCalc.normalize(target, getPrefix(), normalized);
+        final File result = getResultsFile(file, normalized);
+        if (!overwrite(result, normalized)) {
             return result;
         }
 
@@ -68,6 +74,14 @@ public class ResizeImageFilter extends ImageFilter {
         } finally {
             tmp.delete();
         }
+    }
+
+    /** Keep original GIF playback unless the request explicitly changes animation settings. */
+    private boolean isNoOp(final File file, final Dimension source, final Dimension target,
+            final Map<String, String[]> parameters) {
+        return source.equals(target) && (!isGif(file)
+                || (!parameters.containsKey(getPrefix() + "loop")
+                        && !parameters.containsKey(getPrefix() + "frames")));
     }
 
     /** Only actual GIFs use the animated writer. */

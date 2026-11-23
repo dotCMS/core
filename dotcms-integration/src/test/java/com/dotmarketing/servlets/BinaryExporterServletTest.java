@@ -80,6 +80,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(DataProviderRunner.class)
@@ -562,10 +565,13 @@ public class BinaryExporterServletTest {
     private byte[] captureBinary(final BinaryExporterServlet servlet, final String uri,
             final int expectedStatus) throws ServletException, IOException {
         final ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        final HttpServletResponse response = new MockHttpStatusResponse(
-                new MockHttpCaptureResponse(mock(HttpServletResponse.class), bytes));
+        final HttpServletResponse response = spy(new MockHttpStatusResponse(
+                new MockHttpCaptureResponse(mock(HttpServletResponse.class), bytes)));
         servlet.doGet(mockServletRequest(uri), response);
         assertEquals(expectedStatus, response.getStatus());
+        if (expectedStatus == HttpServletResponse.SC_SERVICE_UNAVAILABLE) {
+            verify(response, never()).sendError(expectedStatus);
+        }
         return bytes.toByteArray();
     }
 

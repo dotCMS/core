@@ -24,7 +24,15 @@ public class JpegImageFilter extends ImageFilter {
 
 		};
 	}
-	public File runFilter(File file,   Map<String, String[]> parameters) {
+    /** Keep the JPEG intermediate path identical in the cache lookup and writer. */
+    @Override
+    public File getResultsFile(final File file, final Map<String, String[]> parameters) {
+        return getResultsFile(file, parameters, "jpg");
+    }
+
+    /** Encode the source as JPEG with the requested quality and progressive mode. */
+    @Override
+    public File runFilter(final File file, final Map<String, String[]> parameters) {
 		int quality = parameters.get(getPrefix() +"q") != null?Integer.parseInt(parameters.get(getPrefix() +"q")[0]):85;
         boolean progressive = (parameters.get(getPrefix() +"p") != null);
 
@@ -33,7 +41,7 @@ public class JpegImageFilter extends ImageFilter {
 		Double q = Double.valueOf(quality);
 		q = q/100;
 		
-		File resultFile = getResultsFile(file, parameters, "jpg");
+		File resultFile = getResultsFile(file, parameters);
 
 		if(!overwrite(resultFile,parameters)){
 			return resultFile;

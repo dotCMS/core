@@ -84,10 +84,13 @@ public class ImageFilterExporter implements BinaryContentExporter {
 
             try {
                 for (final ImageFilter filter : filters) {
-                    if (filter.prepare(file, file, parameters) == null) {
+                    final File output = filter.prepare(file, file, parameters);
+                    if (output == null) {
                         throw new DotRuntimeException("Missing input for " + filter.getClass().getSimpleName());
                     }
-                    file = filter.runFilter(file, parameters);
+                    if (!output.equals(file)) {
+                        file = filter.runFilter(file, parameters);
+                    }
                 }
                 if (shared) {
                     publishToShared(file);

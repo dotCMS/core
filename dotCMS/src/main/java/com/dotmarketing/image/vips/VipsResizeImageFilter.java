@@ -10,6 +10,7 @@ import com.dotmarketing.util.UtilMethods;
 import java.awt.Dimension;
 import java.io.File;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -53,12 +54,14 @@ public class VipsResizeImageFilter extends VipsImageFilter {
         if (!metadataSource.isFile()) {
             return null;
         }
+        final boolean gif = "gif".equalsIgnoreCase(UtilMethods.getFileExtension(file.getName()));
         final AtomicReference<Dimension> size = new AtomicReference<>();
+        final AtomicBoolean upright = new AtomicBoolean();
         try {
             VipsManager.run(arena -> {
                 final VImage image = VImage.newFromFile(arena, metadataSource.getAbsolutePath());
-                final int orientation = "gif".equalsIgnoreCase(UtilMethods.getFileExtension(file.getName()))
-                        ? 1 : VipsManager.metaInt(image, "orientation", 1);
+                final int orientation = gif ? 1 : VipsManager.metaInt(image, "orientation", 1);
+                upright.set(orientation == 1);
                 size.set(orientation >= 5 && orientation <= 8
                         ? new Dimension(image.getHeight(), image.getWidth())
                         : new Dimension(image.getWidth(), image.getHeight()));
@@ -69,8 +72,9 @@ public class VipsResizeImageFilter extends VipsImageFilter {
             }
             size.set(ImageFilterAPI.apiInstance.get().getWidthHeight(metadataSource));
         }
-        ResizeCalc.normalize(ResizeCalc.target(size.get(), getPrefix(), parameters), getPrefix(), parameters);
-        return getResultsFile(file, parameters);
+        final Dimension target = ResizeCalc.target(size.get(), getPrefix(), parameters);
+        ResizeCalc.normalize(target, getPrefix(), parameters);
+        return !gif && upright.get() && size.get().equals(target) ? file : getResultsFile(file, parameters);
     }
 
     /**

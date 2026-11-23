@@ -689,7 +689,8 @@ public class BinaryExporterServlet extends HttpServlet {
 		} catch (ImageGenerationBusyException e) {
 			if (!resp.isCommitted()) {
 				resp.setHeader(CACHE_CONTROL, "no-store");
-				resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+				// A custom 503 error page may redirect; keep this overload response as-is.
+				resp.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
 			}
 		} catch (BinaryContentExporterException e) {
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
