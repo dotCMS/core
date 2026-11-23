@@ -2478,7 +2478,17 @@ public class BrowserAjax {
 	}
 
 
-	public void refreshIndex(final Folder parent,
+	/**
+	 * Refreshes the index of the contents under a Folder that was copied or moved, and under its new parent Folder,
+	 * or under its new Site when it was placed at the Site root. Callers check the User's permissions first.
+	 *
+	 * @param parent The new parent Folder, or {@code null} when the Folder was placed at the Site root.
+	 * @param host   The new Site, used when {@code parent} is {@code null}.
+	 * @param folder The Folder that was copied or moved; may be {@code null}.
+	 *
+	 * @throws Exception An error occurred when refreshing the index.
+	 */
+	private void refreshIndex(final Folder parent,
 							 final Host host,
 							 final Folder folder ) throws Exception {
 

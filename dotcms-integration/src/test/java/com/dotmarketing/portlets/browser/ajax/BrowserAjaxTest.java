@@ -37,6 +37,7 @@ import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.lang.reflect.Modifier;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -735,6 +736,21 @@ public class BrowserAjaxTest {
                 names(children));
         assertEquals("min-info third level", List.of(restrictedGrandchild.getName()),
                 names((List<Map>) folderNamed(children, restrictedChild.getName()).get("children")));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> visibility of {@code BrowserAjax#refreshIndex(Folder, Host, Folder)}</li>
+     *     <li><b>Given Scenario:</b> The class is exposed through DWR, which publishes every public method.</li>
+     *     <li><b>Expected Result:</b> The index refresh helper is internal to the class.</li>
+     * </ul>
+     */
+    @Test
+    public void refreshIndex_isNotPublic() throws Exception {
+        final int modifiers = BrowserAjax.class
+                .getDeclaredMethod("refreshIndex", Folder.class, Host.class, Folder.class).getModifiers();
+
+        assertFalse("refreshIndex must not be public", Modifier.isPublic(modifiers));
     }
 
     /**
