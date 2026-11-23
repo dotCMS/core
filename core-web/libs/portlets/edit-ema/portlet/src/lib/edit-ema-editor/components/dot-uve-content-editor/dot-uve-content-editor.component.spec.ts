@@ -917,6 +917,17 @@ describe('DotUveContentEditorComponent', () => {
             });
         });
 
+        // An experiment's variant is the content's working copy on that variant (FR-022).
+        it('should name the variant on a create from a variant page', () => {
+            store.pageVariantId.set('variant-a');
+
+            createContent({ contentType: CONTENT_TYPE_TO_CREATE, into: INTO });
+
+            expect(requestOf(editPanel())).toEqual(
+                expect.objectContaining({ mode: 'new', variantName: 'variant-a' })
+            );
+        });
+
         describe('with a container position', () => {
             beforeEach(() => createContent({ contentType: CONTENT_TYPE_TO_CREATE, into: INTO }));
 
@@ -985,6 +996,20 @@ describe('DotUveContentEditorComponent', () => {
                 ),
                 title: 'Search Content'
             });
+        });
+
+        it('should accept every type in a container that names none', () => {
+            // The server can leave it out, whatever the type says.
+            const into: ActionPayload = {
+                ...INTO,
+                container: { ...INTO.container, acceptTypes: undefined as unknown as string }
+            };
+
+            addContent({ type: 'content', into });
+
+            expect(legacyScreen().request.url).toBe(
+                createAddContentletUrl(INTO.container.identifier, '*', INTO.language_id, 'DEFAULT')
+            );
         });
 
         it('should open the content selector filtered to widgets for a widget', () => {
@@ -1180,6 +1205,40 @@ describe('DotUveContentEditorComponent', () => {
             );
             expect(panel.options.createUrl).toBeUndefined();
             expect(panel.options.resolved).toEqual({ editor: 'new', contentType: null });
+        });
+
+        describe('a page type on the new editor', () => {
+            beforeEach(() => {
+                resolveEditor.mockReturnValue(of({ editor: 'new', contentType: null }));
+                translatePage(TRANSLATE_TO_SPANISH);
+            });
+
+            it('should load the saved translation at its URL and in its language', () => {
+                editPanel().options.saved?.(
+                    createFakeContentlet({ languageId: 2, url: '/translated-page' })
+                );
+
+                expect(store.pageLoad).toHaveBeenCalledWith({
+                    language_id: '2',
+                    url: '/translated-page'
+                });
+            });
+
+            it('should reload the page when the panel closes after a save', () => {
+                editPanel().options.saved?.(
+                    createFakeContentlet({ languageId: 2, url: '/translated-page' })
+                );
+
+                editPanel().ref.close();
+
+                expect(store.pageReload).toHaveBeenCalledTimes(1);
+            });
+
+            it('should leave the page alone when the panel closes without a save', () => {
+                editPanel().ref.close();
+
+                expect(store.pageReload).not.toHaveBeenCalled();
+            });
         });
     });
 
