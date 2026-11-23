@@ -2,7 +2,7 @@ package com.dotcms.storage;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
-import com.dotcms.enterprise.achecker.parsing.EmptyIterable;
+
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -434,10 +435,10 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         if (destBucketFile.exists() && destBucketFile.isDirectory()) {
 
             final Iterable<? extends ObjectPath> ite = Try.of(()->new FilesIterable(destBucketFile, group)).getOrNull();
-            return ite != null ? ite : new EmptyIterable<>();
+            return ite != null ? ite : Collections.emptyList();
         }
 
-        return new EmptyIterable<>();
+        return Collections.emptyList();
     }
 
     public class FilesIterable implements Iterable<ObjectPath> {

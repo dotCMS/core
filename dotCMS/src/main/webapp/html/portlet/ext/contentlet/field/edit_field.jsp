@@ -522,8 +522,6 @@
               </div>
           </div>
 
-            <!-- AChecker errors -->
-            <div id="acheck<%=field.getVelocityVarName()%>"></div>
 
         </div>
         <style>

@@ -186,8 +186,8 @@
 									"",
 									"var jsonData = pm.response.json().entity;",
 									"",
-									"pm.test(\"Check edit_event is present since contentType is event\", function () {",
-									"    pm.expect(jsonData).to.include(\"edit_event\")",
+									"pm.test(\"Check event content uses the content editor\", function () {",
+									"    pm.expect(jsonData).to.include(\"edit_contentlet\")",
 									"});"
 								],
 								"type": "text/javascript",

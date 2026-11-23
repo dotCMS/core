@@ -17,12 +17,10 @@ import com.dotcms.contenttype.business.RelationshipFactory;
 import com.dotcms.contenttype.business.RelationshipFactoryImpl;
 import com.dotcms.cube.CubeJSClientFactory;
 import com.dotcms.cube.CubeJSClientFactoryImpl;
-import com.dotcms.enterprise.DashboardProxy;
 import com.dotcms.enterprise.RulesFactoryProxy;
 import com.dotcms.enterprise.ServerActionFactoryImplProxy;
 import com.dotcms.enterprise.cluster.ServerFactoryImpl;
 import com.dotcms.enterprise.cluster.action.business.ServerActionFactory;
-import com.dotcms.enterprise.linkchecker.LinkCheckerFactoryImpl;
 import com.dotcms.enterprise.rules.RulesFactory;
 import com.dotcms.experiments.business.ExperimentsFactory;
 import com.dotcms.experiments.business.ExperimentsFactoryImpl;
@@ -46,8 +44,6 @@ import com.dotmarketing.common.reindex.ReindexQueueFactory;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.plugin.business.PluginFactory;
 import com.dotmarketing.plugin.business.PluginFactoryDBImpl;
-import com.dotmarketing.portlets.calendar.business.EventFactory;
-import com.dotmarketing.portlets.calendar.business.EventFactoryImpl;
 import com.dotmarketing.portlets.categories.business.CategoryFactory;
 import com.dotmarketing.portlets.categories.business.CategoryFactoryImpl;
 import com.dotmarketing.portlets.containers.business.ContainerFactory;
@@ -55,7 +51,6 @@ import com.dotmarketing.portlets.containers.business.ContainerFactoryImpl;
 import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
 import com.dotmarketing.portlets.contentlet.business.HostFactory;
 import com.dotmarketing.portlets.contentlet.business.HostFactoryImpl;
-import com.dotmarketing.portlets.dashboard.business.DashboardFactory;
 import com.dotmarketing.portlets.fileassets.business.FileAssetFactory;
 import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryImpl;
 import com.dotmarketing.portlets.folders.business.FolderFactory;
@@ -64,7 +59,6 @@ import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableFactory;
 import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableFactoryImpl;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageFactory;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageFactoryImpl;
-import com.dotmarketing.portlets.linkchecker.business.LinkCheckerFactory;
 import com.dotmarketing.portlets.links.business.MenuLinkFactory;
 import com.dotmarketing.portlets.links.business.MenuLinkFactoryImpl;
 import com.dotmarketing.portlets.personas.business.PersonaFactory;
@@ -104,9 +98,6 @@ public class FactoryLocator extends Locator<FactoryIndex>{
 		return (PermissionFactory)getInstance(FactoryIndex.PERMISSION_FACTORY);
 	}
 
-    public static EventFactory getEventFactory() {
-        return (EventFactory)getInstance(FactoryIndex.CALENDAR_EVENT_FACTORY);
-    }
 
     public static CategoryFactory getCategoryFactory() {
         return (CategoryFactory)getInstance(FactoryIndex.CATEGORY_FACTORY);
@@ -171,9 +162,6 @@ public class FactoryLocator extends Locator<FactoryIndex>{
     	return (ContainerFactory) getInstance(FactoryIndex.CONTAINER_FACTORY);
     }
 
-    public static DashboardFactory getDashboardFactory(){
-    	return (DashboardFactory) getInstance(FactoryIndex.DASHBOARD_FACTORY);
-    }
     public static IdentifierFactory getIdentifierFactory(){
     	return (IdentifierFactory) getInstance(FactoryIndex.IDENTIFIER_FACTORY);
     }
@@ -188,10 +176,6 @@ public class FactoryLocator extends Locator<FactoryIndex>{
     }
     public static IndiciesFactory getIndiciesFactory(){
         return (IndiciesFactory) getInstance(FactoryIndex.INDICIES_FACTORY);
-    }
-
-    public static LinkCheckerFactory getLinkCheckerFactory() {
-        return (LinkCheckerFactory) getInstance(FactoryIndex.LINKCHECKER_FACTORY);
     }
 
     public static PublishingEndPointFactory getPublisherEndPointFactory(){
@@ -340,7 +324,6 @@ public class FactoryLocator extends Locator<FactoryIndex>{
 enum FactoryIndex
 {
 	PERMISSION_FACTORY,
-	CALENDAR_EVENT_FACTORY,
 	CALENDAR_EVENT_RECURRENCE_FACTORY,
 	CATEGORY_FACTORY,
 	CONTENTLET_FACTORY,
@@ -363,10 +346,8 @@ enum FactoryIndex
 	IDENTIFIER_FACTORY,
 	VERSIONABLE_FACTORY,
 	FOLDER_FACTORY,
-	DASHBOARD_FACTORY,
 	WORKFLOWS_FACTORY,
 	INDICIES_FACTORY,
-	LINKCHECKER_FACTORY,
 	PUBLISHER_END_POINT_FACTORY,
 	ENVIRONMENT_FACTORY,
 	BUNDLE_FACTORY,
@@ -391,7 +372,6 @@ enum FactoryIndex
 	Object create() {
 		switch(this) {
 			case PERMISSION_FACTORY: return new PermissionBitFactoryImpl(CacheLocator.getPermissionCache());
-            case CALENDAR_EVENT_FACTORY: return new EventFactoryImpl();
             case CATEGORY_FACTORY: return new CategoryFactoryImpl();
             case CONTENTLET_FACTORY: return new ESContentFactoryImpl();
             case PLUGIN_FACTORY: return new PluginFactoryDBImpl();
@@ -405,13 +385,11 @@ enum FactoryIndex
             case ROLE_FACTORY : return new RoleFactoryImpl();
             case MENULINK_FACTORY : return new MenuLinkFactoryImpl();
             case CONTAINER_FACTORY : return new ContainerFactoryImpl();
-            case DASHBOARD_FACTORY : return DashboardProxy.getDashboardFactory();
             case IDENTIFIER_FACTORY : return new IdentifierFactoryImpl();
             case VERSIONABLE_FACTORY : return new VersionableFactoryImpl();
             case FOLDER_FACTORY : return new FolderFactoryImpl();
             case WORKFLOWS_FACTORY :return new WorkflowFactoryImpl();
             case INDICIES_FACTORY: return new IndiciesFactory();
-            case LINKCHECKER_FACTORY: return new LinkCheckerFactoryImpl();
             case PUBLISHER_END_POINT_FACTORY: return new PublishingEndPointFactoryImpl();
             case ENVIRONMENT_FACTORY: return new EnvironmentFactoryImpl();
             case BUNDLE_FACTORY: return new BundleFactoryImpl();

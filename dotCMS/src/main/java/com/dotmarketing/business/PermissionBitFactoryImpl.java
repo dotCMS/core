@@ -37,7 +37,6 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
-import com.dotmarketing.portlets.calendar.model.Event;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
@@ -1838,8 +1837,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
     } else if (permissionable instanceof IHTMLPage || (permissionable instanceof Contentlet
         && BaseContentType.HTMLPAGE.getType() == ((Contentlet) permissionable).getStructure().getStructureType())) {
       type = IHTMLPage.class.getCanonicalName();
-    } else if (permissionable instanceof Event) {
-      type = Contentlet.class.getCanonicalName();
     } else if (permissionable instanceof Identifier) {
       Permissionable perm = InodeFactory.getInode(permissionable.getPermissionId(), Inode.class);
       Logger.error(this,
@@ -1858,7 +1855,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
           type = Template.class.getCanonicalName();
         } else if (perm instanceof Structure || perm instanceof ContentType) {
           type = Structure.class.getCanonicalName();
-        } else if (perm instanceof Contentlet || perm instanceof Event) {
+        } else if (perm instanceof Contentlet) {
           type = Contentlet.class.getCanonicalName();
         }
       }

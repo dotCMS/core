@@ -32,7 +32,6 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotLanguageException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.calendar.model.Event;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -72,10 +71,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
-import java.text.DateFormat;
 import java.text.MessageFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -103,8 +99,6 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 	private FolderAPI folderAPI;
 	private IdentifierAPI identAPI;
 
-	private static DateFormat eventRecurrenceStartDateF = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-	private static DateFormat eventRecurrenceEndDateF = new SimpleDateFormat("yyyy-MM-dd");
 	private static final boolean RESPECT_FRONT_END_ROLES = Boolean.TRUE;
     private static final boolean DONT_RESPECT_FRONT_END_ROLES = Boolean.FALSE;
 
@@ -699,87 +693,9 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		return status;
 	}
 
-	private void handleEventRecurrence(final Map<String, Object> contentletFormData, final Contentlet contentlet) throws DotRuntimeException, ParseException, DotDataException, DotSecurityException{
-		if(!contentlet.isCalendarEvent()){
-			return;
-		}
-		if (contentletFormData.get("recurrenceChanged") != null && Boolean.parseBoolean(contentletFormData.get("recurrenceChanged").toString())) {
-			contentlet.setBoolProperty("recurs",true);
-			contentlet.setDateProperty("recurrenceStart",eventRecurrenceStartDateF.parse((String)contentletFormData.get("recurrenceStarts")));
-			if(contentletFormData.get("noEndDate")==null || (contentletFormData.get("noEndDate")!=null && !Boolean.parseBoolean(contentletFormData.get("noEndDate").toString()))){
-				contentlet.setDateProperty("recurrenceEnd",eventRecurrenceEndDateF.parse((String)contentletFormData.get("recurrenceEnds")));
-				contentlet.setBoolProperty("noRecurrenceEnd", false);
-			}else if(contentletFormData.get("noEndDate")!=null && Boolean.parseBoolean(contentletFormData.get("noEndDate").toString())){
-				contentlet.setDateProperty("recurrenceEnd",null);
-				contentlet.setBoolProperty("noRecurrenceEnd", true);
-			}
-
-			contentlet.setStringProperty("recurrenceDaysOfWeek",contentletFormData.get("recurrenceDaysOfWeek").toString());
-		}
-
-
-			try {
-				contentlet.setProperty("recurrenceWeekOfMonth",Long.valueOf(contentletFormData.get("recurrenceWeekOfMonth").toString()));
-			} catch (Exception e) {
-				contentlet.setProperty("recurrenceWeekOfMonth",1);
-			}
-
-			try {
-				contentlet.setProperty("recurrenceDayOfWeek",Long.valueOf(contentletFormData.get("recurrenceDayOfWeek").toString()));
-			} catch (Exception e) {
-				contentlet.setProperty("recurrenceDayOfWeek",1);
-			}
-
-
-			try {
-				contentlet.setProperty("recurrenceMonthOfYear",Long.valueOf(contentletFormData.get("recurrenceMonthOfYear").toString()));
-			} catch (Exception e) {
-				contentlet.setProperty("recurrenceMonthOfYear",1);
-			}
-
-			if(contentletFormData.get("recurrenceOccurs") == null){
-					contentlet.setBoolProperty("recurs",false);
-			}else if (contentletFormData.get("recurrenceOccurs").toString().equals("daily")) {
-				contentlet.setLongProperty("recurrenceInterval",Long.valueOf(contentletFormData.get("recurrenceIntervalDaily").toString()));
-				contentlet.setStringProperty("recurrenceOccurs",Event.Occurrency.DAILY.toString());
-			}else if (contentletFormData.get("recurrenceOccurs").toString().equals("weekly")) {
-				contentlet.setProperty("recurrenceInterval",Long.valueOf(contentletFormData.get("recurrenceIntervalWeekly").toString()));
-				contentlet.setStringProperty("recurrenceOccurs",Event.Occurrency.WEEKLY.toString());
-			}else if (contentletFormData.get("recurrenceOccurs").toString().equals("monthly")){
-
-				   if(Boolean.parseBoolean(contentletFormData.get("isSpecificDate").toString())
-						   && UtilMethods.isSet((String) contentletFormData.get("recurrenceDayOfMonth"))){
-					   try {
-							contentlet.setProperty("recurrenceDayOfMonth",Long.valueOf(contentletFormData.get("recurrenceDayOfMonth").toString()));
-						} catch (Exception e) {}
-
-				   } else {
-					   contentlet.setProperty("recurrenceDayOfMonth",0);
-				   }
-
-				contentlet.setProperty("recurrenceInterval",Long.valueOf(contentletFormData.get("recurrenceIntervalMonthly").toString()));
-				contentlet.setStringProperty("recurrenceOccurs",Event.Occurrency.MONTHLY.toString());
-			}else if(contentletFormData.get("recurrenceOccurs").toString().equals("annually")){
-
-				 if(UtilMethods.isSet((String) contentletFormData.get("recurrenceDayOfMonth"))){
-					   try {
-							contentlet.setProperty("recurrenceDayOfMonth",Long.valueOf(contentletFormData.get("recurrenceDayOfMonth").toString()));
-						} catch (Exception e) {}
-
-				   }
-
-				contentlet.setProperty("recurrenceInterval",Long.valueOf(contentletFormData.get("recurrenceIntervalYearly").toString()));
-				contentlet.setStringProperty("recurrenceOccurs",Event.Occurrency.ANNUALLY.toString());
-			}else{
-				contentlet.setBoolProperty("recurs",false);
-			}
-
-	}
-
 	private Contentlet populateContent(Map<String, Object> contentletFormData,
 			User user, Contentlet contentlet, boolean isAutoSave)  throws Exception {
 
-		handleEventRecurrence(contentletFormData, contentlet);
 
 		if(UtilMethods.isSet(contentletFormData.get("identifier")))
 			if(UtilMethods.isSet(contentletFormData.get("identifier").toString()) && (!contentletFormData.get("identifier").toString().equalsIgnoreCase(contentlet.getIdentifier()))){
@@ -788,7 +704,6 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			}
 
 		try {
-			//IF EVENT HANDLE RECURRENCE
 
 
 			String structureInode = contentlet.getStructureInode();

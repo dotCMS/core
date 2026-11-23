@@ -130,16 +130,6 @@
         <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
     </portlet>
 
-    <portlet>
-        <portlet-name>calendar</portlet-name>
-        <display-name>Calendar of Events</display-name>
-        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
-        <init-param>
-            <name>view-action</name>
-            <value>/ext/calendar/view_calendar</value>
-        </init-param>
-        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-    </portlet>
 
     <portlet>
         <portlet-name>sites</portlet-name>
@@ -152,16 +142,6 @@
         <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
     </portlet>
 
-    <portlet>
-        <portlet-name>dashboard</portlet-name>
-        <display-name>Dashboard</display-name>
-        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
-        <init-param>
-            <name>view-action</name>
-            <value>/ext/dashboard/view_dashboard</value>
-        </init-param>
-        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-    </portlet>
 
     <!-- JSP Portlets -->
 
@@ -265,16 +245,6 @@
         <security-role-ref>
             <role-name>CMS Administrator</role-name>
         </security-role-ref>
-    </portlet>
-
-    <portlet>
-        <portlet-name>link-checker</portlet-name>
-        <display-name>Broken Links</display-name>
-        <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
-        <init-param>
-            <name>view-jsp</name>
-            <value>/portlet/ext/linkchecker/view_broken_links.jsp</value>
-        </init-param>
     </portlet>
 
     <!-- ESContentResource Portlets -->

@@ -15,7 +15,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
@@ -89,7 +88,6 @@ public class MenuLinkFactoryImpl implements MenuLinkFactory {
 			APILocator.getVersionableAPI().setWorking(menuLink);
 		}
 		CacheLocator.getNavToolCache().removeNav(menuLink.getHostId(),destination.getInode());
-		RefreshMenus.deleteMenu(destination);
 	}
 
 	public List<Link> findLinks(User user, boolean includeArchived,

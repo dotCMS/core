@@ -26,7 +26,6 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.listeners.ClickstreamListener;
 import com.dotmarketing.loggers.DatabaseClickstreamLogger;
 import com.dotmarketing.util.BotChecker;
 import com.dotmarketing.util.Config;
@@ -210,7 +209,7 @@ public class ClickstreamFactory {
 					dblogger.log(stream);
 				}
 			} catch (Exception e) {
-				Logger.error(ClickstreamListener.class, e.getMessage(), e);
+				Logger.error(ClickstreamFactory.class, e.getMessage(), e);
 			}
 		}
 
