@@ -161,3 +161,4 @@ Release-25.07.10 LTS
 155. https://github.com/dotCMS/private-issues/issues/687 : check the password for logins with no matching account #38567 #687
 156. https://github.com/dotCMS/private-issues/issues/1079 : scope the legacy workflow task screen to the calling user #38555 #1079
 157. https://github.com/dotCMS/private-issues/issues/1103 : leave the company key out of JSON and of the workflow Velocity context #38571 #1103
+158. https://github.com/dotCMS/core/issues/38493 : upgrade guava from 32.0.1-jre to 33.7.2-jre (CVE-2026-102554) #38603 #38493
