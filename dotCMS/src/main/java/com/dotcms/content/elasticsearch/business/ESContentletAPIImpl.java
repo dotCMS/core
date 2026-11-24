@@ -536,6 +536,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final String folderPath = folderPathParam.endsWith(StringPool.SLASH) ? folderPathParam
                 : folderPathParam + StringPool.SLASH;
 
+        // reject before any folder is looked up or created, so a refused move leaves nothing behind
+        checkFavoritePageDestination(contentlet, host, StringPool.SLASH.equals(folderPath));
+
         //Check if the folder exists via Admin user, b/c user couldn't have VIEW Permissions over the folder
         Folder folder = Try.of(() -> APILocator.getFolderAPI()
                         .findFolderByPath(folderPath, host, APILocator.systemUser(), respectFrontendRoles))
@@ -622,11 +625,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     "CONTENT_APIS_ALLOW_ANONYMOUS setting does not allow anonymous content WRITEs");
         }
 
-        if (isFavoritePage(contentlet) && !Host.SYSTEM_HOST.equals(host.getIdentifier())) {
-
-            throw new IllegalArgumentException("Favorite pages can only be on the System Host: "
-                    + contentlet.getIdentifier());
-        }
+        checkFavoritePageDestination(contentlet, host,
+                FolderAPI.SYSTEM_FOLDER.equals(folder.getInode()));
 
         // if the user can write and add a children to the folder
         if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user,
@@ -7083,7 +7083,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             this.throwSecurityException(contentlet, user);
         }
 
-        if (isCheckinDestinationPermissionCheckEnabled()
+        // a favorite page is always saved to the System Host root by populateHost, whatever site
+        // or folder it was given, so the given one is not a destination to authorize
+        if (isCheckinDestinationPermissionCheckEnabled() && !isFavoritePage(contentlet)
                 && (isNew || isBeingRelocated(contentlet))) {
             checkDestinationPermission(contentlet, respectFrontendRoles, user);
         }
@@ -11420,6 +11422,29 @@ public class ESContentletAPIImpl implements ContentletAPI {
             contentlet.getMap().put(s, null);
         });
         return contentlet;
+    }
+
+    /**
+     * Refuses to move a favorite page anywhere but the root of the System Host. Only there does it
+     * inherit the owner-only permissions of its content type: in a folder, even one on the System
+     * Host, it would inherit the folder's permissions instead (see
+     * {@link Contentlet#getParentPermissionable()}). Other contentlets are not affected.
+     *
+     * @param contentlet the {@link Contentlet} being moved
+     * @param host       the destination site
+     * @param isRoot     whether the destination folder is the site root
+     * @throws IllegalArgumentException when a favorite page would leave the System Host root
+     */
+    private static void checkFavoritePageDestination(final Contentlet contentlet, final Host host,
+            final boolean isRoot) {
+
+        if (isFavoritePage(contentlet)
+                && (!isRoot || !Host.SYSTEM_HOST.equals(host.getIdentifier()))) {
+
+            throw new IllegalArgumentException(
+                    "Favorite pages can only be at the root of the System Host: "
+                            + contentlet.getIdentifier());
+        }
     }
 
     /**

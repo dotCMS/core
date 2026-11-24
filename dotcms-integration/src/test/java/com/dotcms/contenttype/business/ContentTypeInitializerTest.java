@@ -9,6 +9,7 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.UserDataGen;
@@ -39,9 +40,11 @@ import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import com.dotcms.test.util.ApiTokenTestUtils;
@@ -820,19 +823,34 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
                             APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
                             PermissionAPI.PERMISSION_READ, true)),
                     site, APILocator.systemUser(), false);
-            favorite = moveToSite(new ContentletDataGen(contentType).setPolicy(IndexPolicy.WAIT_FOR)
+            favorite = new ContentletDataGen(contentType).setPolicy(IndexPolicy.WAIT_FOR)
                     .setProperty("title", "favorite").setProperty("url", "/favorite-" + System.nanoTime())
-                    .nextPersisted(), site);
+                    .nextPersisted();
 
-            Config.setProperty("PERMISSION_REFERENCES_UPDATE_ASYNC", true);
-            referenceWriter.submit(() -> {
-                writerBusy.countDown();
-                Try.run(() -> releaseWriter.await(2, TimeUnit.MINUTES));
-            });
-            Assert.assertTrue("The permission reference writer did not start the blocking task",
-                    writerBusy.await(1, TimeUnit.MINUTES));
+            // moving the favorite queues it for reindex, and a reindex reads its permissions; a
+            // read while it inherits from the site queues a reference to the site behind the
+            // blocked writer, which is not something the repair does, so keep reindexing paused
+            // until the repair has committed
+            Config.setProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", true);
+            ReindexThread.pause();
+            try {
 
-            new ContentTypeInitializer().init();
+                favorite = moveToSite(favorite, site);
+
+                Config.setProperty("PERMISSION_REFERENCES_UPDATE_ASYNC", true);
+                referenceWriter.submit(() -> {
+                    writerBusy.countDown();
+                    Try.run(() -> releaseWriter.await(2, TimeUnit.MINUTES));
+                });
+                Assert.assertTrue("The permission reference writer did not start the blocking task",
+                        writerBusy.await(1, TimeUnit.MINUTES));
+
+                new ContentTypeInitializer().init();
+            } finally {
+
+                ReindexThread.unpause();
+                Config.setProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false);
+            }
 
             releaseWriter.countDown();
             referenceWriter.submit(() -> { }).get(1, TimeUnit.MINUTES);
@@ -962,6 +980,124 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
             ContentletDataGen.destroy(favorite);
             APILocator.getHostAPI().archive(site, APILocator.systemUser(), false);
             APILocator.getHostAPI().delete(site, APILocator.systemUser(), false);
+        }
+    }
+
+    /**
+     * Method to test: moving a favorite page by path through the contentlet API.
+     * Given Scenario: A favorite saved at the System Host root is moved to a folder path on the
+     * System Host that does not exist yet.
+     * ExpectedResult: The move is refused before the folder is created, so no folder is left
+     * behind and the favorite stays at the System Host root.
+     */
+    @Test
+    public void test_favorite_cannot_be_moved_to_a_new_folder_on_the_system_host() throws Exception {
+
+        final ContentType contentType = prepareFirstInit();
+        new ContentTypeInitializer().init();
+
+        final Host systemHost = APILocator.systemHost();
+        final String folderPath = "/favorite-folder-" + System.nanoTime() + "/";
+        final Contentlet favorite = new ContentletDataGen(contentType).setPolicy(IndexPolicy.WAIT_FOR)
+                .setProperty("title", "favorite").setProperty("url", "/favorite-" + System.nanoTime())
+                .nextPersisted();
+        try {
+
+            Assert.assertThrows(IllegalArgumentException.class, () -> APILocator.getContentletAPI()
+                    .move(favorite, APILocator.systemUser(), systemHost, folderPath, false));
+
+            final Folder folder = Try.of(() -> APILocator.getFolderAPI().findFolderByPath(
+                    folderPath, systemHost, APILocator.systemUser(), false)).getOrNull();
+            Assert.assertTrue("The refused move must not create the folder " + folderPath,
+                    null == folder || !UtilMethods.isSet(folder.getInode()));
+            Assert.assertEquals("The favorite must stay at the System Host root", "/",
+                    APILocator.getIdentifierAPI().loadFromDb(favorite.getIdentifier()).getParentPath());
+        } finally {
+
+            ContentletDataGen.destroy(favorite);
+        }
+    }
+
+    /**
+     * Method to test: moving a favorite page into a folder through the contentlet API.
+     * Given Scenario: A folder on the System Host gives CMS Anonymous READ on its content, and a
+     * favorite saved at the System Host root is moved into it.
+     * ExpectedResult: The move is refused, the favorite stays at the System Host root and it
+     * cannot be read anonymously.
+     */
+    @Test
+    public void test_favorite_cannot_be_moved_to_a_folder_on_the_system_host() throws Exception {
+
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final ContentType contentType = prepareFirstInit();
+        new ContentTypeInitializer().init();
+
+        final Host systemHost = APILocator.systemHost();
+        final Folder folder = new FolderDataGen().site(systemHost).nextPersisted();
+        final Contentlet favorite = new ContentletDataGen(contentType).setPolicy(IndexPolicy.WAIT_FOR)
+                .setProperty("title", "favorite").setProperty("url", "/favorite-" + System.nanoTime())
+                .nextPersisted();
+        try {
+
+            permissionAPI.assignPermissions(List.of(
+                    new Permission(Contentlet.class.getCanonicalName(), folder.getPermissionId(),
+                            APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
+                            PermissionAPI.PERMISSION_READ, true)),
+                    folder, APILocator.systemUser(), false);
+
+            Assert.assertThrows(IllegalArgumentException.class, () -> APILocator.getContentletAPI()
+                    .move(favorite, APILocator.systemUser(), systemHost, folder, false));
+
+            CacheLocator.getPermissionCache().clearCache();
+            Assert.assertEquals("The favorite must stay at the System Host root", "/",
+                    APILocator.getIdentifierAPI().loadFromDb(favorite.getIdentifier()).getParentPath());
+            Assert.assertFalse("A favorite must not be readable anonymously: "
+                            + describePermissions(favorite, "favorite"),
+                    permissionAPI.doesUserHavePermission(favorite, PermissionAPI.PERMISSION_READ,
+                            APILocator.getUserAPI().getAnonymousUser(), true));
+        } finally {
+
+            ContentletDataGen.destroy(favorite);
+            FolderDataGen.remove(folder);
+        }
+    }
+
+    /**
+     * Method to test: saving a favorite page through the contentlet API as a back-end user.
+     * Given Scenario: A back-end user with no permission on a site saves a new favorite that names
+     * that site.
+     * ExpectedResult: The save succeeds and the favorite lands at the System Host root, because
+     * the site it names is never where it is saved, so it is not checked as a destination.
+     */
+    @Test
+    public void test_back_end_user_saves_a_favorite_naming_a_site_they_cannot_add_to() throws Exception {
+
+        final ContentType contentType = prepareFirstInit();
+        new ContentTypeInitializer().init();
+
+        final Host site = new SiteDataGen().nextPersisted();
+        final User owner = new UserDataGen().active(true)
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        Contentlet favorite = null;
+        try {
+
+            final Contentlet unsaved = new ContentletDataGen(contentType).host(site)
+                    .setPolicy(IndexPolicy.WAIT_FOR).setProperty("title", "favorite")
+                    .setProperty("url", "/favorite-" + System.nanoTime()).next();
+            favorite = APILocator.getContentletAPI().checkin(unsaved, owner, false);
+
+            Assert.assertEquals("The favorite must be saved on the System Host", Host.SYSTEM_HOST,
+                    APILocator.getIdentifierAPI().loadFromDb(favorite.getIdentifier()).getHostId());
+            Assert.assertEquals("The favorite must be owned by the user who saved it",
+                    owner.getUserId(), favorite.getOwner());
+        } finally {
+
+            if (null != favorite) {
+                ContentletDataGen.destroy(favorite);
+            }
+            APILocator.getHostAPI().archive(site, APILocator.systemUser(), false);
+            APILocator.getHostAPI().delete(site, APILocator.systemUser(), false);
+            UserDataGen.remove(owner);
         }
     }
 
