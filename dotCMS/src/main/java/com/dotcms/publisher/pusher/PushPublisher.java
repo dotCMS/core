@@ -278,6 +278,22 @@ public class PushPublisher extends Publisher {
 								failureDetails.add(buildFailureDetail(environment, endpoint, detail,
 										response.getStatus(), null));
 							}
+						} else if (endpoint.hasAuthKey()) {
+							// A key is configured but none could be loaded: the key file is missing,
+							// unreadable or blank, or the key is only spaces. Fail this attempt without
+							// touching the stored key or the queue, so the bundle is retried once the
+							// key is fixed.
+							if (currentStatusHistory.getNumTries() >= PublisherQueueJob.MAX_NUM_TRIES) {
+								APILocator.getPushedAssetsAPI().deletePushedAssets(this.config.getId(), environment.getId());
+							}
+							detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
+							detail.setInfo("No usable push publishing key could be loaded for the endpoint "
+									+ endpoint.getServerName() + " with address " + endpoint.getAddress()
+									+ getFormattedPort(endpoint.getPort()));
+							PushPublishLogger.log(this.getClass(), "Status Update: Failed to send bundle. " + detail.getInfo());
+							failedEnvironment = true;
+							errorCounter++;
+							failureDetails.add(buildFailureDetail(environment, endpoint, detail, null, null));
 						} else {
 							markAsInValidToken(environment, endpoint, detail, AuthCredentialPushPublishUtil.INVALID_TOKEN_ERROR_KEY);
 							failedEnvironment = true;
@@ -486,8 +502,8 @@ public class PushPublisher extends Publisher {
 
 	/**
 	 * Returns the key configured for an endpoint: the stored value itself, or the content of the
-	 * file it names when it is a path. An endpoint whose key is empty or made only of spaces has no
-	 * key, so push publishing neither sends a token for it nor accepts one from it.
+	 * file it names when it is a path. An endpoint whose key (or key file) is empty or made only of
+	 * spaces has no key, so push publishing neither sends a token for it nor accepts one from it.
 	 *
 	 * @param endpoint the endpoint, may be {@code null}
 	 * @return the key, or empty when the endpoint has none
@@ -509,8 +525,8 @@ public class PushPublisher extends Publisher {
 		} else {
 			key = token;
 		}
-		if (key != null && !UtilMethods.isSet(key)) {
-			Logger.warn(PushPublisher.class, String.format(
+		if (key != null && key.isBlank()) {
+			Logger.debug(PushPublisher.class, String.format(
 					"Push publishing endpoint '%s' (id %s) has no key, so it is not used to send or receive bundles. Save a key for it to use it again.",
 					endpoint.getServerName(), endpoint.getId()));
 			return Optional.empty();

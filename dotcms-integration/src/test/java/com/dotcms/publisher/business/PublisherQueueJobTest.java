@@ -26,6 +26,7 @@ import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.UniqueLanguageDataGen;
@@ -658,6 +659,57 @@ public class PublisherQueueJobTest {
     }
 
     /**
+     * Method to test: {@link PublisherQueueJob} polling of the receivers of a bundle.
+     * <p>
+     * Given scenario: a bundle went to two {@code http} endpoints. One has a key and its receiver
+     * answers SUCCESS; the other's stored key is only spaces, so it has no usable key, and its
+     * receiver refuses every request with a plain-text 401.
+     * <p>
+     * Expected result: the endpoint with no usable key is not asked and keeps its local result,
+     * and the other endpoint's answer is merged. Before the fix the keyless endpoint was asked
+     * with an empty {@code Authorization} header, its 401 body could not be read as a list, and
+     * the exception stopped the whole pass, so the healthy endpoint's answer was lost too.
+     */
+    @Test
+    public void test_poll_endpointWithoutUsableKey_isSkippedAndPeersAreMerged() throws Exception {
+        final PublishAuditHistory remote = new PublishAuditHistory();
+        remote.addOrUpdateEndpoint("127.0.0.1", "127.0.0.1", endpointDetail(Status.SUCCESS, "installed"));
+
+        try (AuditStub healthyStub = new AuditStub(list(remote.getSerialized()));
+                AuditStub refusingStub = new AuditStub(401, "Unauthorized")) {
+            final User user = TestUserUtils.getAdminUser();
+            final Environment environment = PublisherTestUtil.createEnvironment(user, true);
+            final PublishingEndPoint healthy = PublisherTestUtil.createEndpoint(environment);
+            healthy.setPort(String.valueOf(healthyStub.port()));
+            APILocator.getPublisherEndPointAPI().updateEndPoint(healthy);
+            final PublishingEndPoint keyless = PublisherTestUtil.createEndpoint(environment);
+            keyless.setPort(String.valueOf(refusingStub.port()));
+            keyless.setAuthKey(new StringBuilder(PublicEncryptionFactory.encryptString("   ")));
+            APILocator.getPublisherEndPointAPI().updateEndPoint(keyless);
+            final Bundle bundle = PublisherTestUtil.createBundle("bundle-" + System.nanoTime(), user, environment);
+            try {
+                seedAudit(bundle, environment, Map.of(
+                        healthy.getId(), Status.BUNDLE_SENT_SUCCESSFULLY,
+                        keyless.getId(), Status.BUNDLE_SENT_SUCCESSFULLY));
+
+                invokeUpdateAuditStatus();
+
+                final Map<String, EndpointDetail> endpoints = endpointsOf(bundle, environment);
+                assertEquals("The healthy endpoint's answer must be merged",
+                        Status.SUCCESS.getCode(), endpoints.get(healthy.getId()).getStatus());
+                assertEquals("The endpoint with no usable key must keep its local result",
+                        Status.BUNDLE_SENT_SUCCESSFULLY.getCode(), endpoints.get(keyless.getId()).getStatus());
+                assertEquals("The endpoint with no usable key must not be asked",
+                        0, refusingStub.requests());
+            } finally {
+                cleanUpAudit(bundle);
+                APILocator.getPublisherEndPointAPI().deleteEndPointById(keyless.getId());
+                PublisherTestUtil.cleanBundleEndpointEnv(bundle, healthy, environment);
+            }
+        }
+    }
+
+    /**
      * Method to test: {@code PublisherQueueJob#getPublishersForBundle}
      * Given scenario: an environment with an {@code awss3}, a {@code static} and an {@code http}
      * endpoint, created in that order (#34434, US4).
@@ -775,20 +827,31 @@ public class PublisherQueueJobTest {
 
     /**
      * Local HTTP server that plays the receiver's {@code /api/auditPublishing/getAll}: it answers with
-     * the serialized histories it was given. Closing it stops the server.
+     * the serialized histories it was given, or with a fixed status and plain-text body. It counts
+     * the requests it gets. Closing it stops the server.
      */
     private static final class AuditStub implements AutoCloseable {
 
         private final com.sun.net.httpserver.HttpServer server;
+        private final java.util.concurrent.atomic.AtomicInteger requests =
+                new java.util.concurrent.atomic.AtomicInteger();
 
         AuditStub(final List<String> serializedHistories) throws Exception {
+            this(200, "application/json", new com.fasterxml.jackson.databind.ObjectMapper()
+                    .writeValueAsBytes(serializedHistories));
+        }
+
+        AuditStub(final int status, final String plainTextBody) throws Exception {
+            this(status, "text/plain", plainTextBody.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        }
+
+        private AuditStub(final int status, final String contentType, final byte[] body) throws Exception {
             server = com.sun.net.httpserver.HttpServer.create(
                     new java.net.InetSocketAddress("127.0.0.1", 0), 0);
-            final byte[] body = new com.fasterxml.jackson.databind.ObjectMapper()
-                    .writeValueAsBytes(serializedHistories);
             server.createContext("/api/auditPublishing/getAll", exchange -> {
-                exchange.getResponseHeaders().add("Content-Type", "application/json");
-                exchange.sendResponseHeaders(200, body.length);
+                requests.incrementAndGet();
+                exchange.getResponseHeaders().add("Content-Type", contentType);
+                exchange.sendResponseHeaders(status, body.length);
                 try (java.io.OutputStream out = exchange.getResponseBody()) {
                     out.write(body);
                 }
@@ -798,6 +861,10 @@ public class PublisherQueueJobTest {
 
         int port() {
             return server.getAddress().getPort();
+        }
+
+        int requests() {
+            return requests.get();
         }
 
         @Override

@@ -269,6 +269,45 @@ public class PublishingEndPointAPITest extends IntegrationTestBase{
 				PublicEncryptionFactory.encryptString("a-key"), true).validatePublishingEndPoint();
 	}
 
+	/**
+	 * Method to test: {@link PublishingEndPoint#validatePublishingEndPoint()} for a push publishing
+	 * endpoint whose key is the path of a key file.
+	 * Given scenario: the file does not exist, or holds only spaces.
+	 * Expected result: validation fails with the key-required message, since push publishing could
+	 * not load a key from that file at run time.
+	 */
+	@Test
+	public void validatePublishingEndPoint_pushEndpointWithUnusableKeyFile_isRejected() throws Exception {
+		final java.nio.file.Path dir = java.nio.file.Files.createTempDirectory("pp-key");
+		final java.nio.file.Path blankFile = java.nio.file.Files.writeString(dir.resolve("blank.key"), "   ");
+		for (final String path : new String[]{dir.resolve("missing.key").toString(), blankFile.toString()}) {
+			final PublishingEndPoint endPoint = createPublishingEndPoint(null, "G04", "Key file",
+					"192.0.2.112", "80", "http", true, PublicEncryptionFactory.encryptString(path), true);
+			try {
+				endPoint.validatePublishingEndPoint();
+				fail("A push publishing endpoint whose key file gives no key must not validate: " + path);
+			} catch (PublishingEndPointValidationException e) {
+				assertEquals(List.of("publisher_Endpoint_authKey_required"), e.getI18nmessages());
+			}
+		}
+	}
+
+	/**
+	 * Method to test: {@link PublishingEndPoint#validatePublishingEndPoint()} for a push publishing
+	 * endpoint.
+	 * Given scenario: the key is the path of a file holding a key, or the literal text "null".
+	 * Expected result: validation passes. Only an empty or blank key counts as none.
+	 */
+	@Test
+	public void validatePublishingEndPoint_pushEndpointWithKeyFileOrNullText_isAccepted() throws Exception {
+		final java.nio.file.Path keyFile = java.nio.file.Files.writeString(
+				java.nio.file.Files.createTempDirectory("pp-key").resolve("good.key"), "a-key");
+		for (final String key : new String[]{keyFile.toString(), "null"}) {
+			createPublishingEndPoint(null, "G04", "Key " + key, "192.0.2.113", "80", "http", true,
+					PublicEncryptionFactory.encryptString(key), true).validatePublishingEndPoint();
+		}
+	}
+
 	private void validateEndPoint(PublishingEndPoint endPoint, String address) throws DotDataException {
 		PublishingEndPoint endPointResult;
 		try{

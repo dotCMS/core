@@ -779,7 +779,9 @@ public class PublisherQueueJob implements StatefulJob {
 	}
 
 	/**
-	 * Obtains the bundle history that has been created in the specified end-point.
+	 * Obtains the bundle history that has been created in the specified end-point. An endpoint
+	 * with no usable key is not asked, since the receiver would refuse the request, and an empty
+	 * list is returned so its local result stays as it is.
 	 *
 	 * @param bundleAudit - The {@link PublishAuditStatus} object containing bundle data.
 	 * @param targetEndpoint - The {@link PublishingEndPoint} whose bundle history will be
@@ -789,11 +791,17 @@ public class PublisherQueueJob implements StatefulJob {
 	private List<PublishAuditHistory> getRemoteHistoryFromEndpoint(final  List<String> bundleIds,
 															 final PublishingEndPoint targetEndpoint,
 															 final Client client) throws DotDataException {
+		final Optional<String> requestToken = AuthCredentialPushPublishUtil.INSTANCE.getRequestToken(targetEndpoint);
+		if (requestToken.isEmpty()) {
+			// No usable key, so the receiver would refuse the request: keep the local result
+			Logger.debug(this, () -> "Not polling endpoint " + targetEndpoint.getId() + ": it has no usable key");
+			return List.of();
+		}
 		final WebTarget webTarget = client.target(targetEndpoint.toURL() + "/api/auditPublishing/getAll");
 
 		final String responseBody = webTarget
 				.request(MediaType.APPLICATION_JSON)
-				.header("Authorization", AuthCredentialPushPublishUtil.INSTANCE.getRequestToken(targetEndpoint).orElse(""))
+				.header("Authorization", requestToken.get())
 				.post(Entity.entity(bundleIds, MediaType.APPLICATION_JSON))
 				.readEntity(String.class);
 

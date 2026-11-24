@@ -221,6 +221,23 @@ public class AuthCredentialPushPublishUtilTest extends IntegrationTestBase {
     }
 
     /**
+     * Method to test: {@link AuthCredentialPushPublishUtil#getRequestToken(PublishingEndPoint)}
+     * Given Scenario: The sender's record of a receiver is stored with the literal key "null".
+     * ExpectedResult: A token is produced. Only an empty or blank key counts as none, so a key
+     *                 that happens to read "null" keeps working.
+     */
+    @Test
+    public void test_getRequestToken_endpointWithNullTextKey_isPresent() throws Exception {
+        final PublishingEndPoint endpoint = sendingEndpoint("192.0.2.105", "null");
+        try {
+            assertEquals(java.util.Optional.of("Bearer " + PublicEncryptionFactory.digestString("null")),
+                    AuthCredentialPushPublishUtil.INSTANCE.getRequestToken(endpoint));
+        } finally {
+            APILocator.getPublisherEndPointAPI().deleteEndPointById(endpoint.getId());
+        }
+    }
+
+    /**
      * Stores a sending endpoint for {@code address} with {@code key}, presents the digest of that
      * key from that address, and checks the request is refused.
      */

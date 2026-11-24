@@ -64,7 +64,7 @@
 		// Push publishing endpoints need a key; the static and AWS S3 types have their own checks.
 		var protocol = dijit.byId("protocol") ? dijit.byId("protocol").get("value") : currentProtocol;
 		if (protocol !== "awss3" && protocol !== "static"
-				&& dijit.byId("authKey").value.trim().length == 0) {
+				&& dijit.byId("authKey").get("value").trim().length == 0) {
 			alert("<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "publisher_Endpoint_authKey_required")) %>");
 			return;
 		}
