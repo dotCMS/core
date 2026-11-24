@@ -157,3 +157,4 @@ Release-25.07.10 LTS
 151. https://github.com/dotCMS/private-issues/issues/729 : CI: shell injection via unquoted inputs.pr_branch (PR head ref) in link-pr-to-issue workflow #38403 #729
 152. https://github.com/dotCMS/private-issues/issues/971 : Increase default password policy: min 15 chars with complexity requirements #34989 #38375 #971
 153. https://github.com/dotCMS/private-issues/issues/777 : Implement account lockout, login throttling and alerting on every authentication path (fix for #690, #685, #687; in FD-39801) #38061 #777
+154. https://github.com/dotCMS/private-issues/issues/963 : raise the default HSTS max-age to one year and make it configurable #38267 #963
