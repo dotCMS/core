@@ -21,7 +21,10 @@ import java.util.Locale;
 import javax.validation.Constraint;
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
+import javax.validation.MessageInterpolator;
 import javax.validation.Payload;
+import javax.validation.Validation;
+import javax.validation.Validator;
 import javax.validation.constraints.AssertTrue;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
@@ -34,6 +37,7 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.Response;
 import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.NotBlank;
+import org.hibernate.validator.messageinterpolation.ResourceBundleMessageInterpolator;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -74,6 +78,30 @@ public class ValidatedRestPayloadTest {
     @Test
     public void notNull_defaultMessage() throws Exception {
         assertBadRequest(NotNullForm.class, "{}", "may not be null", "value");
+    }
+
+    /**
+     * The "may not be null" wording is an English override, so a deployment running in another
+     * language keeps the library's translation of the {@code @NotNull} default.
+     */
+    @Test
+    public void notNull_defaultMessage_isTranslatedForOtherLocales() {
+        final Locale previous = Locale.getDefault();
+        Locale.setDefault(Locale.GERMAN);
+        try {
+            final MessageInterpolator german = new ResourceBundleMessageInterpolator() {
+                @Override
+                public String interpolate(final String template, final Context context) {
+                    return interpolate(template, context, Locale.GERMAN);
+                }
+            };
+            final Validator validator = Validation.byDefaultProvider().configure()
+                    .messageInterpolator(german).buildValidatorFactory().getValidator();
+            assertEquals("darf nicht null sein",
+                    validator.validate(new NotNullForm(null)).iterator().next().getMessage());
+        } finally {
+            Locale.setDefault(previous);
+        }
     }
 
     /** A real form whose {@code @NotNull} carries its own message keeps that message. */
