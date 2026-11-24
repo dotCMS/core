@@ -60,6 +60,48 @@ public class DotJobStore extends JobStoreCMT {
 		});
 	}
 
+	/**
+	 * Saves an existing job with new settings and replaces its trigger, or adds the trigger when the
+	 * job has none, in one transaction. A trigger that cannot be stored (for example one whose cron
+	 * expression is longer than its column) leaves the job as it was instead of keeping the new
+	 * settings with the old schedule. The scheduler is told about the new schedule once the
+	 * transaction commits.
+	 *
+	 * @param job     the job to save, replacing the stored one of the same name and group
+	 * @param trigger the trigger that fires the job; its first fire time must already be computed
+	 * @throws JobPersistenceException when either cannot be stored, or the trigger belongs to another
+	 *                                 job; nothing is kept
+	 */
+	public void replaceJobAndTrigger(final JobDetail job, final Trigger trigger) throws JobPersistenceException {
+		final SchedulingContext ctxt = new SchedulingContext();
+		ctxt.setInstanceId(getInstanceId());
+		executeInNonManagedTXLock(LOCK_TRIGGER_ACCESS, conn -> {
+			storeJob(conn, ctxt, job, true);
+			if (!replaceTrigger(conn, ctxt, trigger.getName(), trigger.getGroup(), trigger)) {
+				storeTrigger(conn, ctxt, trigger, job, false, STATE_WAITING, false, false);
+			}
+			signalSchedulingChangeOnTxCompletion(trigger.getNextFireTime() == null ? 0L : trigger.getNextFireTime().getTime());
+		});
+	}
+
+	/**
+	 * Returns the job store of the running scheduler. Quartz does not expose its job store through
+	 * the {@link org.quartz.Scheduler} interface, so the store records itself when it starts.
+	 *
+	 * @return the job store
+	 * @throws JobPersistenceException when the scheduler has not started its job store
+	 */
+	public static DotJobStore getInstance() throws JobPersistenceException {
+		final DotJobStore store = instance;
+		if (store == null) {
+			throw new JobPersistenceException("The Quartz job store has not been initialized");
+		}
+		return store;
+	}
+
+	// prune: one scheduler per JVM; holds the last initialized store
+	private static volatile DotJobStore instance;
+
 	public static final String TX_DATA_SOURCE_PREFIX = "TxDataSource.";
 
 	public static final String NON_TX_DATA_SOURCE_PREFIX = "NonTxDataSource.";
@@ -173,6 +215,7 @@ public class DotJobStore extends JobStoreCMT {
 		}
 
 		super.initialize(loadHelper, signaler);
+		instance = this;
 	}
 
 	protected void closeConnection(final Connection conn) {

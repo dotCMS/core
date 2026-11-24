@@ -471,7 +471,8 @@ public class QuartzUtils {
 	 * settings and schedule. The trigger is checked before anything is written, so a schedule that
 	 * never fires leaves an existing job as it was. A new job and its trigger are stored in one call,
 	 * which fails with {@link org.quartz.ObjectAlreadyExistsException} if another save created the
-	 * job first.
+	 * job first. An existing job and its trigger are replaced in one transaction, so a trigger that
+	 * cannot be stored leaves the job as it was.
 	 *
 	 * @param job the job to save
 	 * @throws SchedulerException when the schedule never fires, or Quartz cannot store the job
@@ -526,16 +527,9 @@ public class QuartzUtils {
 			// Stores the job and its trigger in one call, which fails if another save created the job first
 			scheduler.scheduleJob(jobDetail, trigger);
 		} else {
-			scheduler.addJob(jobDetail, true);
-			if (scheduler.getTrigger(triggerName, triggerGroup) != null) {
-				scheduler.rescheduleJob(triggerName, triggerGroup, trigger);
-			} else {
-				try {
-					scheduler.scheduleJob(trigger);
-				} catch (Exception e) {
-					scheduler.rescheduleJob(triggerName, triggerGroup, trigger);
-				}
-			}
+			// Saves the job and replaces or adds its trigger in one transaction
+			trigger.validate();
+			DotJobStore.getInstance().replaceJobAndTrigger(jobDetail, trigger);
 		}
 
 		QuartzUtils.initializeTaskRuntimeValues(jobName, jobGroup);
