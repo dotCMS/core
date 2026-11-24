@@ -171,3 +171,16 @@ Release-25.07.10 LTS
 165. https://github.com/dotCMS/private-issues/issues/1011 : require the bundle owner or an admin to change bundle contents #38480 #1011
 166. https://github.com/dotCMS/private-issues/issues/1108 : require a CMS Administrator for the RoleAjax role and layout writes #38521 #1108
 167. https://github.com/dotCMS/private-issues/issues/632 : keep only allowlisted query parameters in Content Analytics page URLs #38136 #632
+168. https://github.com/dotCMS/private-issues/issues/1051 : DWR cancelContentEdit and BinaryExporterServlet trust a never-written session attribute and act as the system user (delete/read any content) — High / P2 — Ubaid Raza, VR‑042 #38456 #1051
+169. https://github.com/dotCMS/private-issues/issues/792 : DWR CalendarAjax.saveEvent: path traversal via form field name → arbitrary file deletion (Ubaid Raza) #38535 #792
+170. https://github.com/dotCMS/private-issues/issues/686 : Unauthenticated log injection — forged audit records #38388 #38545 #686
+171. https://github.com/dotCMS/private-issues/issues/956 : 2026 Pentest (Federal Home Loan Bank of Dallas): M1 Content Security Policy not implemented #38524 #956
+172. https://github.com/dotCMS/private-issues/issues/852 : [GLM AI Scanner] Cross-site content write (new-content branch checks type only, never the host) + ungated Variant API create/promote (working-version poisoning by read-only users) #38170 #852
+173. https://github.com/dotCMS/private-issues/issues/755 : Anonymous users can enumerate content live in non-default variants (running experiments) via GraphQL, REST _search +variant:, and /dA — Medium / P3 — zeroninetoo #38408 #38462 #755
+174. https://github.com/dotCMS/private-issues/issues/1015 : Page content-tree REST endpoint lists tree rows for content the reader cannot READ #38453 #38596 #1015
+175. https://github.com/dotCMS/private-issues/issues/844 : Ubaid Raza F6: DWR TagAjax: any back-end user writes tags onto, and reads tags from, another user's profile (5.4 Medium) #38570 #844
+176. https://github.com/dotCMS/private-issues/issues/769 : API token reveal endpoint returns any user's working token without an ownership check (GET /api/v1/apitoken/{id}/jwt) #38059 #769
+177. https://github.com/dotCMS/private-issues/issues/751 : [GLM AI Scanner] SSRF via EMA proxyEditModeURL: any back-end user redirects full page-render POST to arbitrary URL — no validation, no allowlist, no subnet check #38423 #751
+178. https://github.com/dotCMS/private-issues/issues/1109 : Integrity Checker _fixconflictsfromremote second-order SQL injection (push-publish receiver) — High / P2 — Thiago Escobar, VR‑046 #38522 #1109
+179. https://github.com/dotCMS/private-issues/issues/1068 : LoginFactory.doLogin trusts the LDAP pre-authenticator's fallback SUCCESS and never checks the local password of a user the directory does not know #38504 #1068
+180. https://github.com/dotCMS/private-issues/issues/737 : System-user lookups in ContainerResource: default-host container fallback + form render creates live content #38395 #737
