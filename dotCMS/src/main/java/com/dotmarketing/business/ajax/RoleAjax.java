@@ -356,6 +356,8 @@ public class RoleAjax {
 
 	public Map<String, Object> addNewRole (String roleName, String roleKey, String parentRoleId, boolean canEditUsers, boolean canEditPermissions,
 			boolean canEditLayouts,	String description) throws DotDataException, DotRuntimeException, PortalException, SystemException, DotSecurityException  {
+		validateCMSAdmin("create roles");
+
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
@@ -405,6 +407,8 @@ public class RoleAjax {
 
 	public Map<String, Object> updateRole (String roleId, String roleName, String roleKey, String parentRoleId, boolean canEditUsers, boolean canEditPermissions,
 			boolean canEditLayouts,	String description) throws DotDataException, DotRuntimeException, PortalException, SystemException, DotSecurityException {
+		validateCMSAdmin("update roles");
+
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
@@ -455,6 +459,8 @@ public class RoleAjax {
 
 
 	public boolean deleteRole (String roleId) throws DotDataException, DotStateException, DotSecurityException, SystemException, PortalException {
+		validateCMSAdmin("delete roles");
+
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		Role role = roleAPI.loadRoleById(roleId);
 		User user = getAdminUser();
@@ -517,6 +523,8 @@ public class RoleAjax {
 	}
 
 	public void lockRole (String roleId) throws DotDataException, PortalException, SystemException, DotSecurityException {
+		validateCMSAdmin("lock roles");
+
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		Role role = roleAPI.loadRoleById(roleId);
 
@@ -540,6 +548,8 @@ public class RoleAjax {
 	}
 
 	public void unlockRole (String roleId) throws DotDataException, PortalException, SystemException, DotSecurityException {
+		validateCMSAdmin("unlock roles");
+
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 
 		Role role = roleAPI.loadRoleById(roleId);
@@ -692,6 +702,8 @@ public class RoleAjax {
 	}
 
 	public Map<String, Object> addNewLayout(String layoutName, String layoutDescription, int order, List<String> portletIds) throws DotDataException, LanguageException, DotRuntimeException, PortalException, SystemException, DotSecurityException {
+		validateCMSAdmin("create layouts");
+
 		User user = getAdminUser();
 		LayoutAPI layoutAPI = APILocator.getLayoutAPI();
 		Layout newLayout = new Layout();

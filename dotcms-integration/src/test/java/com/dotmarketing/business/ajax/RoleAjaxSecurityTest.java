@@ -36,7 +36,8 @@ import org.junit.Test;
 
 /**
  * Integration tests for the CMS Administrator check on the {@link RoleAjax} DWR methods that
- * change role membership, role layouts, layouts and role permissions.
+ * change role membership, role layouts, layouts and role permissions, and on the ones that create,
+ * update, delete, lock or unlock roles and create layouts.
  *
  * <p>The rejection tests run as a non-admin backend user who can open both the Roles and the Users
  * portlets. That user passes the Roles portlet check and the Users portlet check, so each call can
@@ -175,6 +176,70 @@ public class RoleAjaxSecurityTest extends IntegrationTestBase {
     @Test(expected = DotSecurityException.class)
     public void test_deleteLayout_nonAdmin_throwsDotSecurityException() throws Exception {
         new RoleAjax().deleteLayout(targetLayout.getId());
+    }
+
+    /**
+     * Method to test: {@link RoleAjax#addNewRole(String, String, String, boolean, boolean, boolean, String)}
+     * Given Scenario: A non-admin backend user with Roles and Users portlet access creates a role.
+     * Expected Result: {@link DotSecurityException} is thrown by the CMS Administrator check.
+     */
+    @Test(expected = DotSecurityException.class)
+    public void test_addNewRole_nonAdmin_throwsDotSecurityException() throws Exception {
+        new RoleAjax().addNewRole("RoleAjaxSecurityTest-new", "RoleAjaxSecurityTest-new-key",
+                targetRole.getId(), false, false, false, "");
+    }
+
+    /**
+     * Method to test: {@link RoleAjax#updateRole(String, String, String, String, boolean, boolean, boolean, String)}
+     * Given Scenario: A non-admin backend user with Roles and Users portlet access re-parents the
+     *                 CMS Administrator role under a role they hold.
+     * Expected Result: {@link DotSecurityException} is thrown by the CMS Administrator check,
+     *                  before the role is loaded or saved.
+     */
+    @Test(expected = DotSecurityException.class)
+    public void test_updateRole_nonAdmin_throwsDotSecurityException() throws Exception {
+        new RoleAjax().updateRole(cmsAdminRoleId, "CMS Administrator", "CMS Administrator",
+                backendUser.getUserRole().getId(), true, true, true, "");
+    }
+
+    /**
+     * Method to test: {@link RoleAjax#deleteRole(String)}
+     * Given Scenario: A non-admin backend user with Roles and Users portlet access deletes a role.
+     * Expected Result: {@link DotSecurityException} is thrown by the CMS Administrator check.
+     */
+    @Test(expected = DotSecurityException.class)
+    public void test_deleteRole_nonAdmin_throwsDotSecurityException() throws Exception {
+        new RoleAjax().deleteRole(targetRole.getId());
+    }
+
+    /**
+     * Method to test: {@link RoleAjax#lockRole(String)}
+     * Given Scenario: A non-admin backend user with Roles and Users portlet access locks a role.
+     * Expected Result: {@link DotSecurityException} is thrown by the CMS Administrator check.
+     */
+    @Test(expected = DotSecurityException.class)
+    public void test_lockRole_nonAdmin_throwsDotSecurityException() throws Exception {
+        new RoleAjax().lockRole(targetRole.getId());
+    }
+
+    /**
+     * Method to test: {@link RoleAjax#unlockRole(String)}
+     * Given Scenario: A non-admin backend user with Roles and Users portlet access unlocks a role.
+     * Expected Result: {@link DotSecurityException} is thrown by the CMS Administrator check.
+     */
+    @Test(expected = DotSecurityException.class)
+    public void test_unlockRole_nonAdmin_throwsDotSecurityException() throws Exception {
+        new RoleAjax().unlockRole(targetRole.getId());
+    }
+
+    /**
+     * Method to test: {@link RoleAjax#addNewLayout(String, String, int, List)}
+     * Given Scenario: A non-admin backend user with Roles and Users portlet access creates a layout.
+     * Expected Result: {@link DotSecurityException} is thrown by the CMS Administrator check.
+     */
+    @Test(expected = DotSecurityException.class)
+    public void test_addNewLayout_nonAdmin_throwsDotSecurityException() throws Exception {
+        new RoleAjax().addNewLayout("RoleAjaxSecurityTest-new-layout", "", 0, List.of("roles"));
     }
 
     /**
