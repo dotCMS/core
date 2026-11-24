@@ -401,13 +401,19 @@ public class ContentHandlerTest {
      */
     private static Contentlet persistedSource(final ContentType contentType, final String binaryText)
             throws Exception {
-        final File binary = new File(Files.createTempDirectory("ct-source").toFile(), "source.txt");
-        FileUtils.writeStringToFile(binary, binaryText, StandardCharsets.UTF_8);
-        final Contentlet saved = new ContentletDataGen(contentType)
-                .setProperty("title", "bundle item " + UUIDGenerator.shorty())
-                .setProperty(BINARY_VAR, binary)
-                .nextPersisted();
-        return APILocator.getContentletAPI().find(saved.getInode(), APILocator.systemUser(), false);
+        final File sourceFolder = Files.createTempDirectory("ct-source").toFile();
+        try {
+            final File binary = new File(sourceFolder, "source.txt");
+            FileUtils.writeStringToFile(binary, binaryText, StandardCharsets.UTF_8);
+            final Contentlet saved = new ContentletDataGen(contentType)
+                    .setProperty("title", "bundle item " + UUIDGenerator.shorty())
+                    .setProperty(BINARY_VAR, binary)
+                    .nextPersisted();
+            return APILocator.getContentletAPI().find(saved.getInode(), APILocator.systemUser(), false);
+        } finally {
+            // check-in copies the binary into the asset store, so the source file is no longer needed
+            FileUtils.deleteQuietly(sourceFolder);
+        }
     }
 
     /**
