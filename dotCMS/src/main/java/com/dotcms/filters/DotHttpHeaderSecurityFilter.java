@@ -1,9 +1,16 @@
 package com.dotcms.filters;
 
+import com.dotcms.security.ContentSecurityPolicyUtil;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import java.io.IOException;
+import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.apache.catalina.filters.HttpHeaderSecurityFilter;
 
 /**
@@ -23,6 +30,9 @@ import org.apache.catalina.filters.HttpHeaderSecurityFilter;
  *
  * <p>All other settings (such as {@code hstsIncludeSubDomains} and the X-Frame-Options value)
  * keep coming from the filter's {@code web.xml} init-params.
+ *
+ * <p>On back-end paths the filter also writes the {@code Content-Security-Policy} header described
+ * in {@link ContentSecurityPolicyUtil#addBackendHeader(HttpServletRequest, HttpServletResponse)}.
  */
 public class DotHttpHeaderSecurityFilter extends HttpHeaderSecurityFilter {
 
@@ -43,6 +53,26 @@ public class DotHttpHeaderSecurityFilter extends HttpHeaderSecurityFilter {
     public void init(final FilterConfig filterConfig) throws ServletException {
         setHstsMaxAgeSeconds(resolveMaxAgeSeconds());
         super.init(filterConfig);
+    }
+
+    /**
+     * Writes the back-end {@code Content-Security-Policy} header, then lets Tomcat add its own
+     * headers and continue the chain.
+     *
+     * @param request  the current request
+     * @param response the current response
+     * @param chain    the rest of the filter chain
+     * @throws IOException      if the rest of the chain fails with one
+     * @throws ServletException if the response is already committed or the chain fails with one
+     */
+    @Override
+    public void doFilter(final ServletRequest request, final ServletResponse response,
+            final FilterChain chain) throws IOException, ServletException {
+        if (request instanceof HttpServletRequest && response instanceof HttpServletResponse) {
+            ContentSecurityPolicyUtil.addBackendHeader((HttpServletRequest) request,
+                    (HttpServletResponse) response);
+        }
+        super.doFilter(request, response, chain);
     }
 
     /**
