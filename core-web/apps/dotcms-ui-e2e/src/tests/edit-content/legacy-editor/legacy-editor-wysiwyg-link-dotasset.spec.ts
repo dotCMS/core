@@ -1,5 +1,5 @@
 import { LegacyEditContentFormPage } from '@pages';
-import { expect, test } from '@playwright/test';
+import { expect, request as apiRequest, test } from '@playwright/test';
 import {
     Contentlet,
     createContentlet,
@@ -23,11 +23,6 @@ const WYSIWYG_VARIABLE = 'body';
 const LINK_TEXT = 'Download the brochure';
 const FIRST_VERSION_CONTENT = 'dotAsset version one';
 const SECOND_VERSION_CONTENT = 'dotAsset version two';
-
-/** The short id dotCMS derives from an identifier: dashes removed, then the first ten characters. */
-function shortyId(identifier: string): string {
-    return identifier.replace(/-/g, '').substring(0, 10);
-}
 
 test.describe('Legacy editor — WYSIWYG link to a dotAsset', () => {
     let site: Site;
@@ -103,7 +98,7 @@ test.describe('Legacy editor — WYSIWYG link to a dotAsset', () => {
         page
     }) => {
         const asset = dotAsset as Contentlet;
-        const expectedHref = `/dA/${shortyId(asset.identifier)}/${assetName}`;
+        const expectedHref = `/dA/${asset.identifier}/${assetName}?language_id=${asset.languageId}`;
 
         const formPage = new LegacyEditContentFormPage(page);
         await formPage.goToLegacyEdit(contentType?.variable as string);
@@ -126,9 +121,16 @@ test.describe('Legacy editor — WYSIWYG link to a dotAsset', () => {
         await expect(link).toHaveAttribute('href', expectedHref);
         await expect(link).toHaveText(LINK_TEXT);
 
-        // The same href resolves to the current version, not the one the asset was created with.
-        const served = await page.request.get(expectedHref);
-        expect(served.status()).toBe(200);
-        expect(await served.text()).toBe(SECOND_VERSION_CONTENT);
+        // The same href resolves to the current live version for a site visitor. A fresh, unauthenticated
+        // request context is used on purpose: a logged-in back-end user is served the working version,
+        // which would not prove that the published version is the one being linked.
+        const visitor = await apiRequest.newContext({ baseURL: new URL(page.url()).origin });
+        try {
+            const served = await visitor.get(expectedHref);
+            expect(served.status()).toBe(200);
+            expect(await served.text()).toBe(SECOND_VERSION_CONTENT);
+        } finally {
+            await visitor.dispose();
+        }
     });
 });

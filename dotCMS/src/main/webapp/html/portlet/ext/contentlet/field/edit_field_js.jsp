@@ -792,7 +792,10 @@ var cmsfile=null;
 			// Any content type of base type dotAsset (DotAsset, Image, ...): link by identifier so the
 			// link follows the asset's latest version, the same way the image button does. file.path is
 			// the identifier URI (/content.<inode of the first version>) and stays pinned to that version.
-			assetURI = `/dA/${ident.replace(/-/g, "").substring(0, 10)}/${file.name}`;
+			// The full identifier is used (not a shorty) so the link resolves under any
+			// MINIMUM_SHORTY_ID_LENGTH, and the row's language is kept so a translated asset keeps
+			// serving its own language instead of the visitor's.
+			assetURI = `/dA/${ident}/${file.name}?language_id=${file.languageId}`;
 		}
 
 		tinyMCEFilePickerCallback(assetURI, {});
