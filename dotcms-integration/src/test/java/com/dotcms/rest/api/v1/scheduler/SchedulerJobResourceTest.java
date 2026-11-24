@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.scheduler;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -18,6 +19,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.business.web.UpdatePageTemplatePathJob;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.ScheduledTask;
@@ -26,6 +28,7 @@ import com.dotmarketing.util.PortletID;
 import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.WebApplicationException;
@@ -380,6 +383,66 @@ public class SchedulerJobResourceTest {
             } finally {
                 remove(jobName);
             }
+        }
+    }
+
+    /**
+     * Method to test: {@link SchedulerJobResource#createJob}
+     * Given: a start time that does not exist in the server's time zone because the clocks move
+     * forward at that moment (02:30 on 8 March 2099 in New York)
+     * Expected: 400 instead of starting the job an hour later, and no job is created
+     */
+    @Test
+    public void test_createJob_dateInDaylightSavingGap_shouldBeRefused() {
+        final String jobName = "scheduler-job-" + UUID.randomUUID();
+        final TimeZone serverZone = TimeZone.getDefault();
+        try {
+            TimeZone.setDefault(TimeZone.getTimeZone("America/New_York"));
+            assertStatus(Response.Status.BAD_REQUEST, () -> resource.createJob(requestFor(admin),
+                    new MockHttpResponse().response(),
+                    SchedulerJobForm.copyOf(form(jobName, LISTED)).withStartDate("2099-03-08 02:30")));
+            assertFalse(exists(jobName));
+        } finally {
+            TimeZone.setDefault(serverZone);
+            remove(jobName);
+        }
+    }
+
+    /**
+     * Method to test: {@link SchedulerJobResource#createJob}
+     * Given: {@link com.dotmarketing.quartz.DotJob}, which is on the Scheduler form's list but is
+     * abstract, so Quartz cannot run it
+     * Expected: 400, and no job is created
+     */
+    @Test
+    public void test_createJob_abstractClass_shouldBeRefused() {
+        final String jobName = "scheduler-job-" + UUID.randomUUID();
+        try {
+            assertStatus(Response.Status.BAD_REQUEST, () -> resource.createJob(requestFor(jobsPortletUser),
+                    new MockHttpResponse().response(), form(jobName, "com.dotmarketing.quartz.DotJob")));
+            assertFalse(exists(jobName));
+        } finally {
+            remove(jobName);
+        }
+    }
+
+    /**
+     * Method to test: {@link SchedulerJobResource#createJob}
+     * Given: an 80-character job name, which fits the job table, while the trigger name made from it
+     * ({@code <name>_trigger}) does not fit the trigger table
+     * Expected: the save fails, and the job is not stored without its trigger, which would hide it
+     * from the Scheduler portlet and block the name
+     */
+    @Test
+    public void test_createJob_triggerNotStored_shouldLeaveNoJob() throws Exception {
+        final String jobName = ("scheduler-job-" + UUID.randomUUID() + "-".repeat(80)).substring(0, 80);
+        try {
+            resource.createJob(requestFor(admin), new MockHttpResponse().response(), form(jobName, LISTED));
+            fail("the trigger name is longer than the trigger table allows");
+        } catch (final DotRuntimeException expected) {
+            assertNull(QuartzUtils.getScheduler().getJobDetail(jobName, SchedulerJobResource.USER_JOB_GROUP));
+        } finally {
+            remove(jobName);
         }
     }
 
