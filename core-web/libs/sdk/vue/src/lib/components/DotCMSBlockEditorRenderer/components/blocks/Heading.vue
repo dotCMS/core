@@ -10,7 +10,7 @@ const tag = computed(() => `h${props.node?.attrs?.level || 1}`);
 </script>
 
 <template>
-  <component :is="tag">
-    <slot />
-  </component>
+    <component :is="tag">
+        <slot />
+    </component>
 </template>
