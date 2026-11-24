@@ -21,6 +21,8 @@ export type DotUveEditableContentlet = Pick<
 > & {
     /** How many pages the contentlet is on; a picked one carries it. */
     onNumberOfPages?: number;
+    /** The contentlet's language; the editor opens in the page's language when it is missing. */
+    languageId?: number;
 };
 
 /**
@@ -35,6 +37,11 @@ export interface DotUveEditContentRequest {
      * on this page only.
      */
     forkFrom?: ContainerPayload;
+    /**
+     * The request came from the SDK's `editContentlet()`: a save also asks the page in the iframe
+     * to reload itself, since a headless page renders its own content (#38303).
+     */
+    fromSdk?: boolean;
 }
 
 /**

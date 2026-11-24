@@ -305,11 +305,14 @@ public class SiteResource implements Serializable {
     } // sites.
 
     /**
-     * Switch to a site
-     * @param httpServletRequest
-     * @param httpServletResponse
-     * @param hostId
-     * @return
+     * Switches the user's current site in the session. The user needs READ on the site as a
+     * back-end user; front-end roles (such as anonymous access to a public site) do not count.
+     *
+     * @param httpServletRequest  The HTTP request
+     * @param httpServletResponse The HTTP response
+     * @param hostId              Identifier of the site to switch to
+     * @return 200 when the site was switched, 404 when it does not exist; 403 when the user cannot
+     *         read it
      */
     @PUT
     @Path ("/switch/{id}")
@@ -319,7 +322,8 @@ public class SiteResource implements Serializable {
     @Operation(operationId = "switchSiteById",
             summary = "Switch to a specific site",
             description = "Switches the current user's active site to the specified site. " +
-                    "The 'id' path parameter represents the site identifier (also referred to as 'siteId' or 'hostId' in the API).")
+                    "The 'id' path parameter represents the site identifier (also referred to as 'siteId' or 'hostId' in the API). " +
+                    "The user needs READ permission on the site as a back-end user.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Site switched successfully",
                     content = @Content(mediaType = "application/json",
@@ -348,8 +352,8 @@ public class SiteResource implements Serializable {
 
             if (UtilMethods.isSet(hostId)) {
 
-                // we verified if the host id pass by parameter is one of the user's hosts
-                hostFound = siteHelper.getSite( user, hostId);
+                // the user must be able to read the site as a back-end user
+                hostFound = siteHelper.getSiteNoFrontEndRoles(user, hostId);
 
                 if (hostFound != null) {
                     siteHelper.switchSite(httpServletRequest, hostId);

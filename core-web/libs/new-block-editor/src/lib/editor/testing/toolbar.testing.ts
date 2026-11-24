@@ -3,15 +3,12 @@ import { vi } from 'vitest';
 
 import { Injector } from '@angular/core';
 
-import { ConfirmationService } from 'primeng/api';
-
 import { DotMessageService } from '@dotcms/data-access';
 
 import { createTestEditor } from './editor.testing';
 
 import { EditorToolbarStore } from '../components/toolbar/editor-toolbar.store';
 import { ToolbarComponent } from '../components/toolbar/toolbar.component';
-import { ContentletEditUrlService } from '../services/contentlet-edit-url.service';
 import { EditorModalService } from '../services/editor-modal.service';
 import { EditorPopoverService } from '../services/editor-popover.service';
 import { EditorStore } from '../store/editor.store';
@@ -38,8 +35,6 @@ export function createToolbarHarness(): {
             { provide: DotMessageService, useValue: { get: (key: string) => key } },
             { provide: EditorPopoverService, useValue: { isOpen: () => false, toggle: vi.fn() } },
             { provide: EditorModalService, useValue: {} },
-            { provide: ContentletEditUrlService, useValue: {} },
-            { provide: ConfirmationService, useValue: {} },
             {
                 provide: EditorToolbarStore,
                 /**

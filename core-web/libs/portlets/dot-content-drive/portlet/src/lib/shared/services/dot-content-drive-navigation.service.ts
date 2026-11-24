@@ -1,40 +1,18 @@
-import { EMPTY, Observable, of } from 'rxjs';
+import { Injectable, Provider, inject, signal } from '@angular/core';
 
-import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable, Provider, computed, inject, signal } from '@angular/core';
-
-import { catchError, map, switchMap, take } from 'rxjs/operators';
-
+import { DotRouterService } from '@dotcms/data-access';
+import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
 import {
-    DotActionUrlService,
-    DotContentSearchService,
-    DotContentTypeService,
-    DotHttpErrorManagerService,
-    DotRouterService
-} from '@dotcms/data-access';
-import {
-    DotCMSBaseTypesContentTypes,
-    DotCMSContentlet,
-    DotCMSContentType,
-    FeaturedFlags
-} from '@dotcms/dotcms-models';
-import {
+    DotEditContentRequest,
     EDIT_CONTENT_NAVIGATION_OVERRIDE,
-    EditContentDialogData,
     EditContentIdentity,
-    EditContentNavigationOverride
+    EditContentNavigationOverride,
+    withoutUnset
 } from '@dotcms/edit-content';
 import { DotFolderTreeNodeContentData } from '@dotcms/portlets/content-drive/ui';
 
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import { SYSTEM_HOST } from '../constants';
-import { DotLegacyEditorRequest } from '../legacy-editor.models';
-import { DotContentDrivePanelLocation, DotContentDrivePanelRequest } from '../models';
-
-/** Shape of the `/api/content/_search` entity we read the resolved contentlet from. */
-interface ContentSearchEntity {
-    jsonObjectView: { contentlets: DotCMSContentlet[] };
-}
 
 /** Sent to the legacy editor as `angularCurrentPortlet`, so it knows which portlet hosts it. */
 const CONTENT_DRIVE_PORTLET_ID = 'content-drive';
@@ -44,50 +22,31 @@ const CONTENT_DRIVE_PORTLET_ID = 'content-drive';
 // `EditContentNavigationOverride` and its methods: Remove with the legacy editor.
 @Injectable()
 export class DotContentDriveNavigationService implements EditContentNavigationOverride {
-    readonly #dotContentTypeService = inject(DotContentTypeService);
     readonly #dotRouterService = inject(DotRouterService);
-    readonly #httpErrorManager = inject(DotHttpErrorManagerService);
-    readonly #contentSearch = inject(DotContentSearchService);
-    readonly #actionUrl = inject(DotActionUrlService);
     readonly #store = inject(DotContentDriveStore);
 
-    /**
-     * What a side panel was asked to open, and in which editor, or `null` when none is open. The
-     * single source both panel requests below are derived from, so only one panel is ever open.
-     */
-    readonly #panelRequest = signal<DotContentDrivePanelRequest | null>(null);
+    readonly #panelRequest = signal<DotEditContentRequest | null>(null);
 
     /**
-     * The content to show in the Edit Content (new editor) side panel, or `null` when it is
-     * closed. The shell renders that panel while this is set.
+     * What the side panel was asked to open, or `null` when it is closed. One request for either
+     * editor: it names the content, and the opener picks the editor from its content type
+     * (#38303). The shell keeps the panel open while this is set.
      */
-    readonly $editPanelRequest = computed<EditContentDialogData | null>(() => {
-        const request = this.#panelRequest();
+    readonly $editPanelRequest = this.#panelRequest.asReadonly();
 
-        return request?.editor === 'new' ? request.data : null;
-    });
+    readonly #forceLegacyEditor = signal(false);
 
     /**
-     * The content to show in the legacy-editor side panel, or `null` when it is closed. The shell
-     * renders that panel while this is set. Remove with the legacy editor.
+     * Whether the open request must show the legacy editor whatever its content type says. Set
+     * only by "switch to the old editor" ({@link switchToLegacyEditor}), whose type was just set
+     * back to the legacy editor while the opener still remembers its old choice; cleared by any
+     * other open and by a close. Remove with the legacy editor.
      */
-    readonly $legacyPanelRequest = computed<DotLegacyEditorRequest | null>(() => {
-        const request = this.#panelRequest();
+    readonly $forceLegacyEditor = this.#forceLegacyEditor.asReadonly();
 
-        return request?.editor === 'legacy' ? request.data : null;
-    });
-
-    readonly #panelLocation = signal<DotContentDrivePanelLocation | null>(null);
-
-    /**
-     * What the URL must say about the open panel (#37759, FR-020). Set from the request when a
-     * panel opens, then free to follow the panel without touching the request, which would
-     * remount it.
-     */
-    readonly $panelLocation = this.#panelLocation.asReadonly();
     /**
      * Navigates to the appropriate editor based on the content type.
-     * Routes to the page editor for HTML pages, or the contentlet editor for other types.
+     * Routes to the page editor for HTML pages, or opens the side panel for other content.
      *
      * @param contentlet - The content item to edit
      */
@@ -95,7 +54,7 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
         if (contentlet.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE) {
             this.editPage(contentlet);
         } else {
-            this.#editContentlet(contentlet);
+            this.#openEdit(contentlet, contentlet.identifier);
         }
     }
 
@@ -119,104 +78,73 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
      * @param contentlet - The page whose properties to open
      */
     editPageProperties(contentlet: DotCMSContentlet) {
-        this.#editContentlet(contentlet);
+        this.#openEdit(contentlet, contentlet.identifier);
     }
 
     /**
-     * Opens the create form for a content type in the side panel of the editor that type chose:
-     * the legacy panel for a type that has not opted into the new editor, the new-editor panel
-     * otherwise (#37759, FR-002). Either way the author stays in Content Drive.
+     * Opens the create form for a content type in the side panel. The opener picks the editor and,
+     * for a legacy type, resolves its create screen, so a type the server refuses shows the
+     * standard error and opens no editor (#38303). Either way the author stays in Content Drive.
      *
      * The form starts in the language the list is filtered by, or Content Drive's default language
      * when there is no language filter, so the new content shows in the list once saved (FR-003).
-     * It goes in the folder Content Drive is showing ({@link #currentFolder}).
+     * It goes in the folder Content Drive is showing ({@link #currentFolder}). The request carries
+     * no title: the opener heads a create with the type's name.
      *
      * @param contentTypeVariable - The variable name of the content type to create
      */
     createContent(contentTypeVariable: string): void {
-        // Read before the type lookup, so the content lands in the folder the author was looking at
-        // when they asked, even if they browse while the request is in flight.
-        const folder = this.#currentFolder();
-
-        this.#dotContentTypeService
-            .getContentType(contentTypeVariable)
-            .pipe(
-                take(1),
-                catchError((error: HttpErrorResponse) => {
-                    this.#httpErrorManager.handle(error);
-
-                    return EMPTY;
-                })
-            )
-            .subscribe((contentType) => {
-                const languageId = this.#createLanguageId();
-
-                // Remove with the legacy editor.
-                if (usesLegacyEditor(contentType)) {
-                    // The variable the server answered with, not the one the caller (or a link)
-                    // passed in. Unknown language only if the default failed to load: 1 is what
-                    // the legacy create screen itself assumes when given no language.
-                    this.#openLegacyCreate(contentType.variable, contentType.name, {
-                        folderInode: folder.folderInode,
-                        languageId: languageId ?? 1
-                    });
-
-                    return;
-                }
-
-                this.#openPanel({
-                    editor: 'new',
-                    data: {
-                        mode: 'new',
-                        contentTypeId: contentTypeVariable,
-                        folderPath: folder.folderPath,
-                        languageId,
-                        title: contentType.name
-                    }
-                });
-            });
+        this.#openPanel(this.#createRequest(contentTypeVariable, this.#createLanguageId()));
     }
 
     /**
-     * Opens the legacy create form, once the server has named its screen. Resolving it first means
-     * a type the server won't serve shows the standard error and opens nothing: no panel, no
-     * `createContent` in the URL, no history entry (#37759, edge case "Legacy create form cannot
-     * be resolved"). Remove with the legacy editor.
+     * A create request for a content type, in the folder Content Drive is showing.
      *
      * @param contentTypeVariable The type to create.
-     * @param title The type's name, for the panel header.
-     * @param options Where the content goes and the language it starts in.
+     * @param languageId The language the content starts in, when one is known.
+     * @returns The request.
      */
-    #openLegacyCreate(
-        contentTypeVariable: string,
-        title: string,
-        { folderInode, languageId }: { folderInode?: string; languageId: number }
-    ): void {
-        this.#actionUrl
-            .getCreateContentletUrl(contentTypeVariable, languageId)
-            .pipe(take(1))
-            .subscribe({
-                next: (createUrl) =>
-                    this.#openPanel({
-                        editor: 'legacy',
-                        data: {
-                            mode: 'new',
-                            contentTypeVariable,
-                            folderInode,
-                            languageId,
-                            title,
-                            portletId: CONTENT_DRIVE_PORTLET_ID,
-                            createUrl
-                        }
-                    }),
-                error: (error: HttpErrorResponse) => this.#httpErrorManager.handle(error)
-            });
+    #createRequest(contentTypeVariable: string, languageId: number | undefined) {
+        const { folderPath, folderInode } = this.#currentFolder();
+
+        return withoutUnset({
+            mode: 'new',
+            contentType: contentTypeVariable,
+            folderPath,
+            folderInode,
+            languageId,
+            portletId: CONTENT_DRIVE_PORTLET_ID
+        });
+    }
+
+    /**
+     * An edit request for a contentlet, named by the identifier the URL uses.
+     *
+     * @param contentlet The working version to edit.
+     * @param identifier The identifier the URL names it by.
+     * @param contentType The content type variable, when it is not the contentlet's own.
+     * @returns The request.
+     */
+    #editRequest(
+        contentlet: DotCMSContentlet,
+        identifier: string,
+        contentType = contentlet.contentType
+    ): DotEditContentRequest {
+        return withoutUnset({
+            mode: 'edit',
+            inode: contentlet.inode,
+            identifier,
+            contentType,
+            languageId: contentlet.languageId,
+            title: contentlet.title,
+            portletId: CONTENT_DRIVE_PORTLET_ID
+        });
     }
 
     /**
      * The folder Content Drive is showing, as a create needs it, so new content lands where the
-     * author is looking: a create from the create action or a `createContent` link, and the legacy
-     * create that "switch to the old editor" opens.
+     * author is looking: a create from the create action or a `createContent` link, and the create
+     * that "switch to the old editor" reopens.
      *
      * At the site root both fall back to the current site (empty path / no inode). System Host is a
      * destination in its own right, and the site in the switcher is only context while it is
@@ -246,11 +174,16 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
 
     /**
      * "Switch to the old editor" in Content Drive's new-editor panel: the type was just set back to
-     * the legacy editor, so the same content reopens, in the same language, in the legacy panel
-     * (#37759, FR-028). The type is not looked up again. The URL already names this content,
-     * unless the panel moved in place to related content, in which case it follows the switched
-     * content. From a create there is no content yet: a legacy create for the
-     * same type opens instead, in the folder being browsed and the language the create started in.
+     * the legacy editor, so the same content reopens, in the same language, in the legacy editor
+     * (#37759, FR-028). The panel may have moved in place to related content: what reopens is the
+     * content it shows, and the opener names that content and its language in the URL. From a
+     * create there is no content yet: a create for the same type opens instead, in the folder being
+     * browsed and the language the create started in.
+     *
+     * The request names no editor (#38303), and the opener remembers the type's old choice, so the
+     * reopen forces the legacy editor ({@link $forceLegacyEditor}). The panel helper reopens the
+     * panel when the forced editor changes, and the shell reopens it in place in the URL, so it
+     * takes the closed panel's history entry.
      *
      * Content Drive answers only for the panel it opened. Any other editor that inherits the
      * override (a related content opened from a relationship field) is declined, and navigates as
@@ -272,41 +205,12 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
             return false;
         }
 
-        if (!contentlet) {
-            this.#openLegacyCreate(contentTypeVariable, open.title ?? contentTypeVariable, {
-                folderInode: this.#currentFolder().folderInode,
-                languageId: open.languageId ?? this.#createLanguageId() ?? 1
-            });
+        const request = contentlet
+            ? this.#editRequest(contentlet, contentlet.identifier, contentTypeVariable)
+            : this.#createRequest(contentTypeVariable, open.languageId ?? this.#createLanguageId());
 
-            return true;
-        }
-
-        this.#panelRequest.set({
-            editor: 'legacy',
-            data: {
-                mode: 'edit',
-                inode: contentlet.inode,
-                identifier: contentlet.identifier,
-                languageId: contentlet.languageId,
-                title: contentlet.title,
-                portletId: CONTENT_DRIVE_PORTLET_ID
-            }
-        });
-
-        // Inside the panel, related content opens in place, so the content switched can differ
-        // from the one the URL names. The URL follows what the legacy panel reopens (FR-020).
-        const location = this.#panelLocation();
-        if (
-            location?.kind === 'edit' &&
-            (location.editContent !== contentlet.identifier ||
-                location.editContentLang !== contentlet.languageId)
-        ) {
-            this.#panelLocation.set({
-                kind: 'edit',
-                editContent: contentlet.identifier,
-                editContentLang: contentlet.languageId
-            });
-        }
+        this.#forceLegacyEditor.set(true);
+        this.#panelRequest.set(request);
 
         return true;
     }
@@ -330,239 +234,86 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
     }
 
     /**
-     * The new-editor panel Content Drive has open, when it is the editor that was opened with
-     * `opened`: the same content for an edit, the same type for a create. What the editor was
-     * opened with comes from the request Content Drive sent, and stays the same across the
-     * editor's in-place reloads (a language switch). Remove with the legacy editor.
+     * The panel Content Drive has open, when it is the editor that was opened with `opened`: the
+     * same content for an edit, the same type for a create. What the editor was opened with comes
+     * from the request Content Drive sent, and stays the same across the editor's in-place reloads
+     * (a language switch). Remove with the legacy editor.
+     *
+     * An edit Content Drive asked for by inode is known by its inode. One asked for by identifier
+     * alone (a link) is known by its identifier: the opener found the inode the editor opened
+     * with, and Content Drive never saw it.
      *
      * @param opened What the editor was opened with.
-     * @returns The open request's data, or `null` for any other editor.
+     * @returns The open request, or `null` for any other editor.
      */
-    #ownEditor(opened: EditContentIdentity): EditContentDialogData | null {
+    #ownEditor(opened: EditContentIdentity): DotEditContentRequest | null {
         const request = this.#panelRequest();
 
-        if (request?.editor !== 'new') {
+        if (!request) {
             return null;
         }
 
-        const { data } = request;
-        const isOwn =
-            data.mode === 'edit'
-                ? !!opened.inode && opened.inode === data.contentletInode
-                : !opened.inode && opened.contentTypeId === data.contentTypeId;
+        let isOwn: boolean;
 
-        return isOwn ? data : null;
-    }
-
-    /**
-     * A panel saved. The first save of a create switches the URL to the saved content, so a refresh
-     * reopens it instead of a second empty form (#37759, FR-025). A later save only follows a
-     * language the saved version names, such as a new translation (FR-020). The request is left
-     * alone, so the panel is not remounted.
-     *
-     * @param saved The saved content's identifier and language.
-     */
-    panelSaved({ identifier, languageId }: { identifier: string; languageId: number }): void {
-        const location = this.#panelLocation();
-
-        if (location?.kind === 'create') {
-            this.#panelLocation.set({
-                kind: 'edit',
-                editContent: identifier,
-                editContentLang: languageId
-            });
-
-            return;
+        if (request.mode !== 'edit') {
+            isOwn = !opened.inode && opened.contentTypeId === request.contentType;
+        } else if (request.inode) {
+            isOwn = opened.inode === request.inode;
+        } else {
+            isOwn = !!request.identifier && opened.identifier === request.identifier;
         }
 
-        // A new translation saved in the new editor: the saved version names the language. A save
-        // of related content reached in place names another content, so it is left alone.
-        if (
-            location?.kind === 'edit' &&
-            location.editContent === identifier &&
-            location.editContentLang !== languageId
-        ) {
-            this.#panelLocation.set({ ...location, editContentLang: languageId });
-        }
+        return isOwn ? request : null;
     }
 
-    /**
-     * The author switched language inside the legacy panel: the URL follows it, so a refresh
-     * reopens that language (#37759, FR-020). A create names no content yet, so it is left alone.
-     *
-     * @param languageId The language the editor now shows.
-     */
-    panelLanguageChanged(languageId: number): void {
-        const location = this.#panelLocation();
-
-        if (location?.kind === 'edit') {
-            this.#panelLocation.set({ ...location, editContentLang: languageId });
-        }
-    }
-
-    /** Closes whichever side panel is open and clears what the URL says about it. */
+    /** Closes the side panel and drops any forced editor. */
     closeEditPanel(): void {
+        this.#forceLegacyEditor.set(false);
         this.#panelRequest.set(null);
-        this.#panelLocation.set(null);
     }
 
     /**
-     * Opens a side panel and names it in the URL: the identifier and language for an edit, the
-     * content type variable for a create.
+     * Opens the side panel. The opener picks the editor from the content type, and names the panel
+     * in the URL: the identifier and language for an edit, the content type for a create (#38303).
      *
-     * @param request What to open, and in which editor.
+     * @param request What to open.
      */
-    #openPanel(request: DotContentDrivePanelRequest): void {
+    #openPanel(request: DotEditContentRequest): void {
+        this.#forceLegacyEditor.set(false);
         this.#panelRequest.set(request);
-        this.#panelLocation.set(this.#locationOf(request));
     }
 
     /**
-     * The URL location a freshly opened panel starts from.
-     *
-     * @param request The request the panel was opened with.
-     * @returns The location for that request.
-     */
-    #locationOf(request: DotContentDrivePanelRequest): DotContentDrivePanelLocation {
-        if (request.editor === 'new') {
-            const { data } = request;
-
-            return data.mode === 'edit'
-                ? {
-                      kind: 'edit',
-                      editContent: data.identifier ?? '',
-                      editContentLang: data.languageId
-                  }
-                : { kind: 'create', createContent: data.contentTypeId ?? '' };
-        }
-
-        const { data } = request;
-
-        return data.mode === 'edit'
-            ? { kind: 'edit', editContent: data.identifier ?? '', editContentLang: data.languageId }
-            : { kind: 'create', createContent: data.contentTypeVariable ?? '' };
-    }
-
-    /**
-     * Opens a contentlet in the side panel of the editor its content type chose: the legacy panel
-     * for a type that has not opted into the new editor, the new-editor panel otherwise. Either way
-     * the author stays in Content Drive (#37759, FR-001).
-     *
-     * @param contentlet - The contentlet to edit
-     */
-    #editContentlet(contentlet: DotCMSContentlet) {
-        this.#dotContentTypeService
-            .getContentType(contentlet.contentType)
-            .pipe(
-                take(1),
-                catchError((error: HttpErrorResponse) => {
-                    this.#httpErrorManager.handle(error);
-
-                    return EMPTY;
-                })
-            )
-            .subscribe((contentType) =>
-                this.#openEdit(contentlet, contentlet.identifier, contentType)
-            );
-    }
-
-    /**
-     * Opens a contentlet for edit in the panel of the editor its content type chose. The one rule
-     * every edit path shares, so a link and a double-click never disagree on the editor (#37759,
-     * FR-007, FR-021).
+     * Opens a contentlet for edit in the side panel. The one rule every edit path shares, so a link
+     * and a double-click never disagree (#37759, FR-007, FR-021).
      *
      * @param contentlet The working version to edit.
      * @param identifier The identifier the URL names it by.
-     * @param contentType The contentlet's content type.
      */
-    #openEdit(
-        contentlet: DotCMSContentlet,
-        identifier: string,
-        contentType: DotCMSContentType | undefined
-    ): void {
-        // Remove with the legacy editor.
-        if (usesLegacyEditor(contentType)) {
-            this.#openPanel({
-                editor: 'legacy',
-                data: {
-                    mode: 'edit',
-                    inode: contentlet.inode,
-                    identifier,
-                    languageId: contentlet.languageId,
-                    title: contentlet.title,
-                    portletId: CONTENT_DRIVE_PORTLET_ID
-                }
-            });
-
-            return;
-        }
-
-        this.#openPanel({
-            editor: 'new',
-            data: {
-                mode: 'edit',
-                contentletInode: contentlet.inode,
-                identifier,
-                languageId: contentlet.languageId,
-                title: contentlet.title
-            }
-        });
+    #openEdit(contentlet: DotCMSContentlet, identifier: string): void {
+        this.#openPanel(this.#editRequest(contentlet, identifier));
     }
 
     /**
      * Opens the editor for a content addressed by its stable `identifier` (e.g. from a shared
-     * `?editContent=<identifier>` URL, or Part 1's redirect from `c/content/<inode>`). Resolves the
-     * identifier to its current working inode (the editor loads by inode), looks up its content
-     * type, then opens it in the panel of the editor that type chose. No-op when the content can't
-     * be resolved (deleted, no permission, bad id).
+     * `?editContent=<identifier>` URL, or a `c/content/<inode>` link redirected here). The request
+     * names the identifier and the language Content Drive prefers; the opener finds the working
+     * version, falls back to any language when that one has none, picks the editor from its type,
+     * and shows the standard error for content that cannot be opened, whose close clears the
+     * request (#38303, FR-050).
+     *
+     * @param identifier The content's identifier.
+     * @param languageId The language the URL asked for, when it carried one.
      */
     openEditByIdentifier(identifier: string, languageId?: number): void {
-        const anyVersion = `+identifier:${identifier} +working:true`;
-        const preferred = this.#preferredLanguageId(languageId);
-
-        this.#resolveWorkingVersion(
-            preferred ? `${anyVersion} +languageId:${preferred}` : anyVersion
-        )
-            .pipe(
-                // A link to content with no version in the preferred language must still open, so
-                // "nothing" falls back to any version rather than being read as "do not open". Only
-                // reached when that language is genuinely missing: the link carries the language that
-                // was open, so the first lookup normally hits.
-                switchMap((version) =>
-                    version || !preferred ? of(version) : this.#resolveWorkingVersion(anyVersion)
-                ),
-                // The link names content, not an editor: its content type picks the editor, so a
-                // legacy-editor type never opens in the new editor it opted out of (FR-021).
-                switchMap((contentlet) =>
-                    contentlet?.inode
-                        ? this.#dotContentTypeService
-                              .getContentType(contentlet.contentType)
-                              .pipe(map((contentType) => ({ contentlet, contentType })))
-                        : EMPTY
-                ),
-                take(1),
-                catchError((error: HttpErrorResponse) => {
-                    this.#httpErrorManager.handle(error);
-
-                    return EMPTY;
-                })
-            )
-            .subscribe(({ contentlet, contentType }) =>
-                this.#openEdit(contentlet, identifier, contentType)
-            );
-    }
-
-    /**
-     * Resolves an identifier query to the single working contentlet it matches, or `undefined`.
-     *
-     * @param query The Lucene query to run.
-     *
-     * @return {*} {Observable<DotCMSContentlet | undefined>} The matched contentlet, if any.
-     */
-    #resolveWorkingVersion(query: string): Observable<DotCMSContentlet | undefined> {
-        return this.#contentSearch
-            .get<ContentSearchEntity>({ query, limit: 1 })
-            .pipe(map((entity) => entity?.jsonObjectView?.contentlets?.[0]));
+        this.#openPanel(
+            withoutUnset({
+                mode: 'edit',
+                identifier,
+                languageId: this.#preferredLanguageId(languageId),
+                portletId: CONTENT_DRIVE_PORTLET_ID
+            })
+        );
     }
 
     /**
@@ -599,17 +350,6 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
 }
 
 /**
- * Whether a content type edits in the legacy editor: it has not opted into the new editor
- * (`CONTENT_EDITOR2_ENABLED` in its metadata). The type's own setting is the only thing that decides
- * it (#37759, FR-007). Remove with the legacy editor.
- *
- * @param contentType The content type, or `undefined` when the lookup returned nothing.
- * @returns `true` for the legacy editor.
- */
-function usesLegacyEditor(contentType: DotCMSContentType | undefined): boolean {
-    return !contentType?.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED];
-}
-
 /**
  * Hands the new editor's "switch to the old editor" and load error to Content Drive's navigation
  * service, for the panel Content Drive opened (#37759, FR-028, FR-029). The shell provides it next
