@@ -170,3 +170,4 @@ Release-25.07.10 LTS
 164. https://github.com/dotCMS/private-issues/issues/846 : link checker reads content as the calling user and no longer returns the modifier's email #38531 #846
 165. https://github.com/dotCMS/private-issues/issues/1011 : require the bundle owner or an admin to change bundle contents #38480 #1011
 166. https://github.com/dotCMS/private-issues/issues/1108 : require a CMS Administrator for the RoleAjax role and layout writes #38521 #1108
+167. https://github.com/dotCMS/private-issues/issues/632 : keep only allowlisted query parameters in Content Analytics page URLs #38136 #632

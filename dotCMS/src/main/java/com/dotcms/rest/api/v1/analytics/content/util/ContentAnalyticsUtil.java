@@ -7,11 +7,16 @@ import com.dotcms.jitsu.EventLogSubmitter;
 import com.dotcms.jitsu.ValidAnalyticsEventPayload;
 import com.dotcms.jitsu.ValidAnalyticsEventPayloadAttributes;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtil;
+import com.dotcms.rest.api.v1.analytics.event.UrlParamFilter;
+import com.dotcms.security.apps.AppSecrets;
+import com.dotcms.security.apps.Secret;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
@@ -23,6 +28,7 @@ import io.vavr.Lazy;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +55,19 @@ public class ContentAnalyticsUtil {
     private static final EventLogSubmitter SUBMITTER  = new EventLogSubmitter();
 
     public static final String CONTENT_ANALYTICS_APP_KEY = "dotContentAnalytics-config";
+
+    /**
+     * App-secret key under which the comma-separated list of extra query parameter names to keep
+     * in page URLs is stored. See {@link com.dotcms.rest.api.v1.analytics.event.UrlParamFilter}.
+     */
+    public static final String ALLOWED_URL_PARAMS_KEY = "allowedUrlParams";
+
+    /**
+     * App-secret key under which the site's choice to filter query parameters out of page URLs is
+     * stored. Filtering applies unless this is explicitly {@code false}. See
+     * {@link com.dotcms.rest.api.v1.analytics.event.UrlParamFilter}.
+     */
+    public static final String FILTER_URL_PARAMS_KEY = "filterUrlParams";
 
     public static AnalyticsEventsResult registerContentAnalyticsRestEvent(
             final HttpServletRequest request,
@@ -86,6 +105,10 @@ public class ContentAnalyticsUtil {
         removeUnValidPayloads(payloadEvents, eventsErrors);
 
         if (!payloadEvents.isEmpty()) {
+            filterEventUrls(request, userEventPayload);
+        }
+
+        if (!payloadEvents.isEmpty()) {
             includeAutomaticallyFields(userEventPayload, request);
             sendEvents(request, userEventPayload, eventsErrors);
         }
@@ -94,6 +117,61 @@ public class ContentAnalyticsUtil {
                 .addEventsErrors(eventsErrors)
                 .addTotalEvents(totalEvents)
                 .build();
+    }
+
+    /**
+     * Cleans the page URL fields of the events before they are sent: {@code page.url},
+     * {@code page.doc_search}, {@code page.doc_hash} and a clicked link's {@code href} keep only the
+     * allowlisted query parameters, and user info and session ids are removed (see
+     * {@link UrlParamFilter}). The site can turn the parameter filter off with its
+     * {@code filterUrlParams} App field, in which case only user info and session ids are removed.
+     * Events whose {@code data} or {@code page} is not an object are removed from the payload.
+     *
+     * @param request          the current request, used to resolve the site
+     * @param userEventPayload the event payload; its events are cleaned in place
+     */
+    private static void filterEventUrls(final HttpServletRequest request,
+                                        final Map<String, Serializable> userEventPayload) {
+        try {
+            final Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
+            applyUrlParamFilter((Map<String, Object>) (Map<?, ?>) userEventPayload, getAppSecrets(host));
+        } catch (DotDataException | DotSecurityException | PortalException | SystemException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Applies the URL filter to an event payload, in place, according to the site's App secrets.
+     *
+     * @param payload    the event payload ({@code events[].data.page...})
+     * @param siteSecrets the site's Content Analytics App secrets; may be empty
+     */
+    static void applyUrlParamFilter(final Map<String, Object> payload,
+                                    final Map<String, Secret> siteSecrets) {
+        if (UrlParamFilter.isEnabled(siteSecrets)) {
+            UrlParamFilter.filterEventPages(payload, UrlParamFilter.resolveAllowedParams(siteSecrets));
+        } else {
+            UrlParamFilter.removeUserInfoAndSessionIds(payload);
+        }
+    }
+
+    /**
+     * Retrieves all app secrets for the Content Analytics app for the given site.
+     *
+     * @param currentSite The site to retrieve the secrets for
+     * @return Map of secret keys to Secret objects, or an empty map if not found or unreadable
+     */
+    public static Map<String, Secret> getAppSecrets(final Host currentSite) {
+        try {
+            return APILocator.getAppsAPI()
+                    .getSecrets(CONTENT_ANALYTICS_APP_KEY, true, currentSite, APILocator.systemUser())
+                    .map(AppSecrets::getSecrets)
+                    .orElse(Collections.emptyMap());
+        } catch (final DotDataException | DotSecurityException e) {
+            Logger.error(ContentAnalyticsUtil.class,
+                    "Error retrieving app secrets for site: " + currentSite.getIdentifier(), e);
+            return Collections.emptyMap();
+        }
     }
 
     private static void includeAutomaticallyFields(final Map<String, Serializable> userEventPayload,
