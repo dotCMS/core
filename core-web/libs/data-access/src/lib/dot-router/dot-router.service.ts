@@ -126,21 +126,6 @@ export class DotRouterService {
     }
 
     /**
-     * Go to edit contentlet
-     *
-     * @param string inode
-     * @returns Promise<boolean>
-     * @memberof DotRouterService
-     */
-    goToEditContentlet(inode: string): Promise<boolean> {
-        const url = this.currentPortlet.url.split('?')[0]; // remove query params from portlet url
-
-        return this.router.navigate([`${url}/${inode}`], {
-            queryParamsHandling: 'preserve'
-        }); // Preserve URL query params
-    }
-
-    /**
      * Go to edit workflow task
      *
      * @param string inode

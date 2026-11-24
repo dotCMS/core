@@ -288,6 +288,8 @@ public class UserResourceIntegrationTest {
         final String password = "loginAsPwd" + System.currentTimeMillis();
         final User nonAdmin = newLoginAsUser(password, false);
         final HttpServletRequest nonAdminRequest = mockRequestAs(nonAdmin.getEmailAddress(), password);
+        // the caller's back-end session, as the login in the browser leaves it
+        nonAdminRequest.getSession().setAttribute(WebKeys.USER_ID, nonAdmin.getUserId());
         final LoginAsForm form = new LoginAsForm.Builder().userId(adminUser.getUserId()).build();
 
         final Response result = resource.loginAs(nonAdminRequest, response, form);
@@ -295,7 +297,7 @@ public class UserResourceIntegrationTest {
         assertNotNull(result);
         assertEquals(Status.FORBIDDEN.getStatusCode(), result.getStatus());
         assertEquals("loginas.error.adminrequired", result.getHeaderString("error-key"));
-        // the request authentication stores the caller in the session; a denied Login As must leave it there
+        // a denied Login As leaves the caller's session as it was
         assertEquals(nonAdmin.getUserId(), nonAdminRequest.getSession().getAttribute(WebKeys.USER_ID));
         assertNull(nonAdminRequest.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID));
     }
@@ -351,6 +353,43 @@ public class UserResourceIntegrationTest {
         } catch (final DotDataException e) {
             assertEquals("loginas.error.invalidloginascredentials", e.getMessageKey());
         }
+    }
+
+    /**
+     * Method to test: {@link UserResource#loginAs} and {@link UserResource#logoutAs}
+     * Given Scenario: an administrator logs in as user B, who also holds the Login As role. B's session then asks
+     * to Login As B itself, which is refused.
+     * ExpectedResult: the refused request answers {@code loginAs:false} and the session still acts as B with the
+     * administrator as principal, so Logout As answers 200 and brings the administrator back.
+     */
+    @Test
+    public void test_loginAs_refusedDuringLoginAs_keepsLogoutAsWorking() throws Exception {
+        final String password = "loginAsPwd" + System.currentTimeMillis();
+        final User admin = newLoginAsUser(password, true);
+        final User loginAsHolder = newLoginAsUser("loginAsPwd" + System.nanoTime(), false);
+        final Role holderRole = APILocator.getRoleAPI().getUserRole(loginAsHolder);
+        APILocator.getRoleAPI().addLayoutToRole(APILocator.getLayoutAPI().findAllLayouts().get(0), holderRole);
+        APILocator.getPermissionAPI().save(new Permission(host.getPermissionId(), holderRole.getId(),
+                PermissionAPI.PERMISSION_READ, true), host, adminUser, false);
+        final HttpServletRequest sessionRequest = loginAs(admin, password, loginAsHolder);
+        // from here on the request is authenticated by its session, which now acts as the Login As user, as a new
+        // request from the browser would be: no token, and no user cached on the request by the previous call
+        ((MockHeaderRequest) sessionRequest).setHeader("Authorization", null);
+        sessionRequest.removeAttribute(WebKeys.USER);
+        sessionRequest.removeAttribute(WebKeys.USER_ID);
+
+        final Response refused = resource.loginAs(sessionRequest, new MockHttpResponse(),
+                new LoginAsForm.Builder().userId(loginAsHolder.getUserId()).build());
+
+        assertEquals(Status.OK.getStatusCode(), refused.getStatus());
+        assertEquals(Map.of("loginAs", false), ((ResponseEntityView<?>) refused.getEntity()).getEntity());
+        assertEquals(loginAsHolder.getUserId(), sessionRequest.getSession().getAttribute(WebKeys.USER_ID));
+        assertEquals(admin.getUserId(), sessionRequest.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID));
+
+        final Response loggedOut = resource.logoutAs(sessionRequest, new MockHttpResponse());
+
+        assertEquals(Status.OK.getStatusCode(), loggedOut.getStatus());
+        assertEquals(admin.getUserId(), sessionRequest.getSession().getAttribute(WebKeys.USER_ID));
     }
 
     @Test

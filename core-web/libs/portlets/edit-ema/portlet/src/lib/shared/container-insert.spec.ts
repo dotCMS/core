@@ -39,6 +39,20 @@ describe('notifyContainerInsertRefused', () => {
         });
     });
 
+    // Review of #38575: a drop with nothing to place it next to changes nothing, and is not a
+    // duplicate; the editor resets quietly.
+    it('should tell the user nothing when the contentlet it should go next to is gone', () => {
+        const messageService = createMessageService();
+
+        notifyContainerInsertRefused(
+            { didInsert: false, errorCode: CONTAINER_INSERT_ERROR.PIVOT_NOT_FOUND },
+            messageService,
+            dotMessageService
+        );
+
+        expect(messageService.add).not.toHaveBeenCalled();
+    });
+
     it('should tell the user the container already holds the contentlet', () => {
         const messageService = createMessageService();
 

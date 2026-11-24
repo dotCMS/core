@@ -17,6 +17,7 @@
                     [languageId]="contentlet.language"
                     [fillHeight]="true"
                     (valueChange)="value.set($event)"
+                    (contentletEdit)="contentletEdit.emit($event)"
                     data-testId="dot-block-editor" />
             } @else {
                 <!-- Default to the legacy editor whenever the flag is false OR still resolving — safer than rendering nothing. -->
@@ -25,6 +26,7 @@
                     [value]="contentlet.content"
                     [languageId]="contentlet.language"
                     (valueChange)="value.set($event)"
+                    (contentletEdit)="contentletEdit.emit($event)"
                     data-testId="dot-block-editor" />
             }
         }

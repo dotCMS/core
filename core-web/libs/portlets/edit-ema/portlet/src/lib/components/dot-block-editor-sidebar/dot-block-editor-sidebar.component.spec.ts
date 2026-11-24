@@ -8,7 +8,7 @@ import { MockComponent } from 'ng-mocks';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
-import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, input, output } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
 import { Drawer } from 'primeng/drawer';
@@ -95,6 +95,14 @@ const EVENT_DATA = {
 const contentTypeMock: DotCMSContentType = {
     ...dotcmsContentTypeBasicMock,
     fields: [BLOCK_EDITOR_FIELD]
+};
+
+/** The contentlet a block editor's "Edit" names. */
+const CONTENTLET_EDIT = {
+    identifier: 'embedded-identifier',
+    inode: 'embedded-inode',
+    contentType: 'Activity',
+    title: 'Embedded activity'
 };
 
 describe('DotBlockEditorSidebarComponent', () => {
@@ -254,5 +262,76 @@ describe('DotBlockEditorSidebarComponent', () => {
         expect(event.stopPropagation).toHaveBeenCalled();
     });
 
+    // A contentlet's "Edit" in the editor's toolbar asks the host to open it; the UVE opens it in
+    // the side panel (#38303, review R1).
+    it('should pass on the contentlet the new block editor asks to edit', () => {
+        const contentletEdit = vi.fn();
+        spectator.output('contentletEdit').subscribe(contentletEdit);
+
+        spectator.query(DotCMSEditorComponent)?.contentletEdit.emit(CONTENTLET_EDIT);
+
+        expect(contentletEdit).toHaveBeenCalledTimes(1);
+        expect(contentletEdit).toHaveBeenCalledWith(CONTENTLET_EDIT);
+    });
+
     afterEach(() => vi.clearAllMocks());
+});
+
+/** Stands in for the legacy block editor, which `BlockEditorModule` declares. */
+@Component({
+    selector: 'dot-old-block-editor',
+    template: ''
+})
+class MockOldBlockEditorComponent {
+    readonly field = input<DotCMSContentTypeField>();
+    readonly value = input<unknown>();
+    readonly languageId = input<number>();
+    readonly valueChange = output<unknown>();
+    readonly contentletEdit = output<{ inode: string; contentType: string }>();
+}
+
+describe('DotBlockEditorSidebarComponent with the legacy block editor', () => {
+    let spectator: Spectator<DotBlockEditorSidebarComponent>;
+
+    const createComponent = createComponentFactory({
+        component: DotBlockEditorSidebarComponent,
+        schemas: [CUSTOM_ELEMENTS_SCHEMA],
+        overrideComponents: [
+            [
+                DotBlockEditorSidebarComponent,
+                {
+                    remove: { imports: [DotCMSEditorComponent, BlockEditorModule] },
+                    add: { imports: [MockOldBlockEditorComponent] }
+                }
+            ]
+        ],
+        providers: [
+            DotAlertConfirmService,
+            ConfirmationService,
+            { provide: DotMessageService, useValue: messageServiceMock },
+            mockProvider(DotWorkflowActionsFireService),
+            mockProvider(DotContentTypeService, {
+                getContentType: vi.fn().mockReturnValue(of(contentTypeMock))
+            }),
+            mockProvider(DotPropertiesService, {
+                getFeatureFlag: vi.fn().mockReturnValue(of(false))
+            })
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createComponent();
+        spectator.component.open(EVENT_DATA);
+        spectator.detectChanges();
+    });
+
+    it('should pass on the contentlet the legacy block editor asks to edit', () => {
+        const contentletEdit = vi.fn();
+        spectator.output('contentletEdit').subscribe(contentletEdit);
+
+        spectator.query(MockOldBlockEditorComponent)?.contentletEdit.emit(CONTENTLET_EDIT);
+
+        expect(contentletEdit).toHaveBeenCalledTimes(1);
+        expect(contentletEdit).toHaveBeenCalledWith(CONTENTLET_EDIT);
+    });
 });

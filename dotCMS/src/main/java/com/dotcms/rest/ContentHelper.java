@@ -122,6 +122,22 @@ public class ContentHelper {
         return this.mapToContentletPopulator.populate(contentlet, stringObjectMap);
     }
 
+    /**
+     * Populate the contentlet from the map, resolving relationship targets on behalf of the given
+     * user rather than the request bound to the current thread. Use this from front-end view tools,
+     * where the request belongs to the site visitor and not the saving user (private-issues#930).
+     * @param contentlet      {@link Contentlet}
+     * @param stringObjectMap Map
+     * @param user            the user on whose behalf the save runs
+     * @return Contentlet
+     */
+    public Contentlet populateContentletFromMap(final Contentlet contentlet,
+                                                final Map<String, Object> stringObjectMap,
+                                                final User user) {
+
+        return this.mapToContentletPopulator.populate(contentlet, stringObjectMap, user);
+    }
+
 
     /**
      * If the contentletMap does not have any content type assigned and a base type is set, tries to figure out the content type using the base type

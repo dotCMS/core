@@ -7,6 +7,10 @@
 >**Rule of thumb:** a change is SDK-breaking if an SDK built against the server contract *before*
 >this change would misbehave (throw, silently drop data, or misinterpret a message) against the
 >server *after* this change — with no fallback path in the SDK for the old shape.
+>
+> Before applying `SDK Breaking Change`, name an existing SDK request or workflow and explain
+> what works before the change and what fails after it. Adding a field, optional parameter,
+> or opt-in flag is not breaking if old clients keep working without it.
 
 Unlike [`ROLLBACK_UNSAFE_CATEGORIES.md`](ROLLBACK_UNSAFE_CATEGORIES.md), this reference doesn't use a
 CRITICAL/HIGH/MEDIUM/LOW risk scale — this doc answers a single binary question for a single
@@ -276,8 +280,8 @@ version at once — not just for one release's floor value.
 
 ### Safer alternative
 
-- Treat this mechanism itself as doubly-reviewed: any change here should be treated as breaking by
-  default unless proven otherwise, since a bug here is invisible (fails open, no warning, no error)
+- Review changes here closely: the check fails silently. Apply the label only if you can show
+  how an existing SDK's compatibility check stops working or reports the wrong result.
 
 ---
 

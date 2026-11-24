@@ -5484,4 +5484,290 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         final String query = "{\"query\":{\"query_string\":{\"query\":\"+identifier:" + identifier + "\"}}}";
         return APILocator.getSearchAPI().search(query, true, caller, true).getContentlets().size();
     }
+
+    /**
+     * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)} resolving a
+     * relationship field whose value is a raw identifier String.
+     * <p>
+     * Given Scenario: A limited back-end user checks in a parent contentlet whose relationship
+     * field carries the identifier of a child it cannot READ (the child lives on a site the user
+     * has no permission on). This is the checkin leg that resolves the String field value in
+     * {@link ESContentletAPIImpl} getContentletRelationships, distinct from the REST populate leg.
+     * <p>
+     * ExpectedResult: The unreadable child is dropped, so no relationship row is persisted
+     * (private-issues#930). The system user still relates it, proving the fixture is valid.
+     */
+    @Test
+    public void checkinRelationshipFieldValueFiltersTargetsLimitedUserCannotRead()
+            throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final ContentType childType = new ContentTypeDataGen().host(host).nextPersisted();
+        final Field relationshipFieldDef = new FieldDataGen()
+                .type(RelationshipField.class)
+                .values(String.valueOf(
+                        WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
+                .relationType(childType.variable())
+                .next();
+        final ContentType parentType = new ContentTypeDataGen().host(host)
+                .field(relationshipFieldDef).nextPersisted();
+        final Field relationshipField = parentType.fields(RelationshipField.class).get(0);
+        final Relationship relationship = relationshipAPI.byTypeValue(
+                parentType.variable() + "." + relationshipField.variable());
+
+        final Contentlet unreadableChild = new ContentletDataGen(childType).host(host)
+                .nextPersisted();
+        final User limitedUser = new UserDataGen().roles(TestUserUtils.getBackendRole())
+                .nextPersisted();
+
+        // The limited user may create parent content on the host and type, but has NO permission on
+        // the child (it lives on the fresh site), so it cannot READ it.
+        PermissionUtilTest.addPermission(host, limitedUser,
+                PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN);
+        PermissionUtilTest.addPermission(parentType, limitedUser,
+                PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ, PermissionAPI.PERMISSION_EDIT,
+                PermissionAPI.PERMISSION_PUBLISH, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN);
+
+        try {
+            assertFalse("precondition: the limited user must not be able to READ the child",
+                    APILocator.getPermissionAPI().doesUserHavePermission(unreadableChild,
+                            PermissionAPI.PERMISSION_READ, limitedUser, false));
+
+            // Limited user: the relationship to the unreadable child must NOT be persisted
+            final Contentlet parent = new ContentletDataGen(parentType).host(host).next();
+            // Put the raw identifier String on the map (as the REST layer does); setProperty would
+            // pre-resolve it into a List and bypass the String-resolution branch under test.
+            parent.getMap().put(relationshipField.variable(), unreadableChild.getIdentifier());
+            parent.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+            final Contentlet saved = contentletAPI.checkin(parent, limitedUser, false);
+            final List<String> childrenAsLimited = TreeFactory.getRelatedIdsByParentAndRelationType(
+                    saved.getIdentifier(), relationship.getRelationTypeValue());
+            assertTrue("A relationship to content the saving user cannot read must not be persisted",
+                    childrenAsLimited.isEmpty());
+
+            // Control: the system user still relates the child, so the difference is the READ gate
+            final Contentlet parentAsSystem = new ContentletDataGen(parentType).host(host).next();
+            parentAsSystem.getMap().put(relationshipField.variable(), unreadableChild.getIdentifier());
+            parentAsSystem.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+            final Contentlet savedAsSystem = contentletAPI.checkin(parentAsSystem, user, false);
+            final List<String> childrenAsSystem = TreeFactory.getRelatedIdsByParentAndRelationType(
+                    savedAsSystem.getIdentifier(), relationship.getRelationTypeValue());
+            assertEquals("The system user must still relate the child", 1, childrenAsSystem.size());
+            assertEquals(unreadableChild.getIdentifier(), childrenAsSystem.get(0));
+        } finally {
+            ContentletDataGen.remove(unreadableChild);
+            UserDataGen.remove(limitedUser);
+            ContentTypeDataGen.remove(parentType);
+            ContentTypeDataGen.remove(childType);
+            removeSite(host);
+        }
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl} getContentletRelationships, the READ filter
+     * applied to a relationship field whose value is a raw identifier String.
+     * <p>
+     * Given Scenario: A user can READ the child only through a front-end role (the logged-in site
+     * role), the way a logged-in visitor reads content granted to "Registered Users". The user checks
+     * in a parent whose relationship field carries the child identifier, once with the checkin
+     * {@code respectFrontendRoles} argument {@code true} (a front-end submission) and once with
+     * {@code false} (a back-end save).
+     * <p>
+     * ExpectedResult: The child is dropped in BOTH cases. This relationship-resolution subsystem
+     * deliberately evaluates the READ gate against the user's back-end roles only
+     * ({@code respectFrontendRoles = false} hardcoded, matching the resolution search and the
+     * checkin preservation net), so the checkin {@code respectFrontendRoles} argument does not reach
+     * this gate. The system user still relates the child, proving the grant is otherwise valid. This
+     * pins the documented decision (private-issues#930) so it is not silently changed.
+     */
+    @Test
+    public void checkinRelationshipFieldValueIgnoresFrontendRoleReadableTarget()
+            throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final ContentType childType = new ContentTypeDataGen().host(host).nextPersisted();
+        final Field relationshipFieldDef = new FieldDataGen()
+                .type(RelationshipField.class)
+                .values(String.valueOf(
+                        WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
+                .relationType(childType.variable())
+                .next();
+        final ContentType parentType = new ContentTypeDataGen().host(host)
+                .field(relationshipFieldDef).nextPersisted();
+        final Field relationshipField = parentType.fields(RelationshipField.class).get(0);
+        final Relationship relationship = relationshipAPI.byTypeValue(
+                parentType.variable() + "." + relationshipField.variable());
+
+        final Contentlet frontEndReadableChild = new ContentletDataGen(childType).host(host)
+                .nextPersisted();
+        // The logged-in site role is a front-end role that PermissionAPI.filterCollection (the gate)
+        // auto-adds ONLY when respectFrontendRoles is true. The user is deliberately NOT granted this
+        // role, so the child is readable when respectFrontendRoles is true and not when it is false.
+        final Role frontEndRole = APILocator.getRoleAPI().loadLoggedinSiteRole();
+        final User frontEndUser = new UserDataGen()
+                .roles(TestUserUtils.getBackendRole()).nextPersisted();
+
+        // The user may create parent content on the host and type; READ on the child comes ONLY from
+        // the front-end role grant below, never from an individual permission.
+        PermissionUtilTest.addPermission(host, frontEndUser,
+                PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN);
+        PermissionUtilTest.addPermission(parentType, frontEndUser,
+                PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ, PermissionAPI.PERMISSION_EDIT,
+                PermissionAPI.PERMISSION_PUBLISH, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN);
+        APILocator.getPermissionAPI().save(
+                getPermission(frontEndRole, frontEndReadableChild, PermissionAPI.PERMISSION_READ),
+                frontEndReadableChild, APILocator.systemUser(), false);
+
+        try {
+            // Preconditions checked against the actual gate (filterCollection), whose front-end-role
+            // semantics differ from doesUserHavePermission: it auto-adds the logged-in site role only
+            // when respectFrontendRoles is true.
+            assertTrue("precondition: the child must be filtered out on the back end (false)",
+                    APILocator.getPermissionAPI().filterCollection(List.of(frontEndReadableChild),
+                            PermissionAPI.PERMISSION_READ, frontEndUser, false).isEmpty());
+            assertEquals("precondition: the child must be readable through the front-end role (true)",
+                    1, APILocator.getPermissionAPI().filterCollection(List.of(frontEndReadableChild),
+                            PermissionAPI.PERMISSION_READ, frontEndUser, true).size());
+
+            // Front-end submission (checkin respectFrontendRoles = true): the subsystem still ignores
+            // front-end roles, so the front-end-only-readable child is dropped.
+            final Contentlet parentFrontEnd = new ContentletDataGen(parentType).host(host).next();
+            parentFrontEnd.getMap().put(relationshipField.variable(),
+                    frontEndReadableChild.getIdentifier());
+            parentFrontEnd.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+            final Contentlet savedFrontEnd = contentletAPI.checkin(parentFrontEnd, frontEndUser, true);
+            final List<String> childrenFrontEnd = TreeFactory.getRelatedIdsByParentAndRelationType(
+                    savedFrontEnd.getIdentifier(), relationship.getRelationTypeValue());
+            assertTrue("A target readable only via a front-end role must be dropped even when the"
+                    + " checkin respectFrontendRoles argument is true", childrenFrontEnd.isEmpty());
+
+            // Back-end save (checkin respectFrontendRoles = false): the front-end-only grant is also
+            // ignored.
+            final Contentlet parentBackEnd = new ContentletDataGen(parentType).host(host).next();
+            parentBackEnd.getMap().put(relationshipField.variable(),
+                    frontEndReadableChild.getIdentifier());
+            parentBackEnd.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+            final Contentlet savedBackEnd = contentletAPI.checkin(parentBackEnd, frontEndUser, false);
+            final List<String> childrenBackEnd = TreeFactory.getRelatedIdsByParentAndRelationType(
+                    savedBackEnd.getIdentifier(), relationship.getRelationTypeValue());
+            assertTrue("A target readable only via a front-end role must be dropped when"
+                    + " respectFrontendRoles is false", childrenBackEnd.isEmpty());
+
+            // Control: the system user still relates the child, proving the grant is otherwise valid
+            final Contentlet parentAsSystem = new ContentletDataGen(parentType).host(host).next();
+            parentAsSystem.getMap().put(relationshipField.variable(),
+                    frontEndReadableChild.getIdentifier());
+            parentAsSystem.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+            final Contentlet savedAsSystem = contentletAPI.checkin(parentAsSystem, user, false);
+            final List<String> childrenAsSystem = TreeFactory.getRelatedIdsByParentAndRelationType(
+                    savedAsSystem.getIdentifier(), relationship.getRelationTypeValue());
+            assertEquals("The system user must still relate the child", 1, childrenAsSystem.size());
+        } finally {
+            ContentletDataGen.remove(frontEndReadableChild);
+            UserDataGen.remove(frontEndUser);
+            ContentTypeDataGen.remove(parentType);
+            ContentTypeDataGen.remove(childType);
+            removeSite(host);
+        }
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl} checkin, the interaction between the relationship
+     * READ gate (getContentletRelationships) and the preservation net (moveContentRelationships ->
+     * addRestrictedContentForLimitedUser).
+     * <p>
+     * Given Scenario: A parent is already related (as the system user) to a child the limited user
+     * cannot READ. The limited user, who can EDIT the parent but cannot READ either child, re-saves
+     * the parent submitting the identifier of a second child it also cannot READ.
+     * <p>
+     * ExpectedResult: The existing unreadable relationship is PRESERVED (no data loss) because the
+     * preservation net re-adds from the index, as the system user, the related content the saver
+     * cannot see; and the newly submitted unreadable target is NOT added because the READ gate drops
+     * it (private-issues#930). This is the security-relevant update case: the fix must not let a save
+     * destroy a relationship the saver cannot see, nor let it establish a new one it cannot read.
+     */
+    @Test
+    public void checkinPreservesExistingUnreadableRelationshipAndDropsNewUnreadableTarget()
+            throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final ContentType childType = new ContentTypeDataGen().host(host).nextPersisted();
+        final Field relationshipFieldDef = new FieldDataGen()
+                .type(RelationshipField.class)
+                .values(String.valueOf(
+                        WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
+                .relationType(childType.variable())
+                .next();
+        final ContentType parentType = new ContentTypeDataGen().host(host)
+                .field(relationshipFieldDef).nextPersisted();
+        final Field relationshipField = parentType.fields(RelationshipField.class).get(0);
+        final Relationship relationship = relationshipAPI.byTypeValue(
+                parentType.variable() + "." + relationshipField.variable());
+
+        final Contentlet existingUnreadableChild = new ContentletDataGen(childType).host(host)
+                .nextPersisted();
+        final Contentlet newUnreadableChild = new ContentletDataGen(childType).host(host)
+                .nextPersisted();
+        final User limitedUser = new UserDataGen().roles(TestUserUtils.getBackendRole())
+                .nextPersisted();
+
+        // Relate the existing child to the parent AS THE SYSTEM USER, and index it so the
+        // preservation net (which reads the current related content from the index) can see it.
+        final Contentlet parentAsSystem = new ContentletDataGen(parentType).host(host).next();
+        parentAsSystem.getMap().put(relationshipField.variable(),
+                existingUnreadableChild.getIdentifier());
+        parentAsSystem.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+        parentAsSystem.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        final Contentlet parent = contentletAPI.checkin(parentAsSystem, user, false);
+
+        // The limited user may READ/EDIT the parent itself (individual grant), but has NO permission
+        // on either child, so it cannot READ them.
+        PermissionUtilTest.addPermission(parent, limitedUser,
+                PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ, PermissionAPI.PERMISSION_EDIT,
+                PermissionAPI.PERMISSION_PUBLISH);
+
+        try {
+            assertTrue("precondition: the existing related child must not be readable by the saver",
+                    APILocator.getPermissionAPI().filterCollection(List.of(existingUnreadableChild),
+                            PermissionAPI.PERMISSION_READ, limitedUser, false).isEmpty());
+            assertTrue("precondition: the newly submitted child must not be readable by the saver",
+                    APILocator.getPermissionAPI().filterCollection(List.of(newUnreadableChild),
+                            PermissionAPI.PERMISSION_READ, limitedUser, false).isEmpty());
+
+            // The limited user re-saves the parent, submitting the second (unreadable) child.
+            // Check out as the limited user so it holds the lock it later releases on checkin.
+            final Contentlet toEdit = contentletAPI.checkout(parent.getInode(), limitedUser, false);
+            toEdit.getMap().put(relationshipField.variable(), newUnreadableChild.getIdentifier());
+            toEdit.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+            toEdit.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            final Contentlet reSaved = contentletAPI.checkin(toEdit, limitedUser, false);
+
+            final List<String> relatedIds = TreeFactory.getRelatedIdsByParentAndRelationType(
+                    reSaved.getIdentifier(), relationship.getRelationTypeValue());
+            assertTrue("The existing relationship to a child the saver cannot read must be preserved",
+                    relatedIds.contains(existingUnreadableChild.getIdentifier()));
+            assertFalse("A new relationship to a child the saver cannot read must not be established",
+                    relatedIds.contains(newUnreadableChild.getIdentifier()));
+        } finally {
+            ContentletDataGen.remove(existingUnreadableChild);
+            ContentletDataGen.remove(newUnreadableChild);
+            UserDataGen.remove(limitedUser);
+            ContentTypeDataGen.remove(parentType);
+            ContentTypeDataGen.remove(childType);
+            removeSite(host);
+        }
+    }
+
+    private void removeSite(final Host host) {
+        try {
+            APILocator.getHostAPI().archive(host, APILocator.systemUser(), false);
+            APILocator.getHostAPI().delete(host, APILocator.systemUser(), false);
+        } catch (final Exception e) {
+            Logger.warn(this, "Could not clean up test site '" + host.getHostname() + "': "
+                    + e.getMessage());
+        }
+    }
+
 }

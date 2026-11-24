@@ -7,6 +7,7 @@ export interface IframeMessage {
     payload?: unknown;
     direction?: 'up' | 'down';
     sectionIndex?: number;
+    velocity?: number;
 }
 
 /**
@@ -96,11 +97,26 @@ export class UveIframeMessengerService {
      * Convenience method to send scroll direction to the iframe.
      *
      * @param direction - The scroll direction ('up' or 'down')
+     * @deprecated Use {@link scrollAtVelocity}. Still sent, throttled, during a drag for pages on
+     * an older `@dotcms/uve`, which do not know the velocity message.
      */
     scrollInsideIframe(direction: 'up' | 'down'): void {
         this.sendPostMessage({
             name: __DOTCMS_UVE_EVENT__.UVE_SCROLL_INSIDE_IFRAME,
             direction
+        });
+    }
+
+    /**
+     * Ask the page to scroll continuously during a drag, every frame, until told otherwise.
+     * Pages on an older `@dotcms/uve` ignore it and answer {@link scrollInsideIframe} instead.
+     *
+     * @param velocity - Signed pixels per 60fps frame; negative scrolls up, `0` stops
+     */
+    scrollAtVelocity(velocity: number): void {
+        this.sendPostMessage({
+            name: __DOTCMS_UVE_EVENT__.UVE_SCROLL_VELOCITY,
+            velocity
         });
     }
 

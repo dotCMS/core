@@ -68,10 +68,11 @@ public abstract class CustomField extends Field {
 	}
 
 	/**
-	 * Enumerates the possible render modes for a Custom Field. The represent the way dotCMS can
-	 * render the code in it. For instance, {@link RenderMode#IFRAME} means the code will be parsed
-	 * via the Velocity Utility class we already use by default. And {@link RenderMode#COMPONENT}
-	 * means that we let the Angular code decide how to render it.
+	 * Enumerates the possible render modes for a Custom Field, set through the {@code newRenderMode}
+	 * field variable. {@link RenderMode#IFRAME} is the default: the Content Editor shows the field's
+	 * code in an iframe, and the Content Type endpoints return it as is. With
+	 * {@link RenderMode#COMPONENT}, the rendered Content Type endpoint parses the field's Velocity
+	 * code on the server and returns the result in the field's {@code rendered} attribute.
 	 */
 	public enum RenderMode {
 

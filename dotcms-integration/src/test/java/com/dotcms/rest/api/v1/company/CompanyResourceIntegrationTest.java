@@ -357,6 +357,75 @@ public class CompanyResourceIntegrationTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * A login screen logo or navigation bar logo that is not a dotAsset path is rejected with a
+     * message naming the field, and the stored logos are left as they were.
+     */
+    @Test
+    public void test_saveBasicInfo_logoNotADotAssetPath_isRejected() {
+        final CompanySnapshot snapshot = CompanySnapshot.take(companyAPI);
+        try {
+            final String storedLogo = companyAPI.getDefaultCompany().getCity();
+            final String storedNavLogo = companyAPI.getDefaultCompany().getState();
+            for (final String invalid : new String[]{
+                    "/dA/../html/logo.png",
+                    "/dA/%2e%2e/html/logo.png",
+                    "/dA/..;/html/logo.png",
+                    "/dAx/logo.png"}) {
+                for (final String field : new String[]{"loginScreenLogo", "navBarLogo"}) {
+                    final CompanyBasicInfoForm form = basicInfoForm("http://localhost:8080",
+                            "test@dotcms.com", null, "#FF0000", "#00FF00", null, null,
+                            "loginScreenLogo".equals(field) ? invalid : null,
+                            "navBarLogo".equals(field) ? invalid : null);
+                    try {
+                        resource.saveBasicInfo(createAdminRequest(), mockResponse, form);
+                        fail("Expected BadRequestException for " + field + "=" + invalid);
+                    } catch (final BadRequestException e) {
+                        final String body = String.valueOf(e.getResponse().getEntity());
+                        assertTrue(body, body.contains(field));
+                    }
+                    assertEquals(storedLogo, companyAPI.getDefaultCompany().getCity());
+                    assertEquals(storedNavLogo, companyAPI.getDefaultCompany().getState());
+                }
+            }
+        } finally {
+            snapshot.restore(companyAPI);
+        }
+    }
+
+    /**
+     * Stored logos that are not dotAsset paths, written before validation existed, are not
+     * returned; a stored dotAsset logo is returned with each path segment encoded.
+     */
+    @Test
+    public void test_getCompanyConfig_storedLogoNotADotAssetPath_isNotReturned() throws Exception {
+        final CompanySnapshot snapshot = CompanySnapshot.take(companyAPI);
+        try {
+            final Company company = companyAPI.getDefaultCompany();
+            company.setCity("/dA/../html/logo.png");
+            company.setState("/dA/%2e%2e/html/logo.png");
+            com.liferay.portal.ejb.CompanyManagerUtil.updateCompany(company);
+
+            final CompanyConfigView config =
+                    resource.getCompanyConfig(createAdminRequest(), mockResponse).getEntity();
+
+            assertNull(config.loginScreenLogo());
+            assertNull(config.navBarLogo());
+
+            company.setCity("/dA/e9f32fc04a4d7a0e7e6a025ee65fcf30/asset/O'Neil logo.png");
+            company.setState("/dA/e9f32fc04a4d7a0e7e6a025ee65fcf30/%2e%2e/%2e%2e/x.png#%zz");
+            com.liferay.portal.ejb.CompanyManagerUtil.updateCompany(company);
+
+            final CompanyConfigView stored =
+                    resource.getCompanyConfig(createAdminRequest(), mockResponse).getEntity();
+            assertEquals("/dA/e9f32fc04a4d7a0e7e6a025ee65fcf30/asset/O'Neil%20logo.png",
+                    stored.loginScreenLogo());
+            assertNull(stored.navBarLogo());
+        } finally {
+            snapshot.restore(companyAPI);
+        }
+    }
+
     // ==================== GET /v1/configuration/license (#37874) ====================
 
     /**

@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
@@ -44,6 +45,9 @@ import org.apache.commons.collections.map.CompositeMap;
 public abstract class Publisher implements IPublisher {
 
 	protected PublisherConfig config;
+
+	// The tar.gz archive this publisher wrote while processing the bundle, if any
+	private File compressedBundle;
 
     protected static final String BUNDLE_ID = "BundleId";
     protected static final String ENDPOINT_NAME = "EndpointName";
@@ -282,7 +286,10 @@ public abstract class Publisher implements IPublisher {
 
     /**
      * Compress the bundle root (set up in the config) into a tar.gz file. It will run only if
-     * STATIC_PUBLISHING_GENERATE_TAR_GZ property is True. False by default.
+     * STATIC_PUBLISHING_GENERATE_TAR_GZ property is True. False by default. The archive written is
+     * remembered, see {@link #getCompressedBundle()}.
+     *
+     * @throws IOException the bundle could not be compressed
      */
     protected void compressBundleIfNeeded() throws IOException {
         if (Config.getBooleanProperty("STATIC_PUBLISHING_GENERATE_TAR_GZ", false)) {
@@ -295,7 +302,29 @@ public abstract class Publisher implements IPublisher {
 
             // Compressing the bundle.
             PushUtils.compressFiles(list, bundle, bundleToCompress.getAbsolutePath());
+            recordCompressedBundle(bundle);
         }
+    }
+
+    /**
+     * Remembers the tar.gz archive this publisher wrote while processing the bundle.
+     *
+     * @param archive the archive that was written
+     */
+    protected void recordCompressedBundle(final File archive) {
+        this.compressedBundle = archive;
+    }
+
+    /**
+     * Returns the tar.gz archive this publisher wrote while processing the bundle, if any. The
+     * static and S3 publishers write {@code <bundleId>.tar.gz} when
+     * {@code STATIC_PUBLISHING_GENERATE_TAR_GZ} is on, the same file the push publisher sends to
+     * its receivers, so a later publisher of the same run must not take it for its own bundle.
+     *
+     * @return the archive written, or empty when this publisher wrote none
+     */
+    public Optional<File> getCompressedBundle() {
+        return Optional.ofNullable(compressedBundle);
     }
 
     /**
