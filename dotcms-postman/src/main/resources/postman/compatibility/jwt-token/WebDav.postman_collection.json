@@ -1275,6 +1275,578 @@
 				}
 			],
 			"description": "Copy and move a file in WebDAV temp storage with a real Destination header: a destination that is not a single plain name is rejected with 400 and leaves the source untouched, while plain names keep working."
+		},
+		{
+			"name": "Protocol methods",
+			"description": "OPTIONS, PROPFIND, PROPPATCH, LOCK, UNLOCK and REPORT with the bodies clients send. These fail if the WebDAV servlet does not start or its REPORT handling changes.",
+			"item": [
+				{
+					"name": "Create the folder",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "MKCOL",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/webdavprotocol",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"webdavprotocol"
+							]
+						},
+						"description": "Creates the folder the protocol checks below work in."
+					},
+					"response": []
+				},
+				{
+					"name": "Upload a file",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "text/plain",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "protocol checks\n",
+							"options": {
+								"raw": {
+									"language": "xml"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/webdavprotocol/file.txt",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"webdavprotocol",
+								"file.txt"
+							]
+						},
+						"description": "Uploads the file the protocol checks below work on."
+					},
+					"response": []
+				},
+				{
+					"name": "OPTIONS on the folder",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// The Allow list comes from a set, so its order and duplicates vary; compare the method names.",
+									"pm.test(\"Allow lists the same methods as before, and not REPORT\", function () {",
+									"    var allowed = pm.response.headers.get('Allow').split(',').map(function (m) { return m.trim(); });",
+									"    var unique = allowed.filter(function (m, i) { return allowed.indexOf(m) === i; }).sort();",
+									"    pm.expect(unique).to.eql([\"COPY\", \"DELETE\", \"GET\", \"HEAD\", \"LOCK\", \"MKCOL\", \"MOVE\", \"OPTIONS\", \"PROPFIND\", \"PROPPATCH\", \"PUT\", \"UNLOCK\"]);",
+									"});",
+									"",
+									"pm.test(\"DAV header advertises classes 1 and 2\", function () {",
+									"    pm.expect(pm.response.headers.get('DAV')).to.eql('1, 2');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "OPTIONS",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/webdavprotocol",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"webdavprotocol"
+							]
+						},
+						"description": "A client's first request. The WebDAV servlet only answers it once the library has started, and the Allow list is built from the handlers that accept the resource: REPORT must not appear."
+					},
+					"response": []
+				},
+				{
+					"name": "OPTIONS on the file",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// The Allow list comes from a set, so its order and duplicates vary; compare the method names.",
+									"pm.test(\"Allow lists the same methods as before, and not REPORT\", function () {",
+									"    var allowed = pm.response.headers.get('Allow').split(',').map(function (m) { return m.trim(); });",
+									"    var unique = allowed.filter(function (m, i) { return allowed.indexOf(m) === i; }).sort();",
+									"    pm.expect(unique).to.eql([\"COPY\", \"DELETE\", \"GET\", \"HEAD\", \"LOCK\", \"MOVE\", \"OPTIONS\", \"POST\", \"PROPFIND\", \"PROPPATCH\", \"UNLOCK\"]);",
+									"});",
+									"",
+									"pm.test(\"DAV header advertises classes 1 and 2\", function () {",
+									"    pm.expect(pm.response.headers.get('DAV')).to.eql('1, 2');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "OPTIONS",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/webdavprotocol/file.txt",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"webdavprotocol",
+								"file.txt"
+							]
+						},
+						"description": "Same as above for a file."
+					},
+					"response": []
+				},
+				{
+					"name": "PROPFIND named properties on the file",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 207\", function () {",
+									"    pm.response.to.have.status(207);",
+									"});",
+									"",
+									"pm.test(\"Known properties are found and the unknown one is not\", function () {",
+									"    var body = pm.response.text();",
+									"    pm.expect(body).to.include('<d:getcontentlength>16</d:getcontentlength>');",
+									"    pm.expect(body).to.include('<d:supported-report-set></d:supported-report-set>');",
+									"    pm.expect(body).to.include('<d:lockentry><d:lockscope><d:exclusive/></d:lockscope>');",
+									"    pm.expect(body).to.include('<d:status>HTTP/1.1 404 Not Found</d:status>');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PROPFIND",
+						"header": [
+							{
+								"key": "Depth",
+								"value": "0",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/xml",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<D:propfind xmlns:D=\"DAV:\" xmlns:X=\"urn:x\">\n  <D:prop>\n    <D:getcontentlength/>\n    <D:supportedlock/>\n    <D:supported-report-set/>\n    <D:lockdiscovery/>\n    <X:unknown/>\n  </D:prop>\n</D:propfind>",
+							"options": {
+								"raw": {
+									"language": "xml"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/webdavprotocol/file.txt",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"webdavprotocol",
+								"file.txt"
+							]
+						},
+						"description": "PROPFIND with an XML body naming DAV properties and one unknown property."
+					},
+					"response": []
+				},
+				{
+					"name": "PROPPATCH on the file",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 207\", function () {",
+									"    pm.response.to.have.status(207);",
+									"});",
+									"",
+									"pm.test(\"Answers a multistatus for the property\", function () {",
+									"    var body = pm.response.text();",
+									"    pm.expect(body).to.include('d:multistatus');",
+									"    pm.expect(body).to.include('Win32FileAttributes');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PROPPATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/xml",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<D:propertyupdate xmlns:D=\"DAV:\" xmlns:Z=\"urn:schemas-microsoft-com:\">\n  <D:set><D:prop><Z:Win32FileAttributes>00000020</Z:Win32FileAttributes></D:prop></D:set>\n</D:propertyupdate>",
+							"options": {
+								"raw": {
+									"language": "xml"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/webdavprotocol/file.txt",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"webdavprotocol",
+								"file.txt"
+							]
+						},
+						"description": "PROPPATCH with an XML body, as Windows clients send after an upload. dotCMS stores no dead properties, so the property is reported as not found inside a 207."
+					},
+					"response": []
+				},
+				{
+					"name": "Lock the file",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Returns a lock token\", function () {",
+									"    var token = pm.response.headers.get('Lock-Token');",
+									"    pm.expect(token).to.match(/^<opaquelocktoken:[0-9a-f-]+>$/);",
+									"    pm.collectionVariables.set('webdavLockToken', token);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "LOCK",
+						"header": [
+							{
+								"key": "Timeout",
+								"value": "Second-300",
+								"type": "text"
+							},
+							{
+								"key": "Depth",
+								"value": "0",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/xml",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<D:lockinfo xmlns:D=\"DAV:\">\n  <D:lockscope><D:exclusive/></D:lockscope>\n  <D:locktype><D:write/></D:locktype>\n  <D:owner><D:href>postman</D:href></D:owner>\n</D:lockinfo>",
+							"options": {
+								"raw": {
+									"language": "xml"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/webdavprotocol/file.txt",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"webdavprotocol",
+								"file.txt"
+							]
+						},
+						"description": "LOCK with a lockinfo XML body."
+					},
+					"response": []
+				},
+				{
+					"name": "Release the lock on the file",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 204\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "UNLOCK",
+						"header": [
+							{
+								"key": "Lock-Token",
+								"value": "{{webdavLockToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/webdavprotocol/file.txt",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"webdavprotocol",
+								"file.txt"
+							]
+						},
+						"description": "Releases the lock taken above."
+					},
+					"response": []
+				},
+				{
+					"name": "REPORT on the folder is not implemented",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 501\", function () {",
+									"    pm.response.to.have.status(501);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "REPORT",
+						"header": [
+							{
+								"key": "Depth",
+								"value": "0",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/xml",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<D:version-tree xmlns:D=\"DAV:\">\n  <D:prop><D:version-name/></D:prop>\n</D:version-tree>",
+							"options": {
+								"raw": {
+									"language": "xml"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/webdavprotocol",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"webdavprotocol"
+							]
+						},
+						"description": "No dotCMS resource implements REPORT; dotCMS replaces the library's REPORT handler so that WebDAV runs without jdom 1.x. This pins the answer clients have always had."
+					},
+					"response": []
+				},
+				{
+					"name": "REPORT on the file is not implemented",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 501\", function () {",
+									"    pm.response.to.have.status(501);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "REPORT",
+						"header": [
+							{
+								"key": "Depth",
+								"value": "0",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/xml",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<D:version-tree xmlns:D=\"DAV:\">\n  <D:prop><D:version-name/></D:prop>\n</D:version-tree>",
+							"options": {
+								"raw": {
+									"language": "xml"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/webdavprotocol/file.txt",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"webdavprotocol",
+								"file.txt"
+							]
+						},
+						"description": "Same as above for a file."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete the folder",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 204\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/webdavprotocol",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"webdavprotocol"
+							]
+						},
+						"description": "Removes everything the protocol checks created."
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"auth": {
