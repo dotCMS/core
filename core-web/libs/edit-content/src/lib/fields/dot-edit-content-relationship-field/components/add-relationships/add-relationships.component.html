@@ -103,6 +103,7 @@
                         [unselectable]="store.$constrainedList()"
                         [totalItems]="store.$totalItems()"
                         [offset]="store.$offset()"
+                        [rows]="store.page().limit"
                         (selectionChange)="onSelectionChange($event)"
                         (paginate)="onPaginate($event)"
                         (sort)="onSort($event)" />

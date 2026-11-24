@@ -62,6 +62,7 @@
                                 [loading]="$loading()"
                                 [totalItems]="store.$totalRecords()"
                                 [offset]="$offset()"
+                                [rows]="store.pagination().limit"
                                 (selectionChange)="onSelect($event)"
                                 (doubleClick)="onSelect([$event])"
                                 (paginate)="onPaginate($event)"

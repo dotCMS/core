@@ -162,7 +162,7 @@ Content Drive loses the place an editor was working in when they come back from 
 - **AC-012**: Row labels in the content type filter render in regular weight, and so do the labels of every other filter popover that uses the shared filter row, with no other layout change.
 - **AC-013**: When the listing has no results and nothing to page to, no table (header or columns) is rendered, only the empty-state message, centred, with no horizontal scroll. While the server still counts results, the table and its paginator stay.
 - **AC-014**: When results come back, the table returns with the same columns, sort and page size.
-- **AC-015**: Every consumer of the shared listing (Content Drive, Action Center preview, AssetPicker, Add Relationships dialog) shows the same empty state on an empty result, and its own search and filters stay usable.
+- **AC-015**: Every consumer of the shared listing (Content Drive, Action Center preview, AssetPicker, Add Relationships dialog) shows the same empty state on an empty result, and its own search and filters stay usable. When results come back, the listing keeps the page size the consumer was fetching.
 - **AC-016**: With more than one item selected, neither the toolbar nor the right-click menu offers an entry that opens one item in a side panel (Edit or View Content, Edit or View Page, Edit or View Properties, Edit Code). A row outside the selection keeps those entries, since its menu acts on it alone.
 - **AC-017**: With exactly one item selected, or a right-click on a row when nothing else is selected, Edit Content and Edit Page work as before.
 - **AC-018**: The content type picker's empty state is centred in the dialog body, with the same inset on both sides.

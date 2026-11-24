@@ -1162,37 +1162,23 @@ describe('withBreadcrumbs Feature', () => {
                 );
             });
 
-            // The page editor writes its own URL the same way (language, mode, variant), so its
-            // crumb follows too; any route does, while it is the last crumb.
-            it('follows a URL written outside the router on the route of the last crumb', () => {
-                routerMock.triggerNavigationEnd('/c/query-tool?mId=devtools');
-                TestBed.flushEffects();
-                storeWithRouter.addNewBreadcrumb({
-                    label: 'Blog Page',
-                    url: '/dotAdmin/#/edit-page/content?url=/blog/page&language_id=1'
-                });
-
-                locationMock.changeUrl('#/edit-page/content?url=/blog/page&language_id=2');
-
-                expect(storeWithRouter.breadcrumbs().at(-1)).toEqual({
-                    label: 'Blog Page',
-                    url: '/dotAdmin/#/edit-page/content?url=/blog/page&language_id=2'
-                });
-            });
-
-            // Every page the editor opens is on `/edit-page/content`; `url` says which page. Moving
-            // to another page in the canvas is not the same page's state, so the crumb of the page
-            // left keeps its own URL (#38379).
-            it('leaves the last crumb alone when the page editor moves to another page', () => {
+            // The page editor writes its address the same way, but its crumb is its own: it states
+            // the persona its guard needs, which the address leaves out for the default one, and it
+            // is rebuilt when the page loads. Following the address would drop the persona, so
+            // coming back to the editor would no longer rewind the trail (#38379).
+            it.each([
+                ['the language changes', '#/edit-page/content?url=/a&language_id=2'],
+                ['the editor moves to another page', '#/edit-page/content?url=/b&language_id=1']
+            ])('leaves a page editor crumb alone when %s', (_, url) => {
                 routerMock.triggerNavigationEnd('/c/query-tool?mId=devtools');
                 TestBed.flushEffects();
                 storeWithRouter.addNewBreadcrumb({
                     label: 'Page A',
-                    url: '/dotAdmin/#/edit-page/content?url=/a&language_id=1'
+                    url: '/dotAdmin/#/edit-page/content?url=/a&language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
                 });
                 const before = storeWithRouter.breadcrumbs();
 
-                locationMock.changeUrl('#/edit-page/content?url=/b&language_id=1');
+                locationMock.changeUrl(url);
 
                 expect(storeWithRouter.breadcrumbs()).toEqual(before);
             });

@@ -411,6 +411,24 @@ describe('AddRelationshipsComponent — shared surface (US1)', () => {
             expect(spectator.component.store.sort()).toEqual({ field: 'title', order: 'desc' });
         });
 
+        /**
+         * An empty search renders no table, so the list's rows-per-page picker is rebuilt when
+         * results come back. Bound from the store, it comes back at the size the store fetches
+         * instead of the list's default 20.
+         */
+        it('gives the list the page size the store fetches', () => {
+            mountWith(withResults);
+
+            spectator.query(DotFolderListViewComponent)?.paginate.emit({
+                first: 0,
+                rows: 40,
+                page: 1
+            });
+            spectator.detectChanges();
+
+            expect(spectator.query(DotFolderListViewComponent)?.$rows()).toBe(40);
+        });
+
         it('stays on the first page when the list reports no page', () => {
             mountWith(withResults);
 

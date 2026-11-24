@@ -91,59 +91,38 @@ function contentDriveCrumbUrl(url: string): string {
     return browsing.length > 0 ? `${urlPath}?${browsing.join('&')}` : urlPath;
 }
 
-/**
- * The params that say which page a route shows, where one route shows many: every page the page
- * editor opens is on `/edit-page/content`, and `url` says which. Moving to another page is not the
- * same page's state, so its crumb does not follow (#38379).
- */
-const PAGE_IDENTITY_PARAMS: Record<string, string[]> = {
-    '/edit-page/content': ['url']
-};
+/** Content Drive's route, the one route whose crumb follows URLs written outside the router. */
+const CONTENT_DRIVE_ROUTE = '/content-drive';
 
 /**
- * Whether two URLs of a route show the same page: the params that identify it are unchanged.
+ * The last crumb after Content Drive moved its own URL, or `null` when the trail should stay as it
+ * is.
  *
- * @param route The route both URLs are on.
- * @param query The new URL's query string.
- * @param lastQuery The last crumb's query string.
- * @returns `true` when they show the same page.
- */
-function samePage(route: string, query: string, lastQuery: string): boolean {
-    const params = new URLSearchParams(query);
-    const lastParams = new URLSearchParams(lastQuery);
-
-    return (PAGE_IDENTITY_PARAMS[route] ?? []).every(
-        (name) => params.get(name) === lastParams.get(name)
-    );
-}
-
-/**
- * The last crumb after its page moved its own URL, or `null` when the trail should stay as it is.
- *
- * Some portlets write their state into the URL with `Location.go` / `replaceState`, which never
- * reaches the router: Content Drive its folder, filters and tree, the page editor its language and
- * mode. The crumb would otherwise keep the URL the author arrived on, and coming back to it from
- * another page opened that state instead of the one they left (#38379). Only a URL on the same
- * route as the last crumb, showing the same page, is followed: anywhere else, that crumb is not the
- * page being shown. In the page editor that means the same `url` ({@link PAGE_IDENTITY_PARAMS}).
- * Content Drive's crumb also leaves out the params that open a panel or a dialog (see
+ * Content Drive writes its folder, filters and tree into the URL with `Location.go` /
+ * `replaceState`, which never reaches the router. Its crumb would otherwise keep the URL the author
+ * arrived on, and coming back to it from another page opened that state instead of the one they
+ * left (#38379). Only a Content Drive URL is followed, and only while Content Drive's crumb is the
+ * last one; the crumb leaves out the params that open a panel or a dialog (see
  * {@link contentDriveCrumbUrl}).
  *
- * @param url The URL the page moved to, as `Location` reports it (`#/content-drive?…`).
+ * The page editor also writes its address outside the router, but it keeps its own crumb: that
+ * crumb states the persona `editEmaGuard` needs, which the address leaves out for the default one,
+ * and the editor rebuilds it whenever the page loads.
+ *
+ * @param url The URL Content Drive moved to, as `Location` reports it (`#/content-drive?…`).
  * @param last The last crumb of the trail.
  * @returns The last crumb pointing at the new URL, or `null` to leave the trail alone.
  */
 export function followUrl(url: string, last: MenuItem | null): MenuItem | null {
     const path = url.replace(/^.*#/, '');
-    const lastPath = (last?.url ?? '').replace(/^.*#/, '');
-    const [route, query = ''] = path.split('?');
-    const [lastRoute, lastQuery = ''] = lastPath.split('?');
+    const lastRoute = (last?.url ?? '').replace(/^.*#/, '').split('?')[0];
+    const route = path.split('?')[0];
 
-    if (!last?.url || route !== lastRoute || !samePage(route, query, lastQuery)) {
+    if (!last?.url || route !== CONTENT_DRIVE_ROUTE || lastRoute !== CONTENT_DRIVE_ROUTE) {
         return null;
     }
 
-    const crumbUrl = `/dotAdmin/#${route === '/content-drive' ? contentDriveCrumbUrl(path) : path}`;
+    const crumbUrl = `/dotAdmin/#${contentDriveCrumbUrl(path)}`;
 
     return crumbUrl === last.url ? null : { ...last, url: crumbUrl };
 }

@@ -524,6 +524,23 @@ describe('DotAssetPickerComponent', () => {
             expect(spectator.component['$offset']()).toBe(40);
         });
 
+        /**
+         * An empty result renders no table, so the list's rows-per-page picker is rebuilt when
+         * results come back. Bound from the store, it comes back at the size the store fetches
+         * instead of the list's default 20.
+         */
+        it('should give the list the page size the store fetches', () => {
+            store.pagination.set({ limit: 40, page: 1 });
+            spectator.detectChanges();
+
+            // The list is not rendered for real here (CUSTOM_ELEMENTS_SCHEMA), so the binding
+            // lands as a property on its element.
+            const list = spectator.query(byTestId('asset-picker-list')) as { rows?: number } | null;
+
+            expect(list).toBeTruthy();
+            expect(list?.rows).toBe(40);
+        });
+
         it('should translate the sort event', () => {
             spectator.component['onSort']({ field: 'title', order: 1 });
 
