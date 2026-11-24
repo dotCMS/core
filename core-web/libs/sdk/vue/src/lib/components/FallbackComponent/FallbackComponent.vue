@@ -21,12 +21,19 @@ const useUserComponent = computed(() => !!props.userNoComponent);
 </script>
 
 <template>
-    <template v-if="isDevMode">
-        <component :is="userNoComponent" v-if="useUserComponent" v-bind="contentlet" />
-        <div v-else data-testid="no-component">
-            No Component for
-            <strong>{{ contentlet.contentType }}</strong>
-            .
-        </div>
-    </template>
+  <template v-if="isDevMode">
+    <component
+      :is="userNoComponent"
+      v-if="useUserComponent"
+      v-bind="contentlet"
+    />
+    <div
+      v-else
+      data-testid="no-component"
+    >
+      No Component for
+      <strong>{{ contentlet.contentType }}</strong>
+      .
+    </div>
+  </template>
 </template>

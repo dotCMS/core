@@ -25,6 +25,7 @@ import { ZIndexUtils } from 'primeng/utils';
 import {
     AddToBundleService,
     DotAlertConfirmService,
+    DotContentChangeKind,
     DotContentChangeService,
     DotContentSearchService,
     DotContentTypeService,
@@ -5498,9 +5499,9 @@ describe('DotContentDriveShellComponent', () => {
              * as the portlet lives.
              */
             it.each([
-                ['a save', 'saved', 0],
-                ['a save in a stacked panel', 'saved', 1],
-                ['a delete', 'deleted', 2]
+                ['a save', DotContentChangeKind.SAVED, 0],
+                ['a save in a stacked panel', DotContentChangeKind.SAVED, 1],
+                ['a delete', DotContentChangeKind.DELETED, 2]
             ] as const)('refreshes the list quietly on %s in any panel', (_label, kind, depth) => {
                 spectator.inject(DotContentChangeService).notify({
                     kind,
@@ -5523,7 +5524,7 @@ describe('DotContentDriveShellComponent', () => {
                 } as DotCMSContentlet;
 
                 spectator.inject(DotContentChangeService).notify({
-                    kind: 'locked',
+                    kind: DotContentChangeKind.LOCKED,
                     contentlet,
                     depth: 0
                 });

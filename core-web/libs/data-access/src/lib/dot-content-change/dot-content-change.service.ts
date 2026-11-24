@@ -4,13 +4,28 @@ import { Injectable } from '@angular/core';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
+/**
+ * The kinds of {@link DotContentChange}. Compare a change's `kind` against these rather than a
+ * string, so a new kind is one entry here.
+ */
+export const DotContentChangeKind = {
+    /** Every save and restored version. */
+    SAVED: 'saved',
+    /** The content was removed. */
+    DELETED: 'deleted',
+    /** The content was locked or unlocked, which is not a save (#38379). */
+    LOCKED: 'locked'
+} as const;
+
+export type DotContentChangeKind = (typeof DotContentChangeKind)[keyof typeof DotContentChangeKind];
+
 /** A save, a delete or a lock change in a side panel, at any depth (#38303, T174; #38379). */
 export interface DotContentChange {
     /**
      * `saved` for every save and restored version; `deleted` when the content was removed;
      * `locked` when it was locked or unlocked, which is not a save (#38379).
      */
-    kind: 'saved' | 'deleted' | 'locked';
+    kind: DotContentChangeKind;
     /**
      * The saved contentlet, in full; for a delete, the content the panel had; for a lock change,
      * the content with its new lock.

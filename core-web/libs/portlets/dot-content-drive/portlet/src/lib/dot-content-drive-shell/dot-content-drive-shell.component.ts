@@ -30,6 +30,7 @@ import { catchError, filter, take } from 'rxjs/operators';
 import {
     AddToBundleService,
     DotContentChange,
+    DotContentChangeKind,
     DotContentChangeService,
     DotCurrentUserService,
     DotFolderBulkDeleteRefusalKind,
@@ -2086,7 +2087,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * @param change What changed in the panel.
      */
     protected onContentChanged(change: DotContentChange) {
-        if (change.kind === 'locked') {
+        if (change.kind === DotContentChangeKind.LOCKED) {
             this.#store.updateItemLock(change.contentlet);
 
             return;
