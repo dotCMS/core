@@ -166,3 +166,4 @@ Release-25.07.10 LTS
 160. https://github.com/dotCMS/private-issues/issues/1115 : log Login As only once it completes and keep the session on a refused request #38604 #1115
 161. https://github.com/dotCMS/private-issues/issues/958 : answer password reset requests in constant time #38264 #958
 162. https://github.com/dotCMS/private-issues/issues/962 : send the node response header only to requests with credentials #38266 #962
+163. https://github.com/dotCMS/private-issues/issues/714 : expose RemoteIpValve trustedProxies and document client address settings #38432 #714

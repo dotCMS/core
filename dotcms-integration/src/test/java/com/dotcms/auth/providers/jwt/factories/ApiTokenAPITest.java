@@ -4,12 +4,17 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
+import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.datagen.CompanyDataGen;
 import com.dotcms.datagen.UserDataGen;
@@ -33,6 +38,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.NoSuchElementException;
+import javax.servlet.http.HttpServletRequest;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -274,6 +280,43 @@ public class ApiTokenAPITest extends IntegrationTestBase {
         assertTrue(apiTokenAPI.fromJwt(jwt, IN_NETWORK).isPresent());
         assertFalse(apiTokenAPI.fromJwt(jwt, OUT_OF_NETWORK).isPresent());
 
+    }
+
+    /**
+     * Method to test: {@link JsonWebTokenAuthCredentialProcessorImpl#processAuthHeaderFromJWT}
+     * Given scenario: a token limited to {@link #IP_NETWORK} is sent in the Authorization header
+     * with an X-Forwarded-For header that names an address on the other side of the limit.
+     * The request's remote address is what Tomcat's RemoteIpValve resolved: the connecting
+     * address, or the client address a trusted proxy forwarded (see ClientAddressResolutionTest)
+     * Expected result: the remote address decides; the header is not read. A request from outside
+     * the network naming an inside address is refused, and a request from inside naming an
+     * outside address is accepted
+     */
+    @Test
+    public void test_processAuthHeaderFromJWT_ip_limit_uses_remote_addr_not_forwarded_header() {
+        final ApiToken token = apiTokenAPI.persistApiToken(
+                ApiToken.from(getSkinnyToken()).withAllowNetwork(IP_NETWORK).build(),
+                APILocator.systemUser());
+        final String jwt = apiTokenAPI.getJWT(token, APILocator.systemUser());
+        final JsonWebTokenAuthCredentialProcessorImpl processor =
+                JsonWebTokenAuthCredentialProcessorImpl.getInstance();
+
+        assertNull("a request from outside the network must be refused",
+                processor.processAuthHeaderFromJWT(bearerRequest(jwt, OUT_OF_NETWORK, IN_NETWORK)));
+
+        final User user = processor.processAuthHeaderFromJWT(bearerRequest(jwt, IN_NETWORK, OUT_OF_NETWORK));
+        assertNotNull("a request from inside the network must be accepted", user);
+        assertEquals(TOKEN_USER.getUserId(), user.getUserId());
+    }
+
+    /** A request carrying the JWT as a bearer token, from {@code remoteAddr}, with the given X-Forwarded-For. */
+    private static HttpServletRequest bearerRequest(final String jwt, final String remoteAddr,
+            final String forwardedFor) {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getHeader("Authorization")).thenReturn(JsonWebTokenAuthCredentialProcessor.BEARER + jwt);
+        when(request.getHeader("X-Forwarded-For")).thenReturn(forwardedFor);
+        when(request.getRemoteAddr()).thenReturn(remoteAddr);
+        return request;
     }
 
     @Test
