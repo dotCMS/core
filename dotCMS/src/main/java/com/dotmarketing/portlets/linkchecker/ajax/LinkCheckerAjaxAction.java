@@ -24,6 +24,7 @@ import com.dotcms.enterprise.linkchecker.LinkCheckerJob;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.linkchecker.bean.InvalidLink;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -73,8 +74,16 @@ public class LinkCheckerAjaxAction extends AjaxAction {
         List<Map> list=new ArrayList<>();
         SimpleDateFormat df=new SimpleDateFormat("MM/dd/yyyy hh:mm a");
         try {
+            final User requestUser = getUser();
             for(InvalidLink link : APILocator.getLinkCheckerAPI().findAllByStructure(structureInode, offset, pageSize)) {
-                Contentlet con = APILocator.getContentletAPI().find(link.getInode(), APILocator.getUserAPI().getSystemUser(), false);
+                final Contentlet con;
+                try {
+                    // read as the caller, not as the system user: a record the caller cannot read is left out
+                    con = APILocator.getContentletAPI().find(link.getInode(), requestUser, false);
+                } catch (DotSecurityException e) {
+                    Logger.debug(this, () -> "Link Checker: skipping unreadable content " + link.getInode());
+                    continue;
+                }
                 User modUser=APILocator.getUserAPI().loadUserById(con.getModUser());
                 Field field=FieldsCache.getField(link.getField()); 
                 Structure st=CacheLocator.getContentTypeCache().getStructureByInode(field.getStructureInode());
@@ -97,7 +106,7 @@ public class LinkCheckerAjaxAction extends AjaxAction {
                 mm.put("field", field.getFieldName());
                 mm.put("structure", st.getName());
                 mm.put("date", df.format(con.getModDate()));
-                mm.put("user", modUser.getFullName()+"<"+modUser.getEmailAddress()+">");
+                mm.put("user", modUser.getFullName());
                 mm.put("url_title", link.getTitle());
                 mm.put("url", link.getUrl());
                 list.add(mm);

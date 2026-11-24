@@ -167,3 +167,4 @@ Release-25.07.10 LTS
 161. https://github.com/dotCMS/private-issues/issues/958 : answer password reset requests in constant time #38264 #958
 162. https://github.com/dotCMS/private-issues/issues/962 : send the node response header only to requests with credentials #38266 #962
 163. https://github.com/dotCMS/private-issues/issues/714 : expose RemoteIpValve trustedProxies and document client address settings #38432 #714
+164. https://github.com/dotCMS/private-issues/issues/846 : link checker reads content as the calling user and no longer returns the modifier's email #38531 #846
