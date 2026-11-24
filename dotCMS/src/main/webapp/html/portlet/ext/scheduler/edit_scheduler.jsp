@@ -46,12 +46,13 @@ function submitfm(form) {
 	}
 	const valueOf = (name) => (form[name] && form[name].value) ? form[name].value : null;
 	const checked = (id) => document.getElementById(id) != null && document.getElementById(id).checked;
-	const properties = {};
+	// Keep every named parameter, including empty values and names such as __proto__; clearing the
+	// name removes a parameter
+	const properties = Object.create(null);
 	for (const field of form.querySelectorAll('input[name^="propertyName"]')) {
-		const name = field.value;
-		const value = valueOf(field.name.replace('propertyName', 'propertyValue'));
-		if (name && value) {
-			properties[name] = value;
+		const valueField = form[field.name.replace('propertyName', 'propertyValue')];
+		if (field.value) {
+			properties[field.value] = valueField ? valueField.value : '';
 		}
 	}
 	const jobName = valueOf('jobName');
