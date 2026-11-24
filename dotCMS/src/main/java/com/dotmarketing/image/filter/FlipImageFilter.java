@@ -38,7 +38,7 @@ public class FlipImageFilter extends ImageFilter {
 			if (flip) {
 				filter.setOperation(FlipFilter.FLIP_H);
 			} 
-            final File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() +".tmp");
+            final File tempResultFile = stagingFileFor(resultFile);
 
 			
 			BufferedImage src = StrictImageReader.read(file);

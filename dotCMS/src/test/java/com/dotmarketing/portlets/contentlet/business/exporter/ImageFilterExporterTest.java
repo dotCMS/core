@@ -8,7 +8,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import com.dotmarketing.image.vips.VipsManager;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporter.BinaryContentExporterData;
+import com.dotmarketing.util.Config;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -171,6 +173,119 @@ class ImageFilterExporterTest {
 
         assertTrue(healthy.exists(), "a healthy intermediate must be kept");
         assertTrue(source.exists(), "the asset's own binary must never be deleted");
+    }
+
+    /**
+     * Given a cached animated GIF intermediate whose last frame is cut off (its first frames decode),
+     * stored under a .gif name and under a .png name (the legacy resize can write GIF bytes there),
+     * When the chain that read it fails on the legacy engine,
+     * Then it is discarded: the legacy GIF resize needs every frame, so keeping it fails every request.
+     */
+    @Test
+    void discardBrokenIntermediate_deletesGifWhoseLastFrameIsCutOff(@TempDir final Path dir) throws Exception {
+        final byte[] gif = animatedGif(3);
+        final byte[] cut = Arrays.copyOf(gif, lastImageDescriptor(gif) + 200);
+        for (final String ext : new String[]{"gif", "png"}) {
+            final File intermediate = dir.resolve("dotGenerated_929f6225-7c89-4cdf-9867-0bfb0c57d7b5_resize_cut." + ext).toFile();
+            Files.write(intermediate.toPath(), cut);
+
+            onLegacyEngine(() -> ImageFilterExporter.discardBrokenIntermediate(intermediate, dir.toFile()));
+
+            assertFalse(intermediate.exists(), "a GIF with a cut-off frame must be removed (." + ext + ")");
+        }
+    }
+
+    /**
+     * Given a cached animated GIF intermediate that decodes fully,
+     * When a chain that read it fails for another reason,
+     * Then it is kept.
+     */
+    @Test
+    void discardBrokenIntermediate_keepsHealthyAnimatedGif(@TempDir final Path dir) throws Exception {
+        final File intermediate = dir.resolve("dotGenerated_929f6225-7c89-4cdf-9867-0bfb0c57d7b5_resize_ok.gif").toFile();
+        Files.write(intermediate.toPath(), animatedGif(3));
+
+        onLegacyEngine(() -> ImageFilterExporter.discardBrokenIntermediate(intermediate, dir.toFile()));
+
+        assertTrue(intermediate.exists(), "a healthy animated GIF must be kept");
+    }
+
+    /**
+     * Given a cached WebP intermediate that was cut short,
+     * When the chain that read it fails on the legacy engine,
+     * Then it is discarded so the next request regenerates it.
+     */
+    @Test
+    void discardBrokenIntermediate_deletesTruncatedWebp(@TempDir final Path dir) throws Exception {
+        // as in production, the image API deregisters the lenient javavp8 WebP reader on startup
+        com.dotmarketing.image.filter.ImageFilterAPI.apiInstance.apply();
+        final byte[] webp = Files.readAllBytes(Path.of(getClass().getResource("/images/test.webp").toURI()));
+        final File intermediate = dir.resolve("dotGenerated_929f6225-7c89-4cdf-9867-0bfb0c57d7b5_webp_abc.webp").toFile();
+        Files.write(intermediate.toPath(), Arrays.copyOf(webp, webp.length / 3));
+
+        onLegacyEngine(() -> ImageFilterExporter.discardBrokenIntermediate(intermediate, dir.toFile()));
+
+        assertFalse(intermediate.exists(), "a damaged WebP intermediate must be removed so it is regenerated");
+    }
+
+    /**
+     * Runs a check with libvips turned off, so the JVM decoders do it whatever the host has installed.
+     *
+     * @param check the check to run
+     */
+    private static void onLegacyEngine(final Runnable check) {
+        final String previous = Config.getStringProperty(VipsManager.USE_LIBVIPS, null);
+        Config.setProperty(VipsManager.USE_LIBVIPS, false);
+        try {
+            check.run();
+        } finally {
+            Config.setProperty(VipsManager.USE_LIBVIPS, previous);
+        }
+    }
+
+    /**
+     * Writes an animated GIF whose frames are noise, so each frame holds enough data to be cut inside.
+     *
+     * @param frames the number of frames
+     * @return the GIF bytes
+     * @throws Exception if the GIF cannot be written
+     */
+    private static byte[] animatedGif(final int frames) throws Exception {
+        final javax.imageio.ImageWriter writer = ImageIO.getImageWritersByFormatName("gif").next();
+        final java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+        final java.util.Random random = new java.util.Random(1);
+        try (javax.imageio.stream.ImageOutputStream stream = ImageIO.createImageOutputStream(out)) {
+            writer.setOutput(stream);
+            writer.prepareWriteSequence(null);
+            for (int i = 0; i < frames; i++) {
+                final BufferedImage frame = new BufferedImage(60, 40, BufferedImage.TYPE_INT_RGB);
+                for (int y = 0; y < frame.getHeight(); y++) {
+                    for (int x = 0; x < frame.getWidth(); x++) {
+                        frame.setRGB(x, y, random.nextInt());
+                    }
+                }
+                writer.writeToSequence(new javax.imageio.IIOImage(frame, null, null), null);
+            }
+            writer.endWriteSequence();
+        } finally {
+            writer.dispose();
+        }
+        return out.toByteArray();
+    }
+
+    /**
+     * Finds where the last frame starts: its image descriptor (0x2C) right after a block terminator.
+     *
+     * @param gif the GIF bytes
+     * @return the offset of the last image descriptor
+     */
+    private static int lastImageDescriptor(final byte[] gif) {
+        for (int i = gif.length - 11; i > 0; i--) {
+            if (gif[i] == 0x2C && gif[i - 1] == 0x00) {
+                return i;
+            }
+        }
+        throw new IllegalStateException("no image descriptor in the GIF fixture");
     }
 
     private static byte[] png() throws Exception {

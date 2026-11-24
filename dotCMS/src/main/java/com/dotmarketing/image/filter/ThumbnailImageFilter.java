@@ -104,8 +104,7 @@ public class ThumbnailImageFilter extends ImageFilter {
             resultGraphics.drawImage(thumbImage, null, offsetX, offsetY);
             resultGraphics.dispose();
 
-            final File tempResultFile =
-                            new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() + ".tmp");
+            final File tempResultFile = stagingFileFor(resultFile);
 
             ImageIO.write(bgImage, "png", tempResultFile);
             bgImage.flush();

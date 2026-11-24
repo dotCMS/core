@@ -28,6 +28,9 @@ public abstract class ImageFilter implements ImageFilterIf {
 	protected static final String FILE_EXT = "png";
 	public    static final String CROP     = "crop";
 	private   static final String UUID_REGEX = "[\\w]{8}(-[\\w]{4}){3}-[\\w]{12}";
+	/** The version inode at the start of a generated name: a UUID or a legacy numeric inode, then "_". */
+	private   static final java.util.regex.Pattern EMBEDDED_INODE =
+			java.util.regex.Pattern.compile("^(" + UUID_REGEX + "|\\d+)_");
 
 
 	
@@ -107,10 +110,11 @@ public abstract class ImageFilter implements ImageFilterIf {
 
 			StringBuilder ret = new StringBuilder();
 			ret.append( WebKeys.GENERATED_FILE);
-			// only a real version inode goes into the name (cleanup matches on it); a fallback value
-			// (temp-file id, a chained input's whole name) stays in the digest only, otherwise each
-			// chained stage would embed the previous name and grow past the file name limit
-			if (inode.matches(UUID_REGEX)) {
+			// only a real version inode (a UUID, or a legacy numeric inode) goes into the name, since
+			// cleanup matches on it; a fallback value (temp-file id, a chained input's whole name) stays
+			// in the digest only, otherwise each chained stage would embed the previous name and grow
+			// past the file name limit
+			if (isVersionInode(inode)) {
 				ret.append(inode + "_");
 			}
 			ret.append(thisFilter + "_");
@@ -225,6 +229,32 @@ public abstract class ImageFilter implements ImageFilterIf {
 	}
 
 	/**
+	 * Tells whether a resolved value is a content version inode that belongs in a rendition name: a
+	 * UUID, or a numeric inode from older content.
+	 *
+	 * @param inode the resolved value
+	 * @return true for a UUID or an all-digits inode
+	 */
+	static boolean isVersionInode(final String inode) {
+		return inode != null && (inode.matches(UUID_REGEX) || inode.matches("\\d+"));
+	}
+
+	/**
+	 * Names the staging file for a rendition, in the rendition's own folder so the final move stays on
+	 * one filesystem. The name is unique per call, so concurrent renders of the same rendition never
+	 * share a staging file, and starts with a dot, so inode-scoped cleanup ({@code dotGenerated_<inode>_*})
+	 * never deletes a render in progress. Nothing is created until the filter writes to it, so a render
+	 * that fails early leaves no empty file behind.
+	 *
+	 * @param result the rendition's final file
+	 * @return a staging file next to it, not created yet
+	 */
+	protected static File stagingFileFor(final File result) {
+		return new File(result.getAbsoluteFile().getParentFile(),
+				"." + result.getName() + "_" + java.util.UUID.randomUUID() + ".tmp");
+	}
+
+	/**
 	 * Publishes a fully written temporary rendition under its final name in one step, replacing the
 	 * previous one if present. Readers see either the old rendition or the new one, never a missing or
 	 * half-written file, so a rendition is never deleted ahead of its regeneration. If the move fails,
@@ -258,9 +288,8 @@ public abstract class ImageFilter implements ImageFilterIf {
 	private String resolveInode(final File file, final Map<String, String[]> parameters) {
 		final String fileName = file.getName();
 		if (fileName.startsWith(WebKeys.GENERATED_FILE)) {
-			final String fromName = Try.of(() -> RegEX.find(
-							fileName.substring(WebKeys.GENERATED_FILE.length()), "^" + UUID_REGEX).get(0).getMatch())
-					.getOrNull();
+			final java.util.regex.Matcher embedded = EMBEDDED_INODE.matcher(fileName.substring(WebKeys.GENERATED_FILE.length()));
+			final String fromName = embedded.find() ? embedded.group(1) : null;
 			// a generated input without an embedded inode keeps the legacy behaviour of keying on its name
 			return fromName != null ? fromName : fileName;
 		}

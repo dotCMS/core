@@ -33,7 +33,7 @@ public class SubSampleImageFilter extends ImageFilter {
         BufferedImage srcImage = ImageFilterAPI.apiInstance.get().subsampleImage(file, width, height);
 
         
-        File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() +".tmp");
+        File tempResultFile = stagingFileFor(resultFile);
 
         try{
             ImageIO.write(srcImage, "png", tempResultFile);

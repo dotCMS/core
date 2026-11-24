@@ -19,6 +19,7 @@ import com.dotmarketing.image.filter.ImageFilter;
 import com.dotmarketing.image.filter.ImageFilterAPI;
 import com.dotmarketing.image.filter.PDFImageFilter;
 import com.dotmarketing.image.filter.StrictImageReader;
+import com.dotmarketing.image.gif.GifDecoder;
 import com.dotmarketing.image.vips.VipsManager;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporter;
@@ -117,14 +118,34 @@ public class ImageFilterExporter implements BinaryContentExporter {
         } catch (Exception e) {
 
             Logger.warnAndDebug(errorClass,  e);
-            discardBrokenIntermediate(file);
+            discardBrokenIntermediateWithinLimit(file);
             throw new BinaryContentExporterException(e.getMessage(), e);
         }
 
     }
 
-    /** Raster formats the pure-JVM decoder can verify when libvips is off; others are never discarded. */
-    private static final Set<String> JVM_VERIFIABLE_EXTENSIONS = Set.of("png", "jpg", "jpeg", "gif");
+    /**
+     * Runs {@link #discardBrokenIntermediate(File)} only while holding an image-generation permit, so
+     * the full decode it may do never pushes the work past {@code IMAGE_GENERATION_SIMULTANEOUS_REQUESTS}.
+     * When no permit is free the check is skipped; the next request that hits the same intermediate
+     * retries it.
+     *
+     * @param input the file the failed step was reading
+     */
+    private void discardBrokenIntermediateWithinLimit(final File input) {
+        if (!semaphore.tryAcquire()) {
+            Logger.debug(this.getClass(), () -> "Image permits exhausted; damaged-intermediate check skipped for " + input);
+            return;
+        }
+        try {
+            discardBrokenIntermediate(input);
+        } finally {
+            semaphore.release();
+        }
+    }
+
+    /** Raster formats the pure-JVM decoders can verify when libvips is off; others are never discarded. */
+    private static final Set<String> JVM_VERIFIABLE_EXTENSIONS = Set.of("png", "jpg", "jpeg", "gif", "webp");
 
     /**
      * When a step fails, {@code input} is the file that step was reading. If that file is a cached
@@ -143,7 +164,8 @@ public class ImageFilterExporter implements BinaryContentExporter {
      * <p>Only a {@code dotGenerated_*} file inside {@code cacheRoot} is ever deleted, so an asset's own
      * binary (or an upload that happens to be named {@code dotGenerated_*}) is never touched. With
      * libvips the check runs natively and covers every format it reads (WebP, AVIF...); without it,
-     * the JVM decoder checks PNG, JPEG and GIF.</p>
+     * the JVM decoders check PNG, JPEG and WebP, and a GIF (by its signature, whatever its extension)
+     * must decode every frame, as the legacy GIF resize requires.</p>
      *
      * @param input the file the failed step was reading
      * @param cacheRoot the local rendition cache the intermediate must live in
@@ -167,10 +189,31 @@ public class ImageFilterExporter implements BinaryContentExporter {
         }
         try {
             StrictImageReader.assertDecodable(input); // deletes the file when it does not decode
+            if (isGif(input) && new GifDecoder().read(input.getAbsolutePath()) != GifDecoder.STATUS_OK
+                    && input.delete()) {
+                Logger.warn(ImageFilterExporter.class,
+                        "Discarded an image intermediate whose later GIF frames do not decode: " + input);
+            }
         } catch (IOException e) {
             Logger.warn(ImageFilterExporter.class,
                     "Discarded a damaged image intermediate so it is regenerated: " + input + " : " + e.getMessage());
         }
+    }
+
+    /**
+     * Tells whether a file starts with the GIF signature. The legacy resize can write animated GIF bytes
+     * to a rendition named {@code .png}, so the extension is not enough.
+     *
+     * @param file a file
+     * @return true when the file starts with {@code GIF8}
+     */
+    private static boolean isGif(final File file) {
+        return Try.of(() -> {
+            try (java.io.InputStream in = Files.newInputStream(file.toPath())) {
+                final byte[] head = in.readNBytes(4);
+                return head.length == 4 && head[0] == 'G' && head[1] == 'I' && head[2] == 'F' && head[3] == '8';
+            }
+        }).getOrElse(false);
     }
 
     /**
@@ -299,9 +342,9 @@ public class ImageFilterExporter implements BinaryContentExporter {
         if (!publishInFlight.add(key)) {
             return;
         }
-        // stage next to the target: the same folder is always on the same filesystem, so the final
-        // move can be atomic even when tmp_upload is mounted separately from dotGenerated
-        final File sharedTmpDir = shared.getParentFile();
+        // staged in the shared tmp_upload dir, which BinaryCleanupJob sweeps, so a copy abandoned by a
+        // killed process is removed; moveIntoPlace keeps the final step atomic on any mount layout
+        final File sharedTmpDir = new File(ConfigUtils.getAssetTempPath());
         Thread.ofVirtual().name("dotGenerated-share").start(() -> {
             try {
                 copyToShared(localFinal, shared, sharedTmpDir);
@@ -317,11 +360,10 @@ public class ImageFilterExporter implements BinaryContentExporter {
      *
      * <p>{@code sharedTmpDir} <b>must live on the same filesystem (the shared mount) as
      * {@code shared}</b>: the move is attempted as an {@link StandardCopyOption#ATOMIC_MOVE} and only
-     * a same-filesystem rename can satisfy that. The caller passes the target's own folder, which is
-     * always on the same filesystem, even when {@code tmp_upload} is mounted separately. If the
-     * filesystem still cannot do an atomic move, it falls back to a non-atomic replace. The staged temp file is uniquely named (so two cluster instances cannot
-     * collide) and is removed if the publish fails. Package-visible and synchronous for tests; the
-     * virtual-thread hand-off lives in {@link #publishToShared(File)}.</p>
+     * a same-filesystem rename can satisfy that. The caller passes {@link ConfigUtils#getAssetTempPath()}
+     * (the shared {@code tmp_upload} dir, swept by {@code BinaryCleanupJob}). When it is mounted
+     * separately from the store, {@link #moveIntoPlace(Path, Path)} copies into a dot-prefixed file in
+     * the target folder first and renames it from there, so readers still never see a partial file.</p>
      */
     static void copyToShared(final File localFinal, final File shared, final File sharedTmpDir) {
         Path tmp = null;
@@ -350,9 +392,22 @@ public class ImageFilterExporter implements BinaryContentExporter {
      */
     private static void moveIntoPlace(final Path tmp, final Path target) throws IOException {
         try {
-            Files.move(tmp, target, StandardCopyOption.ATOMIC_MOVE);
+            Files.move(tmp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
         } catch (AtomicMoveNotSupportedException e) {
-            Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING);
+            // different filesystems: copy next to the target under a dot-prefixed name (never matched by
+            // inode-scoped cleanup nor served), then rename it within that folder in one step
+            final Path local = target.resolveSibling("." + target.getFileName() + "_" + java.util.UUID.randomUUID() + ".tmp");
+            try {
+                Files.copy(tmp, local, StandardCopyOption.REPLACE_EXISTING);
+                try {
+                    Files.move(local, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+                } catch (AtomicMoveNotSupportedException stillNotAtomic) {
+                    Files.move(local, target, StandardCopyOption.REPLACE_EXISTING);
+                }
+            } finally {
+                Files.deleteIfExists(local);
+                Files.deleteIfExists(tmp);
+            }
         }
     }
 

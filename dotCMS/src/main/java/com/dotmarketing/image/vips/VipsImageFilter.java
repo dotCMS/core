@@ -64,7 +64,7 @@ public abstract class VipsImageFilter extends ImageFilter {
             if (repaired.isPresent()) {
                 return retryWithRepairedInput(file, repaired.get(), tempResultFile, resultFile, parameters, e);
             }
-            return fallbackOrThrow(file, parameters, e);
+            return fallbackOrThrow(file, parameters, e, true);
         }
     }
 
@@ -92,7 +92,9 @@ public abstract class VipsImageFilter extends ImageFilter {
             return resultFile;
         } catch (Exception retryFailure) {
             io.vavr.control.Try.run(tempResultFile::delete);
-            return fallbackOrThrow(file, parameters, original);
+            // the input was verified as a complete JPEG, so this is not damaged data: keep the usual
+            // legacy fallback (the legacy reader accepts a lone missing EOI marker)
+            return fallbackOrThrow(file, parameters, retryFailure, false);
         } finally {
             io.vavr.control.Try.run(() -> java.nio.file.Files.deleteIfExists(repaired.toPath()));
         }
@@ -106,11 +108,19 @@ public abstract class VipsImageFilter extends ImageFilter {
      * <p>No fallback when the input itself is damaged: libvips recognises its format but cannot decode
      * it ({@code fail_on=truncated}). The legacy engine would decode the same bad bytes into the JVM heap
      * only to fail again, so the error is raised directly.</p>
+     *
+     * @param file the input the failed filter was reading
+     * @param parameters the filter parameters
+     * @param cause the libvips failure
+     * @param checkInput whether to check if the input is damaged before falling back; {@code false} when
+     *                   the input is already known to be complete (a repaired JPEG)
+     * @return the legacy filter's rendition
      */
-    private File fallbackOrThrow(final File file, final Map<String, String[]> parameters, final Exception cause) {
+    private File fallbackOrThrow(final File file, final Map<String, String[]> parameters, final Exception cause,
+            final boolean checkInput) {
         final boolean fallbackEnabled =
                 com.dotmarketing.util.Config.getBooleanProperty("IMAGE_API_LIBVIPS_FALLBACK", true);
-        if (fallbackEnabled && isDamagedInput(file)) {
+        if (fallbackEnabled && checkInput && isDamagedInput(file)) {
             Logger.warnAndDebug(this.getClass(), "libvips filter '" + getFilterName() + "' failed for " + file
                     + "; the input does not decode, so the legacy engine is skipped: " + cause.getMessage(), cause);
             throw new DotRuntimeException("unable to convert file: " + file + " : " + cause.getMessage(), cause);

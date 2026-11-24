@@ -54,7 +54,7 @@ public class ResizeGifImageFilter extends ImageFilter {
       final int width = (int) w;
       final int height = (int) h;
 
-      File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() + ".tmp");
+      File tempResultFile = stagingFileFor(resultFile);
       try {
         readWriteGIF(file, tempResultFile, maxFrames, loop, width, height);
       } catch (IOException | RuntimeException e) {

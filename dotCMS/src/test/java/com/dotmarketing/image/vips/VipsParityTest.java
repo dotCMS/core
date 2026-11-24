@@ -720,6 +720,54 @@ public class VipsParityTest {
      * rejects short reads only, not checksum errors. The fixture is written with several IDAT chunks,
      * which is what makes libvips check the first one ({@code fail_on=error} rejects it).
      */
+    /**
+     * Given a complete JPEG without its EOI marker, and a libvips transform that keeps failing even on
+     * the repaired copy,
+     * When the filter runs with the legacy fallback on,
+     * Then the legacy engine renders it (the input was verified as complete, so it is not damaged
+     * data) and the repaired temporary copy is removed.
+     */
+    @Test
+    public void runFilter_repaired_jpeg_that_still_fails_falls_back_and_cleans_up() throws Exception {
+        final byte[] bytes = java.nio.file.Files.readAllBytes(image("test.jpg").toPath());
+        final File in = staged(java.util.Arrays.copyOf(bytes, bytes.length - 2), "jpg");
+        final java.util.Set<String> repairedBefore = repairedCopies();
+        final String previous = Config.getStringProperty(FALLBACK_PROPERTY, null);
+        Config.setProperty(FALLBACK_PROPERTY, true);
+        try {
+            final File out = new FailingVipsResizeImageFilter()
+                    .runFilter(in, params("resize_w", "200", "resize_h", "150"));
+            assertEquals(new Dimension(200, 150), dims(out));
+        } finally {
+            Config.setProperty(FALLBACK_PROPERTY, previous);
+        }
+        assertEquals("the repaired copy must be deleted", repairedBefore, repairedCopies());
+    }
+
+    /** A libvips resize whose transform always fails, to drive the retry and fallback paths. */
+    private static final class FailingVipsResizeImageFilter extends VipsResizeImageFilter {
+        @Override
+        protected String getFilterName() {
+            return "resize";
+        }
+
+        @Override
+        protected void transform(final File in, final File out, final Map<String, String[]> parameters) {
+            throw new IllegalStateException("libvips transform failed");
+        }
+    }
+
+    /**
+     * Lists the repaired JPEG copies currently in the JVM temp folder.
+     *
+     * @return their names
+     */
+    private static java.util.Set<String> repairedCopies() {
+        final String[] names = new File(System.getProperty("java.io.tmpdir"))
+                .list((dir, name) -> name.startsWith("dot-eoi-repaired_"));
+        return names == null ? java.util.Set.of() : java.util.Set.of(names);
+    }
+
     @Test
     public void runFilter_png_with_bad_idat_checksum_renders() throws Exception {
         final BufferedImage noise = new BufferedImage(320, 240, BufferedImage.TYPE_INT_RGB);

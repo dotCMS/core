@@ -186,8 +186,10 @@ public class LegacyTruncatedImageIntegrationTest {
 
     private static void assertNothingCached(final File rendition) {
         assertFalse("no rendition may be cached for a truncated source: " + rendition, rendition.exists());
+        // staging files are named ".<rendition>_<uuid>.tmp" next to the rendition
         final File[] temps = rendition.getParentFile().listFiles(
-                (dir, name) -> name.startsWith(rendition.getName() + "_"));
+                (dir, name) -> name.startsWith(rendition.getName() + "_")
+                        || name.startsWith("." + rendition.getName() + "_"));
         assertEquals("no temp rendition may be left behind", 0, temps == null ? 0 : temps.length);
     }
 
@@ -201,7 +203,8 @@ public class LegacyTruncatedImageIntegrationTest {
     private static void deleteRenditionAndTemps(final File rendition) {
         final File parent = rendition.getParentFile();
         final File[] files = parent == null ? null
-                : parent.listFiles((dir, name) -> name.startsWith(rendition.getName()));
+                : parent.listFiles((dir, name) -> name.startsWith(rendition.getName())
+                        || name.startsWith("." + rendition.getName()));
         if (files != null) {
             for (final File file : files) {
                 file.delete();

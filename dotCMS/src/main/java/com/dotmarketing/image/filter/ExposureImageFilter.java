@@ -39,7 +39,7 @@ public class ExposureImageFilter extends ImageFilter {
 			BufferedImage src = StrictImageReader.read(file);
 
 			
-            final File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() +".tmp.jpg");
+            final File tempResultFile = stagingFileFor(resultFile);
 
 			
 			BufferedImage dst = ef.filter(src, null);

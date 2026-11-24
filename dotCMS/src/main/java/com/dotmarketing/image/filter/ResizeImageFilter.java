@@ -67,7 +67,7 @@ public class ResizeImageFilter extends ImageFilter {
 		
 
         try {
-            File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() + ".tmp");
+            File tempResultFile = stagingFileFor(resultFile);
             // resample from stream
             BufferedImage srcImage = ImageFilterAPI.apiInstance.get().intelligentResize(file, newSize.width, newSize.height,resampleOpts);
             ImageIO.write(srcImage, "png", tempResultFile);

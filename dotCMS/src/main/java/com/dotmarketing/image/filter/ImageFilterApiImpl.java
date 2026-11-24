@@ -5,6 +5,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.util.StringPool;
@@ -292,9 +293,20 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
                             "subsample_hash", new String[] {hash},
                     FILTER, new String[] {"subsample"}
             );
-            incomingImage = new SubSampleImageFilter().runFilter(incomingImage, params);
+            final File subsample = new SubSampleImageFilter().runFilter(incomingImage, params);
+            try {
+                return this.resizeImage(subsample, width, height, resampleOption);
+            } catch (RuntimeException e) {
+                // the subsample is a cached rendition; if it no longer decodes every request would fail
+                // on it, so drop it and let the next request regenerate it from the source
+                if (subsample.getName().startsWith(WebKeys.GENERATED_FILE)
+                        && Try.of(() -> Files.deleteIfExists(subsample.toPath())).getOrElse(false)) {
+                    Logger.warn(this, "Discarded a cached subsample that failed to resize: " + subsample);
+                }
+                throw e;
+            }
         }
-        
+
         return this.resizeImage(incomingImage, width, height, resampleOption);
 
     }

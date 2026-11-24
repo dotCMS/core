@@ -52,8 +52,7 @@ public class RotateImageFilter extends ImageFilter {
 			 * }
 			 */
 			// a staging file unique to this call: concurrent renders of the same rendition never share one
-			final File tempResultFile = java.nio.file.Files.createTempFile(
-					resultFile.getAbsoluteFile().getParentFile().toPath(), resultFile.getName() + "_", ".tmp").toFile();
+			final File tempResultFile = stagingFileFor(resultFile);
 			try {
 				ImageIO.write(dst, "png", tempResultFile);
 				dst.flush();

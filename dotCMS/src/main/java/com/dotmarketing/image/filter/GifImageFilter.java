@@ -42,7 +42,7 @@ public class GifImageFilter extends ImageFilter {
 			Graphics2D graphics = dst.createGraphics();  
 
 			graphics.setPaint ( new Color ( 255, 255, 255 ) );
-            final File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() +".tmp");
+            final File tempResultFile = stagingFileFor(resultFile);
 
 			graphics.fillRect(0, 0, src.getWidth(), src.getHeight());
 			graphics.drawImage(src, 0, 0, src.getWidth(), src.getHeight(),null);

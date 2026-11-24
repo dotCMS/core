@@ -1,7 +1,9 @@
 package com.dotmarketing.image.filter;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -19,8 +21,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
- * Tests {@link ImageFilter#publishRendition(File, File)}: a rendition is put in place in one step and
- * is never deleted ahead of its regeneration.
+ * Tests how legacy filters stage, name and publish a rendition: it is written to a private staging
+ * file, put in place in one step, and never deleted ahead of its regeneration.
  */
 class ImageFilterPublishRenditionTest {
 
@@ -81,6 +83,45 @@ class ImageFilterPublishRenditionTest {
 
         assertTrue(rendition.exists(), "a failed regeneration must not delete the cached rendition");
         assertArrayEquals(bytes("previously cached rendition"), Files.readAllBytes(rendition.toPath()));
+    }
+
+    /**
+     * Given the same rendition rendered twice,
+     * When each render asks for its staging file,
+     * Then each gets its own file in the rendition's folder, named with a leading dot (so inode-scoped
+     * cleanup never matches it) and not created until the filter writes it.
+     */
+    @Test
+    void stagingFileFor_isUniquePerRenderHiddenAndNotCreated(@TempDir final Path dir) {
+        final File result = dir.resolve("dotGenerated_929f6225-7c89-4cdf-9867-0bfb0c57d7b5_resize_abc.png").toFile();
+
+        final File first = ImageFilter.stagingFileFor(result);
+        final File second = ImageFilter.stagingFileFor(result);
+
+        assertNotEquals(first, second, "concurrent renders must not share a staging file");
+        assertEquals(result.getAbsoluteFile().getParentFile(), first.getParentFile(),
+                "staging must stay in the rendition's folder so the final move is a rename");
+        assertTrue(first.getName().startsWith("." + result.getName() + "_"),
+                "a staging file must not start with dotGenerated_<inode>_, which cleanup deletes");
+        assertFalse(first.exists(), "nothing is created before the filter writes");
+    }
+
+    /**
+     * Given a generated input carrying a legacy numeric inode,
+     * When the next filter in the chain names its rendition,
+     * Then the numeric inode is kept at the start of the name, so cleanup by inode still finds it.
+     */
+    @Test
+    void getResultsFile_keepsALegacyNumericInodeInTheName(@TempDir final Path dir) throws Exception {
+        final File input = dir.resolve(WebKeys.GENERATED_FILE + "12345_resize_abc.png").toFile();
+        Files.write(input.toPath(), bytes("input"));
+        final Map<String, String[]> parameters = new HashMap<>();
+        parameters.put("filter", new String[]{"Jpeg"});
+        parameters.put("jpeg_q", new String[]{"80"});
+
+        final File rendition = new JpegImageFilter().getResultsFile(input, parameters, "jpg");
+
+        assertTrue(rendition.getName().startsWith(WebKeys.GENERATED_FILE + "12345_jpeg_"), rendition.getName());
     }
 
     private static byte[] bytes(final String text) {

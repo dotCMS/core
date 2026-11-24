@@ -60,7 +60,7 @@ public class JpegImageFilter extends ImageFilter {
 			graphics.drawImage(src, 0, 0, src.getWidth(), src.getHeight(),null);
 			
 			
-            final File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() +".tmp.jpg");
+            final File tempResultFile = stagingFileFor(resultFile);
 
             
 			try(ImageOutputStream ios = ImageIO.createImageOutputStream(tempResultFile)){

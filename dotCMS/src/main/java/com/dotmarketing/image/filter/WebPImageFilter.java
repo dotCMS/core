@@ -44,7 +44,7 @@ public class WebPImageFilter extends ImageFilter {
 	            writeParam.setCompressionQuality(quality);
 	        }
 
-            final File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() +".tmp");
+            final File tempResultFile = stagingFileFor(resultFile);
 
 
 

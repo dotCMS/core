@@ -219,14 +219,18 @@ public final class VipsManager {
         if (!isEnabled() || !endsWithoutJpegEoi(file)) {
             return java.util.Optional.empty();
         }
-        final java.io.File repaired = Try.of(() -> {
-            final java.io.File copy = java.io.File.createTempFile("dot-eoi-repaired_", ".jpg");
-            java.nio.file.Files.copy(file.toPath(), copy.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            java.nio.file.Files.write(copy.toPath(), new byte[]{(byte) 0xFF, (byte) 0xD9},
-                    java.nio.file.StandardOpenOption.APPEND);
-            return copy;
-        }).getOrNull();
+        final java.io.File repaired = Try.of(() -> java.io.File.createTempFile("dot-eoi-repaired_", ".jpg")).getOrNull();
         if (repaired == null) {
+            return java.util.Optional.empty();
+        }
+        final boolean staged = Try.run(() -> {
+            java.nio.file.Files.copy(file.toPath(), repaired.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            java.nio.file.Files.write(repaired.toPath(), new byte[]{(byte) 0xFF, (byte) 0xD9},
+                    java.nio.file.StandardOpenOption.APPEND);
+        }).isSuccess();
+        if (!staged) {
+            // never leave a partial copy behind when the copy or the append fails
+            Try.run(() -> java.nio.file.Files.deleteIfExists(repaired.toPath()));
             return java.util.Optional.empty();
         }
         final boolean complete = Try.run(() -> run(arena ->

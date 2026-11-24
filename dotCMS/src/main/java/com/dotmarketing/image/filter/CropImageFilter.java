@@ -97,7 +97,7 @@ public class CropImageFilter extends ImageFilter {
 
 			final BufferedImage out = src.getSubimage(x, y, width, height);
 			
-            final File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() +".tmp");
+            final File tempResultFile = stagingFileFor(resultFile);
 
             
 			
