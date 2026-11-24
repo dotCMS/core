@@ -46,6 +46,10 @@ public class SchedulerJobResourceTest {
     /** Fires only at 01:00 on 1 January 2099, so no job runs during the test. */
     private static final String NEVER = "0 0 1 1 1 ? 2099";
 
+    /** A valid schedule that fires only in 2099, longer than the 80-character cron expression column. */
+    private static final String TOO_LONG_CRON = java.util.stream.IntStream.range(0, 30)
+            .mapToObj(String::valueOf).collect(java.util.stream.Collectors.joining(",")) + " 0 1 1 1 ? 2099";
+
     /** A class on the Scheduler form's list that takes no file paths. */
     private static final String LISTED = "com.dotmarketing.quartz.job.BinaryCleanupJob";
 
@@ -433,20 +437,100 @@ public class SchedulerJobResourceTest {
 
     /**
      * Method to test: {@link SchedulerJobResource#createJob}
-     * Given: an 80-character job name, which fits the job table, while the trigger name made from it
-     * ({@code <name>_trigger}) does not fit the trigger table
+     * Given: a 73-character job name, which fits the job table, while the trigger name made from it
+     * ({@code <name>_trigger}) does not fit the trigger table; and a 72-character name, which fits both
+     * Expected: 400 for the longer name and no job is created; the shorter name is scheduled
+     */
+    @Test
+    public void test_createJob_nameTooLongForTrigger_shouldBeRefused() throws Exception {
+        final String base = ("scheduler-job-" + UUID.randomUUID() + "-".repeat(80)).substring(0, 72);
+        final String tooLong = base + "x";
+        try {
+            assertStatus(Response.Status.BAD_REQUEST, () -> resource.createJob(requestFor(admin),
+                    new MockHttpResponse().response(), form(tooLong, LISTED)));
+            assertNull(QuartzUtils.getScheduler().getJobDetail(tooLong, SchedulerJobResource.USER_JOB_GROUP));
+
+            resource.createJob(requestFor(admin), new MockHttpResponse().response(), form(base, LISTED));
+            assertTrue(exists(base));
+        } finally {
+            remove(tooLong);
+            remove(base);
+        }
+    }
+
+    /**
+     * Method to test: {@link SchedulerJobResource#createJob}
+     * Given: a valid cron expression longer than the 80 characters the cron trigger table allows, so
+     * the job can be stored but its trigger cannot
      * Expected: the save fails, and the job is not stored without its trigger, which would hide it
      * from the Scheduler portlet and block the name
      */
     @Test
     public void test_createJob_triggerNotStored_shouldLeaveNoJob() throws Exception {
-        final String jobName = ("scheduler-job-" + UUID.randomUUID() + "-".repeat(80)).substring(0, 80);
+        final String jobName = "scheduler-job-" + UUID.randomUUID();
         try {
-            resource.createJob(requestFor(admin), new MockHttpResponse().response(), form(jobName, LISTED));
-            fail("the trigger name is longer than the trigger table allows");
+            resource.createJob(requestFor(admin), new MockHttpResponse().response(),
+                    SchedulerJobForm.copyOf(form(jobName, LISTED)).withCronExpression(TOO_LONG_CRON));
+            fail("the cron expression is longer than the cron trigger table allows");
         } catch (final DotRuntimeException expected) {
             assertNull(QuartzUtils.getScheduler().getJobDetail(jobName, SchedulerJobResource.USER_JOB_GROUP));
         } finally {
+            remove(jobName);
+        }
+    }
+
+    /**
+     * Method to test: {@link SchedulerJobResource#updateJob}
+     * Given: an existing job, saved again by another user with new parameters and a valid cron
+     * expression longer than the 80 characters the cron trigger table allows
+     * Expected: the save fails, and the job keeps its parameters, its schedule and the user it runs
+     * as, instead of taking the new settings with its old schedule
+     */
+    @Test
+    public void test_updateJob_triggerNotStored_shouldLeaveJobUnchanged() throws Exception {
+        final String jobName = "scheduler-job-" + UUID.randomUUID();
+        final User otherUser = backendUser(PortletID.JOBS.toString());
+        try {
+            resource.createJob(requestFor(jobsPortletUser), new MockHttpResponse().response(),
+                    SchedulerJobForm.copyOf(form(jobName, LISTED)).withProperties(Map.of("kept", "1")));
+            try {
+                resource.updateJob(requestFor(otherUser), new MockHttpResponse().response(), jobName,
+                        SchedulerJobForm.copyOf(form(jobName, LISTED)).withCronExpression(TOO_LONG_CRON)
+                                .withProperties(Map.of("new", "2")));
+                fail("the cron expression is longer than the cron trigger table allows");
+            } catch (final DotRuntimeException expected) {
+                // the job must be left as it was
+            }
+
+            final ScheduledTask job = saved(jobName);
+            assertEquals(NEVER, ((com.dotmarketing.quartz.CronScheduledTask) job).getCronExpression());
+            assertEquals("1", job.getProperties().get("kept"));
+            assertFalse(job.getProperties().containsKey("new"));
+            assertEquals(jobsPortletUser.getUserId(), job.getProperties().get(ScheduledTask.SCHEDULED_BY_USER_ID));
+        } finally {
+            remove(jobName);
+        }
+    }
+
+    /**
+     * Method to test: {@link SchedulerJobResource#createJob}
+     * Given: a start time that occurs twice in the server's time zone because the clocks go back at
+     * that moment (01:30 on 2 November 2098 in New York)
+     * Expected: the job starts at the second occurrence (06:30 UTC), as the Scheduler form's earlier
+     * date parsing read it, so saving a job unchanged does not move its start an hour earlier
+     */
+    @Test
+    public void test_createJob_dateInDaylightSavingOverlap_shouldUseSecondOccurrence() throws Exception {
+        final String jobName = "scheduler-job-" + UUID.randomUUID();
+        final TimeZone serverZone = TimeZone.getDefault();
+        try {
+            TimeZone.setDefault(TimeZone.getTimeZone("America/New_York"));
+            resource.createJob(requestFor(admin), new MockHttpResponse().response(),
+                    SchedulerJobForm.copyOf(form(jobName, LISTED)).withStartDate("2098-11-02 01:30"));
+            assertEquals(java.time.Instant.parse("2098-11-02T06:30:00Z"),
+                    saved(jobName).getStartDate().toInstant());
+        } finally {
+            TimeZone.setDefault(serverZone);
             remove(jobName);
         }
     }
