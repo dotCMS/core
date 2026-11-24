@@ -92,6 +92,37 @@ them when you upgrade dotCMS — or when the console tells you to.
 > Want more background on how dotCMS releases and support windows work? See
 > [Release & Support Lifecycle](https://dev.dotcms.com/docs/release-support-lifecycle).
 
+##### How the Version Check Works
+
+Every response from your dotCMS instance — REST and GraphQL alike — includes two headers:
+
+| Header             | Meaning                                                                 |
+| ------------------- | ------------------------------------------------------------------------ |
+| `X-DotCMS-Version`  | The exact version of the dotCMS instance that served the response       |
+| `X-DotCMS-Min-SDK`  | The oldest `@dotcms/*` SDK version this dotCMS instance still supports  |
+
+Both headers use the same `YY.MM.DD-N` naming convention as dotCMS releases, where `-N` counts builds made on the same day (so `26.10.28-2` is the second build from October 28, 2026). The `@dotcms/*` packages use the same scheme, except that npm drops leading zeros: dotCMS `26.11.02-01` is published as `@dotcms/client@26.11.2-1`.
+
+`@dotcms/client` reads these headers off responses it already makes — no extra network calls — and compares them, as numeric version segments (e.g. `26.10.5-1` is treated as newer than `26.7.21-1`, never as a string comparison), against its own version:
+
+- If the SDK's own version is **older** than `X-DotCMS-Min-SDK`, it logs one `console.error` per session:
+    ```
+    [dotCMS SDK] SDK <your-version> is not supported by dotCMS <server-version> (minimum required: <min-sdk-version>). Upgrade required: <docs link>
+    ```
+- If the SDK's own version is **newer** than `X-DotCMS-Version`, it logs one `console.warn` per session. This usually means your SDK was built against a newer dotCMS environment (e.g. local dev) than the one it's currently talking to, and it may be calling APIs that instance doesn't have yet.
+- If either header is missing — for example, an older dotCMS instance that doesn't send them yet — or a version string can't be parsed, the check fails silently: no warning is logged and no request/response behavior changes.
+- Prerelease builds published under the `next` tag (e.g. `26.11.17-1-next.3119`) fall into this case too: the `next` segment isn't numeric, so the check never runs and you won't see either warning. If you're on a `next` build, confirm compatibility yourself.
+
+"Once per session" means once per page load in the browser, or once per server process lifetime in Node.js/SSR — not on every individual request.
+
+> [!TIP]
+> **Troubleshooting:** if you run into any issue with the SDKs, first check your logs for `[dotCMS SDK]` compatibility messages — the browser console for client-side code, and your server logs for Node.js/SSR — to rule out a version mismatch before digging further. Because the message is logged only once per session, look back to the start of the page load or server process rather than just at the most recent requests.
+
+Because `@dotcms/react` and `@dotcms/angular` route all of their requests through `@dotcms/client`'s `FetchHttpClient`, they inherit this check automatically; you don't need to add anything extra to see the warning when using those frameworks.
+
+> [!NOTE]
+> If you're self-hosting and have customized [CORS headers](https://dev.dotcms.com/docs/cors-header-configuration) by overriding `Access-Control-Expose-Headers` for the `graphql` resource specifically, make sure `X-DotCMS-Version` and `X-DotCMS-Min-SDK` stay in that list — otherwise the SDK's browser-side version check silently stops seeing them. The global default already exposes both headers, so most instances need no changes here.
+
 #### Environment Setup
 
 **For Production Use:**
@@ -839,6 +870,9 @@ const client = createDotCMSClient({
     httpClient: new CustomHttpClient()
 });
 ```
+
+> [!NOTE]
+> If you provide a custom `httpClient`, the SDK version-compatibility check described above still runs as long as your implementation returns the raw response headers — it reads them off whatever response your `request()` method resolves with.
 
 #### When You Might Need a Custom HTTP Client
 
