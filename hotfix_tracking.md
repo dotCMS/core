@@ -159,3 +159,4 @@ Release-25.07.10 LTS
 153. https://github.com/dotCMS/private-issues/issues/777 : Implement account lockout, login throttling and alerting on every authentication path (fix for #690, #685, #687; in FD-39801) #38061 #777
 154. https://github.com/dotCMS/private-issues/issues/963 : raise the default HSTS max-age to one year and make it configurable #38267 #963
 155. https://github.com/dotCMS/private-issues/issues/687 : check the password for logins with no matching account #38567 #687
+156. https://github.com/dotCMS/private-issues/issues/1079 : scope the legacy workflow task screen to the calling user #38555 #1079
