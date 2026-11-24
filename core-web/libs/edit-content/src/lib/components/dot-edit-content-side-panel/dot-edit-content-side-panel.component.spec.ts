@@ -126,19 +126,8 @@ describe('DotEditContentSidePanelComponent', () => {
         expect(panel.close).not.toHaveBeenCalled();
     });
 
-    it('should forward the host `saved$` stream to the `saved` output', async () => {
-        await open();
-        const savedSpy = vi.fn();
-        spectator.output('saved').subscribe(savedSpy);
-
-        const contentlet = { inode: 'inode-1' } as DotCMSContentlet;
-        saved$.next(contentlet);
-
-        expect(savedSpy).toHaveBeenCalledWith(contentlet);
-    });
-
-    // One output for everything the opener may want to follow, so a new kind of change does not
-    // need a new output (#38379). `saved` stays for the openers that only listen to saves.
+    // One output for everything the opener may want to follow, each change reported once, so a new
+    // kind of change does not need a new output (#38379).
     describe('the `changed` output', () => {
         it('reports a save', async () => {
             await open();
@@ -174,14 +163,18 @@ describe('DotEditContentSidePanelComponent', () => {
         });
     });
 
-    it('should not report a lock change as a save', async () => {
+    it('should report a save once, on the one output', async () => {
         await open();
-        const savedSpy = vi.fn();
-        spectator.output('saved').subscribe(savedSpy);
+        const changedSpy = vi.fn();
+        spectator.output('changed').subscribe(changedSpy);
 
-        lockChanged$.next({ inode: 'inode-1', locked: true } as DotCMSContentlet);
+        saved$.next({ inode: 'inode-1' } as DotCMSContentlet);
 
-        expect(savedSpy).not.toHaveBeenCalled();
+        expect(changedSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('should have no separate `saved` output', () => {
+        expect('saved' in spectator.component).toBe(false);
     });
 
     it('should fire data.onContentSaved (last save) and data.onCancel on close', async () => {

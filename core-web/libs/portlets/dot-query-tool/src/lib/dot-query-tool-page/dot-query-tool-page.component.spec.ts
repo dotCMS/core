@@ -663,7 +663,14 @@ describe('DotQueryToolPageComponent (side panel enabled)', () => {
         spectator.detectChanges();
         const [{ config, ref }] = sidePanels.opened;
 
-        (config.outputs?.['saved'] as () => void)();
+        const changed = config.outputs?.['changed'] as (change: unknown) => void;
+
+        // Only a save changes the results; a lock or a language switch does not (#38379).
+        changed({ kind: 'lock', contentlet: { inode: 'inode-1', locked: true } });
+        changed({ kind: 'language', languageId: 2 });
+        expect(store.runSearch).not.toHaveBeenCalled();
+
+        changed({ kind: 'saved', contentlet: { inode: 'inode-1' } });
         expect(store.runSearch).toHaveBeenCalledTimes(1);
 
         ref.close();

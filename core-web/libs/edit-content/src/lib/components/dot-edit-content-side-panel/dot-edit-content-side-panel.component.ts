@@ -99,17 +99,13 @@ export class DotEditContentSidePanelComponent implements DotSidePanelContent, On
     /** Identity of the content to create or edit. The editor is created once it is set. */
     readonly data = input<EditContentDialogData | null>(null);
 
-    /** Emitted on each successful save, so the opener can refresh its view. */
-    readonly saved = output<DotCMSContentlet>();
-
     /**
-     * Everything the opener may want to follow, as one output with a `kind`, so a new kind of
-     * change does not need a new output (#38379):
-     * - `saved`: a successful save, with the saved content (also on `saved`, which openers that
-     *   only refresh on a save still use);
+     * Everything the opener may want to follow, each change reported once on this one output with
+     * a `kind`, so a new kind of change does not need a new output (#38379):
+     * - `saved`: a successful save, with the saved content, so the opener can refresh its view;
      * - `language`: the author switched language inside the editor, which reloads in place, so
      *   the opener can name it in its URL (#37759, FR-020);
-     * - `lock`: the content was locked or unlocked. Not a save, so it never reaches `saved`; an
+     * - `lock`: the content was locked or unlocked. Never reported as a save; an
      *   opener that lists the content shows the new lock from it.
      */
     readonly changed = output<DotEditContentPanelChange>();
@@ -140,7 +136,6 @@ export class DotEditContentSidePanelComponent implements DotSidePanelContent, On
 
             host.saved$.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe((contentlet) => {
                 this.#lastSaved = contentlet;
-                this.saved.emit(contentlet);
                 this.changed.emit({ kind: 'saved', contentlet });
             });
 

@@ -43,7 +43,11 @@ import {
     DotMessageService
 } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSContentlet, FeaturedFlags } from '@dotcms/dotcms-models';
-import { EditContentDialogData, loadDotEditContentSidePanel } from '@dotcms/edit-content';
+import {
+    DotEditContentPanelChange,
+    EditContentDialogData,
+    loadDotEditContentSidePanel
+} from '@dotcms/edit-content';
 import {
     DOT_MONACO_BASE_OPTIONS,
     DOT_MONACO_RAW_OPTIONS,
@@ -145,7 +149,11 @@ export class DotQueryToolPageComponent implements OnInit {
         component: loadDotEditContentSidePanel,
         heading: (data) => data.title ?? '',
         inputs: (data) => ({ data }),
-        outputs: { saved: () => this.onEditPanelSaved() },
+        // Only a save changes the results; a lock or a language switch does not.
+        outputs: {
+            changed: ({ kind }: DotEditContentPanelChange) =>
+                kind === 'saved' && this.onEditPanelSaved()
+        },
         closed: () => this.onEditPanelClosed()
     });
 
