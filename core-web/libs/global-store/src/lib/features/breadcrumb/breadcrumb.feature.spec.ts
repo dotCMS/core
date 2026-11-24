@@ -867,6 +867,11 @@ describe('withBreadcrumbs Feature', () => {
          */
         class LocationMock {
             #listeners: ((url: string) => void)[] = [];
+            #path = '';
+
+            path(): string {
+                return this.#path;
+            }
 
             onUrlChange(listener: (url: string) => void) {
                 this.#listeners.push(listener);
@@ -875,6 +880,7 @@ describe('withBreadcrumbs Feature', () => {
             }
 
             changeUrl(url: string) {
+                this.#path = url.replace(/^.*#/, '');
                 this.#listeners.forEach((listener) => listener(url));
             }
         }
@@ -1113,6 +1119,23 @@ describe('withBreadcrumbs Feature', () => {
                 TestBed.flushEffects();
 
                 locationMock.changeUrl('#/content-drive?path=/blog/&filters=contentType:Blog');
+                TestBed.flushEffects();
+
+                expect(storeWithRouter.breadcrumbs().at(-1)?.url).toBe(
+                    '/dotAdmin/#/content-drive?path=/blog/&filters=contentType:Blog'
+                );
+            });
+
+            // The menu reloads when portlet layouts change, which re-runs the menu effect with the
+            // router's URL: still the one Content Drive was opened on.
+            it('keeps the followed URL when the menu reloads', () => {
+                routerMock.url = '/content-drive?mId=content';
+                routerMock.triggerNavigationEnd('/content-drive?mId=content');
+                TestBed.flushEffects();
+                locationMock.changeUrl('#/content-drive?path=/blog/&filters=contentType:Blog');
+                TestBed.flushEffects();
+
+                menuItemsSignal.set([...menuItemsSignal()]);
                 TestBed.flushEffects();
 
                 expect(storeWithRouter.breadcrumbs().at(-1)?.url).toBe(
