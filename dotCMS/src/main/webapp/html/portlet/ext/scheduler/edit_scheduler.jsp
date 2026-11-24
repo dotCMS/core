@@ -410,6 +410,8 @@ function deleteSchedule(form) {
 			parameters.add(new java.util.AbstractMap.SimpleEntry<>("", ""));
 		}
 	}
+	// Values are edited in a text area so a value with line breaks is saved back unchanged; the HTML
+	// parser drops the line break right after the opening tag, so a value that starts with one keeps it
 	boolean parameterShowed = false;
 	for (int i = 0; i < parameters.size(); i++) {
 		String key = parameters.get(i).getKey();
@@ -417,7 +419,8 @@ function deleteSchedule(form) {
 		if (editableParameters) {
 %>
 				<b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b><input type="text" dojoType="dijit.form.TextBox" name="propertyName<%= i %>" id="propertyName<%= i %>" value="<%= Xss.encodeForHTMLAttribute(key) %>">&nbsp;&nbsp;
-				<b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b><input type="text" dojoType="dijit.form.TextBox" name="propertyValue<%= i %>" id="propertyValue<%= i %>" value="<%= Xss.encodeForHTMLAttribute(value) %>">
+				<b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b><textarea rows="1" style="vertical-align: middle" name="propertyValue<%= i %>" id="propertyValue<%= i %>">
+<%= Xss.encodeForHTML(value) %></textarea>
 				<br>
 				<br>
 <%
