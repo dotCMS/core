@@ -281,7 +281,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"userId\": \"failed-records-limited-user\",\n    \"active\": true,\n    \"firstName\": \"Limited\",\n    \"lastName\": \"Backend\",\n    \"email\": \"failed-records-limited@dotcms.com\",\n    \"male\": true,\n    \"password\": [\n        \"L\",\n        \"i\",\n        \"m\",\n        \"i\",\n        \"t\",\n        \"e\",\n        \"d\",\n        \"1\",\n        \"2\",\n        \"3\",\n        \"!\"\n    ],\n    \"roles\": [\n        \"DOTCMS_BACK_END_USER\"\n    ]\n}",
+							"raw": "{\n    \"userId\": \"failed-records-limited-user\",\n    \"active\": true,\n    \"firstName\": \"Limited\",\n    \"lastName\": \"Backend\",\n    \"email\": \"failed-records-limited@dotcms.com\",\n    \"male\": true,\n    \"password\": [\n        \"P\",\n        \"o\",\n        \"s\",\n        \"t\",\n        \"m\",\n        \"a\",\n        \"n\",\n        \"-\",\n        \"P\",\n        \"a\",\n        \"s\",\n        \"s\",\n        \"-\",\n        \"2\",\n        \"0\",\n        \"2\",\n        \"6\",\n        \"!\"\n    ],\n    \"roles\": [\n        \"DOTCMS_BACK_END_USER\"\n    ]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
