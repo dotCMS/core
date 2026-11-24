@@ -7,6 +7,18 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotRelatedContentCrumb } from '../../store/dot-related-content-navigation.store';
 
 /**
+ * A change the editor reports to whoever opened it. Every change goes through one stream, whatever
+ * it was, so a new kind of change adds a case rather than a stream (#38379):
+ * - `saved`: a successful save, with the saved content;
+ * - `language`: the author switched language inside the editor, which reloads in place;
+ * - `lock`: the content was locked or unlocked. Never reported as a save.
+ */
+export type DotEditContentPanelChange =
+    | { kind: 'saved'; contentlet: DotCMSContentlet }
+    | { kind: 'language'; languageId: number }
+    | { kind: 'lock'; contentlet: DotCMSContentlet };
+
+/**
  * A request to reload the editor in place (in-place hosts only). `trail`, when
  * present, is the related-content trail to commit **once the navigation is
  * confirmed** (i.e. after the unsaved-changes check) — so cancelling never leaves

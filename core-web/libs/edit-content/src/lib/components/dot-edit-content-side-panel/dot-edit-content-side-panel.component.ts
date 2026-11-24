@@ -30,7 +30,10 @@ import {
     IMAGE_EDITOR_LAUNCHER
 } from '../../fields/shared/image-editor-launcher';
 import { EditContentDialogData } from '../../models/dot-edit-content-dialog.interface';
-import { EDIT_CONTENT_HOST } from '../../services/host/edit-content-host.model';
+import {
+    DotEditContentPanelChange,
+    EDIT_CONTENT_HOST
+} from '../../services/host/edit-content-host.model';
 import { OverlayEditContentHost } from '../../services/host/overlay-edit-content-host';
 import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-edit-content.layout.component';
 
@@ -51,12 +54,6 @@ import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-ed
  * disappears for Image/File fields, and Binary falls back to the legacy Dojo editor instead of the
  * new one. Providing both here — rather than in each opener — fixes it for all three at once.
  */
-/** A change the edit side panel reports to whoever opened it, on its `changed` output. */
-export type DotEditContentPanelChange =
-    | { kind: 'saved'; contentlet: DotCMSContentlet }
-    | { kind: 'language'; languageId: number }
-    | { kind: 'lock'; contentlet: DotCMSContentlet };
-
 @Component({
     selector: 'dot-edit-content-side-panel',
     imports: [DotEditContentLayoutComponent],
@@ -128,15 +125,18 @@ export class DotEditContentSidePanelComponent implements DotSidePanelContent, On
         // Give the editor a clean form-bridge slot; restore the previous one on close.
         pushFormBridge();
 
-        // Forward each save to the opener so it can refresh its view. The overlay host is resolved
+        // Forward every change to the opener, through the one stream. The overlay host is resolved
         // AFTER construction (afterNextRender) on purpose: resolving it in the constructor would
         // cycle through its `DynamicDialogConfig` factory, which depends on this component.
         afterNextRender(() => {
             const host = this.#injector.get(OverlayEditContentHost);
 
-            host.saved$.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe((contentlet) => {
-                this.#lastSaved = contentlet;
-                this.changed.emit({ kind: 'saved', contentlet });
+            host.changes$.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe((change) => {
+                if (change.kind === 'saved') {
+                    this.#lastSaved = change.contentlet;
+                }
+
+                this.changed.emit(change);
             });
 
             // The content was deleted: close without the unsaved-changes guard (nothing is left to
@@ -146,14 +146,6 @@ export class DotEditContentSidePanelComponent implements DotSidePanelContent, On
                 this.#fireCloseCallbacks();
                 this.#panel.close();
             });
-
-            host.languageChanged$
-                .pipe(takeUntilDestroyed(this.#destroyRef))
-                .subscribe((languageId) => this.changed.emit({ kind: 'language', languageId }));
-
-            host.lockChanged$
-                .pipe(takeUntilDestroyed(this.#destroyRef))
-                .subscribe((contentlet) => this.changed.emit({ kind: 'lock', contentlet }));
         });
     }
 

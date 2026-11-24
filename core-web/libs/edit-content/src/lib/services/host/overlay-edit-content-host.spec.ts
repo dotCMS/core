@@ -113,18 +113,35 @@ describe('OverlayEditContentHost', () => {
             }));
     });
 
-    // A lock is not a save, but an opener that lists the content shows its lock (#38379).
-    describe('lockChanged$', () => {
-        it('emits the contentlet reported via reportLockChanged', () =>
-            new Promise<void>((done) => {
-                const contentlet = { inode: 'x', locked: true } as DotCMSContentlet;
-                host.lockChanged$.subscribe((c) => {
-                    expect(c).toBe(contentlet);
-                    done();
-                });
+    // Every change reaches the opener through one stream, whatever it was (#38379).
+    describe('changes$', () => {
+        it('carries every reported change, in order, on the one stream', () => {
+            const changes: unknown[] = [];
+            host.changes$.subscribe((change) => changes.push(change));
+            const saved = { inode: 'x', title: 't' } as DotCMSContentlet;
+            const locked = { inode: 'x', locked: true } as DotCMSContentlet;
 
-                host.reportLockChanged(contentlet);
-            }));
+            host.reportSaved(saved);
+            host.reportLanguage(2);
+            host.reportLockChanged(locked);
+
+            expect(changes).toEqual([
+                { kind: 'saved', contentlet: saved },
+                { kind: 'language', languageId: 2 },
+                { kind: 'lock', contentlet: locked }
+            ]);
+        });
+
+        it('keeps `saved$` as the saves of that stream only', () => {
+            const saves: DotCMSContentlet[] = [];
+            host.saved$.subscribe((contentlet) => saves.push(contentlet));
+            const saved = { inode: 'x' } as DotCMSContentlet;
+
+            host.reportLockChanged({ inode: 'x', locked: true } as DotCMSContentlet);
+            host.reportSaved(saved);
+
+            expect(saves).toEqual([saved]);
+        });
     });
 
     // Chrome intents overlay another context, so they are safe no-ops.
@@ -216,7 +233,7 @@ describe('OverlayEditContentHost', () => {
         // for the reload reports nothing yet (#37759, FR-020, T125).
         it('does not report the language when only asked to reload', () => {
             const spy = vi.fn();
-            host.languageChanged$.subscribe(spy);
+            host.changes$.subscribe(spy);
 
             host.reloadContent('inode-5', 2);
 
@@ -227,13 +244,13 @@ describe('OverlayEditContentHost', () => {
     // The layout reports the language once the reload runs; the opener names it in its URL
     // (#37759, FR-020, FR-028, T125).
     describe('reportLanguage', () => {
-        it('emits the language on languageChanged$', () => {
+        it('emits the language on changes$', () => {
             const spy = vi.fn();
-            host.languageChanged$.subscribe(spy);
+            host.changes$.subscribe(spy);
 
             host.reportLanguage(2);
 
-            expect(spy).toHaveBeenCalledWith(2);
+            expect(spy).toHaveBeenCalledWith({ kind: 'language', languageId: 2 });
         });
     });
 

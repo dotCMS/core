@@ -18,6 +18,7 @@ import {
     IMAGE_EDITOR_LAUNCHER
 } from '../../fields/shared/image-editor-launcher';
 import { EditContentDialogData } from '../../models/dot-edit-content-dialog.interface';
+import { DotEditContentPanelChange } from '../../services/host/edit-content-host.model';
 import { OverlayEditContentHost } from '../../services/host/overlay-edit-content-host';
 import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-edit-content.layout.component';
 
@@ -26,10 +27,8 @@ const panelRef = () => ({ close: vi.fn(), contentStyleClass: signal('p-0!') });
 
 describe('DotEditContentSidePanelComponent', () => {
     let spectator: Spectator<DotEditContentSidePanelComponent>;
-    let saved$: Subject<DotCMSContentlet>;
+    let changes$: Subject<DotEditContentPanelChange>;
     let left$: Subject<void>;
-    let languageChanged$: Subject<number>;
-    let lockChanged$: Subject<DotCMSContentlet>;
     let panel: { close: Mock };
 
     const EDIT_DATA: EditContentDialogData = {
@@ -41,7 +40,7 @@ describe('DotEditContentSidePanelComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotEditContentSidePanelComponent,
-        // Swap the heavy editor for a stub; feed a mock host so we control `saved$`.
+        // Swap the heavy editor for a stub; feed a mock host so we control `changes$`.
         overrideComponents: [
             [
                 DotEditContentSidePanelComponent,
@@ -57,10 +56,8 @@ describe('DotEditContentSidePanelComponent', () => {
     });
 
     beforeEach(() => {
-        saved$ = new Subject<DotCMSContentlet>();
+        changes$ = new Subject<DotEditContentPanelChange>();
         left$ = new Subject<void>();
-        languageChanged$ = new Subject<number>();
-        lockChanged$ = new Subject<DotCMSContentlet>();
         panel = panelRef();
 
         spectator = createComponent({
@@ -68,10 +65,8 @@ describe('DotEditContentSidePanelComponent', () => {
                 {
                     provide: OverlayEditContentHost,
                     useValue: {
-                        saved$: saved$.asObservable(),
-                        left$: left$.asObservable(),
-                        languageChanged$: languageChanged$.asObservable(),
-                        lockChanged$: lockChanged$.asObservable()
+                        changes$: changes$.asObservable(),
+                        left$: left$.asObservable()
                     }
                 },
                 { provide: DotSidePanelRef, useValue: panel }
@@ -135,7 +130,7 @@ describe('DotEditContentSidePanelComponent', () => {
             spectator.output('changed').subscribe(changedSpy);
 
             const contentlet = { inode: 'inode-1' } as DotCMSContentlet;
-            saved$.next(contentlet);
+            changes$.next({ kind: 'saved', contentlet: contentlet });
 
             expect(changedSpy).toHaveBeenCalledWith({ kind: 'saved', contentlet });
         });
@@ -145,7 +140,7 @@ describe('DotEditContentSidePanelComponent', () => {
             const changedSpy = vi.fn();
             spectator.output('changed').subscribe(changedSpy);
 
-            languageChanged$.next(2);
+            changes$.next({ kind: 'language', languageId: 2 });
 
             expect(changedSpy).toHaveBeenCalledWith({ kind: 'language', languageId: 2 });
         });
@@ -157,7 +152,7 @@ describe('DotEditContentSidePanelComponent', () => {
             spectator.output('changed').subscribe(changedSpy);
 
             const contentlet = { inode: 'inode-1', locked: true } as DotCMSContentlet;
-            lockChanged$.next(contentlet);
+            changes$.next({ kind: 'lock', contentlet });
 
             expect(changedSpy).toHaveBeenCalledWith({ kind: 'lock', contentlet });
         });
@@ -168,7 +163,7 @@ describe('DotEditContentSidePanelComponent', () => {
         const changedSpy = vi.fn();
         spectator.output('changed').subscribe(changedSpy);
 
-        saved$.next({ inode: 'inode-1' } as DotCMSContentlet);
+        changes$.next({ kind: 'saved', contentlet: { inode: 'inode-1' } as DotCMSContentlet });
 
         expect(changedSpy).toHaveBeenCalledTimes(1);
     });
@@ -183,7 +178,7 @@ describe('DotEditContentSidePanelComponent', () => {
         await open({ ...EDIT_DATA, onContentSaved, onCancel });
 
         const contentlet = { inode: 'inode-2' } as DotCMSContentlet;
-        saved$.next(contentlet);
+        changes$.next({ kind: 'saved', contentlet: contentlet });
         guardAnswers('proceed');
 
         spectator.component.requestClose();
@@ -210,7 +205,7 @@ describe('DotEditContentSidePanelComponent', () => {
         await open({ ...EDIT_DATA, onContentSaved, onCancel });
 
         // An earlier save of the same content must not reach the opener once it is deleted.
-        saved$.next({ inode: 'inode-2' } as DotCMSContentlet);
+        changes$.next({ kind: 'saved', contentlet: { inode: 'inode-2' } as DotCMSContentlet });
         const confirmClose = vi.spyOn(
             spectator.query(DotEditContentLayoutComponent)!,
             'confirmClose'
@@ -260,7 +255,7 @@ describe('DotEditContentSidePanelComponent — image editor host capability', ()
             providers: [
                 {
                     provide: OverlayEditContentHost,
-                    useValue: { saved$: new Subject(), left$: new Subject<void>() }
+                    useValue: { changes$: new Subject(), left$: new Subject<void>() }
                 },
                 { provide: DotSidePanelRef, useValue: panelRef() }
             ],

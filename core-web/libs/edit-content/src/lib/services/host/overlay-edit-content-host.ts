@@ -4,9 +4,12 @@ import { Injectable, OnDestroy, computed, inject, signal } from '@angular/core';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
+import { filter, map } from 'rxjs/operators';
+
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import {
+    DotEditContentPanelChange,
     EditContentHost,
     EditContentIdentity,
     InPlaceNavigationRequest
@@ -32,7 +35,8 @@ import {
  *   unsaved-changes check passes — so cancelling never leaves a stale breadcrumb.
  * - **The trail** is a per-instance signal (not the shared root store), so an open
  *   overlay never blanks the breadcrumb of a full-screen editor behind it.
- * - **The save result** is forwarded to the opener via {@link saved$}.
+ * - **Every change** (a save, a language switch, a lock) reaches the opener through the one
+ *   {@link changes$} stream.
  *
  * Presentation-agnostic across overlays: the same host backs both the dialog and a
  * side panel — only the chrome (the component that provides it) differs.
@@ -43,9 +47,8 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
     readonly #config = inject(DynamicDialogConfig, { optional: true });
     readonly #dialogRef = inject(DynamicDialogRef, { optional: true });
     readonly #navigation$ = new Subject<InPlaceNavigationRequest>();
-    readonly #saved$ = new Subject<DotCMSContentlet>();
+    readonly #changes$ = new Subject<DotEditContentPanelChange>();
     readonly #left$ = new Subject<void>();
-    readonly #lockChanged$ = new Subject<DotCMSContentlet>();
 
     /** Set once the edited content is deleted; later save reports would point at content that is gone. */
     #contentDeleted = false;
@@ -58,11 +61,17 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
 
     readonly inPlaceNavigation$ = this.#navigation$.asObservable();
 
-    /** Emits each successful save so the dialog can notify its opener. */
-    readonly saved$ = this.#saved$.asObservable();
+    /**
+     * Every change the opener may want to follow (a save, a language switch, a lock), through one
+     * stream whatever it was (#38379).
+     */
+    readonly changes$ = this.#changes$.asObservable();
 
-    /** Emits each lock or unlock, so an opener that lists the content can show the new lock. */
-    readonly lockChanged$ = this.#lockChanged$.asObservable();
+    /** The saves of {@link changes$} alone, for the create dialog, which only follows saves. */
+    readonly saved$ = this.changes$.pipe(
+        filter((change) => change.kind === 'saved'),
+        map((change) => change.contentlet)
+    );
 
     /**
      * Emits when the edited content was deleted and the overlay must close. Overlays not opened
@@ -95,11 +104,11 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
             return;
         }
 
-        this.#saved$.next(contentlet);
+        this.#changes$.next({ kind: 'saved', contentlet });
     }
 
     reportLockChanged(contentlet: DotCMSContentlet): void {
-        this.#lockChanged$.next(contentlet);
+        this.#changes$.next({ kind: 'lock', contentlet });
     }
 
     reloadContent(inode: string, languageId?: number): void {
@@ -108,9 +117,9 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
         this.#navigation$.next(languageId ? { inode, languageId } : { inode });
     }
 
-    /** Reports the language on {@link languageChanged$}. */
+    /** Reports the language on {@link changes$}. */
     reportLanguage(languageId: number): void {
-        this.#languageChanged$.next(languageId);
+        this.#changes$.next({ kind: 'language', languageId });
     }
 
     setTrail(inodes: string[]): void {
@@ -153,14 +162,6 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
         this.#navigation$.next({ inode });
     }
 
-    readonly #languageChanged$ = new Subject<number>();
-
-    /**
-     * A locale switch loaded another language of the content. The opener can name it in its URL,
-     * so a refresh reopens that language (#37759, FR-020).
-     */
-    readonly languageChanged$ = this.#languageChanged$.asObservable();
-
     leaveDeletedContent(_contentType: string): void {
         // The overlay has no listing to return to; just close it. The DialogService dialog closes
         // through its ref; the side panel (no ref in its injector) closes on `left$`.
@@ -182,8 +183,7 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
 
     ngOnDestroy(): void {
         this.#navigation$.complete();
-        this.#saved$.complete();
+        this.#changes$.complete();
         this.#left$.complete();
-        this.#lockChanged$.complete();
     }
 }
