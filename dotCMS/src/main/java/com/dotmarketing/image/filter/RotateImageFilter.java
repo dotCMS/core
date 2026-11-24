@@ -57,9 +57,7 @@ public class RotateImageFilter extends ImageFilter {
 			try {
 				ImageIO.write(dst, "png", tempResultFile);
 				dst.flush();
-				if (!tempResultFile.renameTo(resultFile)) {
-					throw new DotRuntimeException("unable to create file:" + resultFile);
-				}
+				publishRendition(tempResultFile, resultFile);
 			} finally {
 				// already gone after a successful rename; removes a partial file on any failure
 				java.nio.file.Files.deleteIfExists(tempResultFile.toPath());

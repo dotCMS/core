@@ -40,7 +40,6 @@ public class ResizeGifImageFilter extends ImageFilter {
     if (!overwrite(resultFile, parameters)) {
       return resultFile;
     }
-    resultFile.delete();
 
     try {
       BufferedImage src = StrictImageReader.read(file);
@@ -63,7 +62,7 @@ public class ResizeGifImageFilter extends ImageFilter {
         tempResultFile.delete();
         throw e;
       }
-      tempResultFile.renameTo(resultFile);
+      publishRendition(tempResultFile, resultFile);
       return resultFile;
     } catch (Exception e) {
         throw new DotRuntimeException("unable to convert file:" +file + " : " +  e.getMessage(),e);

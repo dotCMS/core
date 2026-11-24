@@ -46,7 +46,7 @@ public class ExposureImageFilter extends ImageFilter {
 			ImageIO.write(dst, "png", tempResultFile);
 			dst.flush();
 			
-	        tempResultFile.renameTo(resultFile);
+	        publishRendition(tempResultFile, resultFile);
 		} catch (IOException e) {
 			throw new DotRuntimeException("unable to convert file:" + file + " : " + e.getMessage(), e);
 		}

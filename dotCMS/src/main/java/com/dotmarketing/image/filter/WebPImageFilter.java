@@ -30,7 +30,6 @@ public class WebPImageFilter extends ImageFilter {
 	        return resultFile;
 	    }
 
-	    resultFile.delete();
 
 	    try {
 	        final ImageWriter writer = ImageIO.getImageWritersByMIMEType("image/webp").next();
@@ -55,7 +54,7 @@ public class WebPImageFilter extends ImageFilter {
 	            writer.write(null, new IIOImage(src, null, null), writeParam);
 	            writer.dispose();
 	        }
-            tempResultFile.renameTo(resultFile);
+            publishRendition(tempResultFile, resultFile);
         } catch (Exception e) {
             throw new DotRuntimeException("unable to convert file:" +file + " : " +  e.getMessage(),e);
         }

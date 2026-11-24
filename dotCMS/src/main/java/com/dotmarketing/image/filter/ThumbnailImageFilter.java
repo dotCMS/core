@@ -45,7 +45,6 @@ public class ThumbnailImageFilter extends ImageFilter {
             return resultFile;
         }
 
-        resultFile.delete();
         try {
 
             if (height <= 0 && width <= 0) {
@@ -111,7 +110,7 @@ public class ThumbnailImageFilter extends ImageFilter {
             ImageIO.write(bgImage, "png", tempResultFile);
             bgImage.flush();
 
-            tempResultFile.renameTo(resultFile);
+            publishRendition(tempResultFile, resultFile);
         } catch (Exception e) {
             throw new DotRuntimeException("unable to convert file:" + file + " : " + e.getMessage(), e);
         }

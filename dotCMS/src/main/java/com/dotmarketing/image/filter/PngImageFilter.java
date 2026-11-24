@@ -41,9 +41,7 @@ public class PngImageFilter extends ImageFilter {
     			ios.flush();
     			writer.dispose();
 			}
-            if (!tempResultFile.renameTo(resultFile)) {
-                throw new DotRuntimeException("unable to create file:" + resultFile);
-            }
+            publishRendition(tempResultFile, resultFile);
             return resultFile;
 			
 			

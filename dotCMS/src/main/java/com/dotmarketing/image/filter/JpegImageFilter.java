@@ -39,7 +39,6 @@ public class JpegImageFilter extends ImageFilter {
 			return resultFile;
 		}
 		
-		resultFile.delete();
 
 		try {
 			Iterator<ImageWriter> iter = ImageIO.getImageWritersByFormatName("jpeg");
@@ -71,7 +70,7 @@ public class JpegImageFilter extends ImageFilter {
     			writer.dispose();
 			}
 			
-	        tempResultFile.renameTo(resultFile);
+	        publishRendition(tempResultFile, resultFile);
 
 
 		} catch (Exception e) {

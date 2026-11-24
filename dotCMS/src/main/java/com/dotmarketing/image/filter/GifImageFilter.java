@@ -52,8 +52,7 @@ public class GifImageFilter extends ImageFilter {
 			ios.flush();
 			writer.dispose();
 			ios.close();
-			resultFile.delete();
-			tempResultFile.renameTo(resultFile);
+			publishRendition(tempResultFile, resultFile);
 			//writer.setOutput(output);
 
 		//	IIOImage image = new IIOImage(src, null, null);

@@ -39,9 +39,7 @@ public class PDFImageFilter extends ImageFilter {
             pdfRenderer.setSubsamplingAllowed(true);
             BufferedImage bim = pdfRenderer.renderImage(--page, scale);
             ImageIO.write(bim, "PNG", tempResultFile);
-            if (!tempResultFile.renameTo(resultFile)) {
-                throw new DotRuntimeException("unable to create file:" + resultFile);
-            }
+            publishRendition(tempResultFile, resultFile);
             return resultFile;
 
         } catch (Exception e) {

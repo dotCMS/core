@@ -45,7 +45,7 @@ public class FlipImageFilter extends ImageFilter {
 			BufferedImage dst = filter.filter(src, null);
 			ImageIO.write(dst, "png", tempResultFile);
 			dst.flush();
-            tempResultFile.renameTo(resultFile);
+            publishRendition(tempResultFile, resultFile);
 			 
 		} catch (IOException e) {
 			throw new DotRuntimeException("unable to convert file:" + file + " : " + e.getMessage(), e);

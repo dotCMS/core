@@ -225,6 +225,30 @@ public abstract class ImageFilter implements ImageFilterIf {
 	}
 
 	/**
+	 * Publishes a fully written temporary rendition under its final name in one step, replacing the
+	 * previous one if present. Readers see either the old rendition or the new one, never a missing or
+	 * half-written file, so a rendition is never deleted ahead of its regeneration. If the move fails,
+	 * the temporary file is removed and the error is raised.
+	 *
+	 * @param temp the temporary file, written next to {@code result} (same folder, same filesystem)
+	 * @param result the rendition's final file
+	 * @throws IOException if the rendition cannot be put in place
+	 */
+	protected static void publishRendition(final File temp, final File result) throws IOException {
+		try {
+			try {
+				java.nio.file.Files.move(temp.toPath(), result.toPath(),
+						java.nio.file.StandardCopyOption.ATOMIC_MOVE, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+			} catch (java.nio.file.AtomicMoveNotSupportedException e) {
+				java.nio.file.Files.move(temp.toPath(), result.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+			}
+		} catch (IOException | RuntimeException e) {
+			java.nio.file.Files.deleteIfExists(temp.toPath());
+			throw e;
+		}
+	}
+
+	/**
 	 * Resolves the inode of the content version being rendered, which is embedded in every rendition
 	 * name so {@code FileAssetAPI#cleanThumbnailsFromFileAsset} can delete only that version's files.
 	 * A chained stage reads it back from its {@code dotGenerated_<inode>_...} input; the first stage
