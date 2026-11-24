@@ -13,8 +13,12 @@ public class UnrecognizedPropertyExceptionMapper implements ExceptionMapper<Unre
     @Override
     public Response toResponse(UnrecognizedPropertyException exception)
     {
-        //Log into our logs first.
-        Logger.warn(this.getClass(), exception.getMessage(), exception);
+        //Log into our logs first, without the field name the client sent.
+        Logger.warn(this.getClass(), "Rejected request: the body has a field that "
+                + (exception.getReferringClass() != null
+                        ? exception.getReferringClass().getSimpleName()
+                        : "the target form")
+                + " does not declare");
 
         //Create the message.
         String message = exception.getMessage();

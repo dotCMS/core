@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="INFO">
+    <Properties>
+        <!-- Control characters other than tab and line ends (a carriage return counts as a line
+             end only before a line feed), written as "?" in messages and exception text.
+             %ex{none} keeps log4j from appending a second, unfiltered trace. -->
+        <Property name="CONTROL_CHARS">[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F\u2028\u2029]|\r(?!\n)</Property>
+    </Properties>
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{HH:mm:ss.SSS}  %-5level %logger{2}{nolookups} - %msg{nolookups}%n" />
+            <PatternLayout pattern="%d{HH:mm:ss.SSS}  %-5level %logger{2}{nolookups} - %replace{%enc{%msg{nolookups}}{CRLF}}{${CONTROL_CHARS}}{?}%n%replace{%ex}{${CONTROL_CHARS}}{?}%ex{none}" />
         </Console>
     </Appenders>
     <Loggers>
