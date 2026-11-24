@@ -1,6 +1,7 @@
 package com.dotcms.enterprise.publishing.remote.handler;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -337,6 +338,49 @@ public class ContentHandlerTest {
                     binary.getCanonicalPath().startsWith(new File(
                             APILocator.getFileAssetAPI().getRealAssetsRootPath()).getCanonicalPath() + File.separator));
         } finally {
+            FileUtils.deleteQuietly(bundleFolder);
+            ContentTypeDataGen.remove(contentType);
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentHandler#handle(File)}
+     * Given scenario: A bundle whose content item has a new identifier but the same unique field
+     * value as an item in the receiver that has a binary. The bundle carries no binary file, and
+     * the binary value in its content XML names a file elsewhere on the receiver.
+     * Expected Result: The receiver's item is updated and keeps its own binary.
+     */
+    @Test
+    public void TEST_UNIQUE_FIELD_MATCH_KEEPS_RECEIVER_BINARY() throws Exception {
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(new FieldDataGen().type(TextField.class).velocityVarName("title").unique(true).next())
+                .field(new FieldDataGen().type(BinaryField.class).velocityVarName(BINARY_VAR).next())
+                .nextPersisted();
+        final File bundleFolder = newBundleFolder();
+        final File outsideFolder = Files.createTempDirectory("ct-outside").toFile();
+        try {
+            final File outsideFile = new File(outsideFolder, "outside.txt");
+            FileUtils.writeStringToFile(outsideFile, "outside the bundle", StandardCharsets.UTF_8);
+            final Contentlet receiverItem = persistedSource(contentType, "receiver binary");
+            // Kept as values: the handler may change the cached object receiverItem refers to
+            final String receiverIdentifier = receiverItem.getIdentifier();
+            final String receiverInode = receiverItem.getInode();
+            final long languageId = receiverItem.getLanguageId();
+            writeContentXml(bundleFolder, receiverItem, UUIDGenerator.generateUuid(),
+                    UUIDGenerator.generateUuid(), outsideFile);
+            new File(bundleFolder, "assets").mkdirs();
+
+            handlerFor(bundleFolder).handle(bundleFolder);
+
+            final Contentlet updated = APILocator.getContentletAPI().findContentletByIdentifier(
+                    receiverIdentifier, false, languageId, APILocator.systemUser(), false);
+            assertNotEquals("The receiver's item must have a new version", receiverInode,
+                    updated.getInode());
+            final File binary = updated.getBinary(BINARY_VAR);
+            assertNotNull("The receiver's binary must be kept", binary);
+            assertEquals("receiver binary", FileUtils.readFileToString(binary, StandardCharsets.UTF_8));
+        } finally {
+            FileUtils.deleteQuietly(outsideFolder);
             FileUtils.deleteQuietly(bundleFolder);
             ContentTypeDataGen.remove(contentType);
         }

@@ -109,6 +109,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -905,10 +906,13 @@ public class ContentHandler implements IHandler {
         for (final Field ff : fields) {
             if(ff.getFieldType().equals(Field.FieldType.BINARY.toString())) {
                 // The value read from the content XML is never used: only a file the bundle carries
-                // can become the binary. Without one, the check-in falls back to the binary the
-                // receiver already stores for the item, if any.
-                content.setBinary(ff.getVelocityVarName(),
-                        bundledBinary(folderOut, inode, ff.getVelocityVarName()));
+                // can become the binary. Without one, the item keeps the binary the receiver already
+                // stores for it, if any: for an item matched by a unique field it was put back by
+                // findUniqueContentMatch, and otherwise the check-in finds it by inode.
+                final String fieldVar = ff.getVelocityVarName();
+                final File bundled = bundledBinary(folderOut, inode, fieldVar);
+                content.setBinary(fieldVar,
+                        bundled != null || !updateExisting ? bundled : content.getBinary(fieldVar));
 			} else if ( ff.getFieldType().equals(Field.FieldType.TAG.toString()) ) {
 				// We don't want to rely on this value since it is not supposed to exist. So set it empty always
 				content.setStringProperty(ff.getVelocityVarName(), "");
@@ -1364,7 +1368,8 @@ public class ContentHandler implements IHandler {
      * Based on the content coming from the sender environment, finds the correspondent content in the receiver
      * environment based on a unique field instead of using the Identifier equality approach. This will allow content
      * creators to update or delete a given piece of content based on the value of a unique field, instead of using the
-     * Identifier value.
+     * Identifier value. A matched content keeps the binaries the receiver stores for it: the binary values in the
+     * bundle's content XML are not copied.
      *
      * @param content              The {@link Contentlet} object coming from the bundle (sender environment).
      * @param fields               The list of fields in the content, based on its Content Type.
@@ -1439,7 +1444,22 @@ public class ContentHandler implements IHandler {
 							Pair.of(content.getIdentifier(), remoteLocalLanguages.getLeft()),
 							Pair.of(matchingContent.getIdentifier(), remoteLocalLanguages.getRight()));
 					final String identifier = matchingContent.getIdentifier();
+					// The binary values in the bundle's content XML are not used, so the receiver's
+					// binaries are read before the copy and put back after it. They're read now
+					// because the new inode below hides them from Contentlet#getBinary
+					final Map<String, File> receiverBinaries = new HashMap<>();
+					for (final Field field : fields) {
+						if (Field.FieldType.BINARY.toString().equals(field.getFieldType())) {
+							final String fieldVar = field.getVelocityVarName();
+							receiverBinaries.put(fieldVar, Try.of(() -> matchingContent.getBinary(fieldVar))
+									.getOrElseThrow(e -> new DotDataException(e.getMessage(), e)));
+						}
+					}
 					this.contentletAPI.copyProperties(matchingContent, content.getMap());
+					for (final Map.Entry<String, File> receiverBinary : receiverBinaries.entrySet()) {
+						Try.run(() -> matchingContent.setBinary(receiverBinary.getKey(), receiverBinary.getValue()))
+								.getOrElseThrow(e -> new DotDataException(e.getMessage(), e));
+					}
 					matchingContent.setIdentifier(identifier);
 					matchingContent.setInode(UUIDUtil.uuid());
 					matchingContent.setProperty(Contentlet.DONT_VALIDATE_ME, true);
