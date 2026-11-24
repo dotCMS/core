@@ -46,6 +46,7 @@ import com.dotmarketing.cms.urlmap.UrlMapContextBuilder;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.PageTreeReadFilter;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -964,7 +965,8 @@ public class PageResource {
 
     /**
      * Returns the tree associated to the page. The caller must be a back-end user with READ
-     * permission on the page.
+     * permission on the page. Only rows whose contentlet the caller can read are returned; see
+     * {@link PageTreeReadFilter}.
      *
      * @param request  the current request
      * @param response the current response
@@ -988,7 +990,8 @@ public class PageResource {
 
         Logger.debug(this, ()-> "Getting multitree per page: " + pageId);
 
-        final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(pageId);
+        final List<MultiTree> multiTrees = new PageTreeReadFilter(user).filter(
+                APILocator.getMultiTreeAPI().getMultiTrees(pageId));
 
         final List<MulitreeView> mulitreeViews = null != multiTrees? multiTrees.stream().map(multiTree ->
                 new MulitreeView(multiTree.getHtmlPage(), multiTree.getContainer(),
