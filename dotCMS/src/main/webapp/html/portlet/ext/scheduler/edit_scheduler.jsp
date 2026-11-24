@@ -47,9 +47,9 @@ function submitfm(form) {
 	const valueOf = (name) => (form[name] && form[name].value) ? form[name].value : null;
 	const checked = (id) => document.getElementById(id) != null && document.getElementById(id).checked;
 	const properties = {};
-	for (let i = 0; i < 6; i++) {
-		const name = valueOf('propertyName' + i);
-		const value = valueOf('propertyValue' + i);
+	for (const field of form.querySelectorAll('input[name^="propertyName"]')) {
+		const name = field.value;
+		const value = valueOf(field.name.replace('propertyName', 'propertyValue'));
 		if (name && value) {
 			properties[name] = value;
 		}
@@ -65,7 +65,8 @@ function submitfm(form) {
 		endDate: checked('haveEndDate') ? valueOf('endDate') : null,
 		properties: properties
 	};
-	fetch('/api/v1/scheduler/jobs' + (editMode ? '/' + encodeURIComponent(jobName) : ''), {
+	// The name goes in the query string, not the path, so names with characters such as ';' stay editable
+	fetch('/api/v1/scheduler/jobs' + (editMode ? '?' + new URLSearchParams({jobName}) : ''), {
 		method: editMode ? 'PUT' : 'POST',
 		headers: {'Content-Type': 'application/json'},
 		body: JSON.stringify(job)
@@ -396,190 +397,39 @@ function deleteSchedule(form) {
 
 		<div id="properties" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Parameters") %>">
 <%
+	// One row per saved parameter, padded with empty rows so a user job always offers at least six
 	java.util.Map<String, String> properties = schedulerForm.getMap();
-	Iterator<String> keys = null;
-	if (properties != null)
-		keys = properties.keySet().iterator();
-
+	List<java.util.Map.Entry<String, String>> parameters = new java.util.ArrayList<>();
+	if (properties != null) {
+		parameters.addAll(properties.entrySet());
+	}
+	boolean editableParameters = (schedulerForm.getJobGroup() == null) || (schedulerForm.getJobGroup().equals("User Job"));
+	if (editableParameters) {
+		while (parameters.size() < 6) {
+			parameters.add(new java.util.AbstractMap.SimpleEntry<>("", ""));
+		}
+	}
 	boolean parameterShowed = false;
-	String key;
-	String value;
-
-	if ((keys != null) && keys.hasNext()) {
-		key = keys.next();
-		value = properties.get(key);
-	} else {
-		key = "";
-		value = "";
-	}
+	for (int i = 0; i < parameters.size(); i++) {
+		String key = parameters.get(i).getKey();
+		String value = parameters.get(i).getValue();
+		if (editableParameters) {
 %>
-<%
-	if ((schedulerForm.getJobGroup() == null) || (schedulerForm.getJobGroup().equals("User Job"))) {
-%>
-				<b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b><input type="text" dojoType="dijit.form.TextBox" name="propertyName0" id="propertyName0" value="<%= key %>">&nbsp;&nbsp;
-				<b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b><input type="text" dojoType="dijit.form.TextBox" name="propertyValue0" id="propertyValue0" value="<%= value %>">
+				<b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b><input type="text" dojoType="dijit.form.TextBox" name="propertyName<%= i %>" id="propertyName<%= i %>" value="<%= Xss.encodeForHTMLAttribute(key) %>">&nbsp;&nbsp;
+				<b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b><input type="text" dojoType="dijit.form.TextBox" name="propertyValue<%= i %>" id="propertyValue<%= i %>" value="<%= Xss.encodeForHTMLAttribute(value) %>">
 				<br>
 				<br>
 <%
-	} else {
-		if (UtilMethods.isSet(key)) {
+		} else if (UtilMethods.isSet(key)) {
 			parameterShowed = true;
 %>
-				<b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b><%= key %>&nbsp;&nbsp;
-				<b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b><%= value %>
+				<b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b><%= Xss.encodeForHTML(key) %>&nbsp;&nbsp;
+				<b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b><%= Xss.encodeForHTML(value) %>
 				<br>
 				<br>
 <%
 		}
 	}
-%>
-<%
-	if ((keys != null) && keys.hasNext()) {
-		key = keys.next();
-		value = properties.get(key);
-	} else {
-		key = "";
-		value = "";
-	}
-%>
-<%
-	if ((schedulerForm.getJobGroup() == null) || (schedulerForm.getJobGroup().equals("User Job"))) {
-%>
-				<b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b><input type="text" dojoType="dijit.form.TextBox" name="propertyName1" id="propertyName1" value="<%= key %>">&nbsp;&nbsp;
-				<b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b><input type="text" dojoType="dijit.form.TextBox" name="propertyValue1" id="propertyValue1" value="<%= value %>">
-				<br>
-				<br>
-<%
-	} else {
-		if (UtilMethods.isSet(key)) {
-			parameterShowed = true;
-%>
-				<b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b><%= key %>&nbsp;&nbsp;
-				<b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b><%= value %>
-				<br>
-				<br>
-<%
-		}
-	}
-%>
-<%
-	if ((keys != null) && keys.hasNext()) {
-		key = keys.next();
-		value = properties.get(key);
-	} else {
-		key = "";
-		value = "";
-	}
-%>
-<%
-	if ((schedulerForm.getJobGroup() == null) || (schedulerForm.getJobGroup().equals("User Job"))) {
-%>
-				<b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b><input type="text" dojoType="dijit.form.TextBox" name="propertyName2" id="propertyName2" value="<%= key %>">&nbsp;&nbsp;
-				<b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b><input type="text" dojoType="dijit.form.TextBox" name="propertyValue2" id="propertyValue2" value="<%= value %>">
-				<br>
-				<br>
-<%
-	} else {
-		if (UtilMethods.isSet(key)) {
-			parameterShowed = true;
-%>
-				<b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b><%= key %>&nbsp;&nbsp;
-				<b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b><%= value %>
-				<br>
-				<br>
-<%
-		}
-	}
-%>
-<%
-	if ((keys != null) && keys.hasNext()) {
-		key = keys.next();
-		value = properties.get(key);
-	} else {
-		key = "";
-		value = "";
-	}
-%>
-<%
-	if ((schedulerForm.getJobGroup() == null) || (schedulerForm.getJobGroup().equals("User Job"))) {
-%>
-				<b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b><input type="text" dojoType="dijit.form.TextBox" name="propertyName3" id="propertyName3" value="<%= key %>">&nbsp;&nbsp;
-				<b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b><input type="text" dojoType="dijit.form.TextBox" name="propertyValue3" id="propertyValue3" value="<%= value %>">
-				<br>
-				<br>
-<%
-	} else {
-		if (UtilMethods.isSet(key)) {
-			parameterShowed = true;
-%>
-				<b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b><%= key %>&nbsp;&nbsp;
-				<b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b><%= value %>
-				<br>
-				<br>
-<%
-		}
-	}
-%>
-
-<%
-	if ((keys != null) && keys.hasNext()) {
-		key = keys.next();
-		value = properties.get(key);
-	} else {
-		key = "";
-		value = "";
-	}
-%>
-<%
-	if ((schedulerForm.getJobGroup() == null) || (schedulerForm.getJobGroup().equals("User Job"))) {
-%>
-				<b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b><input type="text" dojoType="dijit.form.TextBox" name="propertyName4" id="propertyName4" value="<%= key %>">&nbsp;&nbsp;
-				<b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>:  </b><input type="text" dojoType="dijit.form.TextBox" name="propertyValue4" id="propertyValue4" value="<%= value %>">
-				<br>
-				<br>
-<%
-	} else {
-		if (UtilMethods.isSet(key)) {
-			parameterShowed = true;
-%>
-				<b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b><%= key %>&nbsp;&nbsp;
-				<b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b><%= value %>
-				<br>
-				<br>
-<%
-		}
-	}
-%>
-<%
-	if ((keys != null) && keys.hasNext()) {
-		key = keys.next();
-		value = properties.get(key);
-	} else {
-		key = "";
-		value = "";
-	}
-%>
-<%
-	if ((schedulerForm.getJobGroup() == null) || (schedulerForm.getJobGroup().equals("User Job"))) {
-%>
-				<b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b><input type="text" dojoType="dijit.form.TextBox" name="propertyName5" id="propertyName5" value="<%= key %>">&nbsp;&nbsp;
-				<b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b><input type="text" dojoType="dijit.form.TextBox" name="propertyValue5" id="propertyValue5" value="<%= value %>">
-				<br>
-				<br>
-<%
-	} else {
-		if (UtilMethods.isSet(key)) {
-			parameterShowed = true;
-%>
-				<b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b><%= key %>&nbsp;&nbsp;
-				<b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b><%= value %>
-				<br>
-				<br>
-<%
-		}
-	}
-%>
-<%
 	if ((schedulerForm.getJobGroup() != null) && (schedulerForm.getJobGroup().equals("Recurrent Campaign")) && !parameterShowed) {
 %>
 			<%= LanguageUtil.get(pageContext, "There-are-no-Parameters-to-show") %>

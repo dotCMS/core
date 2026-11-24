@@ -467,15 +467,16 @@ public class QuartzUtils {
 	}
 
 	/**
+	 * Schedules the given job, or saves an existing job of the same name and group with the new
+	 * settings and schedule. The trigger is checked before anything is written, so a schedule that
+	 * never fires leaves an existing job as it was. A new job and its trigger are stored in one call,
+	 * which fails with {@link org.quartz.ObjectAlreadyExistsException} if another save created the
+	 * job first.
 	 *
-	 * This methods schedules the given job in the quartz system, and depending on the sequentialScheduled property
-	 * it will use the sequential of the standard scheduler
-	 *
-	 * @param job
-	 * @return
-	 * @throws SchedulerException
-	 * @throws ParseException
-	 * @throws ClassNotFoundException
+	 * @param job the job to save
+	 * @throws SchedulerException when the schedule never fires, or Quartz cannot store the job
+	 * @throws ParseException when the cron expression is not valid
+	 * @throws ClassNotFoundException when the job class is not on the classpath
 	 */
 	public static void scheduleTask(final ScheduledTask job) throws SchedulerException, ParseException, ClassNotFoundException {
 
@@ -515,17 +516,25 @@ public class QuartzUtils {
 		}
 		trigger.setMisfireInstruction(job.getMisfireInstruction());
 
-		scheduler.addJob(jobDetail, true);
+		// Quartz refuses a trigger that never fires; check before writing so an existing job is not
+		// left with the new settings and its old schedule
+		if (trigger.computeFirstFireTime(null) == null) {
+			throw new SchedulerException("Based on configured schedule, the given trigger will never fire.");
+		}
 
 		if (isNew) {
-			scheduler.scheduleJob(trigger);
-		} else if (scheduler.getTrigger(triggerName, triggerGroup) != null) {
-			scheduler.rescheduleJob(triggerName, triggerGroup, trigger);
+			// Stores the job and its trigger in one call, which fails if another save created the job first
+			scheduler.scheduleJob(jobDetail, trigger);
 		} else {
-			try {
-				scheduler.scheduleJob(trigger);
-			} catch (Exception e) {
+			scheduler.addJob(jobDetail, true);
+			if (scheduler.getTrigger(triggerName, triggerGroup) != null) {
 				scheduler.rescheduleJob(triggerName, triggerGroup, trigger);
+			} else {
+				try {
+					scheduler.scheduleJob(trigger);
+				} catch (Exception e) {
+					scheduler.rescheduleJob(triggerName, triggerGroup, trigger);
+				}
 			}
 		}
 

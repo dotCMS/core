@@ -26,7 +26,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -38,12 +42,14 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.quartz.CronTrigger;
+import org.quartz.ObjectAlreadyExistsException;
 import org.quartz.SchedulerException;
 
 /**
@@ -66,7 +72,9 @@ public class SchedulerJobResource {
      */
     static final Set<String> ADMIN_ONLY_CLASSES = Set.of(ContentImportThread.class.getName());
 
-    private static final String DATE_FORMAT = "yyyy-MM-dd HH:mm";
+    /** The whole value must match, and dates that do not exist (such as February 30) are refused. */
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm")
+            .withResolverStyle(ResolverStyle.STRICT);
 
     private final WebResource webResource = new WebResource();
 
@@ -136,7 +144,6 @@ public class SchedulerJobResource {
      * @throws DotDataException when the caller's roles cannot be read
      */
     @PUT
-    @Path("/{jobName}")
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
@@ -144,8 +151,9 @@ public class SchedulerJobResource {
             operationId = "updateSchedulerJob",
             summary = "Update a scheduled job",
             description = "Saves an existing job in the Scheduler portlet's User Job group with new "
-                    + "settings. The same checks as scheduling a job apply, and the job then runs "
-                    + "as the user who saved it.",
+                    + "settings. The job is named in the jobName query parameter, so names with "
+                    + "characters a URL path refuses, such as ';', can be updated. The same checks as "
+                    + "scheduling a job apply, and the job then runs as the user who saved it.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Job saved",
                             content = @Content(mediaType = "application/json",
@@ -166,13 +174,13 @@ public class SchedulerJobResource {
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @Parameter(description = "The name of the job to update", required = true)
-            @PathParam("jobName") final String jobName,
+            @QueryParam("jobName") final String jobName,
             @RequestBody(description = "The job's new settings", required = true,
                     content = @Content(schema = @Schema(implementation = SchedulerJobForm.class)))
             final SchedulerJobForm form) throws DotDataException {
 
         final User user = init(request, response);
-        if (!exists(jobName)) {
+        if (!UtilMethods.isSet(jobName) || !exists(jobName)) {
             throw refused(Response.Status.NOT_FOUND, user, "message.Scheduler.jobNotFound");
         }
         return save(jobName, form, user);
@@ -247,10 +255,18 @@ public class SchedulerJobResource {
         job.setEndDate(endDate);
         job.setCronExpression(form.cronExpression());
 
+        // Quartz refuses a trigger that never fires; checking first answers 400 instead of 500
         try {
+            if (new CronTrigger(jobName, USER_JOB_GROUP, jobName, USER_JOB_GROUP, startDate, endDate,
+                    form.cronExpression()).computeFirstFireTime(null) == null) {
+                throw refused(Response.Status.BAD_REQUEST, user, "message.Scheduler.invalidJobSettings");
+            }
             QuartzUtils.scheduleTask(job);
         } catch (final ParseException e) {
             throw refused(Response.Status.BAD_REQUEST, user, "message.Scheduler.invalidCronExpression");
+        } catch (final ObjectAlreadyExistsException e) {
+            // Another save created the job after this request checked for it
+            throw refused(Response.Status.CONFLICT, user, "message.Scheduler.jobAlreadyExists");
         } catch (final ClassNotFoundException | IllegalArgumentException e) {
             // Not on the classpath, or not a Quartz job
             throw refused(Response.Status.BAD_REQUEST, user, "message.Scheduler.javaClassNotFound");
@@ -263,13 +279,19 @@ public class SchedulerJobResource {
                 .withJobName(jobName).withProperties(parameters));
     }
 
+    /**
+     * Reads a date in the {@code yyyy-MM-dd HH:mm} format, in the server's time zone.
+     *
+     * @return the date, or null when none was given
+     * @throws WebApplicationException 400 when the value is not a whole, existing date in that format
+     */
     private static Date parseDate(final String value, final User user) {
         if (!UtilMethods.isSet(value)) {
             return null;
         }
         try {
-            return new SimpleDateFormat(DATE_FORMAT).parse(value);
-        } catch (final ParseException e) {
+            return Date.from(LocalDateTime.parse(value, DATE_FORMAT).atZone(ZoneId.systemDefault()).toInstant());
+        } catch (final DateTimeParseException e) {
             throw refused(Response.Status.BAD_REQUEST, user, "message.Scheduler.invalidDate");
         }
     }

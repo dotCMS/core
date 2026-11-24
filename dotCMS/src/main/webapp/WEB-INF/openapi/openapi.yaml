@@ -17396,15 +17396,16 @@ paths:
       summary: Schedule a job
       tags:
       - Scheduler
-  /v1/scheduler/jobs/{jobName}:
     put:
       description: "Saves an existing job in the Scheduler portlet's User Job group\
-        \ with new settings. The same checks as scheduling a job apply, and the job\
-        \ then runs as the user who saved it."
+        \ with new settings. The job is named in the jobName query parameter, so names\
+        \ with characters a URL path refuses, such as ';', can be updated. The same\
+        \ checks as scheduling a job apply, and the job then runs as the user who\
+        \ saved it."
       operationId: updateSchedulerJob
       parameters:
       - description: The name of the job to update
-        in: path
+        in: query
         name: jobName
         required: true
         schema:

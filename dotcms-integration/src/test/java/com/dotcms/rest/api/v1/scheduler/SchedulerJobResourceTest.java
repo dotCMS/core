@@ -333,6 +333,56 @@ public class SchedulerJobResourceTest {
         }
     }
 
+    /**
+     * Method to test: {@link SchedulerJobResource#updateJob}
+     * Given: an existing job, and new settings whose cron expression only fires in a year that has
+     * passed, so Quartz would refuse the trigger
+     * Expected: 400, and the job keeps its description and parameters instead of taking the new
+     * ones while keeping its old schedule
+     */
+    @Test
+    public void test_updateJob_scheduleThatNeverFires_shouldLeaveJobUnchanged() throws Exception {
+        final String jobName = "scheduler-job-" + UUID.randomUUID();
+        try {
+            resource.createJob(requestFor(admin), new MockHttpResponse().response(),
+                    SchedulerJobForm.copyOf(form(jobName, LISTED)).withJobDescription("before")
+                            .withProperties(Map.of("kept", "1")));
+
+            assertStatus(Response.Status.BAD_REQUEST, () -> resource.updateJob(requestFor(admin),
+                    new MockHttpResponse().response(), jobName,
+                    SchedulerJobForm.copyOf(form(jobName, LISTED)).withJobDescription("after")
+                            .withCronExpression("0 0 1 1 1 ? 2020").withProperties(Map.of("new", "2"))));
+
+            final ScheduledTask job = saved(jobName);
+            assertEquals("before", job.getJobDescription());
+            assertEquals("1", job.getProperties().get("kept"));
+            assertFalse(job.getProperties().containsKey("new"));
+        } finally {
+            remove(jobName);
+        }
+    }
+
+    /**
+     * Method to test: {@link SchedulerJobResource#createJob}
+     * Given: start dates that a lenient parser would accept: a day that does not exist, and a
+     * valid date followed by extra text
+     * Expected: 400 for each, and no job is created
+     */
+    @Test
+    public void test_createJob_invalidDate_shouldBeRefused() {
+        for (final String startDate : List.of("2099-02-30 10:00", "2099-01-01 10:00 tomorrow")) {
+            final String jobName = "scheduler-job-" + UUID.randomUUID();
+            try {
+                assertStatus(Response.Status.BAD_REQUEST, () -> resource.createJob(requestFor(admin),
+                        new MockHttpResponse().response(),
+                        SchedulerJobForm.copyOf(form(jobName, LISTED)).withStartDate(startDate)));
+                assertFalse(startDate, exists(jobName));
+            } finally {
+                remove(jobName);
+            }
+        }
+    }
+
     private static SchedulerJobForm form(final String jobName, final String javaClass) {
         return SchedulerJobForm.builder()
                 .jobName(jobName)
