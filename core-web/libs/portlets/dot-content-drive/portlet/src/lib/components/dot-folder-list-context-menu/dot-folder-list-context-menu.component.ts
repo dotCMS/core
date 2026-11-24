@@ -142,6 +142,13 @@ export class DotFolderListViewContextMenuComponent {
      * */
     $memoizedMenuItems = signal<Record<string, MenuItem[]>>({});
 
+    /**
+     * The latest right-click. Each one replaces it, so the answer to an earlier one, arriving late,
+     * is dropped instead of replacing the newer menu. A dismissal does not clear it: the menu's hide
+     * can fire while the next right-click is already being answered.
+     */
+    #currentTrigger: Event | null = null;
+
     /** The context menu data for the store. */
     $contextMenuData = this.#store.contextMenu;
 
@@ -243,6 +250,8 @@ export class DotFolderListViewContextMenuComponent {
         if (!triggeredEvent || !contentlet) {
             return;
         }
+
+        this.#currentTrigger = triggeredEvent;
 
         this.$items.set([]);
         const memoizedMenuItems = this.$memoizedMenuItems();
@@ -384,6 +393,12 @@ export class DotFolderListViewContextMenuComponent {
         const workflowActions = await lastValueFrom(
             this.#workflowsActionsService.getByInode(contentlet.inode, DotRenderMode.LISTING)
         );
+
+        // Another right-click while the requests were pending: its menu is the one on screen, and
+        // this late answer would replace it with another row's entries.
+        if (this.#currentTrigger !== triggeredEvent) {
+            return;
+        }
 
         // Read again once both requests answer: a row selected meanwhile counts, or an answer that
         // arrives after it would bring the single-item editor entries back.

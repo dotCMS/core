@@ -65,10 +65,11 @@ interface RouteHandlerConfig {
 }
 
 /**
- * The Content Drive params that say where the author is browsing. Every other param (the open
- * panel, a folder dialog, …) names something that is only open for a moment.
+ * The Content Drive params that say where the author is browsing and how it is shown (folder,
+ * filters, tree, list or cards). Every other param (the open panel, a folder dialog, …) names
+ * something that is only open for a moment.
  */
-const CONTENT_DRIVE_BROWSING_PARAMS = ['path', 'filters', 'isTreeExpanded'];
+const CONTENT_DRIVE_BROWSING_PARAMS = ['path', 'filters', 'isTreeExpanded', 'viewType'];
 
 /**
  * The URL a Content Drive crumb links back to: the same folder, filters and tree, without the

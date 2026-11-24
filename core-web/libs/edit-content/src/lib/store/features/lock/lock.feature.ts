@@ -147,8 +147,13 @@ export function withLock() {
                             dotContentletService.lockContent(store.contentlet()?.inode).pipe(
                                 tapResponse({
                                     next: (updated: DotCMSContentlet) => {
+                                        // Not a save, but an opener listing it shows the lock.
+                                        // The answer is about the version asked for, which the
+                                        // editor may have left (another language) meanwhile.
+                                        host.reportLockChanged(updated);
+
                                         const current = store.contentlet();
-                                        if (!current) {
+                                        if (!current || current.inode !== updated.inode) {
                                             patchState(store, {
                                                 lockStatus: ComponentStatus.LOADED
                                             });
@@ -167,8 +172,6 @@ export function withLock() {
                                             lockStatus: ComponentStatus.LOADED,
                                             contentlet
                                         });
-                                        // Not a save, but an opener listing it shows the lock.
-                                        host.reportLockChanged(contentlet);
                                     },
                                     error: (error: HttpErrorResponse) => {
                                         dotHttpErrorManagerService.handle(error);
@@ -201,8 +204,13 @@ export function withLock() {
                             dotContentletService.unlockContent(store.contentlet()?.inode).pipe(
                                 tapResponse({
                                     next: (updated: DotCMSContentlet) => {
+                                        // Not a save, but an opener listing it shows the lock.
+                                        // The answer is about the version asked for, which the
+                                        // editor may have left (another language) meanwhile.
+                                        host.reportLockChanged(updated);
+
                                         const current = store.contentlet();
-                                        if (!current) {
+                                        if (!current || current.inode !== updated.inode) {
                                             patchState(store, {
                                                 lockStatus: ComponentStatus.LOADED
                                             });
@@ -221,8 +229,6 @@ export function withLock() {
                                             lockStatus: ComponentStatus.LOADED,
                                             contentlet
                                         });
-                                        // Not a save, but an opener listing it shows the lock.
-                                        host.reportLockChanged(contentlet);
                                     },
                                     error: (error: HttpErrorResponse) => {
                                         dotHttpErrorManagerService.handle(error);

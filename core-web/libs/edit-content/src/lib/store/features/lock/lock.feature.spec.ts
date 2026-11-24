@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { patchState, signalStore, signalStoreFeature, withMethods, withState } from '@ngrx/signals';
 import { createServiceFactory, SpectatorService, SpyObject } from '@openng/spectator/vitest';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { HttpErrorResponse } from '@angular/common/http';
@@ -364,6 +364,31 @@ describe('LockFeature', () => {
                 );
             }));
 
+            // The editor can move to another language while the request is pending; the answer is
+            // still about the version it was asked for, so that is the one reported, and the
+            // version now open keeps its own lock.
+            it('should report the locked version, not the one open when it answers', fakeAsync(() => {
+                dotContentletService.canLock.mockReturnValue(
+                    of({ canLock: true, locked: false } as DotContentletCanLock)
+                );
+                store.updateContent({ inode: '123', locked: false } as DotCMSContentlet);
+                const pending = new Subject<DotCMSContentlet>();
+                dotContentletService.lockContent.mockReturnValue(pending);
+
+                store.lockContent();
+                store.updateContent({ inode: '456', locked: false } as DotCMSContentlet);
+                pending.next({ inode: '123', locked: true } as DotCMSContentlet);
+                pending.complete();
+                tick();
+
+                expect(host.reportLockChanged).toHaveBeenCalledWith(
+                    expect.objectContaining({ inode: '123', locked: true })
+                );
+                expect(store.contentlet()).toEqual(
+                    expect.objectContaining({ inode: '456', locked: false })
+                );
+            }));
+
             it('should not report a lock that failed', fakeAsync(() => {
                 dotContentletService.canLock.mockReturnValue(
                     of({ canLock: true, locked: false } as DotContentletCanLock)
@@ -436,6 +461,31 @@ describe('LockFeature', () => {
                 expect(store.lockError()).toBeNull();
                 expect(store.lockStatus()).toBe(ComponentStatus.LOADED);
                 expect(store.isLocking()).toBe(false);
+            }));
+
+            // The editor can move to another language while the request is pending; the answer is
+            // still about the version it was asked for, so that is the one reported, and the
+            // version now open keeps its own lock.
+            it('should report the unlocked version, not the one open when it answers', fakeAsync(() => {
+                dotContentletService.canLock.mockReturnValue(
+                    of({ canLock: true, locked: true } as DotContentletCanLock)
+                );
+                store.updateContent({ inode: '123', locked: true } as DotCMSContentlet);
+                const pending = new Subject<DotCMSContentlet>();
+                dotContentletService.unlockContent.mockReturnValue(pending);
+
+                store.unlockContent();
+                store.updateContent({ inode: '456', locked: true } as DotCMSContentlet);
+                pending.next({ inode: '123', locked: false } as DotCMSContentlet);
+                pending.complete();
+                tick();
+
+                expect(host.reportLockChanged).toHaveBeenCalledWith(
+                    expect.objectContaining({ inode: '123', locked: false })
+                );
+                expect(store.contentlet()).toEqual(
+                    expect.objectContaining({ inode: '456', locked: true })
+                );
             }));
 
             it('should report the released lock to the host that opened the editor', fakeAsync(() => {

@@ -429,6 +429,18 @@ describe('AddRelationshipsComponent — shared surface (US1)', () => {
             expect(spectator.query(DotFolderListViewComponent)?.$rows()).toBe(40);
         });
 
+        /** Same as the page size: the rebuilt table shows the sort the store fetches. */
+        it('gives the list the sort the store fetches', () => {
+            mountWith(withResults);
+
+            spectator.query(DotFolderListViewComponent)?.sort.emit({ field: 'title', order: 1 });
+            spectator.detectChanges();
+
+            const list = spectator.query(DotFolderListViewComponent);
+            expect(list?.$sortField()).toBe('title');
+            expect(list?.$sortOrder()).toBe(1);
+        });
+
         it('stays on the first page when the list reports no page', () => {
             mountWith(withResults);
 
