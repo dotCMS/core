@@ -57,7 +57,11 @@ import {
     isActionableBrowseItem,
     DotCMSContentlet
 } from '@dotcms/dotcms-models';
-import { loadDotEditContentSidePanel, loadDotSourceEditorSidePanel } from '@dotcms/edit-content';
+import {
+    DotEditContentPanelChange,
+    loadDotEditContentSidePanel,
+    loadDotSourceEditorSidePanel
+} from '@dotcms/edit-content';
 import {
     DotContentDriveUploadFiles,
     DotFolderTreeNodeData,
@@ -367,9 +371,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
         heading: (request) => request.title ?? '',
         inputs: (request) => ({ data: request }),
         outputs: {
-            saved: (contentlet: DotCMSContentlet) => this.onEditPanelSaved(contentlet),
-            languageChanged: (languageId: number) => this.onEditPanelLanguage(languageId),
-            lockChanged: () => this.onEditPanelLockChanged()
+            changed: (change: DotEditContentPanelChange) => this.onEditPanelChanged(change)
         },
         closed: () => this.onEditPanelClosed()
     });
@@ -2114,11 +2116,24 @@ export class DotContentDriveShellComponent implements OnDestroy {
     }
 
     /**
-     * The content was locked or unlocked in the new-editor panel. That is not a save, but the list
-     * shows the lock, so refresh it quietly (#38379).
+     * Everything the new-editor panel reports, on its one `changed` output (#38379).
+     *
+     * @param change What changed in the panel.
      */
-    protected onEditPanelLockChanged() {
-        this.#store.reloadContentDrive({ quiet: true });
+    protected onEditPanelChanged(change: DotEditContentPanelChange) {
+        switch (change.kind) {
+            case 'saved':
+                this.onEditPanelSaved(change.contentlet);
+                break;
+            case 'language':
+                this.onEditPanelLanguage(change.languageId);
+                break;
+            case 'lock':
+                // Not a save, but the list shows the lock: the row takes it from the content the
+                // panel reports, with no list request.
+                this.#store.updateItemLock(change.contentlet);
+                break;
+        }
     }
 
     /**

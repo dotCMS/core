@@ -137,26 +137,41 @@ describe('DotEditContentSidePanelComponent', () => {
         expect(savedSpy).toHaveBeenCalledWith(contentlet);
     });
 
-    it('should forward the host language switch to the `languageChanged` output', async () => {
-        await open();
-        const languageSpy = vi.fn();
-        spectator.output('languageChanged').subscribe(languageSpy);
+    // One output for everything the opener may want to follow, so a new kind of change does not
+    // need a new output (#38379). `saved` stays for the openers that only listen to saves.
+    describe('the `changed` output', () => {
+        it('reports a save', async () => {
+            await open();
+            const changedSpy = vi.fn();
+            spectator.output('changed').subscribe(changedSpy);
 
-        languageChanged$.next(2);
+            const contentlet = { inode: 'inode-1' } as DotCMSContentlet;
+            saved$.next(contentlet);
 
-        expect(languageSpy).toHaveBeenCalledWith(2);
-    });
+            expect(changedSpy).toHaveBeenCalledWith({ kind: 'saved', contentlet });
+        });
 
-    // The opener's listing shows the lock, and a lock is not a save (#38379).
-    it('should forward a lock change to the `lockChanged` output', async () => {
-        await open();
-        const lockSpy = vi.fn();
-        spectator.output('lockChanged').subscribe(lockSpy);
+        it('reports a language switch', async () => {
+            await open();
+            const changedSpy = vi.fn();
+            spectator.output('changed').subscribe(changedSpy);
 
-        const contentlet = { inode: 'inode-1', locked: true } as DotCMSContentlet;
-        lockChanged$.next(contentlet);
+            languageChanged$.next(2);
 
-        expect(lockSpy).toHaveBeenCalledWith(contentlet);
+            expect(changedSpy).toHaveBeenCalledWith({ kind: 'language', languageId: 2 });
+        });
+
+        // The opener's listing shows the lock, and a lock is not a save.
+        it('reports a lock change', async () => {
+            await open();
+            const changedSpy = vi.fn();
+            spectator.output('changed').subscribe(changedSpy);
+
+            const contentlet = { inode: 'inode-1', locked: true } as DotCMSContentlet;
+            lockChanged$.next(contentlet);
+
+            expect(changedSpy).toHaveBeenCalledWith({ kind: 'lock', contentlet });
+        });
     });
 
     it('should not report a lock change as a save', async () => {

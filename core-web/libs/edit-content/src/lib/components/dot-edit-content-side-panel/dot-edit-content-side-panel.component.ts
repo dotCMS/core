@@ -51,6 +51,12 @@ import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-ed
  * disappears for Image/File fields, and Binary falls back to the legacy Dojo editor instead of the
  * new one. Providing both here — rather than in each opener — fixes it for all three at once.
  */
+/** A change the edit side panel reports to whoever opened it, on its `changed` output. */
+export type DotEditContentPanelChange =
+    | { kind: 'saved'; contentlet: DotCMSContentlet }
+    | { kind: 'language'; languageId: number }
+    | { kind: 'lock'; contentlet: DotCMSContentlet };
+
 @Component({
     selector: 'dot-edit-content-side-panel',
     imports: [DotEditContentLayoutComponent],
@@ -97,16 +103,16 @@ export class DotEditContentSidePanelComponent implements DotSidePanelContent, On
     readonly saved = output<DotCMSContentlet>();
 
     /**
-     * The author switched language inside the editor, which reloads in place. The opener can name
-     * the language now open in its URL (#37759, FR-020).
+     * Everything the opener may want to follow, as one output with a `kind`, so a new kind of
+     * change does not need a new output (#38379):
+     * - `saved`: a successful save, with the saved content (also on `saved`, which openers that
+     *   only refresh on a save still use);
+     * - `language`: the author switched language inside the editor, which reloads in place, so
+     *   the opener can name it in its URL (#37759, FR-020);
+     * - `lock`: the content was locked or unlocked. Not a save, so it never reaches `saved`; an
+     *   opener that lists the content shows the new lock from it.
      */
-    readonly languageChanged = output<number>();
-
-    /**
-     * The content was locked or unlocked. Not a save, so it does not reach `saved`; an opener that
-     * lists the content refreshes its lock from it (#38379).
-     */
-    readonly lockChanged = output<DotCMSContentlet>();
+    readonly changed = output<DotEditContentPanelChange>();
 
     /** Last successfully-saved contentlet, forwarded to `data.onContentSaved` when the panel closes. */
     #lastSaved: DotCMSContentlet | null = null;
@@ -135,6 +141,7 @@ export class DotEditContentSidePanelComponent implements DotSidePanelContent, On
             host.saved$.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe((contentlet) => {
                 this.#lastSaved = contentlet;
                 this.saved.emit(contentlet);
+                this.changed.emit({ kind: 'saved', contentlet });
             });
 
             // The content was deleted: close without the unsaved-changes guard (nothing is left to
@@ -147,11 +154,11 @@ export class DotEditContentSidePanelComponent implements DotSidePanelContent, On
 
             host.languageChanged$
                 .pipe(takeUntilDestroyed(this.#destroyRef))
-                .subscribe((languageId) => this.languageChanged.emit(languageId));
+                .subscribe((languageId) => this.changed.emit({ kind: 'language', languageId }));
 
             host.lockChanged$
                 .pipe(takeUntilDestroyed(this.#destroyRef))
-                .subscribe((contentlet) => this.lockChanged.emit(contentlet));
+                .subscribe((contentlet) => this.changed.emit({ kind: 'lock', contentlet }));
         });
     }
 

@@ -465,6 +465,7 @@ describe('DotContentDriveShellComponent', () => {
                     dragItems: vi.fn().mockReturnValue({ folders: [], contentlets: [] }),
                     loadItems: vi.fn(),
                     reloadContentDrive: vi.fn(),
+                    updateItemLock: vi.fn(),
                     setPath: vi.fn(),
                     setShowAddToBundle: vi.fn(),
                     userSearchableFields: vi.fn().mockReturnValue([]),
@@ -5330,8 +5331,11 @@ describe('DotContentDriveShellComponent', () => {
             setPanelRequest(EDIT_REQUEST);
             spectator.detectChanges();
 
-            // The panel's `saved` output always carries the saved contentlet.
-            emit(editPanel(), 'saved', { identifier: 'id-1', languageId: 1 } as DotCMSContentlet);
+            // The panel reports every change through `changed`; a save carries the saved contentlet.
+            emit(editPanel(), 'changed', {
+                kind: 'saved',
+                contentlet: { identifier: 'id-1', languageId: 1 } as DotCMSContentlet
+            });
 
             expect(store.reloadContentDrive).toHaveBeenCalledTimes(1);
         });
@@ -5514,7 +5518,7 @@ describe('DotContentDriveShellComponent', () => {
             setPanelRequest(EDIT_REQUEST);
             spectator.detectChanges();
 
-            emit(editPanel(), 'languageChanged', 2);
+            emit(editPanel(), 'changed', { kind: 'language', languageId: 2 });
 
             expect(navigationService.panelLanguageChanged).toHaveBeenCalledWith(2);
         });
@@ -5523,11 +5527,14 @@ describe('DotContentDriveShellComponent', () => {
             setPanelRequest({ mode: 'new', contentTypeId: 'ct-1', title: 'New content' });
             spectator.detectChanges();
 
-            emit(editPanel(), 'saved', {
-                identifier: 'id-9',
-                languageId: 2,
-                inode: 'inode-9'
-            } as DotCMSContentlet);
+            emit(editPanel(), 'changed', {
+                kind: 'saved',
+                contentlet: {
+                    identifier: 'id-9',
+                    languageId: 2,
+                    inode: 'inode-9'
+                } as DotCMSContentlet
+            });
 
             expect(navigationService.panelSaved).toHaveBeenCalledWith({
                 identifier: 'id-9',
@@ -5537,17 +5544,17 @@ describe('DotContentDriveShellComponent', () => {
             expect(store.reloadContentDrive).toHaveBeenCalledWith();
         });
 
-        // A lock or unlock in the panel is not a save, but the listing shows the lock (#38379).
-        it("refreshes the list quietly when the new editor's lock changes", () => {
+        // A lock or unlock in the panel is not a save, but the listing shows the lock. The row
+        // takes it from the content the panel reports, with no list request (#38379).
+        it("gives the row the new editor's lock change, without reloading the list", () => {
             setPanelRequest(EDIT_REQUEST);
             spectator.detectChanges();
+            const contentlet = { identifier: 'id-1', inode: 'inode-1', locked: true };
 
-            emit(editPanel(), 'lockChanged', {
-                identifier: 'id-1',
-                locked: true
-            } as DotCMSContentlet);
+            emit(editPanel(), 'changed', { kind: 'lock', contentlet });
 
-            expect(store.reloadContentDrive).toHaveBeenCalledWith({ quiet: true });
+            expect(store.updateItemLock).toHaveBeenCalledWith(contentlet);
+            expect(store.reloadContentDrive).not.toHaveBeenCalled();
             expect(navigationService.panelSaved).not.toHaveBeenCalled();
         });
 

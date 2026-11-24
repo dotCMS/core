@@ -1142,6 +1142,34 @@ describe('withBreadcrumbs Feature', () => {
                 );
             });
 
+            // The page editor writes its own URL the same way (language, mode, variant), so its
+            // crumb follows too; any route does, while it is the last crumb.
+            it('follows a URL written outside the router on the route of the last crumb', () => {
+                routerMock.triggerNavigationEnd('/c/query-tool?mId=devtools');
+                TestBed.flushEffects();
+                storeWithRouter.addNewBreadcrumb({
+                    label: 'Blog Page',
+                    url: '/dotAdmin/#/edit-page/content?url=/blog/page&language_id=1'
+                });
+
+                locationMock.changeUrl('#/edit-page/content?url=/blog/page&language_id=2');
+
+                expect(storeWithRouter.breadcrumbs().at(-1)).toEqual({
+                    label: 'Blog Page',
+                    url: '/dotAdmin/#/edit-page/content?url=/blog/page&language_id=2'
+                });
+            });
+
+            it('leaves the last crumb alone when the URL moves to another route', () => {
+                routerMock.triggerNavigationEnd('/c/query-tool?mId=devtools');
+                TestBed.flushEffects();
+                const before = storeWithRouter.breadcrumbs();
+
+                locationMock.changeUrl('#/edit-page/content?url=/blog/page');
+
+                expect(storeWithRouter.breadcrumbs()).toEqual(before);
+            });
+
             it('still resets the trail from the menu on a menu click', () => {
                 routerMock.triggerNavigationEnd('/c/query-tool?mId=devtools');
                 TestBed.flushEffects();

@@ -18,11 +18,7 @@ import { filter, map } from 'rxjs/operators';
 
 import { MenuItemEntity } from '@dotcms/dotcms-models';
 
-import {
-    followContentDriveUrl,
-    processSpecialRoute,
-    shouldReplaceLastCrumb
-} from './breadcrumb.utils';
+import { followUrl, processSpecialRoute, shouldReplaceLastCrumb } from './breadcrumb.utils';
 
 /**
  * State interface for the Breadcrumb feature.
@@ -272,10 +268,11 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
                         processUrl(url);
                     });
 
-                // Content Drive moves its URL as the author browses without a navigation, so the
-                // router never sees it; the crumb follows it here (#38379).
+                // Some pages write their state into the URL without a navigation (Content Drive,
+                // the page editor), so the router never sees it; the last crumb follows it here
+                // (#38379).
                 store.location.onUrlChange((url) => {
-                    const crumb = followContentDriveUrl(url, store.lastBreadcrumb());
+                    const crumb = followUrl(url, store.lastBreadcrumb());
 
                     if (crumb) {
                         setLastBreadcrumb(crumb);

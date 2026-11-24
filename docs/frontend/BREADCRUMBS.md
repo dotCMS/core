@@ -164,7 +164,7 @@ myFeatureTab: {
 
   The crumb links back to the same folder, filters and tree, without the params that open a panel or a folder dialog. Otherwise, once another crumb followed it, a click on it would reopen the content, or start another create, the link named.
 
-  Content Drive writes its browsing with `Location.go` / `replaceState`, which never reaches the router, so the store also listens to `Location.onUrlChange`: while the trail ends on Content Drive, the crumb follows the URL (`followContentDriveUrl`). Without it, coming back from the page editor through the crumb opened the URL the author first arrived on instead of the folder they left (#38379).  
+- **URLs written outside the router**: some pages write their state with `Location.go` / `replaceState`, which never reaches the router (Content Drive its folder, filters and tree; the page editor its language and mode). The store also listens to `Location.onUrlChange`, and when the new URL is on the same route as the last crumb, that crumb follows it (`followUrl`); Content Drive's still drops its panel and dialog params. Without it, coming back to a page through its crumb opened the URL the author first arrived on instead of the state they left (#38379).  
 - **Reload with pending tab crumbs**: If a child component calls `addNewBreadcrumb` with a tab `id` before the menu finishes loading (common on hard reload), the store detects those crumbs (items with `id` but no `url`) and re-appends them after the menu effect resets the base trail. No extra work is needed in components — just always provide a stable `id`.
 
 ## Summary

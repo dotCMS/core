@@ -41,17 +41,11 @@
         }
     }
 </div>
-<div
-    class="grid min-h-0 flex-1 overflow-x-hidden"
-    [class.pl-4]="!$selectionMode()"
-    [class.pl-8]="$selectionMode()">
+<!-- No padding of its own: the cards' grid pads both sides, so the empty state, which has none,
+     centres in the full width (#38379). -->
+<div class="grid min-h-0 flex-1 overflow-x-hidden">
     @if ($isEmpty()) {
-        <!-- The list area pads only its left; the cards get their right padding from the grid
-             below. The empty state takes the same right padding, or it sits off centre. -->
-        <div
-            class="grid h-full grid-cols-1 place-items-center overflow-hidden"
-            [class.pr-4]="!$selectionMode()"
-            [class.pr-8]="$selectionMode()">
+        <div class="grid h-full grid-cols-1 place-items-center overflow-hidden">
             <ng-container *ngTemplateOutlet="emptyStateTemplate" />
         </div>
     } @else {
@@ -63,8 +57,8 @@
                 'auto-rows-[7.5rem]!': !listStyle,
                 'grid-cols-1': listStyle,
                 'overflow-auto': !$isLoading(),
-                'pr-4': !$selectionMode(),
-                'pr-8': $selectionMode()
+                'px-4': !$selectionMode(),
+                'px-8': $selectionMode()
             }">
             @if ($isLoading()) {
                 <ng-container *ngTemplateOutlet="loadingTemplate" />

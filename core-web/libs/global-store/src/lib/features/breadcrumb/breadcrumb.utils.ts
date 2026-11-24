@@ -92,28 +92,30 @@ function contentDriveCrumbUrl(url: string): string {
 }
 
 /**
- * The Content Drive crumb after Content Drive moved its own URL, or `null` when the trail should
- * stay as it is.
+ * The last crumb after its page moved its own URL, or `null` when the trail should stay as it is.
  *
- * Content Drive writes its browsing (folder, filters, tree) through `Location.go` and
- * `replaceState`, which never reach the router, so the crumb would keep the URL the author arrived
- * on. Coming back to it from the page editor then opened that URL instead of the folder they left
- * (#38379). Only a trail that ends on Content Drive follows: when it ends anywhere else, Content
- * Drive is not the page being shown.
+ * Some portlets write their state into the URL with `Location.go` / `replaceState`, which never
+ * reaches the router: Content Drive its folder, filters and tree, the page editor its language and
+ * mode. The crumb would otherwise keep the URL the author arrived on, and coming back to it from
+ * another page opened that state instead of the one they left (#38379). Only a URL on the same
+ * route as the last crumb is followed: anywhere else, that crumb is not the page being shown.
+ * Content Drive's crumb also leaves out the params that open a panel or a dialog (see
+ * {@link contentDriveCrumbUrl}).
  *
- * @param url The URL Content Drive moved to, as `Location` reports it (`#/content-drive?…`).
+ * @param url The URL the page moved to, as `Location` reports it (`#/content-drive?…`).
  * @param last The last crumb of the trail.
  * @returns The last crumb pointing at the new URL, or `null` to leave the trail alone.
  */
-export function followContentDriveUrl(url: string, last: MenuItem | null): MenuItem | null {
+export function followUrl(url: string, last: MenuItem | null): MenuItem | null {
     const path = url.replace(/^.*#/, '');
-    const lastPath = (last?.url ?? '').replace(/^.*#/, '');
+    const route = path.split('?')[0];
+    const lastRoute = (last?.url ?? '').replace(/^.*#/, '').split('?')[0];
 
-    if (!last || !/^\/content-drive(\?|$)/.test(path) || !lastPath.startsWith('/content-drive')) {
+    if (!last?.url || route !== lastRoute) {
         return null;
     }
 
-    const crumbUrl = `/dotAdmin/#${contentDriveCrumbUrl(path)}`;
+    const crumbUrl = `/dotAdmin/#${route === '/content-drive' ? contentDriveCrumbUrl(path) : path}`;
 
     return crumbUrl === last.url ? null : { ...last, url: crumbUrl };
 }
