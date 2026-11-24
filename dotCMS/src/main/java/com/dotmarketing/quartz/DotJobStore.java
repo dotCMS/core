@@ -16,6 +16,7 @@ import org.quartz.JobDetail;
 import org.quartz.JobPersistenceException;
 import org.quartz.ObjectAlreadyExistsException;
 import org.quartz.SchedulerConfigException;
+import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 import org.quartz.core.SchedulingContext;
 import org.quartz.impl.jdbcjobstore.JobStoreCMT;
@@ -32,9 +33,31 @@ import org.quartz.utils.DBConnectionManager;
  */
 public class DotJobStore extends JobStoreCMT {
 
+	/**
+	 * Stores a new job and its trigger in one transaction, so a trigger that cannot be stored (for
+	 * example one whose name is too long) does not leave the job saved without it. The store's managed
+	 * connections run with auto-commit on, which would commit the job before the trigger is written;
+	 * this uses the store's own transaction instead, as Quartz does when it acquires triggers.
+	 *
+	 * @param ctxt       the scheduling context
+	 * @param newJob     the job to store
+	 * @param newTrigger the trigger that fires the job
+	 * @throws ObjectAlreadyExistsException when a job or trigger with the same name and group exists
+	 * @throws JobPersistenceException      when either cannot be stored; nothing is kept
+	 */
 	@Override
-	public void storeJobAndTrigger(SchedulingContext ctxt, JobDetail newJob, Trigger newTrigger) throws ObjectAlreadyExistsException, JobPersistenceException {
-		super.storeJobAndTrigger(ctxt, newJob, newTrigger);
+	public void storeJobAndTrigger(final SchedulingContext ctxt, final JobDetail newJob, final Trigger newTrigger)
+			throws ObjectAlreadyExistsException, JobPersistenceException {
+		if (newJob.isVolatile() && !newTrigger.isVolatile()) {
+			final JobPersistenceException e = new JobPersistenceException(
+					"Cannot associate non-volatile trigger with a volatile job!");
+			e.setErrorCode(SchedulerException.ERR_CLIENT_ERROR);
+			throw e;
+		}
+		executeInNonManagedTXLock(isLockOnInsert() ? LOCK_TRIGGER_ACCESS : null, conn -> {
+			storeJob(conn, ctxt, newJob, false);
+			storeTrigger(conn, ctxt, newTrigger, newJob, false, STATE_WAITING, false, false);
+		});
 	}
 
 	public static final String TX_DATA_SOURCE_PREFIX = "TxDataSource.";
