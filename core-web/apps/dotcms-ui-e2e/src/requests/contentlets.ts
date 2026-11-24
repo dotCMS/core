@@ -183,6 +183,108 @@ export async function relateContent(
 }
 
 /**
+ * Locks a contentlet for the admin user, through `PUT /api/v1/content/_lock/{inodeOrIdentifier}`.
+ *
+ * The legacy editor opens content read-only unless the user holds its lock
+ * (`EditContentletAction` sets `CONTENT_EDITABLE` only for the lock owner), so a test that edits
+ * in it locks the content first rather than clicking "Make Editable".
+ *
+ * @param request - Playwright APIRequestContext
+ * @param inodeOrIdentifier - The contentlet to lock
+ */
+export async function lockContentlet(
+    request: APIRequestContext,
+    inodeOrIdentifier: string
+): Promise<void> {
+    const response = await request.put(`/api/v1/content/_lock/${inodeOrIdentifier}`, {
+        headers: {
+            Authorization: generateBase64Credentials(admin1.username, admin1.password)
+        }
+    });
+
+    expect(response.status(), `failed to lock ${inodeOrIdentifier}: ${await response.text()}`).toBe(
+        200
+    );
+}
+
+/**
+ * A contentlet by inode, read from the database through `GET /api/v1/content/{inode}`: any
+ * version, including one a later save has superseded.
+ *
+ * @param request - Playwright APIRequestContext
+ * @param inode - The version's inode
+ * @returns The contentlet
+ */
+export async function getContentlet(
+    request: APIRequestContext,
+    inode: string
+): Promise<Contentlet> {
+    const response = await request.get(`/api/v1/content/${inode}`, {
+        headers: {
+            Authorization: generateBase64Credentials(admin1.username, admin1.password)
+        }
+    });
+
+    expect(response.status(), `failed to read contentlet ${inode}: ${await response.text()}`).toBe(
+        200
+    );
+
+    return (await response.json()).entity as Contentlet;
+}
+
+/** What {@link findWorkingContentlet} looks for. */
+export interface WorkingContentletQuery {
+    /** The content's identifier. */
+    identifier?: string;
+    /** A content type variable: the newest content of that type, or the one with `title`. */
+    contentType?: string;
+    /** The contentlet's title, matched exactly. */
+    title?: string;
+    languageId?: number;
+}
+
+/**
+ * The working version of a contentlet, from the content index (`POST /api/content/_search`), or
+ * `null` while the index has none. Content of a type is looked for among its 20 newest.
+ *
+ * @param request - Playwright APIRequestContext
+ * @param query - The identifier, or the content type and title, and the language
+ * @returns The working contentlet, or `null`
+ */
+export async function findWorkingContentlet(
+    request: APIRequestContext,
+    { identifier, contentType, title, languageId }: WorkingContentletQuery
+): Promise<Contentlet | null> {
+    const terms = ['+working:true', '+deleted:false'];
+
+    if (identifier) {
+        terms.push(`+identifier:${identifier}`);
+    }
+
+    if (contentType) {
+        terms.push(`+contentType:${contentType}`);
+    }
+
+    if (languageId) {
+        terms.push(`+languageId:${languageId}`);
+    }
+
+    const response = await request.post('/api/content/_search', {
+        data: { query: terms.join(' '), sort: 'modDate desc', limit: 20, offset: 0 },
+        headers: {
+            Authorization: generateBase64Credentials(admin1.username, admin1.password)
+        }
+    });
+
+    expect(response.status(), `content search failed: ${await response.text()}`).toBe(200);
+
+    const contentlets: Contentlet[] =
+        (await response.json()).entity?.jsonObjectView?.contentlets ?? [];
+
+    return contentlets.find((contentlet) => !title || contentlet.title === title) ?? null;
+}
+
+/**
  * Deletes contentlets by their identifiers.
  *
  * Fires DESTROY through the WORKFLOW resource. `/api/v1/content/actions/...` — which this used to

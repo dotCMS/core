@@ -226,10 +226,13 @@ const PORTLETS_ANGULAR: Route[] = [
         loadChildren: () => import('@dotcms/portlets/dot-tags/portlet').then((m) => m.dotTagsRoutes)
     },
     {
+        // Deliberately NO `data: { reuseRoute: false }`, as for the Query Tool below: no path
+        // params, so the flag only ever rebuilt the page on browser Back, which the router answers
+        // with a navigation (`onSameUrlNavigation: 'reload'`), discarding the side panel open over
+        // the list and its unsaved-changes prompt (#38303).
         path: 'publishing-queue-beta',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
-        data: { reuseRoute: false },
         loadChildren: () =>
             import('@dotcms/portlets/dot-publishing-queue/portlet').then(
                 (m) => m.dotPublishingQueueRoutes
@@ -276,10 +279,14 @@ const PORTLETS_ANGULAR: Route[] = [
             import('@dotcms/portlets/dot-tools/portlet').then((m) => m.dotToolsRoutes)
     },
     {
+        // Deliberately NO `data: { reuseRoute: false }`. The route has no path params, so the flag
+        // only ever rebuilt the page on a navigation to the Query Tool itself, which in practice is
+        // browser Back: the router answers every Back with a navigation (`onSameUrlNavigation:
+        // 'reload'`). Rebuilt, the page lost the side panel open over it, its unsaved changes, and
+        // the URL DotPanelUrlStateService had just restored for the panel's prompt (#38303).
         path: 'query-tool',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
-        data: { reuseRoute: false },
         loadChildren: () =>
             import('@dotcms/portlets/dot-query-tool/portlet').then((m) => m.dotQueryToolRoutes)
     },
@@ -320,21 +327,29 @@ const PORTLETS_IFRAME = [
                 path: ':id',
                 children: [
                     {
-                        loadChildren: () =>
-                            import('@components/dot-contentlet-editor/dot-contentlet-editor.routes').then(
-                                (m) => m.dotContentletEditorRoutes
+                        // A create deep link redirects to the portlet's URL with `createContent`,
+                        // and the portlet opens the side panel (#38303).
+                        loadComponent: () =>
+                            import('@portlets/dot-porlet-detail/dot-edit-content-deep-link/dot-edit-content-deep-link.component').then(
+                                (m) => m.DotEditContentDeepLinkComponent
                             ),
-                        path: 'new'
+                        path: 'new/:contentType'
                     },
                     {
+                        path: 'new',
+                        redirectTo: '/c/content',
+                        pathMatch: 'full' as const
+                    },
+                    {
+                        // No `reuseRoute: false`: `/c/workflow/<task>` keeps its side panel in the
+                        // URL (#38303, FR-025a), and Back with that panel open is a query-only
+                        // navigation that the flag would answer by rebuilding the task dialog
+                        // under the panel. The task and the portlet detail follow their params.
                         loadComponent: () =>
                             import('@portlets/dot-porlet-detail/dot-portlet-detail.component').then(
                                 (m) => m.DotPortletDetailComponent
                             ),
-                        path: ':asset',
-                        data: {
-                            reuseRoute: false
-                        }
+                        path: ':asset'
                     }
                 ],
                 resolve: {

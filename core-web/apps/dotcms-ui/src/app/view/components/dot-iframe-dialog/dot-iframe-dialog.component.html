@@ -5,6 +5,7 @@
     [style]="{ width: '90vw', height: '90vh', overflow: 'hidden' }"
     [contentStyle]="{ padding: '0', height: '100%' }"
     (visibleChange)="onDialogHide()"
+    (onShow)="shown.emit()"
     #dialog>
     <dot-iframe
         (charge)="onLoad($event)"

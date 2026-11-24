@@ -4,6 +4,7 @@ import { InjectionToken, Signal } from '@angular/core';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
+import { DotOpenContentEvent } from '../../models/dot-open-content-event.model';
 import { DotRelatedContentCrumb } from '../../store/dot-related-content-navigation.store';
 
 /**
@@ -31,6 +32,11 @@ export interface InPlaceNavigationRequest {
 export interface EditContentIdentity {
     /** Inode of existing content to edit. */
     inode?: string;
+    /**
+     * Identifier of the content to edit. A surface that asked for it by identifier alone (a link)
+     * knows its panel by this, since the opener found the inode (#38303, FR-050).
+     */
+    identifier?: string;
     /** Content type id/variable to create new content for. */
     contentTypeId?: string;
     /** Optional pre-fill path for a Host-or-Folder field. */
@@ -41,6 +47,11 @@ export interface EditContentIdentity {
      * default language when it is unset.
      */
     languageId?: number;
+    /**
+     * The experiment variant to edit or create in, set by an overlay opened on a variant page
+     * (#38303). The editor fires every workflow action in it; absent means the default variant.
+     */
+    variantName?: string;
 }
 
 /**
@@ -207,6 +218,15 @@ export interface EditContentHost {
      * @param trailInodes The trail trimmed to (and including) that crumb.
      */
     goToCrumb(inode: string, trailInodes: string[]): void;
+
+    /**
+     * A field (Relationship, a block editor) wants other content opened. The host decides whether
+     * to open a new panel, stack one over itself, or replace its own content in place with a
+     * breadcrumb. Fields never open panels or navigate themselves (#38303).
+     *
+     * @param event What to open, who asked, and the field's reply to each save.
+     */
+    openContent(event: DotOpenContentEvent): void;
 }
 
 /**
