@@ -788,10 +788,13 @@ public class RemotePublishAjaxAction extends AjaxAction {
 
     /**
      * Adds to an specific given bundle a given asset.
-     * <br/>If the given bundle does not exist a new onw will be created with that name
+     * <br/>If the given bundle does not exist a new onw will be created with that name.
+     * <br/>A bundle found by id must belong to the caller, unless the caller is a CMS
+     * Administrator; otherwise the request is answered with 403 and nothing is added.
      *
      * @param request  HttpRequest
      * @param response HttpResponse
+     * @throws IOException when the response cannot be written
      */
     public void addToBundle ( HttpServletRequest request, HttpServletResponse response ) throws IOException {
 
@@ -806,6 +809,14 @@ public class RemotePublishAjaxAction extends AjaxAction {
           
           // try by ID
           Bundle bundle=APILocator.getBundleAPI().getBundleById( bundleId );
+          if (bundle != null) {
+              try {
+                  APILocator.getBundleAPI().checkCanModifyBundle(bundle, getUser());
+              } catch (final DotSecurityException e) {
+                  response.sendError(HttpStatus.SC_FORBIDDEN);
+                  return;
+              }
+          }
           
           // if nothing, try by name
           if(bundle==null) {
