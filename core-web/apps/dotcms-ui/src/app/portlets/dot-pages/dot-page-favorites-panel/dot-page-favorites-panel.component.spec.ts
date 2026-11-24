@@ -12,8 +12,8 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { DotPageFavoritesPanelComponent } from './dot-page-favorites-panel.component';
 import { DotPagesCardComponent } from './dot-pages-card/dot-pages-card.component';
 
-import { LOCAL_STORAGE_FAVORITES_PANEL_KEY } from '../dot-pages-store/dot-pages.store';
 import { DotActionsMenuEventParams } from '../dot-pages.component';
+import { LOCAL_STORAGE_FAVORITES_PANEL_KEY } from '../dot-pages.constants';
 
 const createMockContentlet = (partial: Partial<DotCMSContentlet>): DotCMSContentlet =>
     partial as unknown as DotCMSContentlet;

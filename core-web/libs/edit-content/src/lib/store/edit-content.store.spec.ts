@@ -173,6 +173,43 @@ describe('DotEditContentStore', () => {
             });
         });
 
+        // The variant the host resolved is kept so every save fires in it (#38303, FR-022).
+        it('should keep the experiment variant the host resolves', () => {
+            mockHost.resolveIdentity.mockReturnValue({
+                inode: 'test-inode-123',
+                variantName: 'variant-a'
+            });
+            spectator
+                .inject(DotEditContentService)
+                .getContentById.mockReturnValue(
+                    of({ inode: 'test-inode-123', contentType: 'testType' } as DotCMSContentlet)
+                );
+            spectator
+                .inject(DotContentTypeService)
+                .getContentTypeWithRender.mockReturnValue(of({} as DotCMSContentType));
+            spectator.inject(DotWorkflowsActionsService).getByInode.mockReturnValue(of([]));
+            spectator.inject(DotWorkflowsActionsService).getWorkFlowActions.mockReturnValue(of([]));
+            spectator
+                .inject(DotWorkflowService)
+                .getWorkflowStatus.mockReturnValue(of({} as DotCMSWorkflowStatus));
+
+            store.initialize();
+
+            expect(store.variantName()).toBe('variant-a');
+        });
+
+        it('should keep no variant when the host resolves none', () => {
+            mockHost.resolveIdentity.mockReturnValue({ contentTypeId: 'test-content-type' });
+            spectator
+                .inject(DotContentTypeService)
+                .getContentTypeWithRender.mockReturnValue(of({} as DotCMSContentType));
+            spectator.inject(DotWorkflowsActionsService).getDefaultActions.mockReturnValue(of([]));
+
+            store.initialize();
+
+            expect(store.variantName()).toBeNull();
+        });
+
         it('should initialize new content when the host resolves a contentTypeId', () => {
             mockHost.resolveIdentity.mockReturnValue({ contentTypeId: 'test-content-type' });
 

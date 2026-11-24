@@ -7,7 +7,6 @@ export class MockDotRouterJestService {
 
     replaceQueryParams: () => unknown;
     goToEditContentType: () => unknown;
-    goToEditContentlet: () => unknown;
     goToEditPage: () => unknown;
     goToEditTask: () => unknown;
     goToForgotPassword: () => unknown;
@@ -36,7 +35,6 @@ export class MockDotRouterJestService {
 
         this.replaceQueryParams = this.jest?.fn();
         this.goToEditContentType = this.jest?.fn();
-        this.goToEditContentlet = this.jest?.fn();
         this.goToEditPage = this.jest?.fn();
         this.goToEditTask = this.jest?.fn();
         this.goToForgotPassword = this.jest?.fn();

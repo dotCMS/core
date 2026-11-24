@@ -2726,9 +2726,15 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	@Override
 	Set<String> getPermittedIds(final Collection<String> inodeIds,
 			final int permission, final List<String> roleIds) throws DotDataException {
+		return getBatchPermissions(inodeIds, permission, roleIds).getPermittedIds();
+	}
+
+	@Override
+	BatchPermissionsResult getBatchPermissions(final Collection<String> inodeIds,
+			final int permission, final List<String> roleIds) throws DotDataException {
 
 		if (inodeIds.isEmpty() || roleIds.isEmpty()) {
-			return Set.of();
+			return new BatchPermissionsResult(Set.of(), Set.of());
 		}
 
 		final String rolePlaceholders  = roleIds.stream().map(r -> "?").collect(Collectors.joining(", "));
@@ -2740,13 +2746,16 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				: "(permission & ?) > 0";
 
 		final Set<String> permitted = new HashSet<>();
+		final Set<String> uncached = new HashSet<>();
 		final List<String> idList = new ArrayList<>(inodeIds);
-		for (int i = 0; i < idList.size(); i += 500) {
-			final List<String> chunk = idList.subList(i, Math.min(i + 500, idList.size()));
+		// Chunk size 250 keeps total query parameters well within database limits
+		// (e.g. MS SQL 2,100 parameters, Oracle 1,000 IN items)
+		for (int i = 0; i < idList.size(); i += 250) {
+			final List<String> chunk = idList.subList(i, Math.min(i + 250, idList.size()));
 			final String inodePlaceholders = chunk.stream().map(id -> "?").collect(Collectors.joining(", "));
 
 			final String sql =
-					"SELECT permission_reference.asset_id AS permitted_id " +
+					"SELECT permission_reference.asset_id AS id, 1 AS is_permitted " +
 					"FROM permission_reference, permission " +
 					"WHERE permission_reference.reference_id = permission.inode_id " +
 					"  AND permission.permission_type = permission_reference.permission_type " +
@@ -2754,29 +2763,58 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 					"  AND " + refBitAnd +
 					"  AND permission_reference.asset_id IN (" + inodePlaceholders + ") " +
 					"UNION " +
-					"SELECT inode_id AS permitted_id " +
+					"SELECT inode_id AS id, 1 AS is_permitted " +
 					"FROM permission " +
 					"WHERE permission_type = 'individual' " +
 					"  AND roleid IN (" + rolePlaceholders + ") " +
 					"  AND " + indBitAnd +
+					"  AND inode_id IN (" + inodePlaceholders + ") " +
+					"UNION " +
+					"SELECT asset_id AS id, 0 AS is_permitted " +
+					"FROM permission_reference " +
+					"WHERE asset_id IN (" + inodePlaceholders + ") " +
+					"UNION " +
+					"SELECT inode_id AS id, 0 AS is_permitted " +
+					"FROM permission " +
+					"WHERE permission_type = 'individual' " +
 					"  AND inode_id IN (" + inodePlaceholders + ")";
 
 			final DotConnect dc = new DotConnect().setSQL(sql);
-			// Parameters for the first SELECT (permission_reference join):
+			// Parameters for SELECT 1 (permission_reference join):
 			roleIds.forEach(dc::addParam);
 			dc.addParam(permission);
 			chunk.forEach(dc::addParam);
-			// Parameters for the second SELECT (individual permission):
+			// Parameters for SELECT 2 (individual permission):
 			roleIds.forEach(dc::addParam);
 			dc.addParam(permission);
+			chunk.forEach(dc::addParam);
+			// Parameters for SELECT 3 (cached reference check):
+			chunk.forEach(dc::addParam);
+			// Parameters for SELECT 4 (cached individual check):
 			chunk.forEach(dc::addParam);
 
-			dc.loadObjectResults().stream()
-					.map(row -> (String) row.get("permitted_id"))
-					.filter(java.util.Objects::nonNull)
-					.forEach(permitted::add);
+			final Set<String> knownOrCachedInChunk = new HashSet<>();
+			for (final Map<String, Object> row : dc.loadObjectResults()) {
+				final String id = (String) row.get("id");
+				if (id != null) {
+					knownOrCachedInChunk.add(id);
+					final Object isPermObj = row.get("is_permitted");
+					final int isPermitted = isPermObj instanceof Number
+							? ((Number) isPermObj).intValue()
+							: Integer.parseInt(String.valueOf(isPermObj));
+					if (isPermitted == 1) {
+						permitted.add(id);
+					}
+				}
+			}
+
+			for (final String id : chunk) {
+				if (!knownOrCachedInChunk.contains(id)) {
+					uncached.add(id);
+				}
+			}
 		}
-		return permitted;
+		return new BatchPermissionsResult(permitted, uncached);
 	}
 
 	@Override

@@ -130,9 +130,7 @@ export const DEFAULT_PERSONA: DotCMSViewAsPersona = {
 export const UVE_FEATURE_FLAGS = [
     FeaturedFlags.FEATURE_FLAG_UVE_TOGGLE_LOCK,
     FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR,
-    FeaturedFlags.FEATURE_FLAG_PAGE_SCANNER,
-    // Gates the Edit Content side panel (create/edit contentlet in a slide-in over the editor).
-    FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL
+    FeaturedFlags.FEATURE_FLAG_PAGE_SCANNER
 ] as const;
 
 /**
