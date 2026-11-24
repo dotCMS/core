@@ -1,10 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { mockProvider } from '@openng/spectator/vitest';
 import { NEVER, of } from 'rxjs';
-import { vi } from 'vitest';
+import { Mock, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { Injector } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -40,7 +42,15 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { DotCMSContentType, FeaturedFlags } from '@dotcms/dotcms-models';
+import { FeaturedFlags } from '@dotcms/dotcms-models';
+// The opener is the handler's dependency; the app also lazy-loads the library's routes (#38303).
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import {
+    DotEditContentOpenerService,
+    DotEditContentOpenOptions,
+    DotEditContentRequest
+} from '@dotcms/edit-content';
+import { DotSidePanelRef } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     DotFormatDateServiceMock,
@@ -51,9 +61,11 @@ import {
 import { DotCustomEventHandlerService } from './dot-custom-event-handler.service';
 
 import { MockDotUiColorsService } from '../../../test/dot-test-bed';
-import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotDownloadBundleDialogService } from '../dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotMenuService } from '../dot-menu.service';
+
+/** The handler once it can be told which injector the panels it opens live under (#38303). */
+type WithInjector = DotCustomEventHandlerService & { setInjector?: (injector: Injector) => void };
 
 describe('DotCustomEventHandlerService', () => {
     let service: DotCustomEventHandlerService;
@@ -62,20 +74,22 @@ describe('DotCustomEventHandlerService', () => {
     let dotUiColorsService: DotUiColorsService;
     let dotPushPublishDialogService: DotPushPublishDialogService;
     let dotGenerateSecurePasswordService: DotGenerateSecurePasswordService;
-    let dotContentletEditorService: DotContentletEditorService;
     let dotDownloadBundleDialogService: DotDownloadBundleDialogService;
     let dotWorkflowEventHandlerService: DotWorkflowEventHandlerService;
     let dotEventsService: DotEventsService;
     let dotLicenseService: DotLicenseService;
-    let dotContentTypeService: DotContentTypeService;
+    let dotIframeService: DotIframeService;
     let router: Router;
+    let getKeys: Mock;
 
     const createFeatureFlagResponse = (enabled = 'NOT_FOUND', contentType = '*') => ({
         [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: enabled,
         [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_CONTENT_TYPE]: contentType
     });
 
-    const setup = (dotPropertiesMock: unknown) => {
+    const setup = (dotPropertiesMock: { getKeys: Mock }) => {
+        getKeys = dotPropertiesMock.getKeys;
+
         TestBed.resetTestingModule().configureTestingModule({
             providers: [
                 DotCustomEventHandlerService,
@@ -84,7 +98,6 @@ describe('DotCustomEventHandlerService', () => {
                 DotPushPublishDialogService,
                 DotWorkflowEventHandlerService,
                 DotRouterService,
-                DotContentletEditorService,
                 PushPublishService,
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService },
@@ -115,6 +128,9 @@ describe('DotCustomEventHandlerService', () => {
                 { provide: DotPropertiesService, useValue: dotPropertiesMock },
                 Router,
                 DotContentTypeService,
+                mockProvider(DotEditContentOpenerService, {
+                    open: vi.fn(() => new DotSidePanelRef(() => undefined))
+                }),
                 provideHttpClient(),
                 provideHttpClientTesting()
             ],
@@ -125,25 +141,19 @@ describe('DotCustomEventHandlerService', () => {
         dotLoadingIndicatorService = TestBed.inject(DotLoadingIndicatorService);
         dotRouterService = TestBed.inject(DotRouterService);
         dotUiColorsService = TestBed.inject(DotUiColorsService);
-        dotContentletEditorService = TestBed.inject(DotContentletEditorService);
         dotPushPublishDialogService = TestBed.inject(DotPushPublishDialogService);
         dotGenerateSecurePasswordService = TestBed.inject(DotGenerateSecurePasswordService);
         dotDownloadBundleDialogService = TestBed.inject(DotDownloadBundleDialogService);
         dotWorkflowEventHandlerService = TestBed.inject(DotWorkflowEventHandlerService);
         dotEventsService = TestBed.inject(DotEventsService);
         dotLicenseService = TestBed.inject(DotLicenseService);
-        dotContentTypeService = TestBed.inject(DotContentTypeService);
+        dotIframeService = TestBed.inject(DotIframeService);
         router = TestBed.inject(Router);
     };
 
-    const metadata = {};
-    const metadata2 = {};
-    metadata[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] = true;
-    metadata2[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] = false;
-
     beforeEach(() => {
         setup({
-            getKeys: () => of(createFeatureFlagResponse())
+            getKeys: vi.fn(() => of(createFeatureFlagResponse()))
         });
     });
 
@@ -171,92 +181,6 @@ describe('DotCustomEventHandlerService', () => {
         });
     });
 
-    it('should create a contentlet', () => {
-        vi.spyOn(dotContentletEditorService, 'create');
-
-        service.handle(
-            new CustomEvent('ng-event', {
-                detail: {
-                    name: 'create-contentlet',
-                    data: { url: 'hello.world.com' }
-                }
-            })
-        );
-
-        expect(dotContentletEditorService.create).toHaveBeenCalledWith({
-            data: {
-                url: 'hello.world.com'
-            }
-        });
-    });
-
-    it('should create a host', () => {
-        vi.spyOn(dotContentletEditorService, 'create');
-
-        service.handle(
-            new CustomEvent('ng-event', {
-                detail: {
-                    name: 'create-host',
-                    data: { url: 'hello.world.com' }
-                }
-            })
-        );
-
-        expect(dotContentletEditorService.create).toHaveBeenCalledWith({
-            data: {
-                url: 'hello.world.com'
-            }
-        });
-    });
-
-    it('should create a contentlet from edit page', () => {
-        vi.spyOn(dotContentletEditorService, 'create');
-        service.handle(
-            new CustomEvent('ng-event', {
-                detail: {
-                    name: 'create-contentlet-from-edit-page',
-                    data: { url: 'hello.world.com' }
-                }
-            })
-        );
-
-        expect(dotContentletEditorService.create).toHaveBeenCalledWith({
-            data: {
-                url: 'hello.world.com'
-            }
-        });
-    });
-
-    it('should edit a contentlet', () => {
-        service.handle(
-            new CustomEvent('ng-event', {
-                detail: {
-                    name: 'edit-contentlet',
-                    data: {
-                        inode: '123'
-                    }
-                }
-            })
-        );
-        expect(dotRouterService.goToEditContentlet).toHaveBeenCalledWith('123');
-        expect(dotRouterService.goToEditContentlet).toHaveBeenCalledTimes(1);
-    });
-
-    it('should edit a host', () => {
-        service.handle(
-            new CustomEvent('ng-event', {
-                detail: {
-                    name: 'edit-host',
-                    data: {
-                        inode: '123'
-                    }
-                }
-            })
-        );
-        expect(dotRouterService.goToEditContentlet).toHaveBeenCalledWith('123');
-        expect(dotRouterService.goToEditContentlet).toHaveBeenCalledTimes(1);
-    });
-
     it('should edit a a workflow task', () => {
         service.handle(
             new CustomEvent('ng-event', {
@@ -268,6 +192,23 @@ describe('DotCustomEventHandlerService', () => {
                 }
             })
         );
+        expect(dotRouterService.goToEditTask).toHaveBeenCalledWith('123');
+        expect(dotRouterService.goToEditTask).toHaveBeenCalledTimes(1);
+    });
+
+    it('should edit a workflow task even when the event names a content type', () => {
+        service.handle(
+            new CustomEvent('ng-event', {
+                detail: {
+                    name: 'edit-task',
+                    data: {
+                        inode: '123',
+                        contentType: 'test'
+                    }
+                }
+            })
+        );
+
         expect(dotRouterService.goToEditTask).toHaveBeenCalledWith('123');
         expect(dotRouterService.goToEditTask).toHaveBeenCalledTimes(1);
     });
@@ -339,7 +280,7 @@ describe('DotCustomEventHandlerService', () => {
 
     it('should open push publish dialog even when feature-flag lookup has not resolved', () => {
         setup({
-            getKeys: () => NEVER
+            getKeys: vi.fn(() => NEVER)
         });
 
         const dataMock = {
@@ -424,205 +365,432 @@ describe('DotCustomEventHandlerService', () => {
         expect(dotLicenseService.updateLicense).toHaveBeenCalled();
     });
 
-    describe('edit content 2 is enabled and contentTypes are catchall', () => {
+    /**
+     * #38303 (R11) — the legacy portlets' content events open the side panel through the opener,
+     * whatever editor the content type uses. The panel lives under `DotSidePanelHostComponent`,
+     * which registers its own injector here, so a panel finds the `MessageService` and the
+     * `<p-toast>` that component provides. Saving or closing reloads the portlet that asked.
+     */
+    describe('content events open the side panel', () => {
+        /** The portlet `MockDotRouterService` reports as current. */
+        const PORTLET_ID = '123-567';
+
+        /** Stands in for `DotSidePanelHostComponent`'s injector. */
+        let sidePanelHostInjector: Injector;
+
+        /** The opener's `open`, as the mock records it. */
+        const opened = () => TestBed.inject(DotEditContentOpenerService).open as Mock;
+
+        /** The request the handler asked the opener for, on its only `open`. */
+        const openedRequest = (): DotEditContentRequest => {
+            expect(opened().mock.calls.length, 'the handler opens one panel').toBe(1);
+
+            return opened().mock.calls[0][0] as DotEditContentRequest;
+        };
+
+        /** The options the handler handed the opener, on its only `open`. */
+        const openOptions = (): DotEditContentOpenOptions => {
+            expect(opened().mock.calls.length, 'the handler opens one panel').toBe(1);
+
+            return opened().mock.calls[0][1] as DotEditContentOpenOptions;
+        };
+
+        /**
+         * Sends one of the legacy portlets' events, as `IframePortletLegacyComponent` does, and
+         * waits for the handler to load the opener, which the admin app imports on demand.
+         */
+        const send = async (name: string, data: Record<string, unknown>): Promise<void> => {
+            service.handle(new CustomEvent('ng-event', { detail: { name, data } }));
+            await vi.dynamicImportSettled();
+        };
+
         beforeEach(() => {
-            setup({
-                getKeys: () => of(createFeatureFlagResponse('true'))
+            opened().mockClear();
+            sidePanelHostInjector = Injector.create({
+                providers: [],
+                parent: TestBed.inject(Injector)
             });
-
-            vi.spyOn(router, 'navigate');
-            vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                of({ metadata } as DotCMSContentType)
-            );
+            (service as WithInjector).setInjector?.(sidePanelHostInjector);
         });
 
-        it('should create a contentlet', () => {
-            vi.spyOn(dotContentletEditorService, 'create');
+        describe('edit-contentlet', () => {
+            it('should open the contentlet for editing, naming the portlet that asked', async () => {
+                await send('edit-contentlet', { inode: '123', contentType: 'Blog' });
 
-            service.handle(
-                new CustomEvent('ng-event', {
-                    detail: {
-                        name: 'create-contentlet',
-                        data: { contentType: 'test' }
-                    }
-                })
-            );
-
-            expect(router.navigate).toHaveBeenCalledWith(['content/new/test'], {
-                queryParams: {}
+                expect(openedRequest()).toEqual({
+                    mode: 'edit',
+                    inode: '123',
+                    contentType: 'Blog',
+                    portletId: PORTLET_ID
+                });
             });
-            expect(router.navigate).toHaveBeenCalledTimes(1);
-        });
 
-        it('should create a contentlet with folderPath query param', () => {
-            service.handle(
-                new CustomEvent('ng-event', {
-                    detail: {
-                        name: 'create-contentlet',
-                        data: {
-                            contentType: 'test',
-                            folderPath: 'default/level1/level2/'
-                        }
-                    }
-                })
-            );
+            it('should not route anywhere', async () => {
+                vi.spyOn(router, 'navigate');
 
-            expect(router.navigate).toHaveBeenCalledWith(['content/new/test'], {
-                queryParams: { folderPath: 'default/level1/level2/' }
+                await send('edit-contentlet', { inode: '123', contentType: 'Blog' });
+
+                expect((router.navigate as Mock).mock.calls.length).toBe(0);
             });
         });
 
-        it('should edit a workflow task using legacy handler regardless of feature flag', () => {
-            service.handle(
-                new CustomEvent('ng-event', {
-                    detail: {
-                        name: 'edit-task',
-                        data: {
-                            inode: '123',
-                            contentType: 'test'
-                        }
-                    }
-                })
-            );
+        describe('edit-host', () => {
+            it('should open the site for editing with no content type, which the opener fetches', async () => {
+                await send('edit-host', { inode: 'host-inode' });
 
-            expect(dotRouterService.goToEditTask).toHaveBeenCalledWith('123');
-            expect(dotRouterService.goToEditTask).toHaveBeenCalledTimes(1);
+                const request = openedRequest();
+                expect(request).toEqual({
+                    mode: 'edit',
+                    inode: 'host-inode',
+                    portletId: PORTLET_ID
+                });
+                expect(request.contentType).toBeUndefined();
+            });
         });
 
-        it('should edit a contentlet', () => {
-            service.handle(
-                new CustomEvent('ng-event', {
-                    detail: {
-                        name: 'edit-contentlet',
-                        data: {
-                            inode: '123',
-                            contentType: 'test'
-                        }
-                    }
-                })
-            );
-            expect(router.navigate).toHaveBeenCalledWith(['content/123']);
-            expect(router.navigate).toHaveBeenCalledTimes(1);
+        describe('create-contentlet', () => {
+            /**
+             * The content search and the Site Browser put the language the portlet shows on the
+             * create URL (`&lang=<id>`), and the create opens in it; the rest of the URL is ignored.
+             */
+            it('should create in the language the JSP url names', async () => {
+                await send('create-contentlet', {
+                    url: '/c/portal/layout?p_l_id=1&p_p_id=content&_content_cmd=new&lang=2',
+                    contentType: 'Blog',
+                    folderPath: 'default/'
+                });
+
+                expect(openedRequest()).toEqual({
+                    mode: 'new',
+                    contentType: 'Blog',
+                    folderPath: 'default/',
+                    languageId: 2,
+                    portletId: PORTLET_ID
+                });
+            });
+
+            it('should open a create of the content type in the folder, ignoring the JSP url', async () => {
+                await send('create-contentlet', {
+                    url: '/c/portal/layout?p_l_id=1&p_p_id=content&_content_cmd=new',
+                    contentType: 'Blog',
+                    folderPath: 'default/level1/level2/'
+                });
+
+                const request = openedRequest();
+                expect(request).toEqual({
+                    mode: 'new',
+                    contentType: 'Blog',
+                    folderPath: 'default/level1/level2/',
+                    portletId: PORTLET_ID
+                });
+                expect(request).not.toHaveProperty('url');
+                // No `lang` on the url: the opener's default language applies.
+                expect(request).not.toHaveProperty('languageId');
+            });
+        });
+
+        /**
+         * The Site Browser names the folder twice: `folderPath` for the new editor and
+         * `&folder=<inode>` on its create URL, which is all the legacy editor reads
+         * (`view_browser_js_inc.jsp`, `getSelectedpageAsset` and `getSelectedfileAsset`).
+         */
+        describe('create-contentlet from the Site Browser', () => {
+            const SITE_BROWSER_URL =
+                '/c/portal/layout?p_l_id=1&p_p_id=site-browser&p_p_action=1&p_p_state=maximized' +
+                '&_site_browser_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet' +
+                '&_site_browser_cmd=new&selectedStructure=st-1&folder=folder-inode-1' +
+                '&referer=%2Fc&lang=1';
+
+            it('should carry the folder inode the create URL names, for the legacy editor', async () => {
+                await send('create-contentlet', {
+                    url: SITE_BROWSER_URL,
+                    contentType: 'htmlpageasset',
+                    folderPath: 'default/level1/'
+                });
+
+                expect(openedRequest()).toEqual({
+                    mode: 'new',
+                    contentType: 'htmlpageasset',
+                    folderPath: 'default/level1/',
+                    folderInode: 'folder-inode-1',
+                    languageId: 1,
+                    portletId: PORTLET_ID
+                });
+            });
+
+            it('should name no folder inode when the create URL has an empty folder', async () => {
+                await send('create-contentlet', {
+                    url: SITE_BROWSER_URL.replace('folder=folder-inode-1', 'folder='),
+                    contentType: 'htmlpageasset',
+                    folderPath: 'default/'
+                });
+
+                expect(openedRequest()).not.toHaveProperty('folderInode');
+            });
+        });
+
+        describe('create-host', () => {
+            it('should open a create of a site, ignoring the JSP url', async () => {
+                await send('create-host', { url: '/c/portal/layout?p_l_id=1&p_p_id=sites' });
+
+                const request = openedRequest();
+                expect(request).toEqual({
+                    mode: 'new',
+                    contentType: 'Host',
+                    portletId: PORTLET_ID
+                });
+                expect(request).not.toHaveProperty('url');
+            });
+        });
+
+        // The UVE's own selector event: the UVE handles it now, so it never reaches the opener here.
+        describe('create-contentlet-from-edit-page', () => {
+            it('should not open a panel', async () => {
+                await send('create-contentlet-from-edit-page', { url: 'hello.world.com' });
+
+                expect(opened().mock.calls.length).toBe(0);
+            });
+        });
+
+        describe.each([
+            ['edit-contentlet', { inode: '123', contentType: 'Blog' }],
+            ['edit-host', { inode: 'host-inode' }],
+            ['create-contentlet', { contentType: 'Blog', folderPath: 'default/' }],
+            ['create-host', { url: '/c/portal/layout?p_p_id=sites' }]
+        ])('%s', (name, data) => {
+            it('should hand the opener the injector the side panel host registered, not the root one', async () => {
+                expect(
+                    typeof (service as WithInjector).setInjector,
+                    'the side panel host can register its injector'
+                ).toBe('function');
+
+                await send(name, data);
+
+                // Compared by identity: printing an injector runs the worker out of memory.
+                expect(openOptions().injector === sidePanelHostInjector).toBe(true);
+            });
+
+            // A save reloads the portlet through the content change notification, which the
+            // portlet listens to for as long as it is shown (T174): not through the panel's save.
+            it('should leave the reload on a save to the content change notification', async () => {
+                const reloadData = vi.spyOn(dotIframeService, 'reloadData');
+                await send(name, data);
+
+                openOptions().saved?.({} as never);
+
+                expect(reloadData).not.toHaveBeenCalled();
+            });
+
+            it('should reload the portlet that asked when the legacy editor closes', async () => {
+                const reloadData = vi.spyOn(dotIframeService, 'reloadData');
+                await send(name, data);
+
+                openOptions().editorResolved?.('legacy');
+                openOptions().closed?.();
+
+                expect(reloadData).toHaveBeenCalledWith(PORTLET_ID);
+            });
+
+            // The opener writes the panel to the portlet's URL, as on every surface but UVE
+            // (#38303, FR-044).
+            it('should ask the opener to write the panel to the URL', async () => {
+                await send(name, data);
+
+                expect(openOptions().url).toEqual({});
+            });
+        });
+
+        /**
+         * The legacy portlet route opens what a URL names through the same path the events use
+         * (#38303, FR-049): `IframePortletLegacyComponent` calls it with the identifier and the
+         * language, or the content type and the folder.
+         */
+        describe('openContent', () => {
+            const IDENTIFIER = '3f0c8e5a-7b2d-4c1e-9a6f-0d4b8e2c1a57';
+
+            const openContent = (request: DotEditContentRequest): Promise<void> => {
+                (
+                    service as unknown as { openContent: (r: DotEditContentRequest) => void }
+                ).openContent(request);
+
+                return vi.dynamicImportSettled();
+            };
+
+            it('should be public', () => {
+                expect(typeof (service as unknown as { openContent?: unknown }).openContent).toBe(
+                    'function'
+                );
+            });
+
+            it('should open the request for the current portlet, written to the URL', async () => {
+                await openContent({ mode: 'edit', identifier: IDENTIFIER, languageId: 2 });
+
+                expect(openedRequest()).toEqual({
+                    mode: 'edit',
+                    identifier: IDENTIFIER,
+                    languageId: 2,
+                    portletId: PORTLET_ID
+                });
+                expect(openOptions().url).toEqual({});
+                expect(openOptions().injector === sidePanelHostInjector).toBe(true);
+            });
+
+            /**
+             * A create in a folder names the folder in the portlet's URL beside `createContent`
+             * (`?folder=`, the deep link's and the Site Browser's), and the URL tracker owns it:
+             * written with the panel, gone when the panel closes, so a later create is not read
+             * back in a stale folder (#38303, review R3).
+             */
+            it('should hand the URL tracker the folder of a create in a folder', async () => {
+                await openContent({
+                    mode: 'new',
+                    contentType: 'Blog',
+                    folderInode: 'folder-inode'
+                });
+
+                expect(openOptions().url).toEqual({ extraParams: { folder: 'folder-inode' } });
+            });
+
+            it('should hand the URL tracker no folder for a create in none', async () => {
+                await openContent({ mode: 'new', contentType: 'Blog' });
+
+                expect(openOptions().url).toEqual({});
+            });
+
+            // A save reloads the portlet through the content change notification (T174), and a
+            // close after the legacy editor reloads it, for its moves and language switches that
+            // report nothing.
+            it('should reload the portlet when the legacy editor closes, and leave a save to the notification', async () => {
+                const reloadData = vi.spyOn(dotIframeService, 'reloadData');
+                await openContent({
+                    mode: 'new',
+                    contentType: 'Blog',
+                    folderInode: 'folder-inode'
+                });
+
+                openOptions().editorResolved?.('legacy');
+                openOptions().saved?.({} as never);
+                openOptions().closed?.();
+
+                expect(reloadData).toHaveBeenCalledTimes(1);
+                expect(reloadData).toHaveBeenCalledWith(PORTLET_ID);
+            });
+
+            // The new editor reports each save and delete, which the notification reloads the
+            // portlet for: its close reloads nothing more (review R5).
+            it('should not reload the portlet when the new editor closes', async () => {
+                const reloadData = vi.spyOn(dotIframeService, 'reloadData');
+                await openContent({ mode: 'edit', identifier: IDENTIFIER, languageId: 2 });
+
+                openOptions().editorResolved?.('new');
+                openOptions().saved?.({} as never);
+                openOptions().closed?.();
+
+                expect(reloadData).not.toHaveBeenCalled();
+            });
+
+            /**
+             * The Workflow Tasks detail views its task again on every save in a panel, with the
+             * panel still open, and on a close after the legacy editor, whose workflow actions
+             * report nothing; the new editor reports each one as a save. Either path opened the
+             * panel: its "Edit Content" or the task's URL, which the portlet behind reopens before
+             * the detail exists (#38303, FR-025a, stack review L7-2). The handlers are read when
+             * the panel reports, the close one after the task list behind it reloads.
+             */
+            describe('the panel handlers the portlet registers', () => {
+                type PanelHandlers = { saved: () => void; closed: () => void };
+                type WithPanelHandlers = { onPanelEvents: (handlers: PanelHandlers) => () => void };
+
+                let handlers: { saved: Mock; closed: Mock };
+
+                const register = (): (() => void) =>
+                    (service as unknown as WithPanelHandlers).onPanelEvents(handlers);
+
+                beforeEach(() => {
+                    handlers = { saved: vi.fn(), closed: vi.fn() };
+                });
+
+                it('should run saved on every save, also for a panel opened before they were registered', async () => {
+                    await openContent({ mode: 'edit', identifier: IDENTIFIER, languageId: 2 });
+                    register();
+
+                    openOptions().saved?.({} as never);
+                    openOptions().saved?.({} as never);
+
+                    expect(handlers.saved).toHaveBeenCalledTimes(2);
+                    expect(handlers.closed).not.toHaveBeenCalled();
+                });
+
+                it('should run closed after reloading the portlet when the editor was the legacy one', async () => {
+                    const reloadData = vi.spyOn(dotIframeService, 'reloadData');
+                    await openContent({ mode: 'edit', identifier: IDENTIFIER, languageId: 2 });
+                    register();
+
+                    openOptions().editorResolved?.('legacy');
+                    openOptions().closed?.();
+
+                    expect(handlers.closed).toHaveBeenCalledTimes(1);
+                    expect(reloadData.mock.invocationCallOrder[0]).toBeLessThan(
+                        handlers.closed.mock.invocationCallOrder[0]
+                    );
+                });
+
+                it('should not run closed when the editor was the new one, which reported its saves', async () => {
+                    const reloadData = vi.spyOn(dotIframeService, 'reloadData');
+                    register();
+                    await openContent({ mode: 'edit', inode: '123', contentType: 'Blog' });
+
+                    openOptions().editorResolved?.('new');
+                    openOptions().closed?.();
+
+                    expect(handlers.closed).not.toHaveBeenCalled();
+                    expect(reloadData).not.toHaveBeenCalled();
+                });
+
+                it('should stop running them once released', async () => {
+                    const release = register();
+                    await openContent({ mode: 'edit', inode: '123', contentType: 'Blog' });
+
+                    release();
+                    openOptions().editorResolved?.('legacy');
+                    openOptions().saved?.({} as never);
+                    openOptions().closed?.();
+
+                    expect(handlers.saved).not.toHaveBeenCalled();
+                    expect(handlers.closed).not.toHaveBeenCalled();
+                });
+            });
+        });
+
+        // The opener picks the editor per content type; the global flag swap is gone.
+        it('should never read the content editor flag', async () => {
+            await send('edit-contentlet', { inode: '123', contentType: 'Blog' });
+
+            expect(getKeys.mock.calls.length).toBe(0);
         });
     });
 
-    describe('edit content 2 is enabled and contentTypes are limited', () => {
-        beforeEach(() => {
-            setup({
-                getKeys: () => of(createFeatureFlagResponse('true', 'test,test2'))
-            });
-
-            vi.spyOn(router, 'navigate');
-        });
-
-        it('should create a contentlet', () => {
-            vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                of({ metadata } as DotCMSContentType)
-            );
-            vi.spyOn(dotContentletEditorService, 'create');
+    /**
+     * The root injector provides no `MessageService`, so a panel opened under it fails inside.
+     * `DotSidePanelHostComponent` registers before any portlet can send an event; until it has,
+     * nothing opens and the broken invariant is logged.
+     */
+    describe('before the side panel host registers its injector', () => {
+        it('should open nothing and log an error', async () => {
+            const open = TestBed.inject(DotEditContentOpenerService).open as Mock;
+            open.mockClear();
+            const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
             service.handle(
                 new CustomEvent('ng-event', {
-                    detail: {
-                        name: 'create-contentlet',
-                        data: { contentType: 'test' }
-                    }
+                    detail: { name: 'edit-contentlet', data: { inode: '123', contentType: 'Blog' } }
                 })
             );
+            await vi.dynamicImportSettled();
 
-            expect(router.navigate).toHaveBeenCalledWith(['content/new/test'], {
-                queryParams: {}
-            });
-            expect(router.navigate).toHaveBeenCalledTimes(1);
-        });
-
-        it('should edit a workflow task using legacy handler regardless of content type metadata', () => {
-            service.handle(
-                new CustomEvent('ng-event', {
-                    detail: {
-                        name: 'edit-task',
-                        data: {
-                            inode: '123',
-                            contentType: 'test2'
-                        }
-                    }
-                })
-            );
-
-            expect(dotRouterService.goToEditTask).toHaveBeenCalledWith('123');
-            expect(dotRouterService.goToEditTask).toHaveBeenCalledTimes(1);
-        });
-
-        it('should edit a contentlet', () => {
-            vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                of({ metadata } as DotCMSContentType)
-            );
-            service.handle(
-                new CustomEvent('ng-event', {
-                    detail: {
-                        name: 'edit-contentlet',
-                        data: {
-                            inode: '123',
-                            contentType: 'test2'
-                        }
-                    }
-                })
-            );
-            expect(router.navigate).toHaveBeenCalledWith(['content/123']);
-            expect(router.navigate).toHaveBeenCalledTimes(1);
-        });
-
-        it('should not create a contentlet', () => {
-            vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                of({ metadata: metadata2 } as DotCMSContentType)
-            );
-            vi.spyOn(dotContentletEditorService, 'create');
-
-            service.handle(
-                new CustomEvent('ng-event', {
-                    detail: {
-                        name: 'create-contentlet',
-                        data: { contentType: 'not in the list' }
-                    }
-                })
-            );
-
-            expect(router.navigate).not.toHaveBeenCalled();
-        });
-
-        it('should edit a workflow task using legacy handler even when content type is not in list', () => {
-            service.handle(
-                new CustomEvent('ng-event', {
-                    detail: {
-                        name: 'edit-task',
-                        data: {
-                            inode: '123',
-                            contentType: 'not in the list'
-                        }
-                    }
-                })
-            );
-
-            expect(dotRouterService.goToEditTask).toHaveBeenCalledWith('123');
-            expect(dotRouterService.goToEditTask).toHaveBeenCalledTimes(1);
-        });
-
-        it('should not edit a contentlet', () => {
-            vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                of({ metadata: metadata2 } as DotCMSContentType)
-            );
-            service.handle(
-                new CustomEvent('ng-event', {
-                    detail: {
-                        name: 'edit-contentlet',
-                        data: {
-                            inode: '123',
-                            contentType: 'not in the list'
-                        }
-                    }
-                })
-            );
-            expect(router.navigate).not.toHaveBeenCalledWith(['content/123']);
+            expect(open.mock.calls.length).toBe(0);
+            expect(consoleError).toHaveBeenCalledTimes(1);
+            consoleError.mockRestore();
         });
     });
 });

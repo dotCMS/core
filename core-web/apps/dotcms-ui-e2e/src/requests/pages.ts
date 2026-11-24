@@ -6,7 +6,8 @@ import { getSites } from './sites';
 
 export interface Page {
     identifier: string;
-    contentType: 'htmlpageasset';
+    /** `htmlpageasset`, or the variable of another page content type. */
+    contentType: string;
     title: string;
     url: string;
     hostFolder: string;
@@ -82,6 +83,41 @@ export async function getPageTemplateIdentifier(
 
     const responseData = await response.json();
     return responseData.entity.template.identifier as string;
+}
+
+/** One container on a page and the contentlets it holds, as `POST /api/v1/page/{id}/content` takes it. */
+export interface PageContainerContent {
+    /** The container's identifier, or `SYSTEM_CONTAINER`. */
+    identifier: string;
+    /** The container instance on the template's layout. */
+    uuid: string;
+    contentletsId: string[];
+}
+
+/**
+ * Places contentlets in a page's containers, replacing what those containers held, the same call
+ * the editor makes when content is added to a page.
+ *
+ * @param request - Playwright APIRequestContext
+ * @param pageIdentifier - The page's identifier
+ * @param containers - Each container instance and the identifiers of the contentlets it holds
+ */
+export async function addContentToPage(
+    request: APIRequestContext,
+    pageIdentifier: string,
+    containers: PageContainerContent[]
+): Promise<void> {
+    const response = await request.post(`/api/v1/page/${pageIdentifier}/content`, {
+        data: containers,
+        headers: {
+            Authorization: generateBase64Credentials(admin1.username, admin1.password)
+        }
+    });
+
+    expect(
+        response.status(),
+        `failed to place content on page ${pageIdentifier}: ${await response.text()}`
+    ).toBe(200);
 }
 
 export async function executeAction(request: APIRequestContext, actionId: string, inode: string) {
