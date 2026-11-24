@@ -1177,11 +1177,6 @@
             <artifactId>pdfbox</artifactId>
         </dependency>
         <dependency>
-            <!-- Microsoft Document Processing -->
-            <groupId>org.apache.poi</groupId>
-            <artifactId>poi</artifactId>
-        </dependency>
-        <dependency>
             <!-- Batik SVG Processing -->
             <groupId>org.apache.xmlgraphics</groupId>
             <artifactId>batik-anim</artifactId>
