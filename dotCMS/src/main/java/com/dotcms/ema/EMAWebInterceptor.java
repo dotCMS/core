@@ -96,8 +96,7 @@ public class EMAWebInterceptor implements WebInterceptor {
             if (response instanceof MockHttpCaptureResponse) {
                 final Optional<EMAConfigurationEntry> emaConfig = this.getEmaConfigByURL(currentSite, request.getRequestURI());
                 final Optional<String> proxyUrlOpt = emaConfig.map(EMAConfigurationEntry::getUrlEndpoint);
-                final String proxyUrl = getProxyURL(request).isPresent() ?
-                        getProxyURL(request).get() : proxyUrlOpt.orElse("[ EMPTY ]");
+                final String proxyUrl = proxyUrlOpt.orElse("[ EMPTY ]");
                 final MockHttpCaptureResponse mockResponse = (MockHttpCaptureResponse)response;
                 final String postJson                      = new String(mockResponse.getBytes());
                 final String authToken =
@@ -128,18 +127,15 @@ public class EMAWebInterceptor implements WebInterceptor {
 
     /**
      * Returns the URL to the EMA third-party server -- the Proxy URL -- that will handle the page editing requests for
-     * the given Site. If required, such a Proxy URL can be overridden by adding it as a Request Parameter via the
-     * {@link #PROXY_EDIT_MODE_URL_VAR} property.
+     * the given Site, as set in the EMA App configuration. The {@link #PROXY_EDIT_MODE_URL_VAR} request parameter and
+     * session value that used to override it are ignored: they let any back-end user send the page data to an
+     * arbitrary URL.
      *
      * @param site The {@link Host} that will use the EMA Server.
      *
      * @return An Optional with the Proxy URL.
      */
     protected Optional<String> proxyUrl(final Host site, final HttpServletRequest request) {
-        final Optional<String> overriddenProxyUrl = this.getProxyURL(request);
-        if (overriddenProxyUrl.isPresent()) {
-            return overriddenProxyUrl;
-        }
         try {
             final Optional<EMAConfigurationEntry> emaConfig = this.getEmaConfigByURL(site, request.getRequestURI());
             return emaConfig.map(EMAConfigurationEntry::getUrlEndpoint);
@@ -161,35 +157,6 @@ public class EMAWebInterceptor implements WebInterceptor {
         final List<String> hosts = Host.SYSTEM_HOST.equals(hostId) ? List.of(hostId) : Arrays.asList(Host.SYSTEM_HOST, hostId);
         return !APILocator.getAppsAPI().filterSitesForAppKey(EMA_APP_CONFIG_KEY,
                 hosts, APILocator.systemUser()).isEmpty();
-    }
-
-    /**
-     * Checks if the value of the EMA third-party server is being set via the HTTP Request. This will bypass the value
-     * set via the EMA App.
-     *
-     * @param request The current instance of the {@link HttpServletRequest}.
-     *
-     * @return An Optional with the overridden Proxy URL, if present.
-     */
-    protected Optional<String> getProxyURL (final HttpServletRequest request) {
-        Optional<String> proxyURL = Optional.empty();
-        if (null != request.getParameter(PROXY_EDIT_MODE_URL_VAR)) {
-            final String proxyURLParamValue = request.getParameter(PROXY_EDIT_MODE_URL_VAR);
-            proxyURL = UtilMethods.isSet(proxyURLParamValue)?Optional.of(proxyURLParamValue):Optional.empty();
-            if (null != request.getSession(false)) {
-                if (UtilMethods.isSet(proxyURLParamValue)) {
-                    // If the proxy is set, store it in the session
-                    request.getSession(false).setAttribute(PROXY_EDIT_MODE_URL_VAR, proxyURLParamValue);
-                } else {
-                    // If it's set, but it's empty or null, just remove it
-                    request.getSession(false).removeAttribute(PROXY_EDIT_MODE_URL_VAR);
-                }
-            }
-        } else if (null != request.getSession(false) &&
-                UtilMethods.isSet(request.getSession(false).getAttribute(PROXY_EDIT_MODE_URL_VAR))) {
-            proxyURL = Optional.ofNullable(request.getSession(false).getAttribute(PROXY_EDIT_MODE_URL_VAR).toString());
-        }
-        return proxyURL;
     }
 
     /**

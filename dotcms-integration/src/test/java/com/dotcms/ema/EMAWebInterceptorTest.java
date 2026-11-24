@@ -150,14 +150,14 @@ public class EMAWebInterceptorTest {
     /**
      * <ul>
      *     <li><b>Method to Test:</b> {@link EMAWebInterceptor#proxyUrl(Host, HttpServletRequest)}</li>
-     *     <li><b>Given Scenario:</b> Overrides the EMA Server URL by setting it via a Request Parameter using the
-     *     {@link EMAWebInterceptor#PROXY_EDIT_MODE_URL_VAR}</li>
-     *     <li><b>Expected Result:</b> The generated {@link Result#getResponse()} is not null and is an instance of
-     *     @link MockHttpCaptureResponse}.</li>
+     *     <li><b>Given Scenario:</b> A request tries to override the EMA Server URL with the
+     *     {@link EMAWebInterceptor#PROXY_EDIT_MODE_URL_VAR} Request Parameter.</li>
+     *     <li><b>Expected Result:</b> The override is ignored and the URL set in the EMA App configuration is
+     *     returned.</li>
      * </ul>
      */
     @Test
-    public void test_EMAInterceptor_intercept_SecretExistsAtHost_ReturnResult_Query_String() throws DotDataException, DotSecurityException {
+    public void test_EMAInterceptor_proxyUrl_OverrideParameterIsIgnored() throws DotDataException, DotSecurityException {
         final Host site = this.createAndSetTestSite("EmaSecretAtHostQueryString");
         when(request.getParameter(EMAWebInterceptor.PROXY_EDIT_MODE_URL_VAR)).thenReturn(DUMMY_OVERRIDDEN_PROXY_URL);
         // Create app secret
@@ -170,8 +170,13 @@ public class EMAWebInterceptorTest {
 
         final Optional<String> proxyUrlOpt = emaWebInterceptor.proxyUrl(site, request);
         assertNotNull("Optional variable CANNOT be null", proxyUrlOpt);
-        assertTrue("Optional proxy MUST be present", proxyUrlOpt.isPresent());
-        assertEquals("Proxy URL does not equal overridden value", DUMMY_OVERRIDDEN_PROXY_URL, proxyUrlOpt.get());
+        try {
+            assertTrue("Optional proxy MUST be present", proxyUrlOpt.isPresent());
+            assertEquals("Proxy URL must come from the EMA App, not from the request", DUMMY_PROXY_URL,
+                    proxyUrlOpt.get());
+        } finally {
+            when(request.getParameter(EMAWebInterceptor.PROXY_EDIT_MODE_URL_VAR)).thenReturn(null);
+        }
     }
 
     /**
