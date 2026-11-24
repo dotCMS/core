@@ -90,4 +90,81 @@ describe('appRoutes', () => {
             expect(loaded.some((route) => route.path === '')).toBe(true);
         });
     });
+
+    describe('Query Tool portlet', () => {
+        const queryToolRoutes = allRoutes.filter((route) => route.path === 'query-tool');
+
+        it('should be registered exactly once', () => {
+            expect(queryToolRoutes).toHaveLength(1);
+        });
+
+        it('should not force `reuseRoute: false` on its route', () => {
+            // The route has no path params, so the flag only ever rebuilt the page on a
+            // navigation to the Query Tool itself, which in practice is browser Back: the router
+            // answers every Back with a navigation (`onSameUrlNavigation: 'reload'`). Rebuilt, the
+            // page dropped the side panel open over it, its unsaved changes, and the URL the panel
+            // service had just restored for its prompt (#38303, FR-047).
+            expect(queryToolRoutes[0].data?.['reuseRoute']).toBeUndefined();
+        });
+    });
+
+    describe('Publishing Queue portlet', () => {
+        const publishingQueueRoutes = allRoutes.filter(
+            (route) => route.path === 'publishing-queue-beta'
+        );
+
+        it('should be registered exactly once', () => {
+            expect(publishingQueueRoutes).toHaveLength(1);
+        });
+
+        it('should not force `reuseRoute: false` on its route', () => {
+            // Same rule as the Query Tool: no path params, so the flag only rebuilt the page on
+            // browser Back, discarding the side panel open over the list and its prompt (#38303,
+            // FR-047).
+            expect(publishingQueueRoutes[0].data?.['reuseRoute']).toBeUndefined();
+        });
+    });
+
+    /**
+     * The path deep links redirect to the portlet's URL with the panel params (#38303, FR-049).
+     * Velocity emits `/dotAdmin/#/c/content/<inode>` and workflow emails `/c/workflow/<task>`, so
+     * the `/c/:id` children stay. `/pages/<inode>` and `/pages/new/<type>` were on main too, and
+     * FR-026 covers every `/<portlet>/<inode>` link, so they stay as well (T158).
+     */
+    describe('deep links', () => {
+        const legacyPortlet = allRoutes.find((route) => route.path === ':id' && route.children);
+
+        it.each([':asset', 'new/:contentType', 'new'])(
+            'should keep the `/c/:id/%s` child',
+            (path) => {
+                expect(legacyPortlet?.children?.map((child) => child.path)).toContain(path);
+            }
+        );
+
+        /**
+         * `/c/workflow/<task>` is a surface with a panel in its URL (FR-025a). Back with that panel
+         * open is a query-only navigation, which `reuseRoute: false` would answer by rebuilding the
+         * task dialog under the panel's prompt; the task follows its route's params instead.
+         */
+        it('should not force `reuseRoute: false` on the `/c/:id/:asset` child', () => {
+            const asset = legacyPortlet?.children?.find((child) => child.path === ':asset');
+
+            expect(asset).toBeDefined();
+            expect(asset?.data?.['reuseRoute']).toBeUndefined();
+        });
+
+        it.each([':asset', 'new/:contentType'])(
+            'should keep the `/pages/%s` child, redirecting through the deep-link component',
+            async (path) => {
+                const { dotPagesRoutes } = await import('./portlets/dot-pages/dot-pages.routes');
+                const { DotEditContentDeepLinkComponent } =
+                    await import('./portlets/dot-porlet-detail/dot-edit-content-deep-link/dot-edit-content-deep-link.component');
+
+                expect(dotPagesRoutes).toHaveLength(1);
+                const child = dotPagesRoutes[0].children?.find((route) => route.path === path);
+                expect(child, `the /pages/${path} child`).toBeDefined();
+                expect(await child?.loadComponent?.()).toBe(DotEditContentDeepLinkComponent);
+            }
+        );
+    });
 });

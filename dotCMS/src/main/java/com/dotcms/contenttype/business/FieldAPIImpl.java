@@ -8,8 +8,6 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.cdi.CDIUtils;
-import com.dotcms.content.elasticsearch.business.IndiciesInfo;
-import com.dotcms.content.elasticsearch.util.ESMappingUtilHelper;
 import com.dotcms.contenttype.business.uniquefields.UniqueFieldValidationStrategyResolver;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -227,9 +225,25 @@ public class FieldAPIImpl implements FieldAPI {
             );
         } else {
 
-            //If saving a new indexed field, it should try to set an ES mapping for the field
+            // A new indexed field needs its mapping in the search indices. Deferred to commit:
+            // pushing it inside the transaction would leave the index carrying the mapping of a
+            // field that never existed if the transaction then rolls back, and a later field
+            // reusing that variable with another type would collide with the stale mapping. It
+            // also means the push reads committed data instead of the half-written transaction.
+            //
+            // Synchronous on purpose: a plain commit listener is queued asynchronously when
+            // ASYNC_COMMIT_LISTENERS is on (the default), so save() would return before the
+            // mapping is pushed, leaving a wide window in which content of this type indexed by
+            // another request gets dynamically mapped first — and a field dynamic mapping already
+            // created cannot be re-typed, which is the outcome this mapping exists to prevent.
+            // Sync narrows that window to the push itself, on this thread, but does NOT close it:
+            // the field row is committed and visible to other connections before the listener
+            // runs. Closing it entirely would mean teaching the indexing path to tolerate a
+            // committed field whose mapping has not landed yet, which is not part of this change.
             if (result.indexed()) {
-                addESMappingForField(structure, result);
+                final Field indexedField = result;
+                HibernateUtil.addSyncCommitListener(
+                        () -> addSearchMappingForField(structure, indexedField));
             }
             ActivityLogger.logInfo(ActivityLogger.class, "Save Field Action",
                     String.format(
@@ -403,34 +417,30 @@ public class FieldAPIImpl implements FieldAPI {
     }
 
     /**
-     * This method tries to set an ES mapping for the field.
-     * In case of failure, we just log a warning and continue with the transaction
-     * @param field
+     * Tries to set the search-index mapping for a newly created field.
+     *
+     * <p>Which indices receive it is decided by the indexing API, which asks each search provider
+     * for the names it owns — resolving them here from the Elasticsearch pointer store would send
+     * an Elasticsearch name to OpenSearch as well, and would stop setting the mapping altogether
+     * once Elasticsearch is decommissioned.</p>
+     *
+     * <p>Runs after the field's transaction commits, so it never maps a field that a rollback
+     * then discards. On failure we only log a warning: a missing mapping must not surface as a
+     * failed save, and the next full reindex rebuilds it from the database.</p>
+     *
+     * @param structure the content type the field belongs to, used for logging
+     * @param field     the {@link Field} that was just created
      */
-    private void addESMappingForField(final Structure structure, final Field field) {
+    private void addSearchMappingForField(final Structure structure, final Field field) {
         try {
-            final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
-            if (indiciesInfo != null){
-                if (UtilMethods.isSet(indiciesInfo.getLive())) {
-                    ESMappingUtilHelper.getInstance().addCustomMapping(field, indiciesInfo.getLive());
-                    Logger.debug(this.getClass(), () -> String.format(
-                            "Elasticsearch mapping set for Field: %s. Content type: %s on Index: %s",
-                            field.name(), structure.getName(), APILocator.getESIndexAPI()
-                                    .removeClusterIdFromName(indiciesInfo.getLive())));
-                }
-
-                if (UtilMethods.isSet(indiciesInfo.getWorking())) {
-                    ESMappingUtilHelper.getInstance().addCustomMapping(field, indiciesInfo.getWorking());
-                    Logger.debug(this.getClass(), () -> String.format(
-                            "Elasticsearch mapping set for Field: %s. Content type: %s on Index: %s",
-                            field.name(), structure.getName(), APILocator.getESIndexAPI()
-                                    .removeClusterIdFromName(indiciesInfo.getWorking())));
-                }
-            }
-
+            APILocator.getContentletIndexAPI().addCustomMappingForNewField(field);
+            Logger.debug(this.getClass(), () -> String.format(
+                    "Search mapping applied for Field: %s. Content type: %s — see the indexing log"
+                            + " for the per-provider outcome",
+                    field.name(), structure.getName()));
         } catch (Exception e) {
             Logger.warnAndDebug(this.getClass(), String.format(
-                    "Error trying to set Elasticsearch mapping for Field: %s. Content type: %s",
+                    "Error trying to set the search mapping for Field: %s. Content type: %s",
                     field.name(), structure.getName()), e);
         }
     }

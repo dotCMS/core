@@ -1,6 +1,7 @@
 import { forkJoin, Observable, of } from 'rxjs';
 
-import { inject, Injectable, signal } from '@angular/core';
+import { inject, Injectable, Injector, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { MenuItem } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -8,12 +9,13 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { map, switchMap, take } from 'rxjs/operators';
 
 import {
+    DotContentChangeService,
+    DotContentEditor,
     DotCurrentUserService,
     DotEventsService,
     DotHttpErrorManagerService,
     DotMessageService,
     DotRenderMode,
-    DotRouterService,
     DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
     DotWorkflowsActionsService,
@@ -29,11 +31,13 @@ import {
     PermissionsType,
     UserPermissions
 } from '@dotcms/dotcms-models';
+import type { DotEditContentRequest } from '@dotcms/edit-content';
 import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
 import { generateDotFavoritePageUrl } from '@dotcms/utils';
 
 import { DotPageListService } from './dot-page-list.service';
 
+import { openEditContentPanel } from '../../../api/util/open-edit-content-panel';
 import { DotCMSPagesStore } from '../store/store';
 
 interface DotPermissions {
@@ -55,9 +59,8 @@ interface DotPermissions {
  *   which can cause poor UX on slow connections (empty/late menus) and extra network chatter.
  *
  * Migration note:
- * This service was introduced during the migration from the old Pages store to preserve behavior
- * that previously lived in the legacy store method:
- * `apps/dotcms-ui/src/app/portlets/dot-pages/dot-pages-store/dot-pages.store.ts#L928`
+ * This service was introduced during the migration from the old Pages store (`DotPageStore`,
+ * deleted in #38303) to preserve the menu-building behavior that lived there.
  *
  * TODO: Replace this service by enhancing the Pages listing endpoint to include the minimal
  * data needed to render the menu synchronously, then delete this service and simplify callers.
@@ -67,7 +70,6 @@ interface DotPermissions {
 export class DotPageActionsService {
     readonly #dotMessageService = inject(DotMessageService);
     readonly #dotActionsService = inject(DotWorkflowsActionsService);
-    readonly #dotRouterService = inject(DotRouterService);
     readonly #dotEventsService = inject(DotEventsService);
     readonly #dialogService = inject(DialogService);
     readonly #dotWorkflowEventHandlerService = inject(DotWorkflowEventHandlerService);
@@ -78,6 +80,8 @@ export class DotPageActionsService {
     readonly #pushPublishService = inject(PushPublishService);
     readonly #dotCMSPagesStore = inject(DotCMSPagesStore);
     readonly #dotPageListService = inject(DotPageListService);
+    /** The Pages portlet's injector: a panel Edit opens closes with the portlet. */
+    readonly #injector = inject(Injector);
 
     /**
      * Cached result of whether Push Publish is actionable for this installation.
@@ -105,6 +109,12 @@ export class DotPageActionsService {
     constructor() {
         this.#initUserPermissions();
         this.#initPushPublishEnvironments();
+
+        // Every save and delete in a side panel, at any depth, while the portlet is shown: a page
+        // saved from a relationship inside another panel is in the listing too (T174).
+        inject(DotContentChangeService)
+            .changes$.pipe(takeUntilDestroyed())
+            .subscribe(() => this.#refreshPages());
     }
 
     /**
@@ -115,10 +125,21 @@ export class DotPageActionsService {
     }
 
     /**
+     * Reloads the listing after an edit in the side panel (#38303), keeping the filters and the
+     * page the author is on. A refetch of the whole page rather than of the edited row: the panel
+     * may have deleted or archived it, and a row lookup would then report an error.
+     */
+    #refreshPages(): void {
+        this.#dotCMSPagesStore.getPages();
+    }
+
+    /**
      * Returns the full context-menu model for a given contentlet.
      *
      * This method is intentionally pure from the caller’s perspective: it fetches workflow actions
-     * for the item and combines them with static actions (favorite, edit, push publish, etc.).
+     * for the item and combines them with static actions (favorite, edit, push publish, etc.). Edit
+     * refreshes the listing itself, so every menu that asks for it (the three-dots button, the
+     * right-click menu) gets the same Edit (T173).
      *
      * @param item Contentlet for which to build the menu model.
      * @returns PrimeNG menu model.
@@ -138,15 +159,53 @@ export class DotPageActionsService {
     }
 
     /**
-     * Edit action
+     * Edit action: opens the page in the side panel over the listing, in whichever editor its type
+     * uses (#38303). The listing refreshes on every save and delete, and when the panel closes.
      *
-     * Navigates to the edit screen for the given inode.
+     * @param item The page (or content) the menu was opened on.
      */
-    #editAction({ inode }: DotCMSContentlet): MenuItem {
+    #editAction({ inode, identifier, contentType, languageId, title }: DotCMSContentlet): MenuItem {
         return {
             label: this.#dotMessageService.get('Edit'),
-            command: () => this.#dotRouterService.goToEditContentlet(inode)
+            command: () =>
+                this.openContent({
+                    mode: 'edit',
+                    inode,
+                    identifier,
+                    contentType,
+                    languageId,
+                    title
+                })
         };
+    }
+
+    /**
+     * Opens content in the side panel over the Pages listing, in whichever editor its type uses,
+     * and keeps the panel in the portlet's URL (#38303, FR-044). The Edit action opens through
+     * here, and so does the portlet on load, for what its URL names (FR-049), so both open the same
+     * panel. A save or delete in it refreshes the listing through the content change notification,
+     * like a save in any panel stacked over it (T174). A close after the legacy editor refreshes it
+     * too, through the store, for the moves and language switches that editor reports nothing of,
+     * so no entry point can leave it stale (T173); the new editor reports everything it changes.
+     *
+     * @param request What to open, without the portlet.
+     */
+    openContent(request: DotEditContentRequest): void {
+        let editor: DotContentEditor | null = null;
+
+        void openEditContentPanel(
+            { ...request, portletId: 'pages' },
+            {
+                injector: this.#injector,
+                editorResolved: (resolved) => (editor = resolved),
+                closed: () => {
+                    if (editor !== 'new') {
+                        this.#refreshPages();
+                    }
+                },
+                url: {}
+            }
+        );
     }
 
     /**
@@ -332,6 +391,7 @@ export class DotPageActionsService {
      *
      * @param item Selected contentlet.
      * @param actions Workflow actions resolved for the item.
+     * @param relatedFavoritePage The favorite page pointing at the item, if any.
      */
     #buildMenuItems({
         item,
