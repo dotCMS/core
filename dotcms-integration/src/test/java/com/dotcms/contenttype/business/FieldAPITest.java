@@ -4,7 +4,6 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.content.elasticsearch.business.IndexType;
-import com.dotcms.content.index.IndexConfigHelper;
 import com.dotcms.contenttype.business.FieldAPITest.UniqueConstraintTestCase.DuplicateType;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.DateField;
@@ -87,7 +86,6 @@ import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALIT
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assume.assumeFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -1469,12 +1467,12 @@ public class FieldAPITest extends IntegrationTestBase {
     @Test
     public void test_SaveNewIndexedField_ShouldAddESMapping()
             throws DotSecurityException, DotDataException, IOException {
-        // Asserts the ES static putMapping-on-field-save behavior. Under Phase 3 (OS-only) fields
-        // are not statically mapped on save — OS relies on dynamic templates, so the mapping only
-        // materializes once content of the type is indexed (see #36237). That OS behavior is covered
-        // by ESMappingUtilHelperTest (which indexes content before checking the mapping).
-        assumeFalse("ES static field-mapping-on-save test skipped under Phase 3 (OS dynamic templates)",
-                IndexConfigHelper.MigrationPhase.current().isMigrationComplete());
+        // Asserts that saving an indexed field pushes its mapping to the active indices, in every
+        // phase. This used to be skipped under Phase 3 on the premise that OpenSearch simply
+        // relies on dynamic templates — that premise was issue #36577: the mapping resolved its
+        // target index from the Elasticsearch pointer store, which Phase 3 no longer maintains, so
+        // nothing was pushed at all. With the per-provider resolution in place this is the direct
+        // regression guard for Phase 3.
         final long time = System.currentTimeMillis();
         final ContentType type = new ContentTypeDataGen().nextPersisted();
         try {
@@ -1532,12 +1530,12 @@ public class FieldAPITest extends IntegrationTestBase {
     @Test
     public void test_SaveNewRelationshipField_ShouldAddESMapping()
             throws DotSecurityException, DotDataException, IOException {
-        // Asserts the ES static putMapping-on-field-save behavior. Under Phase 3 (OS-only) fields
-        // are not statically mapped on save — OS relies on dynamic templates, so the mapping only
-        // materializes once content of the type is indexed (see #36237). That OS behavior is covered
-        // by ESMappingUtilHelperTest (which indexes content before checking the mapping).
-        assumeFalse("ES static field-mapping-on-save test skipped under Phase 3 (OS dynamic templates)",
-                IndexConfigHelper.MigrationPhase.current().isMigrationComplete());
+        // Asserts that saving an indexed field pushes its mapping to the active indices, in every
+        // phase. This used to be skipped under Phase 3 on the premise that OpenSearch simply
+        // relies on dynamic templates — that premise was issue #36577: the mapping resolved its
+        // target index from the Elasticsearch pointer store, which Phase 3 no longer maintains, so
+        // nothing was pushed at all. With the per-provider resolution in place this is the direct
+        // regression guard for Phase 3.
         final long time = System.currentTimeMillis();
         final ContentType type = createAndSaveSimpleContentType("contentType" + time);
         try {
