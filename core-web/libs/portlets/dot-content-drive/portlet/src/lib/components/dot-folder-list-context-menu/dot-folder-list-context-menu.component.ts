@@ -7,6 +7,7 @@ import {
     effect,
     inject,
     signal,
+    untracked,
     viewChild
 } from '@angular/core';
 
@@ -161,8 +162,10 @@ export class DotFolderListViewContextMenuComponent {
     readonly rightClickEffect = effect(() => {
         const contextMenuData = this.$contextMenuData();
 
+        // Untracked: building the menu reads the selection and the memo, and a change to either
+        // would otherwise rebuild it under the same right-click. Only a new right-click may.
         if (contextMenuData) {
-            this.getMenuItems(contextMenuData);
+            untracked(() => this.getMenuItems(contextMenuData));
         }
     });
 

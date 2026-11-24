@@ -1933,6 +1933,29 @@ describe('DotFolderListViewContextMenuComponent', () => {
         });
     });
 
+    describe('rightClickEffect', () => {
+        // The menu reads the selection while it is built; only a new right-click may rebuild it,
+        // or a selection change restarts the pending one under the same trigger.
+        it('should not rebuild the menu when the selection changes', () => {
+            const pending = new Subject<typeof mockWorkflowActions>();
+            workflowsActionsService.getByInode.mockReturnValueOnce(pending);
+            dotContentletService.canLock.mockReturnValueOnce(of(createMockCanLock(true, false)));
+            const getMenuItems = vi.spyOn(component, 'getMenuItems');
+
+            store.patchContextMenu({
+                contentlet: mockContentlet,
+                triggeredEvent: new MouseEvent('contextmenu'),
+                showAddToBundle: false
+            });
+            spectator.detectChanges();
+
+            store.setSelectedItems([mockContentlet]);
+            spectator.detectChanges();
+
+            expect(getMenuItems).toHaveBeenCalledTimes(1);
+        });
+    });
+
     describe('closeOnContextMenuReset', () => {
         it('should hide context menu when contentlet is null and menu is visible', () => {
             const mockContextMenu = {
