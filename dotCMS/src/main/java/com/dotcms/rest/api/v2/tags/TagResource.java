@@ -69,6 +69,22 @@ public class TagResource {
     private final TagAPI tagAPI;
 	private final TagsResourceHelper helper;
 
+    /**
+     * Checks that a user may see or change the tags of a user's profile, following
+     * {@link TagAPI#canEditUserTags(User, String)}.
+     *
+     * @param user   the {@link User} making the request
+     * @param userId id of the user whose tags are read or changed
+     * @throws ForbiddenException if the user can't work with those tags
+     * @throws DotDataException   if the user's portlet access can't be resolved
+     */
+    private void checkCanEditUserTags(final User user, final String userId) throws DotDataException {
+        if (!tagAPI.canEditUserTags(user, userId)) {
+            throw new ForbiddenException(String.format(
+                    "User '%s' lacks permission to work with the tags of another user", user.getUserId()));
+        }
+    }
+
     @SuppressWarnings("unused")
     public TagResource() {
         this(APILocator.getTagAPI(), APILocator.getHostAPI(), APILocator.getFolderAPI(), new WebResource());
@@ -155,6 +171,9 @@ public class TagResource {
 
         //We can assign tags to any user as long as we are admin.
         final String userId = tagForm.getOwnerId();
+        if (UtilMethods.isSet(userId)) {
+            checkCanEditUserTags(user, userId);
+        }
         final ImmutableList.Builder<Tag> savedTags = ImmutableList.builder();
         final Map<String, RestTag> tags = tagForm.getTags();
 
@@ -243,6 +262,10 @@ public class TagResource {
             Logger.error(TagResource.class, errorMessage);
             throw new DoesNotExistException(errorMessage);
         }
+        if (!tagAPI.canDeleteTag(user, tag.getTagId())) {
+            throw new ForbiddenException(String.format(
+                    "User '%s' lacks permission to change the tag", user.getUserId()));
+        }
 
         tagAPI.updateTag(tagForm.tagId, tagForm.tagName, false, tagForm.siteId);
 
@@ -266,11 +289,12 @@ public class TagResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public ResponseEntityTagMapView getTagsByUserId(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("userId") final String userId) {
+            @PathParam("userId") final String userId) throws DotDataException {
 
         final InitDataObject initDataObject = getInitDataObject(request, response);
         final User user = initDataObject.getUser();
         Logger.debug(TagResource.class, String.format("User '%s' is requesting tags owned by User '%s'",user.getUserId(), userId));
+        checkCanEditUserTags(user, userId);
 
         final List<Tag> tags = Try.of(() -> tagAPI.getTagsForUserByUserId(userId)).getOrElse(List.of());
         if (tags.isEmpty()) {
@@ -393,6 +417,10 @@ public class TagResource {
         final InitDataObject initDataObject = getInitDataObject(request, response);
         final User user = initDataObject.getUser();
         Logger.debug(TagResource.class, String.format("User '%s' is linking Tag '%s' with inode '%s'",user.getUserId(), nameOrId, inode));
+        if (!tagAPI.canEditTagInodes(user, inode)) {
+            throw new ForbiddenException(String.format(
+                    "User '%s' lacks permission to change the tags of this inode", user.getUserId()));
+        }
         final List<Tag> tags = new ArrayList<>();
         if (isUUID(nameOrId)){
 
@@ -438,11 +466,15 @@ public class TagResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public ResponseEntityTagInodesMapView findTagsByInode(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("inode") final String inode) {
+            @PathParam("inode") final String inode) throws DotDataException {
 
         final InitDataObject initDataObject = getInitDataObject(request, response);
         final User user = initDataObject.getUser();
         Logger.debug(TagResource.class, String.format("User '%s' is requesting tags by inode '%s'",user.getUserId(), inode));
+        if (!tagAPI.canReadTagInodes(user, inode)) {
+            throw new ForbiddenException(String.format(
+                    "User '%s' lacks permission to see the tags of this inode", user.getUserId()));
+        }
         final List<TagInode> tagInodes = Try.of(() -> tagAPI.getTagInodesByInode(inode)).getOrElse(List.of());
         if (tagInodes.isEmpty()) {
             Logger.error(TagResource.class, String.format(NO_TAGS_WERE_FOUND_BY_THE_INODE_S,inode));
