@@ -389,19 +389,24 @@ public class SchedulerJobResourceTest {
     /**
      * Method to test: {@link SchedulerJobResource#createJob}
      * Given: a start time that does not exist in the server's time zone because the clocks move
-     * forward at that moment (02:30 on 8 March 2099 in New York)
-     * Expected: 400 instead of starting the job an hour later, and no job is created
+     * forward at that moment (02:30 on 9 March 2098 in New York), and an hour later the same day
+     * Expected: 400 for the skipped time instead of starting the job an hour later, and no job is
+     * created; the existing time an hour later is accepted
      */
     @Test
-    public void test_createJob_dateInDaylightSavingGap_shouldBeRefused() {
+    public void test_createJob_dateInDaylightSavingGap_shouldBeRefused() throws Exception {
         final String jobName = "scheduler-job-" + UUID.randomUUID();
         final TimeZone serverZone = TimeZone.getDefault();
         try {
             TimeZone.setDefault(TimeZone.getTimeZone("America/New_York"));
             assertStatus(Response.Status.BAD_REQUEST, () -> resource.createJob(requestFor(admin),
                     new MockHttpResponse().response(),
-                    SchedulerJobForm.copyOf(form(jobName, LISTED)).withStartDate("2099-03-08 02:30")));
+                    SchedulerJobForm.copyOf(form(jobName, LISTED)).withStartDate("2098-03-09 02:30")));
             assertFalse(exists(jobName));
+
+            resource.createJob(requestFor(admin), new MockHttpResponse().response(),
+                    SchedulerJobForm.copyOf(form(jobName, LISTED)).withStartDate("2098-03-09 03:30"));
+            assertTrue(exists(jobName));
         } finally {
             TimeZone.setDefault(serverZone);
             remove(jobName);
