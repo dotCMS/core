@@ -290,6 +290,13 @@ export class ContentDrivePage {
     async openFolder(name: string) {
         await this.treeNodeLabels.filter({ hasText: name }).first().click();
         await expect(this.page.getByTestId('dropzone')).toBeVisible({ timeout: 20000 });
+        // The dropzone is always there; the folder in the address is what shows it opened.
+        // Matched as the path's last segment, so a nested folder opened from its parent counts.
+        const segment = encodeURIComponent(name).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        await expect(this.page).toHaveURL(
+            new RegExp(`[?&]path=[^&]*(%2F|/)${segment}(%2F|/)(&|$)`),
+            { timeout: 20000 }
+        );
     }
 
     /**
