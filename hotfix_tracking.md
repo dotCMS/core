@@ -160,3 +160,4 @@ Release-25.07.10 LTS
 154. https://github.com/dotCMS/private-issues/issues/963 : raise the default HSTS max-age to one year and make it configurable #38267 #963
 155. https://github.com/dotCMS/private-issues/issues/687 : check the password for logins with no matching account #38567 #687
 156. https://github.com/dotCMS/private-issues/issues/1079 : scope the legacy workflow task screen to the calling user #38555 #1079
+157. https://github.com/dotCMS/private-issues/issues/1103 : leave the company key out of JSON and of the workflow Velocity context #38571 #1103
