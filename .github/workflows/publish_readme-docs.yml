@@ -20,7 +20,9 @@
 # Production is read too (with the read-only AI search account's token), so a page whose
 # earlier push failed is pushed again. A page that is not on production at all (e.g. an
 # unreleased SDK) is published on authoring only and never pushed. A page with a pending
-# draft fails the run instead of being published: the draft may hold unreviewed edits.
+# draft is never written, since the draft may hold unreviewed edits: if its README is unchanged
+# (the published version matches it on authoring and production) the page is skipped with a
+# warning; otherwise the run fails until the draft is published or discarded.
 #
 # Runs on every merge that touches a markdown file, and manually (dry run by default).
 # Every run checks all mapped pages and writes only those that differ.
@@ -332,8 +334,26 @@ jobs:
                   if path is None:
                       result = "other source, skipped"
                   elif content.get("live") is not True:
-                      # Publishing would also publish whatever else the draft changed, unreviewed.
-                      raise RuntimeError("pending draft: publish or discard it in dotCMS, then rerun")
+                      # A pending draft. Writing would also publish whatever else the draft changed,
+                      # unreviewed, and a push would carry the draft along. So leave the page alone if
+                      # nothing needs writing: the published version already matches the README, on
+                      # authoring and on production (if the page is there). Otherwise fail.
+                      synced += 1
+                      body = clean(open(path, encoding="utf-8").read(), path)
+                      status, data = call("GET", f"/api/v1/content/{ident}?language=1&mode=LIVE")
+                      published = data["entity"] if status == 200 else None
+                      if status not in (200, 404):
+                          raise RuntimeError(f"read of the published version failed: HTTP {status} {data}")
+                      on_prod = production_page(ident)
+                      # Fails closed if the read returned the draft instead of the published version.
+                      if (published is None or published.get("live") is not True
+                              or published.get("inode") == content.get("inode")
+                              or normalize(published.get("documentation") or "") != normalize(body)
+                              or (on_prod is not None
+                                  and normalize(on_prod.get("documentation") or "") != normalize(body))):
+                          raise RuntimeError("pending draft blocks an update: publish or discard it in dotCMS, then rerun")
+                      result = "unchanged; pending draft left alone"
+                      print(f"::warning::{slug} has a pending draft in dotCMS; the README is unchanged, so it was left alone")
                   else:
                       synced += 1
                       body = clean(open(path, encoding="utf-8").read(), path)
