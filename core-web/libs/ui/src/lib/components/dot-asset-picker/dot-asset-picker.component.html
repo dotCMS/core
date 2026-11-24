@@ -63,6 +63,8 @@
                                 [totalItems]="store.$totalRecords()"
                                 [offset]="$offset()"
                                 [rows]="store.pagination().limit"
+                                [sortField]="store.sort().field"
+                                [sortOrder]="store.sort().order === 'asc' ? 1 : -1"
                                 (selectionChange)="onSelect($event)"
                                 (doubleClick)="onSelect([$event])"
                                 (paginate)="onPaginate($event)"

@@ -144,6 +144,7 @@ const createMockStore = () => {
         /** Failures the store records for this component to toast — see the `requestError` effect. */
         requestError: signal<{ messageKey: string } | null>(null),
         pagination: signal({ limit: 20, page: 1 }),
+        sort: signal<{ field: string; order: 'asc' | 'desc' }>({ field: 'modDate', order: 'desc' }),
         totalItems: signal(0),
         /** What the paginator actually reads — see `withAssetBrowse`'s cursor-based row count. */
         $totalRecords: signal(0),
@@ -539,6 +540,20 @@ describe('DotAssetPickerComponent', () => {
 
             expect(list).toBeTruthy();
             expect(list?.rows).toBe(40);
+        });
+
+        it('should give the list the sort the store fetches', () => {
+            store.sort.set({ field: 'title', order: 'asc' });
+            spectator.detectChanges();
+
+            const list = spectator.query(byTestId('asset-picker-list')) as {
+                sortField?: string;
+                sortOrder?: number;
+            } | null;
+
+            expect(list).toBeTruthy();
+            expect(list?.sortField).toBe('title');
+            expect(list?.sortOrder).toBe(1);
         });
 
         it('should translate the sort event', () => {

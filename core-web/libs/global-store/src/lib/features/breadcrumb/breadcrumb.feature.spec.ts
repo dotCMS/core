@@ -1109,6 +1109,21 @@ describe('withBreadcrumbs Feature', () => {
                 });
             });
 
+            // The view (list or cards) is browsing state too: the shell writes it, and the store
+            // prefers it to the stored preference, so dropping it came back in the other view.
+            it('keeps the view in the Content Drive crumb', () => {
+                routerMock.triggerNavigationEnd('/content-drive?mId=content');
+                TestBed.flushEffects();
+
+                locationMock.changeUrl(
+                    '#/content-drive?path=/blog/&viewType=card&editContent=id-1'
+                );
+
+                expect(storeWithRouter.breadcrumbs().at(-1)?.url).toBe(
+                    '/dotAdmin/#/content-drive?path=/blog/&viewType=card'
+                );
+            });
+
             // The router never hears of a `Location` write, so it still reports the URL the author
             // arrived on. The crumb following the new URL must not make the store go back to the
             // router's URL and reset the trail, which is what lost the folder and filters on the

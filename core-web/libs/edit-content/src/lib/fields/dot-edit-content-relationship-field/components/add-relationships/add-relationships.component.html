@@ -104,6 +104,8 @@
                         [totalItems]="store.$totalItems()"
                         [offset]="store.$offset()"
                         [rows]="store.page().limit"
+                        [sortField]="store.sort().field"
+                        [sortOrder]="store.sort().order === 'asc' ? 1 : -1"
                         (selectionChange)="onSelectionChange($event)"
                         (paginate)="onPaginate($event)"
                         (sort)="onSort($event)" />

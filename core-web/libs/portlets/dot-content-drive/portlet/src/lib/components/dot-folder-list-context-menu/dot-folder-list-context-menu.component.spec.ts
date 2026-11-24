@@ -5,7 +5,7 @@ import {
     Spectator,
     SpyObject
 } from '@openng/spectator/vitest';
-import { NEVER, of, throwError } from 'rxjs';
+import { NEVER, of, Subject, throwError } from 'rxjs';
 import { Mock, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -638,6 +638,31 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 const items = await openMenuFor(mockContentlet);
 
                 expect(items).not.toContain('content-drive.context-menu.edit-content');
+            });
+
+            // A second right-click while the first one's requests are pending wins: the first
+            // answer arrives late and must not replace the newer menu with another row's.
+            it('should keep the newer menu when an earlier right-click answers late', async () => {
+                const pending = new Subject<typeof mockWorkflowActions>();
+                workflowsActionsService.getByInode.mockReturnValueOnce(pending);
+
+                const first = component.getMenuItems({
+                    triggeredEvent: new MouseEvent('contextmenu'),
+                    contentlet: mockContentlet,
+                    showAddToBundle: false
+                });
+                await component.getMenuItems({
+                    triggeredEvent: new MouseEvent('contextmenu'),
+                    contentlet: other,
+                    showAddToBundle: false
+                });
+                const newer = component.$items();
+
+                pending.next(mockWorkflowActions);
+                pending.complete();
+                await first;
+
+                expect(component.$items()).toBe(newer);
             });
 
             // Every entry of a row's menu acts on that row alone, so a row outside the selection
