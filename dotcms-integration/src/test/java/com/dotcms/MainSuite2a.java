@@ -6,7 +6,9 @@ import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImpl
 import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.ema.EMAWebInterceptorTest;
 import com.dotcms.enterprise.cluster.ClusterFactoryTest;
+import com.dotcms.content.elasticsearch.business.ContentletCheckinDestinationPermissionTest;
 import com.dotcms.junit.MainBaseSuite;
+import com.dotcms.variant.VariantPromotePermissionTest;
 import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
@@ -141,7 +143,9 @@ import com.dotmarketing.portlets.structure.action.EditStructureActionSaveTest;
     com.dotmarketing.webdav.DotWebdavHelperAuthorizePrincipalTest.class,
     com.dotcms.rest.api.v1.authentication.AuthenticationResourceStoredPasswordTest.class,
     com.dotmarketing.cms.login.factories.LoginFactoryTest.class,
-    com.dotcms.publisher.pusher.AuthCredentialPushPublishUtilTest.class
+    com.dotcms.publisher.pusher.AuthCredentialPushPublishUtilTest.class,
+    ContentletCheckinDestinationPermissionTest.class,
+    VariantPromotePermissionTest.class
 })
 public class MainSuite2a {
 
