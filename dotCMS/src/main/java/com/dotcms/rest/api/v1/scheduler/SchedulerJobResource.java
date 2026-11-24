@@ -25,6 +25,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
+import java.lang.reflect.Modifier;
 import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -49,6 +50,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.quartz.CronTrigger;
+import org.quartz.Job;
 import org.quartz.ObjectAlreadyExistsException;
 import org.quartz.SchedulerException;
 
@@ -257,6 +259,11 @@ public class SchedulerJobResource {
 
         // Quartz refuses a trigger that never fires; checking first answers 400 instead of 500
         try {
+            // The Scheduler form's list includes the abstract DotJob, which Quartz cannot run
+            final Class<?> jobClass = Class.forName(form.javaClass());
+            if (!Job.class.isAssignableFrom(jobClass) || Modifier.isAbstract(jobClass.getModifiers())) {
+                throw refused(Response.Status.BAD_REQUEST, user, "message.Scheduler.javaClassNotFound");
+            }
             if (new CronTrigger(jobName, USER_JOB_GROUP, jobName, USER_JOB_GROUP, startDate, endDate,
                     form.cronExpression()).computeFirstFireTime(null) == null) {
                 throw refused(Response.Status.BAD_REQUEST, user, "message.Scheduler.invalidJobSettings");
@@ -283,17 +290,25 @@ public class SchedulerJobResource {
      * Reads a date in the {@code yyyy-MM-dd HH:mm} format, in the server's time zone.
      *
      * @return the date, or null when none was given
-     * @throws WebApplicationException 400 when the value is not a whole, existing date in that format
+     * @throws WebApplicationException 400 when the value is not a whole, existing date in that format,
+     *                                  or names a time the clocks skip when daylight saving starts
      */
     private static Date parseDate(final String value, final User user) {
         if (!UtilMethods.isSet(value)) {
             return null;
         }
+        final LocalDateTime local;
         try {
-            return Date.from(LocalDateTime.parse(value, DATE_FORMAT).atZone(ZoneId.systemDefault()).toInstant());
+            local = LocalDateTime.parse(value, DATE_FORMAT);
         } catch (final DateTimeParseException e) {
             throw refused(Response.Status.BAD_REQUEST, user, "message.Scheduler.invalidDate");
         }
+        // A time the clocks skip when daylight saving starts would otherwise move an hour later
+        final ZoneId zone = ZoneId.systemDefault();
+        if (zone.getRules().getValidOffsets(local).isEmpty()) {
+            throw refused(Response.Status.BAD_REQUEST, user, "message.Scheduler.invalidDate");
+        }
+        return Date.from(local.atZone(zone).toInstant());
     }
 
     /**
