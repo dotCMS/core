@@ -38,6 +38,7 @@ import com.dotmarketing.common.reindex.ReindexQueueAPI;
 import com.dotmarketing.common.reindex.ReindexQueueAPIImpl;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -1098,6 +1099,69 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
             APILocator.getHostAPI().archive(site, APILocator.systemUser(), false);
             APILocator.getHostAPI().delete(site, APILocator.systemUser(), false);
             UserDataGen.remove(owner);
+        }
+    }
+
+    /**
+     * Method to test: saving an existing favorite page through the contentlet API.
+     * Given Scenario: Another back-end user may edit all content of a site but has no permission on
+     * a favorite at the System Host root. With no cached permissions and no permission reference
+     * for the favorite, that user saves it naming the site.
+     * ExpectedResult: The save is refused, because the favorite is authorized where it is stored,
+     * not where the save names, and the stored favorite is left as it was.
+     */
+    @Test
+    public void test_other_user_cannot_edit_a_favorite_by_naming_a_site_they_can_edit() throws Exception {
+
+        final ContentType contentType = prepareFirstInit();
+        new ContentTypeInitializer().init();
+
+        final Host site = new SiteDataGen().nextPersisted();
+        final Role siteEditors = new RoleDataGen().nextPersisted();
+        final User owner = new UserDataGen().active(true)
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        final User editor = new UserDataGen().active(true)
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole(), siteEditors).nextPersisted();
+        final Contentlet favorite = new ContentletDataGen(contentType).setPolicy(IndexPolicy.WAIT_FOR)
+                .setProperty("title", "favorite").setProperty("url", "/favorite-" + System.nanoTime())
+                .setProperty(Contentlet.OWNER_KEY, owner.getUserId())
+                .nextPersisted();
+        try {
+
+            APILocator.getPermissionAPI().assignPermissions(List.of(
+                    new Permission(Contentlet.class.getCanonicalName(), site.getPermissionId(),
+                            siteEditors.getId(),
+                            PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE, true)),
+                    site, APILocator.systemUser(), false);
+
+            final Contentlet edit = APILocator.getContentletAPI()
+                    .checkout(favorite.getInode(), APILocator.systemUser(), false);
+            edit.setHost(site.getIdentifier());
+            edit.setProperty("title", "edited");
+            // checkout locked it for the system user; unlock so only the permission check can refuse
+            APILocator.getContentletAPI().unlock(favorite, APILocator.systemUser(), false);
+            APILocator.getPermissionAPI().resetPermissionReferences(favorite);
+            CacheLocator.getPermissionCache().clearCache();
+
+            final DotSecurityException refused = Assert.assertThrows(DotSecurityException.class,
+                    () -> APILocator.getContentletAPI().checkin(edit, editor, false));
+            Assert.assertTrue("The save must be refused for lack of WRITE on the favorite: "
+                            + refused.getMessage(),
+                    refused.getMessage().contains("doesn't have write permissions"));
+
+            final Contentlet stored = APILocator.getContentletAPI()
+                    .findContentletByIdentifierAnyLanguage(favorite.getIdentifier());
+            Assert.assertEquals("The stored favorite must keep its title", "favorite",
+                    stored.getStringProperty("title"));
+            Assert.assertEquals("The favorite must stay on the System Host", Host.SYSTEM_HOST,
+                    APILocator.getIdentifierAPI().loadFromDb(favorite.getIdentifier()).getHostId());
+        } finally {
+
+            ContentletDataGen.destroy(favorite);
+            APILocator.getHostAPI().archive(site, APILocator.systemUser(), false);
+            APILocator.getHostAPI().delete(site, APILocator.systemUser(), false);
+            UserDataGen.remove(owner);
+            UserDataGen.remove(editor);
         }
     }
 

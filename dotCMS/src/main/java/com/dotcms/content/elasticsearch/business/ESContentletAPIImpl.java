@@ -7052,7 +7052,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     /**
      * Verifies the user may save the given contentlet. An existing contentlet needs WRITE on
-     * itself; a new contentlet needs WRITE on its content type. On top of that, unless
+     * itself, judged on its stored version for a favorite page (see
+     * {@link #canWriteStoredFavorite(Contentlet, boolean, User)}); a new contentlet needs WRITE on
+     * its content type. On top of that, unless
      * {@link FeatureFlagName#FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK} is off, a new
      * contentlet placed somewhere other than its type's default placement, and an existing
      * contentlet being moved to another site or folder, need "Can Add Children" or WRITE on that
@@ -7072,13 +7074,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
         DotPreconditions.checkNotNull(contentlet);
 
         final boolean isNew = !InodeUtils.isSet(contentlet.getIdentifier());
-        // keep the two calls distinct: the ContentType overload of doesUserHavePermission has
-        // its own rules (CMS Owner on the type), which a Permissionable-typed call would skip
-        final boolean canWrite = isNew
-                ? permissionAPI.doesUserHavePermission(contentlet.getContentType(),
-                PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)
-                : permissionAPI.doesUserHavePermission(contentlet,
-                PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles);
+        // keep the calls distinct: the ContentType overload of doesUserHavePermission has its
+        // own rules (CMS Owner on the type), which a Permissionable-typed call would skip
+        final boolean canWrite;
+        if (isNew) {
+            canWrite = permissionAPI.doesUserHavePermission(contentlet.getContentType(),
+                    PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles);
+        } else if (isFavoritePage(contentlet)) {
+            canWrite = canWriteStoredFavorite(contentlet, respectFrontendRoles, user);
+        } else {
+            canWrite = permissionAPI.doesUserHavePermission(contentlet,
+                    PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles);
+        }
         if (!canWrite) {
             this.throwSecurityException(contentlet, user);
         }
@@ -7089,6 +7096,41 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 && (isNew || isBeingRelocated(contentlet))) {
             checkDestinationPermission(contentlet, respectFrontendRoles, user);
         }
+    }
+
+    /**
+     * Tells whether the user may save an existing favorite page, judged on the favorite as it is
+     * stored rather than on the copy being saved. A favorite inherits its permissions from where
+     * it lives, and the copy may name another site or folder and owner; until
+     * {@link #populateHost(Contentlet)} puts it back at the System Host root, a permission lookup
+     * on the copy would resolve them from the place it names. When the identifier exists but no
+     * version of it can be loaded, the save is refused. When nothing with that identifier is
+     * stored yet, the save creates the favorite, so WRITE on its content type applies.
+     *
+     * @param contentlet           the favorite page being checked in, with its identifier set
+     * @param respectFrontendRoles whether front-end roles count towards the permission
+     * @param user                 the {@link User} performing the checkin
+     * @return {@code true} when the user has WRITE on the stored favorite
+     * @throws DotDataException     when the stored favorite or its identifier cannot be read
+     * @throws DotSecurityException when the stored favorite cannot be read
+     */
+    private boolean canWriteStoredFavorite(final Contentlet contentlet,
+            final boolean respectFrontendRoles, final User user)
+            throws DotDataException, DotSecurityException {
+
+        final Contentlet stored = findContentletByIdentifierAnyLanguage(
+                contentlet.getIdentifier(), true);
+        if (null != stored && UtilMethods.isSet(stored.getIdentifier())) {
+            return permissionAPI.doesUserHavePermission(stored,
+                    PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles);
+        }
+
+        final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
+        if (null != identifier && UtilMethods.isSet(identifier.getId())) {
+            return false;
+        }
+        return permissionAPI.doesUserHavePermission(contentlet.getContentType(),
+                PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles);
     }
 
     /**
