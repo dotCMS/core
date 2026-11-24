@@ -164,3 +164,4 @@ Release-25.07.10 LTS
 158. https://github.com/dotCMS/core/issues/38493 : upgrade guava from 32.0.1-jre to 33.7.2-jre (CVE-2026-102554) #38603 #38493
 159. https://github.com/dotCMS/private-issues/issues/1086 : serve the CSV import template from the REST API #38560 #1086
 160. https://github.com/dotCMS/private-issues/issues/1115 : log Login As only once it completes and keep the session on a refused request #38604 #1115
+161. https://github.com/dotCMS/private-issues/issues/958 : answer password reset requests in constant time #38264 #958

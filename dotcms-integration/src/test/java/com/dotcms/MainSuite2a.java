@@ -98,6 +98,7 @@ import com.dotmarketing.portlets.structure.action.EditStructureActionSaveTest;
         com.dotmarketing.portlets.workflows.business.WorkflowAPITest.class,
         com.dotmarketing.portlets.workflows.model.WorkflowSearcherTest.class,
         com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMappingTest.class,
+        com.dotcms.rest.api.v1.authentication.ForgotPasswordResourceIntegrationTest.class,
         com.dotmarketing.portlets.workflows.actionlet.FourEyeApproverActionletTest.class,
         com.dotmarketing.portlets.workflows.actionlet.SaveContentActionletTest.class,
         com.dotmarketing.portlets.workflows.actionlet.SaveContentActionletWithTagsTest.class,
