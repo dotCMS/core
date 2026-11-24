@@ -50,11 +50,12 @@ test.describe('Content Drive filters', () => {
 
         await basics.chooseContentType(seed.contentType.name);
 
-        // Both at once: while the filtered listing loads, the list shows skeletons and no row at
-        // all, which alone would satisfy "the other type is gone".
-        await expect(async () => {
-            await expect(basics.drive.row(kept)).toHaveCount(1);
-            await expect(basics.drive.row(filteredOut)).toHaveCount(0);
-        }).toPass({ timeout: 20000 });
+        // One read of both titles: the kept row and no other. Two separate reads could see the
+        // unfiltered list for one and the loading skeleton for the other, and pass a broken filter.
+        await expect(
+            basics.drive.listTitles
+                .filter({ hasText: kept })
+                .or(basics.drive.listTitles.filter({ hasText: filteredOut }))
+        ).toHaveText([kept], { timeout: 20000 });
     });
 });
