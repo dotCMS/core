@@ -34,6 +34,8 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.ArgumentMatcher;
+import org.mockito.MockedStatic;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -46,7 +48,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -567,6 +576,8 @@ public class BrowserAjaxTest {
         final List<Map> siteTree = new BrowserAjax().getTree(readSite.getIdentifier());
 
         assertEquals("getTree sites", 1, siteTree.size());
+        assertTrue("The Site must still list READ, which the Site Browser needs to show it",
+                ((List<Integer>) siteTree.get(0).get("permissions")).contains(PermissionAPI.PERMISSION_READ));
         assertEquals("getTree root folders", List.of(readableFolder.getName()),
                 names((List<Map>) siteTree.get(0).get("childrenFolders")));
     }
@@ -702,6 +713,73 @@ public class BrowserAjaxTest {
                 (List<Integer>) folderNamed(children, readableChild.getName()).get("permissions");
         assertTrue("READ must be listed", permissions.contains(PermissionAPI.PERMISSION_READ));
         assertTrue("WRITE must be listed", permissions.contains(PermissionAPI.PERMISSION_WRITE));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAjax#openFolderTree(String)}</li>
+     *     <li><b>Given Scenario:</b> A user who can read every sub-folder expands their parent, and loading the
+     *     user's permissions on one of the sub-folders fails.</li>
+     *     <li><b>Expected Result:</b> That sub-folder is left out; the others are still returned.</li>
+     * </ul>
+     */
+    @Test
+    public void openFolderTree_leavesOutFolderWhosePermissionsCannotBeLoaded() throws Exception {
+        setUpReadPermissionContext(fullReadUser, Set.of());
+        final PermissionAPI permissionAPI = spy(APILocator.getPermissionAPI());
+        doThrow(new DotDataException("Permissions not available")).when(permissionAPI)
+                .getPermissionIdsFromRoles(argThat(isPermissionableOf(readableChild.getIdentifier())),
+                        any(Role[].class), any(User.class));
+
+        final List<Map> children;
+        try (MockedStatic<APILocator> apis = mockStatic(APILocator.class, CALLS_REAL_METHODS)) {
+            apis.when(APILocator::getPermissionAPI).thenReturn(permissionAPI);
+            children = new BrowserAjax().openFolderTree(readableFolder.getIdentifier());
+        }
+
+        verify(permissionAPI).getPermissionIdsFromRoles(argThat(isPermissionableOf(readableChild.getIdentifier())),
+                any(Role[].class), any(User.class));
+        assertEquals("openFolderTree", List.of(restrictedChild.getName(), writeOnlyChild.getName()), names(children));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAjax#getTree(String)}</li>
+     *     <li><b>Given Scenario:</b> A user who can read a Site loads its tree, and loading the user's permissions on
+     *     the Site fails.</li>
+     *     <li><b>Expected Result:</b> The Site is left out.</li>
+     * </ul>
+     */
+    @Test
+    public void getTree_leavesOutSiteWhosePermissionsCannotBeLoaded() throws Exception {
+        setUpReadPermissionContext(fullReadUser, Set.of());
+        final PermissionAPI permissionAPI = spy(APILocator.getPermissionAPI());
+        doThrow(new DotDataException("Permissions not available")).when(permissionAPI)
+                .getPermissionIdsFromRoles(argThat(isPermissionableOf(readSite.getIdentifier())),
+                        any(Role[].class), any(User.class));
+
+        final List<Map> siteTree;
+        try (MockedStatic<APILocator> apis = mockStatic(APILocator.class, CALLS_REAL_METHODS)) {
+            apis.when(APILocator::getPermissionAPI).thenReturn(permissionAPI);
+            siteTree = new BrowserAjax().getTree(readSite.getIdentifier());
+        }
+
+        verify(permissionAPI).getPermissionIdsFromRoles(argThat(isPermissionableOf(readSite.getIdentifier())),
+                any(Role[].class), any(User.class));
+        assertTrue("getTree must leave out the Site", siteTree.isEmpty());
+    }
+
+    /**
+     * Matches the Site or folder with the given identifier.
+     *
+     * @param identifier The identifier of the Site or folder.
+     *
+     * @return The argument matcher.
+     */
+    private static ArgumentMatcher<Permissionable> isPermissionableOf(final String identifier) {
+        return permissionable -> permissionable != null && (identifier.equals(permissionable.getPermissionId())
+                || (permissionable instanceof Folder && identifier.equals(((Folder) permissionable).getIdentifier()))
+                || (permissionable instanceof Host && identifier.equals(((Host) permissionable).getIdentifier())));
     }
 
     /**
