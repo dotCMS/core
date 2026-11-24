@@ -119,7 +119,7 @@ Content Drive loses the place an editor was working in when they come back from 
 - Content Drive shows "Asset" for the dotAsset base type in the New menu and in the content type filter (list and chip).
 - Locking or unlocking from the new editor's side panel updates the row's lock icon without a reload.
 - The shared filter row renders labels in regular weight.
-- In Content Drive, an empty listing renders no table, only the empty-state message, centred and without horizontal scroll; the table returns with the same columns, sort and page size when results come back. The shared listing does this only when its host asks (`hideEmptyTable`), and reuses the grid view's empty-state frame.
+- An empty listing renders no table, only the empty-state message, centred and without horizontal scroll, whenever there is nothing to page to (the server counts no results); the table returns with the same columns, sort and page size when results come back. This is the shared listing's default for every surface, and it reuses the grid view's empty-state frame. While the server still counts results (a page a delete emptied, or a search that stopped at its scan budget), the table and its paginator stay.
 - With more than one item selected, the right-click menu and the toolbar offer no entry that opens one item in a side panel: Edit or View Content, Edit or View Page, Edit or View Properties, Edit Code.
 
 - The picker's empty state gets the same right padding as the cards, in the shared palette list, so it is centred in Content Drive's picker and in the page editor's palette alike.
@@ -142,7 +142,7 @@ Content Drive loses the place an editor was working in when they come back from 
 
 - **Blast radius**:
   - The filter row is shared by every filter popover: in Content Drive the language, status, workflow and field filters, and elsewhere the Users, Experiments and Publishing Queue filters. All of them change to regular weight, on purpose.
-  - The folder listing is shared by Content Drive, the Action Center preview, the AssetPicker and the relationship field's Add Relationships dialog. Rendering only the empty state is opt-in, so the other three keep their table on an empty result; Add Relationships relies on its header and paging footer to get the editor out of an empty search.
+  - The folder listing is shared by Content Drive, the Action Center preview, the AssetPicker and the relationship field's Add Relationships dialog. The empty state without a table applies to all four; their own search, filter chips and Clear all stay, and they are what gets the editor out of an empty result.
   - The content type filter is shared with the AssetPicker, which must keep "DotAsset".
   - The breadcrumb handler is shared by every portlet's trail; only the Content Drive crumb's behaviour may change.
   - The edit panel's lock and unlock are used outside Content Drive (page editor, other surfaces opening the side panel); any new notification from them must be harmless where nobody listens.
@@ -157,13 +157,13 @@ Content Drive loses the place an editor was working in when they come back from 
 - **AC-007**: Content Drive's New menu shows "Asset" for the dotAsset base type.
 - **AC-008**: Content Drive's content type filter shows "Asset" for that base type, in the list and in the chip.
 - **AC-009**: The Content Types portlet and the AssetPicker still show "DotAsset".
-- **AC-010**: Locking or unlocking from the edit side panel updates that row's lock icon without a reload, in the new editor.
+- **AC-010**: Locking or unlocking from the edit side panel updates that row's lock icon without a reload, in the new editor. Under a status filter that includes Locked, the list is also reloaded quietly, since the lock decides which rows belong. Other listings that refresh on edits (Query Tool, Publishing Queue, Pages, legacy portlets) do not reload on a lock.
 - **AC-011**: withdrawn: Content Drive ships with the new editor, and the legacy panel refreshes the list when it closes.
 - **AC-012**: Row labels in the content type filter render in regular weight, and so do the labels of every other filter popover that uses the shared filter row, with no other layout change.
-- **AC-013**: When the listing has no results, no table (header or columns) is rendered, only the empty-state message, centred, with no horizontal scroll.
+- **AC-013**: When the listing has no results and nothing to page to, no table (header or columns) is rendered, only the empty-state message, centred, with no horizontal scroll. While the server still counts results, the table and its paginator stay.
 - **AC-014**: When results come back, the table returns with the same columns, sort and page size.
-- **AC-015**: The other consumers of the shared listing (Action Center preview, AssetPicker, Add Relationships dialog) keep their table, with its empty state inside it, on an empty result.
-- **AC-016**: With more than one item selected, neither the toolbar nor the right-click menu offers an entry that opens one item in a side panel (Edit or View Content, Edit or View Page, Edit or View Properties, Edit Code).
+- **AC-015**: Every consumer of the shared listing (Content Drive, Action Center preview, AssetPicker, Add Relationships dialog) shows the same empty state on an empty result, and its own search and filters stay usable.
+- **AC-016**: With more than one item selected, neither the toolbar nor the right-click menu offers an entry that opens one item in a side panel (Edit or View Content, Edit or View Page, Edit or View Properties, Edit Code). A row outside the selection keeps those entries, since its menu acts on it alone.
 - **AC-017**: With exactly one item selected, or a right-click on a row when nothing else is selected, Edit Content and Edit Page work as before.
 - **AC-018**: The content type picker's empty state is centred in the dialog body, with the same inset on both sides.
 - **Verification method**:

@@ -9,7 +9,7 @@ import {
 } from '@ngrx/signals';
 
 import { Location } from '@angular/common';
-import { computed, effect, inject, Signal } from '@angular/core';
+import { computed, effect, inject, Signal, untracked } from '@angular/core';
 import { Event, NavigationEnd, Router } from '@angular/router';
 
 import { MenuItem } from 'primeng/api';
@@ -311,26 +311,31 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
                     }
                 });
 
-                // Process current URL when menuItems become available
+                // Process current URL when menuItems become available. Only the menu is tracked:
+                // a crumb that followed a `Location` write (#38379) changes the trail while
+                // `router.url` still names the URL the author arrived on, and re-running here
+                // would rebuild the trail from that stale URL.
                 effect(() => {
                     const menu = menuItems();
-                    const currentUrl = store.router.url;
 
-                    // When `menuItems` is loaded and we have a current URL, process the route
-                    if (menu.length > 0 && currentUrl) {
-                        const breadcrumbs = store.breadcrumbs();
-                        const newUrl = `/dotAdmin/#${currentUrl}`;
+                    untracked(() => {
+                        const currentUrl = store.router.url;
 
-                        // Check if any breadcrumb matches the current URL
-                        const hasMatchingBreadcrumb = breadcrumbs.some(
-                            (crumb) => crumb.url === newUrl
-                        );
+                        // When `menuItems` is loaded and we have a current URL, process the route
+                        if (menu.length > 0 && currentUrl) {
+                            const newUrl = `/dotAdmin/#${currentUrl}`;
 
-                        // Only process if we don't have a matching breadcrumb for the current URL
-                        if (!hasMatchingBreadcrumb) {
-                            store._processUrl(currentUrl);
+                            // Check if any breadcrumb matches the current URL
+                            const hasMatchingBreadcrumb = store
+                                .breadcrumbs()
+                                .some((crumb) => crumb.url === newUrl);
+
+                            // Only process if we don't have a matching breadcrumb for the current URL
+                            if (!hasMatchingBreadcrumb) {
+                                store._processUrl(currentUrl);
+                            }
                         }
-                    }
+                    });
                 });
             }
         })

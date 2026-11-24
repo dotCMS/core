@@ -223,17 +223,14 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
     $loading = input<boolean>(false, { alias: 'loading' });
 
     /**
-     * Show only the empty state, with no table, when a loaded page has no items. Off by default:
-     * the Add Relationships dialog keeps the header and the paging footer on an empty search, since
-     * those are what get the editor out of it. Content Drive turns it on, because its extra columns
-     * can make an empty table wider than the screen, and the message scrolled away with it
-     * (#38379). The grid view always shows its empty state on its own.
+     * No table, only the empty state: loaded, nothing on the page, and nothing to page to. An empty
+     * table's header alone can be wider than the screen (Content Drive's extra columns), and the
+     * message scrolled away with it (#38379). While the server counts results anywhere, the table
+     * and its paginator stay: paging is the way out of a page a delete emptied, and to matches a
+     * search found beyond its scan budget.
      */
-    $hideEmptyTable = input<boolean>(false, { alias: 'hideEmptyTable' });
-
-    /** No table, only the empty state: asked for, loaded, and nothing to show. */
     protected readonly $showEmptyStateOnly = computed(
-        () => this.$hideEmptyTable() && !this.$loading() && !this.$items().length
+        () => !this.$loading() && !this.$items().length && this.$recordCount() === 0
     );
 
     /**
@@ -1093,6 +1090,15 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
         this.#keepPlaceAcrossLayouts();
         this.#applyRovingTabStop();
         this.#trackFocusIntent();
+
+        // The table is rebuilt whenever it comes back after an empty page (#38379), so its scroll
+        // listener follows the instance rather than being bound once. Adding the same listener to
+        // a body that already has it is a no-op.
+        effect(() => {
+            if (this.dataTable()) {
+                untracked(() => this.#listenToTableScroll());
+            }
+        });
 
         // Hands the local page-change guard back to `$loading()` the moment the store's own status
         // catches up with the click that set it (found in review, issue #37212).

@@ -219,13 +219,13 @@ describe('AddRelationshipsComponent — shared surface (US1)', () => {
 
     describe('empty states', () => {
         /**
-         * The **table's** empty state, not one of the dialog's own: replacing the table with a
-         * message took the header row and the paging footer with it, and with them the controls
-         * that get the editor out of an empty result.
+         * The listing's empty state, not one of the dialog's own. An empty first page shows the
+         * message alone, with no table header, as every listing does (#38379); the dialog's own
+         * search and filters stay, and they are what get the editor out of an empty result.
          */
-        it('shows the table empty state when a search matches nothing', () => {
+        it('shows the listing empty state, with no table, when a search matches nothing', () => {
             expect(spectator.query(byTestId('empty-state'))).toBeTruthy();
-            expect(spectator.query(byTestId('header-row'))).toBeTruthy();
+            expect(spectator.query(byTestId('header-row'))).toBeNull();
         });
 
         it('shows an empty state, not an error, when the target content type has no content', () => {

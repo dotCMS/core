@@ -327,7 +327,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
 
         // Every save and delete in a side panel, at any depth, reloads the active bundle's assets:
         // content saved from a relationship inside the panel a row opened may be in it (T174).
-        this.#contentChanges.changes$.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe(() => {
+        this.#contentChanges.edits$.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe(() => {
             const bundleId = this.$activeBundleId();
 
             if (bundleId) {

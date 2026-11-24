@@ -2090,6 +2090,11 @@ export class DotContentDriveShellComponent implements OnDestroy {
         if (change.kind === DotContentChangeKind.LOCKED) {
             this.#store.updateItemLock(change.contentlet);
 
+            // Under a Locked status filter the lock decides which rows belong in the list.
+            if (this.#store.filters()?.status?.includes('LOCKED')) {
+                this.#store.reloadContentDrive({ quiet: true });
+            }
+
             return;
         }
 

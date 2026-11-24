@@ -12,7 +12,7 @@
 } @else if ($showEmptyStateOnly()) {
     <ng-container
         [ngTemplateOutlet]="emptyFrame"
-        [ngTemplateOutletContext]="{ testId: 'table-empty-state' }" />
+        [ngTemplateOutletContext]="{ testId: 'empty-state' }" />
 } @else {
     <p-table
         #dataTable
@@ -428,7 +428,7 @@
 }
 
 <!-- The empty state on its own, centred in the listing's area: the grid's, and the table's when
-     the host asks for no table on an empty result (`hideEmptyTable`, #38379). -->
+     an empty first page shows no table (#38379). -->
 <ng-template #emptyFrame let-testId="testId">
     <div class="flex size-full items-center justify-center p-6" [attr.data-testid]="testId">
         <ng-container [ngTemplateOutlet]="emptyState" />
@@ -532,8 +532,8 @@
             }
         </div>
 
-        <!-- Not on an empty result when the host asks for the empty state alone (`hideEmptyTable`):
-             there is nothing to page through, and the table shows none either (#38379). -->
+        <!-- Not on an empty first page: there is nothing to page through, and the table shows
+             none either (#38379). -->
         @if (!$showEmptyStateOnly()) {
             <!-- The table's paginator settings and the same lock (FR-018): same page sizes, "Page N",
                  no page links, Previous/Next truly disabled while a page loads. -->

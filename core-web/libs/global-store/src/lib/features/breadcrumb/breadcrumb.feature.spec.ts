@@ -849,6 +849,9 @@ describe('withBreadcrumbs Feature', () => {
         class RouterMock {
             private _events = new Subject<Event>();
 
+            /** What the router thinks the URL is. A `Location` write does not change it. */
+            url = '';
+
             get events(): Observable<Event> {
                 return this._events.asObservable();
             }
@@ -1100,6 +1103,23 @@ describe('withBreadcrumbs Feature', () => {
                 });
             });
 
+            // The router never hears of a `Location` write, so it still reports the URL the author
+            // arrived on. The crumb following the new URL must not make the store go back to the
+            // router's URL and reset the trail, which is what lost the folder and filters on the
+            // way back from the page editor (#38379).
+            it('keeps the followed URL though the router still reports the old one', () => {
+                routerMock.url = '/content-drive?mId=content';
+                routerMock.triggerNavigationEnd('/content-drive?mId=content');
+                TestBed.flushEffects();
+
+                locationMock.changeUrl('#/content-drive?path=/blog/&filters=contentType:Blog');
+                TestBed.flushEffects();
+
+                expect(storeWithRouter.breadcrumbs().at(-1)?.url).toBe(
+                    '/dotAdmin/#/content-drive?path=/blog/&filters=contentType:Blog'
+                );
+            });
+
             it('goes back to the folder left when its crumb is clicked from the page editor', () => {
                 routerMock.triggerNavigationEnd('/content-drive?mId=content');
                 TestBed.flushEffects();
@@ -1158,6 +1178,23 @@ describe('withBreadcrumbs Feature', () => {
                     label: 'Blog Page',
                     url: '/dotAdmin/#/edit-page/content?url=/blog/page&language_id=2'
                 });
+            });
+
+            // Every page the editor opens is on `/edit-page/content`; `url` says which page. Moving
+            // to another page in the canvas is not the same page's state, so the crumb of the page
+            // left keeps its own URL (#38379).
+            it('leaves the last crumb alone when the page editor moves to another page', () => {
+                routerMock.triggerNavigationEnd('/c/query-tool?mId=devtools');
+                TestBed.flushEffects();
+                storeWithRouter.addNewBreadcrumb({
+                    label: 'Page A',
+                    url: '/dotAdmin/#/edit-page/content?url=/a&language_id=1'
+                });
+                const before = storeWithRouter.breadcrumbs();
+
+                locationMock.changeUrl('#/edit-page/content?url=/b&language_id=1');
+
+                expect(storeWithRouter.breadcrumbs()).toEqual(before);
             });
 
             it('leaves the last crumb alone when the URL moves to another route', () => {

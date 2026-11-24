@@ -247,10 +247,11 @@ export class DotFolderListViewContextMenuComponent {
         this.$items.set([]);
         const memoizedMenuItems = this.$memoizedMenuItems();
 
-        // The side panel edits one item, so with several selected the entries that open one in it
-        // read as if all of them would open (#38379). That menu is built fresh each time and never
-        // memoized, so neither menu is ever served for the other.
-        const opensOneItem = this.#store.selectedItems().length <= 1;
+        // The side panel edits one item, so when the clicked row is one of several selected, the
+        // entries that open one in it read as if all of them would open (#38379). A row outside
+        // the selection keeps them: its menu acts on it alone. That menu is built fresh each time
+        // and never memoized, so neither menu is ever served for the other.
+        const opensOneItem = this.#opensOneItem(contentlet);
         const key = isFolder(contentlet) ? contentlet.identifier : contentlet.inode;
 
         if (opensOneItem && memoizedMenuItems[key]) {
@@ -384,6 +385,10 @@ export class DotFolderListViewContextMenuComponent {
             this.#workflowsActionsService.getByInode(contentlet.inode, DotRenderMode.LISTING)
         );
 
+        // Read again once both requests answer: a row selected meanwhile counts, or an answer that
+        // arrives after it would bring the single-item editor entries back.
+        const opensOneItemNow = this.#opensOneItem(contentlet);
+
         const isPage = contentlet.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE;
         // Without WRITE the entries still open the item, read as View, as in Content Search
         // (#37903, FR-010).
@@ -394,7 +399,7 @@ export class DotFolderListViewContextMenuComponent {
         // entries that open one item in an editor are left out (#38379).
         const builtIn: MenuItem[] = [];
 
-        if (opensOneItem) {
+        if (opensOneItemNow) {
             builtIn.push({
                 label: this.#dotMessageService.get(
                     `content-drive.context-menu.${verb}-${isPage ? 'page' : 'content'}`
@@ -514,7 +519,7 @@ export class DotFolderListViewContextMenuComponent {
 
         this.$items.set(actionsMenu);
 
-        if (opensOneItem) {
+        if (opensOneItemNow) {
             this.$memoizedMenuItems.set({
                 ...this.$memoizedMenuItems(),
                 [key]: this.$items()
@@ -522,6 +527,27 @@ export class DotFolderListViewContextMenuComponent {
         }
 
         this.contextMenu()?.show(triggeredEvent);
+    }
+
+    /**
+     * Whether the row's menu may offer the entries that open one item in the side panel: not when
+     * the row is one of several selected, since the panel edits one item and the entry would read
+     * as if all of them would open (#38379). A row outside the selection keeps them: its menu acts
+     * on it alone.
+     *
+     * @param contentlet The row the menu is for.
+     * @returns `true` when the single-item editor entries belong in its menu.
+     */
+    #opensOneItem(contentlet: { identifier: string; inode?: string }): boolean {
+        const selected = this.#store.selectedItems();
+
+        return (
+            selected.length <= 1 ||
+            !selected.some(
+                (item) =>
+                    item.identifier === contentlet.identifier && item.inode === contentlet.inode
+            )
+        );
     }
 
     #executeWorkflowActions(workflowAction: DotCMSWorkflowAction, contentlet: DotCMSContentlet) {

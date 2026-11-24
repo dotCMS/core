@@ -600,6 +600,72 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
                 expect(items).toContain('content-drive.context-menu.edit-content');
             });
+
+            it("should not offer a page's Edit or View Properties", async () => {
+                store.setSelectedItems([page, other]);
+
+                const items = await openMenuFor(page);
+
+                expect(items).not.toContain('content-drive.context-menu.edit-properties');
+                expect(items).not.toContain('content-drive.context-menu.view-properties');
+            });
+
+            it("should not offer a file's Edit Code", async () => {
+                const file = createFakeContentlet({
+                    inode: 'file-inode',
+                    baseType: DotCMSBaseTypesContentTypes.FILEASSET,
+                    extension: 'vtl',
+                    fileName: 'header.vtl',
+                    permissions: [1, 2, 4, 8, 16] as unknown as DotCMSContentlet['permissions']
+                });
+                store.setSelectedItems([file, other]);
+
+                const items = await openMenuFor(file);
+
+                expect(items).not.toContain('content-drive.context-menu.edit-code');
+            });
+
+            // The menu waits on two requests; a row selected meanwhile counts, so an answer that
+            // arrives after it does not bring the editor entries back.
+            it('should go by the selection as it is once the menu requests answer', async () => {
+                store.setSelectedItems([mockContentlet]);
+                workflowsActionsService.getByInode.mockImplementationOnce(() => {
+                    store.setSelectedItems([mockContentlet, other]);
+
+                    return of(mockWorkflowActions);
+                });
+
+                const items = await openMenuFor(mockContentlet);
+
+                expect(items).not.toContain('content-drive.context-menu.edit-content');
+            });
+
+            // Every entry of a row's menu acts on that row alone, so a row outside the selection
+            // keeps its editor entries (#38379).
+            it('should still offer Edit Content for a row outside the selection', async () => {
+                store.setSelectedItems([page, other]);
+
+                const items = await openMenuFor(mockContentlet);
+
+                expect(items).toContain('content-drive.context-menu.edit-content');
+            });
+
+            // With the editor entries left out, a read-only row that cannot be locked has nothing
+            // in the built-in group: the menu opens on the workflow actions, not on a separator.
+            it('should not open on a separator when the built-in group is empty', async () => {
+                const readOnly = createFakeContentlet({
+                    inode: 'read-only-inode',
+                    permissions: [1] as unknown as DotCMSContentlet['permissions']
+                });
+                dotContentletService.canLock.mockReturnValueOnce(
+                    of(createMockCanLock(false, false))
+                );
+                store.setSelectedItems([readOnly, other]);
+
+                const items = await openMenuFor(readOnly);
+
+                expect(items[0]).toBe('content-drive.context-menu.workflows');
+            });
         });
 
         describe('edit code', () => {

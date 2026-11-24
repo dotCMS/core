@@ -92,13 +92,40 @@ function contentDriveCrumbUrl(url: string): string {
 }
 
 /**
+ * The params that say which page a route shows, where one route shows many: every page the page
+ * editor opens is on `/edit-page/content`, and `url` says which. Moving to another page is not the
+ * same page's state, so its crumb does not follow (#38379).
+ */
+const PAGE_IDENTITY_PARAMS: Record<string, string[]> = {
+    '/edit-page/content': ['url']
+};
+
+/**
+ * Whether two URLs of a route show the same page: the params that identify it are unchanged.
+ *
+ * @param route The route both URLs are on.
+ * @param query The new URL's query string.
+ * @param lastQuery The last crumb's query string.
+ * @returns `true` when they show the same page.
+ */
+function samePage(route: string, query: string, lastQuery: string): boolean {
+    const params = new URLSearchParams(query);
+    const lastParams = new URLSearchParams(lastQuery);
+
+    return (PAGE_IDENTITY_PARAMS[route] ?? []).every(
+        (name) => params.get(name) === lastParams.get(name)
+    );
+}
+
+/**
  * The last crumb after its page moved its own URL, or `null` when the trail should stay as it is.
  *
  * Some portlets write their state into the URL with `Location.go` / `replaceState`, which never
  * reaches the router: Content Drive its folder, filters and tree, the page editor its language and
  * mode. The crumb would otherwise keep the URL the author arrived on, and coming back to it from
  * another page opened that state instead of the one they left (#38379). Only a URL on the same
- * route as the last crumb is followed: anywhere else, that crumb is not the page being shown.
+ * route as the last crumb, showing the same page, is followed: anywhere else, that crumb is not the
+ * page being shown. In the page editor that means the same `url` ({@link PAGE_IDENTITY_PARAMS}).
  * Content Drive's crumb also leaves out the params that open a panel or a dialog (see
  * {@link contentDriveCrumbUrl}).
  *
@@ -108,10 +135,11 @@ function contentDriveCrumbUrl(url: string): string {
  */
 export function followUrl(url: string, last: MenuItem | null): MenuItem | null {
     const path = url.replace(/^.*#/, '');
-    const route = path.split('?')[0];
-    const lastRoute = (last?.url ?? '').replace(/^.*#/, '').split('?')[0];
+    const lastPath = (last?.url ?? '').replace(/^.*#/, '');
+    const [route, query = ''] = path.split('?');
+    const [lastRoute, lastQuery = ''] = lastPath.split('?');
 
-    if (!last?.url || route !== lastRoute) {
+    if (!last?.url || route !== lastRoute || !samePage(route, query, lastQuery)) {
         return null;
     }
 

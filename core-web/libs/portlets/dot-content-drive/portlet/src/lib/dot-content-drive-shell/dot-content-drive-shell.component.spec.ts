@@ -1920,14 +1920,6 @@ describe('DotContentDriveShellComponent', () => {
             expect(folderListView?.$items()).toEqual(MOCK_ITEMS);
         });
 
-        // Content Drive's extra columns can make even an empty table wider than the screen, so an
-        // empty result shows only the empty state, as the grid does (#38379).
-        it('should ask the listing to show no table on an empty result', () => {
-            spectator.detectChanges();
-
-            expect(spectator.query(DotFolderListViewComponent)?.$hideEmptyTable()).toBe(true);
-        });
-
         it('should have a dot-content-drive-toolbar with tree toggler', () => {
             spectator.detectChanges();
 
@@ -5531,6 +5523,26 @@ describe('DotContentDriveShellComponent', () => {
 
                 expect(store.updateItemLock).toHaveBeenCalledWith(contentlet);
                 expect(store.reloadContentDrive).not.toHaveBeenCalled();
+            });
+
+            // Under a Locked status filter the lock decides which rows belong in the list, so the
+            // list is reloaded quietly as well as the row patched (#38379).
+            it('also reloads the list quietly when the status filter includes Locked', () => {
+                filtersSignal.set({ status: ['LOCKED'] });
+                const contentlet = {
+                    identifier: 'id-9',
+                    inode: 'inode-9',
+                    locked: false
+                } as DotCMSContentlet;
+
+                spectator.inject(DotContentChangeService).notify({
+                    kind: DotContentChangeKind.LOCKED,
+                    contentlet,
+                    depth: 0
+                });
+
+                expect(store.updateItemLock).toHaveBeenCalledWith(contentlet);
+                expect(store.reloadContentDrive).toHaveBeenCalledWith({ quiet: true });
             });
 
             it('clears the request, then refreshes the list quietly, when the panel closes itself', () => {

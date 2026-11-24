@@ -2,6 +2,8 @@ import { Observable, Subject } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
+import { filter } from 'rxjs/operators';
+
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 /**
@@ -54,6 +56,14 @@ export class DotContentChangeService {
 
     /** Every change, as it happens. */
     readonly changes$: Observable<DotContentChange> = this.#changes.asObservable();
+
+    /**
+     * The saves and deletes of {@link changes$}: what a listing refreshes on. A lock change is
+     * not an edit, so it is left out (#38379).
+     */
+    readonly edits$: Observable<DotContentChange> = this.changes$.pipe(
+        filter(({ kind }) => kind !== DotContentChangeKind.LOCKED)
+    );
 
     /**
      * Announces a change. Called by the opener only.
