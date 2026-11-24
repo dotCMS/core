@@ -36,6 +36,10 @@ export class DotWorkflowTaskDetailComponent implements OnInit {
     @Output()
     custom: EventEmitter<CustomEvent<Record<string, unknown>>> = new EventEmitter();
 
+    /** The task dialog has shown, stacked above what was open before it (#38303). */
+    @Output()
+    shown: EventEmitter<void> = new EventEmitter();
+
     url$: Observable<string>;
     header$: Observable<string>;
 

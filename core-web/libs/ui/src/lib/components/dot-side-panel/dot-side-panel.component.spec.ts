@@ -134,6 +134,54 @@ describe('DotSidePanelComponent', () => {
             // Shared global stack: leaving the entry behind would leak into later tests.
             ZIndexUtils.clear(overlay);
         });
+
+        /**
+         * A PrimeNG dialog under the panel listens to the document's keydown itself and closes when
+         * it is the top of `ZIndexUtils`. The panel's close destroys its drawer, which drops the
+         * drawer's entry, so a dialog listener later in the same event found itself on top and
+         * closed too: one Escape closed two layers (#38303, US3 AC 3, SC-007).
+         */
+        describe('with a dialog under the panel', () => {
+            let laterListener: Mock;
+
+            beforeEach(() => {
+                laterListener = vi.fn();
+            });
+
+            afterEach(() => document.removeEventListener('keydown', laterListener));
+
+            it('stops the Escape that closes the panel before any later document listener', () => {
+                open();
+                document.addEventListener('keydown', laterListener);
+
+                pressEscape();
+
+                expect(closeRequested).toHaveBeenCalledTimes(1);
+                expect(laterListener).not.toHaveBeenCalled();
+            });
+
+            it('lets an overlay above the panel hear the Escape it owns', () => {
+                open();
+                const overlay = document.createElement('div');
+                ZIndexUtils.set('modal', overlay, 2000);
+                document.addEventListener('keydown', laterListener);
+
+                pressEscape();
+
+                expect(laterListener).toHaveBeenCalledTimes(1);
+                ZIndexUtils.clear(overlay);
+            });
+
+            it('lets the dialog hear Escape again once the panel is gone', () => {
+                open();
+                document.addEventListener('keydown', laterListener);
+
+                spectator.fixture.destroy();
+                pressEscape();
+
+                expect(laterListener).toHaveBeenCalledTimes(1);
+            });
+        });
     });
 
     describe('mask click', () => {

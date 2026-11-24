@@ -1,13 +1,29 @@
-import { ChangeDetectionStrategy, Component, effect, inject, untracked } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    effect,
+    inject,
+    Injector,
+    untracked
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute } from '@angular/router';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { ToastModule } from 'primeng/toast';
 
 import { take } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotContentChangeService, DotMessageService } from '@dotcms/data-access';
 import { PublishAuditStatus } from '@dotcms/dotcms-models';
+import {
+    DotEditContentOpenerService,
+    DotEditContentRequest,
+    DotPanelUrlStateService,
+    readPanelUrlIntent
+} from '@dotcms/edit-content';
 
 import { DotPublishingQueueToolbarComponent } from '../components/dot-publishing-queue-toolbar/dot-publishing-queue-toolbar.component';
 import { DotPublishingQueueAssetListDialogHeaderComponent } from '../dialogs/dot-publishing-queue-asset-list-dialog/dot-publishing-queue-asset-list-dialog-header.component';
@@ -34,10 +50,19 @@ const EDITABLE_ASSET_STATUSES = new Set<PublishAuditStatus | null>([
     selector: 'dot-publishing-queue-shell',
     imports: [
         ConfirmDialogModule,
+        ToastModule,
         DotPublishingQueueToolbarComponent,
         DotPublishingQueueTableComponent
     ],
-    providers: [DotPublishingQueueStore, DialogService, ConfirmationService],
+    providers: [
+        DotPublishingQueueStore,
+        DialogService,
+        ConfirmationService,
+        // A panel reopened over the list from the URL lives under this component's injector, and
+        // its editor needs PrimeNG's MessageService. The admin root provides none (one there would
+        // hide the page editor's), so the panel toasts through this one, in this template (#38303).
+        MessageService
+    ],
     templateUrl: './dot-publishing-queue-shell.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-col h-full min-h-0 block' }
@@ -47,6 +72,11 @@ export class DotPublishingQueueShellComponent {
     readonly #dialogService = inject(DialogService);
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #route = inject(ActivatedRoute);
+    readonly #opener = inject(DotEditContentOpenerService);
+    readonly #panelUrl = inject(DotPanelUrlStateService);
+    /** The shell's injector: a panel reopened over the list closes with the portlet. */
+    readonly #injector = inject(Injector);
 
     #detailRef: DynamicDialogRef | null = null;
     #uploadRef: DynamicDialogRef | null = null;
@@ -63,6 +93,51 @@ export class DotPublishingQueueShellComponent {
             const bundleId = this.#store.detailBundleId();
             untracked(() => this.#syncDetail(bundleId));
         });
+
+        // Every save and delete in a side panel over the list, at any depth, reloads the list
+        // (T174). Not while the asset list or the bundle wizard is open: a content change moves
+        // no bundle row, and the dialog reloads its own list (#38303).
+        inject(DotContentChangeService)
+            .changes$.pipe(takeUntilDestroyed())
+            .subscribe(() => {
+                if (!this.#store.selectedBundleId() && !this.#selectBundleRef) {
+                    this.#store.refresh();
+                }
+            });
+
+        this.#openFromUrl();
+    }
+
+    /**
+     * Opens what the URL names, once, on load (#38303, FR-049). A row opened from the asset list or
+     * the bundle wizard wrote its panel to the URL; a refresh or a shared link reopens it over the
+     * list, without the dialog it came from. A link the author cannot have meant (a panel param of
+     * the wrong shape, or two panels) opens nothing, shows the standard error and loses its params.
+     */
+    #openFromUrl(): void {
+        const intent = readPanelUrlIntent(this.#route.snapshot.queryParams);
+
+        if (intent.kind === 'edit') {
+            const { identifier, languageId } = intent;
+            this.#openOverList({ mode: 'edit', identifier, ...(languageId ? { languageId } : {}) });
+        } else if (intent.kind === 'create') {
+            this.#openOverList({ mode: 'new', contentType: intent.contentType });
+        } else if (intent.kind === 'refused') {
+            this.#panelUrl.refuse();
+        }
+    }
+
+    /**
+     * Opens content in the side panel over the list, written to the URL; the close reloads the
+     * list, and a save reloads it through the content change notification (T174).
+     *
+     * @param request What to open, without the portlet.
+     */
+    #openOverList(request: DotEditContentRequest): void {
+        this.#opener.open(
+            { ...request, portletId: 'publishing-queue' },
+            { injector: this.#injector, closed: () => this.#store.refresh(), url: {} }
+        );
     }
 
     openSelectBundle(): void {
@@ -81,7 +156,10 @@ export class DotPublishingQueueShellComponent {
                 closable: true,
                 closeOnEscape: true,
                 draggable: false,
-                position: 'center'
+                position: 'center',
+                // A contentlet row opens the side panel over this dialog; a focus trap here would
+                // keep the panel's editor from taking keystrokes (#38303, R12).
+                focusTrap: false
             }
         );
         this.#selectBundleRef.onClose.pipe(take(1)).subscribe(() => {
@@ -156,6 +234,9 @@ export class DotPublishingQueueShellComponent {
                     closeOnEscape: true,
                     draggable: false,
                     position: 'center',
+                    // A contentlet row opens the side panel over this dialog; a focus trap here
+                    // would keep the panel's editor from taking keystrokes (#38303, R12).
+                    focusTrap: false,
                     data: { allowRemove, bundleName }
                 }
             );
