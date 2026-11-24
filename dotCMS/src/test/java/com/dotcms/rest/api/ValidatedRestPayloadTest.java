@@ -11,11 +11,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import javax.validation.Constraint;
@@ -28,18 +28,10 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.Response;
-import org.glassfish.jersey.internal.MapPropertiesDelegate;
-import org.glassfish.jersey.server.ApplicationHandler;
-import org.glassfish.jersey.server.ContainerRequest;
-import org.glassfish.jersey.server.ContainerResponse;
-import org.glassfish.jersey.server.ResourceConfig;
 import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.NotBlank;
 import org.junit.AfterClass;
@@ -51,13 +43,15 @@ import org.junit.Test;
  * bean-validation constraints. The expected messages are the ones dotCMS has always returned, so
  * a change of the validation library must keep every one of them byte-for-byte.
  *
- * <p>Requests go through an in-memory Jersey application with the same JSON provider dotCMS
- * registers, so the payload is read from JSON and the error list is written back as JSON.
+ * <p>Each payload is read with the same JSON provider dotCMS registers, validated the way dotCMS
+ * resources do (by calling {@link Validated#checkValid()}), and the response carried by the thrown
+ * exception is written back as JSON with that provider, which is what JAX-RS does with a
+ * {@link WebApplicationException} that carries an entity.
  */
 public class ValidatedRestPayloadTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
-    private static ApplicationHandler handler;
+    private static final JacksonJaxbJsonProvider PROVIDER = new JacksonJaxbJsonProvider();
     private static Locale originalLocale;
 
     /**
@@ -65,12 +59,9 @@ public class ValidatedRestPayloadTest {
      * {@link Locale#getDefault()} and the expected texts are the English ones.
      */
     @BeforeClass
-    public static void startApplication() {
+    public static void pinLocale() {
         originalLocale = Locale.getDefault();
         Locale.setDefault(Locale.ENGLISH);
-        handler = new ApplicationHandler(new ResourceConfig()
-                .register(JacksonJaxbJsonProvider.class)
-                .register(FormResource.class));
     }
 
     /** Restores the default locale the JVM had before this class ran. */
@@ -82,69 +73,69 @@ public class ValidatedRestPayloadTest {
     /** A {@code @NotNull} field without its own message reports the library default text. */
     @Test
     public void notNull_defaultMessage() throws Exception {
-        assertBadRequest("notNull", "{}", "may not be null", "value");
+        assertBadRequest(NotNullForm.class, "{}", "may not be null", "value");
     }
 
     /** A real form whose {@code @NotNull} carries its own message keeps that message. */
     @Test
     public void notNull_customMessage_companyLocaleForm() throws Exception {
-        assertBadRequest("companyLocale", "{\"languageId\":\"en_US\"}",
+        assertBadRequest(CompanyLocaleForm.class, "{\"languageId\":\"en_US\"}",
                 "timeZoneId is required", "timeZoneId");
     }
 
     /** A real form whose {@code @Length} carries its own message keeps that message. */
     @Test
     public void length_customMessage_exportSecretForm() throws Exception {
-        assertBadRequest("exportSecret", "{\"password\":\"short\",\"exportAll\":true,\"appKeys\":{}}",
+        assertBadRequest(ExportSecretForm.class, "{\"password\":\"short\",\"exportAll\":true,\"appKeys\":{}}",
                 "The password must be a string with a length between 14 and 32", "password");
     }
 
     /** The default {@code @Length} text interpolates its bounds. */
     @Test
     public void length_defaultMessage() throws Exception {
-        assertBadRequest("length", "{\"value\":\"too long\"}", "length must be between 1 and 3", "value");
+        assertBadRequest(LengthForm.class, "{\"value\":\"too long\"}", "length must be between 1 and 3", "value");
     }
 
     /** The default Hibernate {@code @NotBlank} text. */
     @Test
     public void notBlank_defaultMessage() throws Exception {
-        assertBadRequest("notBlank", "{\"value\":\"  \"}", "may not be empty", "value");
+        assertBadRequest(NotBlankForm.class, "{\"value\":\"  \"}", "may not be empty", "value");
     }
 
     /** The default {@code @Min} text interpolates its bound. */
     @Test
     public void min_defaultMessage() throws Exception {
-        assertBadRequest("min", "{\"value\":-1}", "must be greater than or equal to 0", "value");
+        assertBadRequest(MinForm.class, "{\"value\":-1}", "must be greater than or equal to 0", "value");
     }
 
     /** The default {@code @Max} text interpolates its bound. */
     @Test
     public void max_defaultMessage() throws Exception {
-        assertBadRequest("max", "{\"value\":11}", "must be less than or equal to 10", "value");
+        assertBadRequest(MaxForm.class, "{\"value\":11}", "must be less than or equal to 10", "value");
     }
 
     /** The default {@code @Size} text interpolates its bounds. */
     @Test
     public void size_defaultMessage() throws Exception {
-        assertBadRequest("size", "{\"value\":\"abcd\"}", "size must be between 1 and 3", "value");
+        assertBadRequest(SizeForm.class, "{\"value\":\"abcd\"}", "size must be between 1 and 3", "value");
     }
 
     /** The default {@code @Pattern} text interpolates the expression. */
     @Test
     public void pattern_defaultMessage() throws Exception {
-        assertBadRequest("pattern", "{\"value\":\"ABC\"}", "must match \"[a-z]+\"", "value");
+        assertBadRequest(PatternForm.class, "{\"value\":\"ABC\"}", "must match \"[a-z]+\"", "value");
     }
 
     /** The default {@code @AssertTrue} text. */
     @Test
     public void assertTrue_defaultMessage() throws Exception {
-        assertBadRequest("assertTrue", "{\"value\":false}", "must be true", "value");
+        assertBadRequest(AssertTrueForm.class, "{\"value\":false}", "must be true", "value");
     }
 
     /** dotCMS's own {@link Operator} constraint has no bundle entry, so its key is returned as is. */
     @Test
     public void customConstraint_operator() throws Exception {
-        assertBadRequest("operator", "{\"value\":\"NOPE\"}",
+        assertBadRequest(OperatorForm.class, "{\"value\":\"NOPE\"}",
                 "{javax.validation.constraints.Operator.message}", "value");
     }
 
@@ -155,65 +146,48 @@ public class ValidatedRestPayloadTest {
      */
     @Test
     public void validatorBuiltTemplate_isNotEvaluated() throws Exception {
-        assertBadRequest("echo", "{\"value\":\"${1+1}\"}", "rejected ${1+1}", "value");
+        assertBadRequest(EchoForm.class, "{\"value\":\"${1+1}\"}", "rejected ${1+1}", "value");
     }
 
     /** A valid payload passes. */
     @Test
     public void validPayload_returns200() throws Exception {
-        assertEquals(200, post("min", "{\"value\":5}").getStatus());
+        assertEquals(200, submit(MinForm.class, "{\"value\":5}").getStatus());
     }
 
-    private static void assertBadRequest(final String path, final String json,
+    private static void assertBadRequest(final Class<? extends Validated> formClass, final String json,
             final String message, final String fieldName) throws Exception {
-        final ByteArrayOutputStream body = new ByteArrayOutputStream();
-        final ContainerResponse response = post(path, json, body);
-
+        final Response response = submit(formClass, json);
         assertEquals(400, response.getStatus());
+
+        final Object entity = response.getEntity();
+        final ByteArrayOutputStream body = new ByteArrayOutputStream();
+        PROVIDER.writeTo(entity, entity.getClass(), entity.getClass(), new Annotation[0],
+                MediaType.APPLICATION_JSON_TYPE, new MultivaluedHashMap<>(), body);
+
         final String expected = "[{\"errorCode\":null,\"message\":"
                 + MAPPER.writeValueAsString(message) + ",\"fieldName\":\"" + fieldName + "\"}]";
         assertEquals(MAPPER.readTree(expected),
                 MAPPER.readTree(body.toString(StandardCharsets.UTF_8)));
     }
 
-    private static ContainerResponse post(final String path, final String json) throws Exception {
-        return post(path, json, new ByteArrayOutputStream());
-    }
-
-    private static ContainerResponse post(final String path, final String json,
-            final ByteArrayOutputStream body) throws Exception {
-        final ContainerRequest request = new ContainerRequest(URI.create("http://localhost/"),
-                URI.create("http://localhost/forms/" + path), "POST", null,
-                new MapPropertiesDelegate(), handler.getConfiguration());
-        request.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        request.header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
-        request.setEntityStream(new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
-        return handler.apply(request, body).get();
-    }
-
-    /** Validates each form the way dotCMS resources do: by calling {@link Validated#checkValid()}. */
-    @Path("/forms")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    public static class FormResource {
-
-        private static Response check(final Validated form) {
+    /**
+     * Reads the JSON payload into the form and validates it, returning the response a resource
+     * would send: 200 when the form is valid, otherwise the response carried by the exception.
+     */
+    @SuppressWarnings("unchecked")
+    private static Response submit(final Class<? extends Validated> formClass, final String json)
+            throws Exception {
+        final Validated form = (Validated) PROVIDER.readFrom((Class<Object>) (Class<?>) formClass,
+                formClass, new Annotation[0], MediaType.APPLICATION_JSON_TYPE,
+                new MultivaluedHashMap<>(),
+                new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
+        try {
             form.checkValid();
-            return Response.ok("{}").build();
+            return Response.ok().build();
+        } catch (final WebApplicationException e) {
+            return e.getResponse();
         }
-
-        @POST @Path("notNull") public Response notNull(final NotNullForm f) { return check(f); }
-        @POST @Path("companyLocale") public Response companyLocale(final CompanyLocaleForm f) { return check(f); }
-        @POST @Path("exportSecret") public Response exportSecret(final ExportSecretForm f) { return check(f); }
-        @POST @Path("length") public Response length(final LengthForm f) { return check(f); }
-        @POST @Path("notBlank") public Response notBlank(final NotBlankForm f) { return check(f); }
-        @POST @Path("min") public Response min(final MinForm f) { return check(f); }
-        @POST @Path("max") public Response max(final MaxForm f) { return check(f); }
-        @POST @Path("size") public Response size(final SizeForm f) { return check(f); }
-        @POST @Path("pattern") public Response pattern(final PatternForm f) { return check(f); }
-        @POST @Path("assertTrue") public Response assertTrue(final AssertTrueForm f) { return check(f); }
-        @POST @Path("operator") public Response operator(final OperatorForm f) { return check(f); }
-        @POST @Path("echo") public Response echo(final EchoForm f) { return check(f); }
     }
 
     public static class NotNullForm extends Validated {
