@@ -34,6 +34,8 @@ import {
     getDragItemData,
     getLanguageChangePageParams,
     createReorderMenuURL,
+    createAddContentletUrl,
+    createTranslatePageUrl,
     getRequestHostName,
     getOrientation,
     normalizeQueryParams,
@@ -45,15 +47,21 @@ import {
     isPageSiteHost,
     getPageOwnedParamKeys,
     resolveClickedAnchor,
-    scrollIframeToFragment
+    scrollIframeToFragment,
+    shouldNavigate,
+    pageRequestContext
 } from '.';
 
-import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
+import { DEFAULT_PERSONA, LAYOUT_URL, PERSONA_KEY } from '../shared/consts';
+import { CONTAINER_INSERT_ERROR } from '../shared/enums';
 import { dotPageContainerStructureMock } from '../shared/mocks';
 import {
+    ContainerPayload,
     ContentletDragPayload,
+    ContentletPayload,
     ContentTypeDragPayload,
-    DotPageAssetParams
+    DotPageAssetParams,
+    PageContainer
 } from '../shared/models';
 import { Orientation } from '../store/models';
 
@@ -826,6 +834,244 @@ describe('utils functions', () => {
         });
     });
 
+    // #38575. A move is a delete from the origin container followed by an insert next to the
+    // contentlet the user dropped on (the pivot), the way the canvas places a moved contentlet.
+    describe('move a contentlet next to a pivot', () => {
+        /** Container A holds c1, c2 and c3; container B holds b1. */
+        const containerA = (): ContainerPayload => ({
+            identifier: 'container-a',
+            uuid: '1',
+            acceptTypes: '*',
+            maxContentlets: 25,
+            contentletsId: ['c1', 'c2', 'c3']
+        });
+
+        const containerB = (overrides: Partial<ContainerPayload> = {}): ContainerPayload => ({
+            identifier: 'container-b',
+            uuid: '1',
+            acceptTypes: '*',
+            maxContentlets: 25,
+            contentletsId: ['b1'],
+            ...overrides
+        });
+
+        const contentlet = (identifier: string): ContentletPayload => ({
+            identifier,
+            inode: `${identifier}-inode`,
+            title: identifier,
+            contentType: 'Banner'
+        });
+
+        /** The page's containers, as the store hands them out. */
+        const pageContainersOf = (...containers: ContainerPayload[]): PageContainer[] =>
+            containers.map(({ identifier, uuid, contentletsId }) => ({
+                identifier,
+                uuid,
+                contentletsId: [...(contentletsId ?? [])]
+            }));
+
+        /** Moves `id` out of `from` and drops it `position` the `pivot` in `to`. */
+        const move = ({
+            id,
+            from,
+            to,
+            pivot,
+            position,
+            pageContainers
+        }: {
+            id: string;
+            from: ContainerPayload;
+            to: ContainerPayload;
+            pivot: string;
+            position: 'before' | 'after';
+            pageContainers: PageContainer[];
+        }) => {
+            const removed = deleteContentletFromContainer({
+                pageContainers,
+                container: from,
+                contentlet: contentlet(id),
+                pageId: 'page-id',
+                language_id: '1'
+            });
+
+            return insertContentletInContainer({
+                pageContainers: removed.pageContainers,
+                container: to,
+                contentlet: contentlet(pivot),
+                position,
+                pageId: 'page-id',
+                language_id: '1',
+                newContentletId: id
+            });
+        };
+
+        /** The order of the contentlets of a container after a move. */
+        const orderOf = (
+            pageContainers: PageContainer[],
+            identifier: string
+        ): string[] | undefined =>
+            pageContainers.find((container) => container.identifier === identifier)?.contentletsId;
+
+        it('should not move it to the end of its container when it is dropped next to itself', () => {
+            const result = move({
+                id: 'c1',
+                from: containerA(),
+                to: containerA(),
+                pivot: 'c1',
+                position: 'after',
+                pageContainers: pageContainersOf(containerA())
+            });
+
+            // The pivot left with the delete. Nothing to place it next to, so nothing is placed.
+            expect(result.didInsert).toBe(false);
+            expect(orderOf(result.pageContainers, 'container-a')).toEqual(['c2', 'c3']);
+        });
+
+        // Review of #38575: say why nothing went in, so the user is not told it was a duplicate.
+        it('should report that there is nothing to place it next to when it is dropped next to itself', () => {
+            const result = move({
+                id: 'c1',
+                from: containerA(),
+                to: containerA(),
+                pivot: 'c1',
+                position: 'after',
+                pageContainers: pageContainersOf(containerA())
+            });
+
+            expect(result.errorCode).toBe(CONTAINER_INSERT_ERROR.PIVOT_NOT_FOUND);
+        });
+
+        // PR review of #38575: new content is saved before it is placed, so the block it was
+        // dropped next to can be gone by then (removed by someone else while the create dialog
+        // was open). It still goes in, at the end, as it did before.
+        it('should place new content at the end when the contentlet it was dropped next to is gone', () => {
+            const result = insertContentletInContainer({
+                pageContainers: pageContainersOf(containerA(), containerB()),
+                container: containerB(),
+                contentlet: contentlet('missing'),
+                position: 'after',
+                pageId: 'page-id',
+                language_id: '1',
+                newContentletId: 'new'
+            });
+
+            expect(result.didInsert).toBe(true);
+            expect(result.errorCode).toBeUndefined();
+            expect(orderOf(result.pageContainers, 'container-b')).toEqual(['b1', 'new']);
+        });
+
+        it('should leave the order as it was when it is dropped right after the contentlet above it', () => {
+            const result = move({
+                id: 'c2',
+                from: containerA(),
+                to: containerA(),
+                pivot: 'c1',
+                position: 'after',
+                pageContainers: pageContainersOf(containerA())
+            });
+
+            expect(orderOf(result.pageContainers, 'container-a')).toEqual(['c1', 'c2', 'c3']);
+        });
+
+        it('should leave the order as it was when it is dropped right before the contentlet below it', () => {
+            const result = move({
+                id: 'c2',
+                from: containerA(),
+                to: containerA(),
+                pivot: 'c3',
+                position: 'before',
+                pageContainers: pageContainersOf(containerA())
+            });
+
+            expect(orderOf(result.pageContainers, 'container-a')).toEqual(['c1', 'c2', 'c3']);
+        });
+
+        it.each([
+            { id: 'c1', pivot: 'c3', position: 'after' as const, order: ['c2', 'c3', 'c1'] },
+            { id: 'c3', pivot: 'c1', position: 'before' as const, order: ['c3', 'c1', 'c2'] }
+        ])(
+            'should put $id $position $pivot when it is dropped two contentlets away',
+            ({ id, pivot, position, order }) => {
+                const result = move({
+                    id,
+                    from: containerA(),
+                    to: containerA(),
+                    pivot,
+                    position,
+                    pageContainers: pageContainersOf(containerA())
+                });
+
+                expect(result.didInsert).toBe(true);
+                expect(orderOf(result.pageContainers, 'container-a')).toEqual(order);
+            }
+        );
+
+        it('should take it out of its container and put it next to the pivot in another container', () => {
+            const result = move({
+                id: 'c1',
+                from: containerA(),
+                to: containerB(),
+                pivot: 'b1',
+                position: 'after',
+                pageContainers: pageContainersOf(containerA(), containerB())
+            });
+
+            expect(result.didInsert).toBe(true);
+            expect(orderOf(result.pageContainers, 'container-a')).toEqual(['c2', 'c3']);
+            expect(orderOf(result.pageContainers, 'container-b')).toEqual(['b1', 'c1']);
+        });
+
+        it('should refuse to move it into a container that already holds it', () => {
+            const target = containerB({ contentletsId: ['b1', 'c1'] });
+
+            const result = move({
+                id: 'c1',
+                from: containerA(),
+                to: target,
+                pivot: 'b1',
+                position: 'after',
+                pageContainers: pageContainersOf(containerA(), target)
+            });
+
+            expect(result.didInsert).toBe(false);
+            expect(result.errorCode).toBe(CONTAINER_INSERT_ERROR.DUPLICATE_CONTENT);
+            expect(orderOf(result.pageContainers, 'container-b')).toEqual(['b1', 'c1']);
+        });
+
+        it('should refuse to move it into a container that is full', () => {
+            const target = containerB({ maxContentlets: 1 });
+
+            const result = move({
+                id: 'c1',
+                from: containerA(),
+                to: target,
+                pivot: 'b1',
+                position: 'after',
+                pageContainers: pageContainersOf(containerA(), target)
+            });
+
+            expect(result.didInsert).toBe(false);
+            expect(result.errorCode).toBe(CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED);
+            expect(orderOf(result.pageContainers, 'container-b')).toEqual(['b1']);
+        });
+
+        it('should add it to a container that holds nothing else', () => {
+            const target = containerB({ contentletsId: [] });
+
+            const result = move({
+                id: 'c1',
+                from: containerA(),
+                to: target,
+                pivot: 'missing',
+                position: 'after',
+                pageContainers: pageContainersOf(containerA(), target)
+            });
+
+            expect(result.didInsert).toBe(true);
+            expect(orderOf(result.pageContainers, 'container-b')).toEqual(['c1']);
+        });
+    });
+
     describe('url sanitize', () => {
         it('should left the / as /', () => {
             expect(sanitizeURL('/')).toEqual('/');
@@ -1193,6 +1439,28 @@ describe('utils functions', () => {
 
         it('should return false when the paths are not equal', () => {
             expect(compareUrlPaths('/test', '/test2')).toBe(false);
+        });
+    });
+
+    /**
+     * Whether a saved contentlet's URL map is somewhere else to go. The REST contentlet carries
+     * `URL_MAP_FOR_CONTENT: null` for a type with no detail page (#38303).
+     */
+    describe('shouldNavigate', () => {
+        it('should navigate to a URL other than the current one', () => {
+            expect(shouldNavigate('/blog/a-new-slug', '/blog/index')).toBe(true);
+        });
+
+        it('should not navigate to the current URL', () => {
+            expect(shouldNavigate('/blog/index', 'blog/index')).toBe(false);
+        });
+
+        it.each([
+            ['undefined', undefined],
+            ['null', null],
+            ['an empty string', '']
+        ])('should not navigate to %s', (_label, url) => {
+            expect(shouldNavigate(url, '/blog/index')).toBe(false);
         });
     });
 
@@ -2048,5 +2316,107 @@ describe('utils functions', () => {
                 expect(isAssetPath(pathname)).toBe(true);
             }
         );
+    });
+});
+
+/**
+ * The legacy screens the page editor opens in a side panel (#38303): the URL builders moved out of
+ * the page editor's dialog store as pure functions, with the exact query strings it built.
+ */
+describe('legacy screen URLs', () => {
+    const TEST_VARIANT = 'my-test-variant';
+    const TEST_SITE_ID = 'test-site-identifier';
+
+    describe('createAddContentletUrl', () => {
+        it('should build the content selector URL for a container, its accepted types, language and variant', () => {
+            expect(createAddContentletUrl('1234', 'test', '1', TEST_VARIANT)).toBe(
+                '/html/ng-contentlet-selector.jsp?ng=true&container_id=1234&add=test&language_id=1&' +
+                    new URLSearchParams({ variantName: TEST_VARIANT }).toString()
+            );
+        });
+    });
+
+    describe('createTranslatePageUrl', () => {
+        /** The translate screen's params for a page inode, in the order the dialog store set them. */
+        const translateParams = (pageInode: string) =>
+            new URLSearchParams({
+                p_p_id: 'content',
+                p_p_action: '1',
+                p_p_state: 'maximized',
+                angularCurrentPortlet: 'edit-page',
+                _content_sibbling: pageInode,
+                _content_cmd: 'edit',
+                p_p_mode: 'view',
+                _content_sibblingStructure: pageInode,
+                _content_struts_action: '/ext/contentlet/edit_contentlet',
+                inode: '',
+                lang: '2',
+                populateaccept: 'true',
+                reuseLastLang: 'true',
+                variantName: TEST_VARIANT
+            });
+
+        it('should build the translate screen URL from the page inode, the new language, the variant and the site', () => {
+            const page = {
+                inode: '123',
+                liveInode: '1234',
+                stInode: '12345',
+                live: true,
+                title: 'test'
+            } as DotCMSPage;
+            const queryParams = translateParams('123');
+            queryParams.set('host_id', TEST_SITE_ID);
+
+            expect(createTranslatePageUrl(page, 2, TEST_VARIANT, TEST_SITE_ID)).toBe(
+                LAYOUT_URL + '?' + queryParams.toString()
+            );
+        });
+
+        it('should use the working inode when the page is a working version', () => {
+            const page = {
+                inode: '123',
+                liveInode: '1234',
+                stInode: '12345',
+                live: true,
+                title: 'test',
+                working: true,
+                workingInode: '56789'
+            } as DotCMSPage;
+            const queryParams = translateParams('56789');
+            queryParams.set('host_id', TEST_SITE_ID);
+
+            expect(createTranslatePageUrl(page, 2, TEST_VARIANT, TEST_SITE_ID)).toBe(
+                LAYOUT_URL + '?' + queryParams.toString()
+            );
+        });
+
+        it('should leave the site out when the page names none', () => {
+            const page = { inode: '123', title: 'test' } as DotCMSPage;
+
+            expect(createTranslatePageUrl(page, 2, TEST_VARIANT, undefined)).toBe(
+                LAYOUT_URL + '?' + translateParams('123').toString()
+            );
+        });
+    });
+
+    /** The page an editor request is opened from, read from the store in one place (#38303). */
+    describe('pageRequestContext', () => {
+        const store = (siteId?: string) => ({
+            pageVariantId: () => 'variant-1',
+            pageAsset: () => (siteId ? { site: { identifier: siteId } } : null),
+            pageLanguageId: () => 2
+        });
+
+        it('should read the variant, the site and the language from the page editor store', () => {
+            expect(pageRequestContext(store('site-1'))).toEqual({
+                variantId: 'variant-1',
+                siteId: 'site-1',
+                languageId: 2
+            });
+        });
+
+        it('should leave the site unset when the page has none', () => {
+            expect(pageRequestContext(store()).siteId).toBeUndefined();
+        });
     });
 });

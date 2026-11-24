@@ -67,14 +67,12 @@ jobs:
               return;
             }
 
-            // Match the publisher's tag normalization; environment keys additionally need DNS-label characters.
+            // Match the publisher's tag normalization.
             const branch = pr.head.ref.replace(/[A-Z]/g, c => c.toLowerCase());
             const tagBranch = branch.replace(/[^a-z0-9._-]/g, '-').replace(/-+/g, '-')
               .replace(/^[-.]+|[-.]+$/g, '').slice(0, 100);
             const image = `dotcms/dotcms-test:pr-${pr.number}-${tagBranch}`;
-            const slug = branch.replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '');
-            // Reserve 'dot-dotpr-' inside PostgreSQL's 63-character identifier limit.
-            const envKey = `${pr.number}${slug ? '-' + slug : ''}`.slice(0, 53).replace(/-+$/, '');
+            const envKey = String(pr.number);
             // The artifact is only a hint; independently verify that the expected image was published.
             const tag = image.slice('dotcms/dotcms-test:'.length);
             const publishedDigest = async tag => {

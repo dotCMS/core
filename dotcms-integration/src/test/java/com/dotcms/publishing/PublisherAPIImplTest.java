@@ -41,7 +41,12 @@ import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.endpoint.bean.impl.PushPublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
+import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
+import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher;
+import com.dotcms.publisher.business.PublisherTestUtil;
+import com.dotcms.publisher.business.PublisherTestUtil.MixedEndpointEnvironment;
 import com.dotcms.publisher.pusher.PushPublisher;
+import com.dotcms.publishing.output.BundleOutput;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publisher.util.dependencies.DependencyManager;
@@ -49,6 +54,7 @@ import com.dotcms.publishing.manifest.ManifestBuilder;
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.publishing.manifest.ManifestItem.ManifestInfoBuilder;
 import com.dotcms.publishing.manifest.ManifestReason;
+import com.dotcms.publishing.output.TarGzipBundleOutput;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.model.Variant;
@@ -100,6 +106,7 @@ import org.junit.runner.RunWith;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -120,12 +127,14 @@ import java.util.List;
 import java.util.stream.Stream;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.set;
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 
@@ -1632,5 +1641,353 @@ public class PublisherAPIImplTest {
             Config.setProperty("ASSET_REAL_PATH", realAssetsRootPath);
         }
 
+    }
+
+    /**
+     * Method to Test: {@link PublisherAPIImpl#publish(PublisherConfig)}
+     * When: a bundle is published for the first time (audit {@code numTries} 0) to an environment with
+     * an {@code http} and a {@code static} endpoint, running {@link PushPublisher} first and then
+     * {@link StaticPublisher}
+     * Should: build the static bundle. Today the push publisher raises {@code numTries} before the
+     * static publisher is evaluated, so the static one is treated as a retry and its (empty) bundle
+     * directory is reused (issue #34434).
+     */
+    @Test
+    public void test_publish_firstAttempt_pushThenStatic_buildsStaticBundle() throws Exception {
+        assertStaticBundleBuilt(publishers(PushPublisher.class, StaticPublisher.class));
+    }
+
+    /**
+     * Method to Test: {@link PublisherAPIImpl#publish(PublisherConfig)}
+     * When: the same first attempt, running {@link StaticPublisher} first and then {@link PushPublisher}
+     * Should: build the static bundle (this order already worked before the fix; it guards that the
+     * fix keeps it working)
+     */
+    @Test
+    public void test_publish_firstAttempt_staticThenPush_buildsStaticBundle() throws Exception {
+        assertStaticBundleBuilt(publishers(StaticPublisher.class, PushPublisher.class));
+    }
+
+    /**
+     * Method to Test: {@link PublisherAPIImpl#publish(PublisherConfig)}
+     * When: a first attempt runs {@link StaticPublisher} and {@link AWSS3Publisher} in both orders
+     * Should: leave the shared static bundle directory ({@code <bundleId>-static}, both publishers use
+     * it) with content. This is a regression guard: because both publishers share the directory it
+     * cannot fail before the fix, and no AWS access is needed since the S3 endpoint result is not
+     * asserted.
+     */
+    @Test
+    public void test_publish_firstAttempt_staticAndS3_buildsSharedStaticBundle() throws Exception {
+        assertStaticBundleBuilt(publishers(StaticPublisher.class, AWSS3Publisher.class));
+        assertStaticBundleBuilt(publishers(AWSS3Publisher.class, StaticPublisher.class));
+    }
+
+    /**
+     * Method to Test: {@link PublisherAPIImpl#publish(PublisherConfig)}
+     * When: a real retry (audit {@code numTries} above 0) finds a bundle that already has content
+     * Should: not run the bundlers again, so the existing files are reused untouched
+     */
+    @Test
+    public void test_publish_realRetry_reusesExistingBundle() throws Exception {
+        final MixedEndpointEnvironment fixture = PublisherTestUtil.createMixedEndpointEnvironment(
+                publishers(StaticPublisher.class), false);
+        try {
+            markAsRetry(fixture);
+            final File staticRoot = staticBundleRoot(fixture);
+            final File marker = new File(staticRoot, "marker.txt");
+            assertTrue(marker.createNewFile());
+
+            new PublisherAPIImpl().publish(fixture.config);
+
+            final List<File> files = filesIn(staticRoot);
+            assertEquals("The bundlers must not run on a real retry: " + files, 1, files.size());
+            assertTrue(marker.exists());
+        } finally {
+            fixture.cleanUp();
+        }
+    }
+
+    /**
+     * Method to Test: {@link PublisherAPIImpl#publish(PublisherConfig)}
+     * When: a real retry finds that the bundle directory was deleted
+     * Should: rebuild the bundle instead of publishing an empty one
+     */
+    @Test
+    public void test_publish_realRetry_deletedBundle_rebuildsIt() throws Exception {
+        final MixedEndpointEnvironment fixture = PublisherTestUtil.createMixedEndpointEnvironment(
+                publishers(StaticPublisher.class), false);
+        try {
+            markAsRetry(fixture);
+            final File staticRoot = staticBundleRoot(fixture);
+            org.apache.commons.io.FileUtils.deleteDirectory(staticRoot);
+
+            new PublisherAPIImpl().publish(fixture.config);
+
+            assertTrue("The deleted bundle must be rebuilt: " + filesIn(staticRoot),
+                    filesIn(staticRoot).size() > 1);
+        } finally {
+            fixture.cleanUp();
+        }
+    }
+
+    /**
+     * Method to Test: {@link PublisherAPIImpl#publish(PublisherConfig)}
+     * When: a real retry finds the shared static bundle directory deleted, and two publishers that
+     * share that directory run one after the other, each with a bundler of its own (this is the
+     * S3 then static case, where only the static publisher has the folder bundler)
+     * Should: run the bundlers of both publishers. Today the first publisher rebuilds the directory,
+     * the second one finds it with content and skips its own bundlers (issue #34434).
+     */
+    @Test
+    public void test_publish_realRetry_deletedSharedBundle_bothPublishersRunTheirBundlers()
+            throws Exception {
+        final MixedEndpointEnvironment fixture = PublisherTestUtil.createMixedEndpointEnvironment(
+                publishers(FirstSharedDirPublisher.class, SecondSharedDirPublisher.class), false);
+        try {
+            markAsRetry(fixture);
+            final File staticRoot = staticBundleRoot(fixture);
+            org.apache.commons.io.FileUtils.deleteDirectory(staticRoot);
+
+            new PublisherAPIImpl().publish(fixture.config);
+
+            assertTrue("The first publisher's bundler must run: " + filesIn(staticRoot),
+                    new File(staticRoot, FirstSharedDirPublisher.MARKER).exists());
+            assertTrue("The second publisher's bundler must run too: " + filesIn(staticRoot),
+                    new File(staticRoot, SecondSharedDirPublisher.MARKER).exists());
+        } finally {
+            fixture.cleanUp();
+        }
+    }
+
+    /**
+     * Method to Test: {@link PublisherAPIImpl#publish(PublisherConfig)}
+     * When: a real retry finds the shared bundle directory with content, with two publishers that
+     * share it
+     * Should: not run the bundlers of either, so the existing bundle is reused (guards that the
+     * rebuild tracking does not turn every retry into a rebuild)
+     */
+    @Test
+    public void test_publish_realRetry_existingSharedBundle_noPublisherRebuildsIt()
+            throws Exception {
+        final MixedEndpointEnvironment fixture = PublisherTestUtil.createMixedEndpointEnvironment(
+                publishers(FirstSharedDirPublisher.class, SecondSharedDirPublisher.class), false);
+        try {
+            markAsRetry(fixture);
+            final File staticRoot = staticBundleRoot(fixture);
+            assertTrue(staticRoot.mkdirs() || staticRoot.exists());
+            assertTrue(new File(staticRoot, "marker.txt").createNewFile());
+
+            new PublisherAPIImpl().publish(fixture.config);
+
+            assertFalse(new File(staticRoot, FirstSharedDirPublisher.MARKER).exists());
+            assertFalse(new File(staticRoot, SecondSharedDirPublisher.MARKER).exists());
+        } finally {
+            fixture.cleanUp();
+        }
+    }
+
+    /**
+     * Method to Test: {@link PublisherAPIImpl#publish(PublisherConfig)}
+     * When: {@code STATIC_PUBLISHING_GENERATE_TAR_GZ} is on, {@link StaticPublisher} runs before
+     * {@link PushPublisher} (the order {@code PublisherQueueJob} uses), and a real retry follows a
+     * first run that built the push archive
+     * Should: leave the push bundle in {@code <bundlePath>/<bundleId>.tar.gz}, the file push sends to
+     * the receiver. Today the static compression writes its own archive to that same path before
+     * push runs, and push reuses it on the retry, so the receiver gets the static archive
+     * (issue #34434).
+     */
+    @Test
+    public void test_publish_realRetry_staticArchiveOn_pushSendsItsOwnBundle() throws Exception {
+        final boolean generateTarGz =
+                Config.getBooleanProperty("STATIC_PUBLISHING_GENERATE_TAR_GZ", false);
+        Config.setProperty("STATIC_PUBLISHING_GENERATE_TAR_GZ", true);
+        final MixedEndpointEnvironment fixture = PublisherTestUtil.createMixedEndpointEnvironment(
+                publishers(StaticPublisher.class, PushPublisher.class), false);
+        try {
+            final File pushArchive =
+                    TarGzipBundleOutput.getBundleTarGzipFile(fixture.bundle.getId());
+
+            // First run: push always builds its own archive, overwriting the static one
+            new PublisherAPIImpl().publish(fixture.config);
+            assertTrue("The first run must build the push archive", pushArchive.exists());
+            final Set<String> pushEntries = archiveEntries(pushArchive);
+
+            // The queue job builds a new config for every run; reusing the first one would carry its
+            // already-added assets over, and the rebuilt bundle would then have no manifest
+            markAsRetry(fixture);
+            new PublisherAPIImpl().publish(newRunConfig(fixture.config));
+
+            assertEquals("On a retry push must send its own bundle, not the static archive",
+                    pushEntries, archiveEntries(pushArchive));
+        } finally {
+            Config.setProperty("STATIC_PUBLISHING_GENERATE_TAR_GZ", generateTarGz);
+            org.apache.commons.io.FileUtils.deleteQuietly(
+                    TarGzipBundleOutput.getBundleTarGzipFile(fixture.bundle.getId()));
+            fixture.cleanUp();
+        }
+    }
+
+    /**
+     * Builds the config of a new publish run for the same bundle, as {@code PublisherQueueJob} does
+     * on every run, so nothing the previous run collected is carried over.
+     *
+     * @param previous the config of the earlier run
+     * @return a new {@link PushPublisherConfig} for the same bundle, assets and publishers
+     */
+    private static PushPublisherConfig newRunConfig(final PushPublisherConfig previous) {
+        final PushPublisherConfig config = new PushPublisherConfig();
+        config.setId(previous.getId());
+        config.setPublishers(new ArrayList<>(previous.getPublishers()));
+        config.setLanguages(previous.getLanguages());
+        config.setAssets(previous.getAssets());
+        config.setOperation(previous.getOperation());
+        config.setDownloading(previous.isDownloading());
+        config.setLuceneQueries(previous.getLuceneQueries());
+        return config;
+    }
+
+    /**
+     * Reads the names of the files in a tar.gz archive, without a leading {@code ./} or {@code /},
+     * so archives written by different code can be compared.
+     *
+     * @param archive the tar.gz file to read
+     * @return the sorted file names, directories left out
+     * @throws IOException the archive could not be read
+     */
+    private static Set<String> archiveEntries(final File archive) throws IOException {
+        final Set<String> names = new TreeSet<>();
+        try (InputStream in = new BufferedInputStream(Files.newInputStream(archive.toPath()));
+                GzipCompressorInputStream gzip = new GzipCompressorInputStream(in);
+                TarArchiveInputStream tar = new TarArchiveInputStream(gzip)) {
+            TarArchiveEntry entry;
+            while ((entry = tar.getNextTarEntry()) != null) {
+                if (!entry.isDirectory()) {
+                    names.add(entry.getName().replaceFirst("^\\./", "").replaceFirst("^/", ""));
+                }
+            }
+        }
+        return names;
+    }
+
+    /** Test publisher whose only bundler leaves a marker directory in the shared static bundle. */
+    public static class FirstSharedDirPublisher extends Publisher {
+        static final String MARKER = "first-publisher";
+
+        @Override
+        public PublisherConfig init(final PublisherConfig config) throws DotPublishingException {
+            try {
+                final PublisherConfig staticConfig = (PublisherConfig) config.clone();
+                staticConfig.setStatic(true);
+                return super.init(staticConfig);
+            } catch (final CloneNotSupportedException e) {
+                throw new DotPublishingException(e.getMessage());
+            }
+        }
+
+        @Override
+        public PublisherConfig process(final PublishStatus status) {
+            return config;
+        }
+
+        @Override
+        public List<Class> getBundlers() {
+            return Collections.singletonList(FirstMarkerBundler.class);
+        }
+    }
+
+    /** Same as {@link FirstSharedDirPublisher}, with a different marker. */
+    public static class SecondSharedDirPublisher extends FirstSharedDirPublisher {
+        static final String MARKER = "second-publisher";
+
+        @Override
+        public List<Class> getBundlers() {
+            return Collections.singletonList(SecondMarkerBundler.class);
+        }
+    }
+
+    /** Bundler that writes the {@link FirstSharedDirPublisher#MARKER} directory. */
+    public static class FirstMarkerBundler extends MarkerBundler {
+        public FirstMarkerBundler() {
+            super(FirstSharedDirPublisher.MARKER);
+        }
+    }
+
+    /** Bundler that writes the {@link SecondSharedDirPublisher#MARKER} directory. */
+    public static class SecondMarkerBundler extends MarkerBundler {
+        public SecondMarkerBundler() {
+            super(SecondSharedDirPublisher.MARKER);
+        }
+    }
+
+    /** Bundler that only creates one directory in the bundle output. */
+    public abstract static class MarkerBundler implements IBundler {
+        private final String marker;
+
+        protected MarkerBundler(final String marker) {
+            this.marker = marker;
+        }
+
+        @Override
+        public String getName() {
+            return marker;
+        }
+
+        @Override
+        public void setConfig(final PublisherConfig pc) {
+        }
+
+        @Override
+        public void setPublisher(final IPublisher publisher) {
+        }
+
+        @Override
+        public void generate(final BundleOutput output, final BundlerStatus status) {
+            output.mkdirs(File.separator + marker);
+        }
+
+        @Override
+        public FileFilter getFileFilter() {
+            return null;
+        }
+    }
+
+    @SafeVarargs
+    private static List<Class<? extends Publisher>> publishers(
+            final Class<? extends Publisher>... publishers) {
+        return Arrays.asList(publishers);
+    }
+
+    private static void assertStaticBundleBuilt(final List<Class<? extends Publisher>> publishers)
+            throws Exception {
+        final MixedEndpointEnvironment fixture =
+                PublisherTestUtil.createMixedEndpointEnvironment(publishers, false);
+        try {
+            new PublisherAPIImpl().publish(fixture.config);
+
+            final List<File> files = filesIn(staticBundleRoot(fixture));
+            assertTrue("The static bundle must have content for the order " + publishers
+                    + " but holds " + files, files.size() > 1);
+        } finally {
+            fixture.cleanUp();
+        }
+    }
+
+    private static void markAsRetry(final MixedEndpointEnvironment fixture) throws Exception {
+        final PublishAuditAPI auditAPI = PublishAuditAPI.getInstance();
+        final PublishAuditHistory history = auditAPI.getPublishAuditStatus(
+                fixture.bundle.getId()).getStatusPojo();
+        history.setNumTries(1);
+        auditAPI.updatePublishAuditStatus(fixture.bundle.getId(),
+                PublishAuditStatus.Status.FAILED_TO_PUBLISH, history);
+    }
+
+    private static File staticBundleRoot(final MixedEndpointEnvironment fixture) throws Exception {
+        final PublisherConfig staticConfig = (PublisherConfig) fixture.config.clone();
+        staticConfig.setStatic(true);
+        return BundlerUtil.getBundleRoot(staticConfig);
+    }
+
+    private static List<File> filesIn(final File directory) {
+        return new ArrayList<>(org.apache.commons.io.FileUtils.listFiles(directory, null, true));
     }
 }

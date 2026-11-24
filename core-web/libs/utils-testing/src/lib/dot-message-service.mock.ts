@@ -20,6 +20,9 @@ import { Observable, of } from 'rxjs';
  * @class MockDotMessageService
  */
 export class MockDotMessageService {
+    /** The messages are there from the start, so this has emitted already, as once loaded. */
+    readonly ready$: Observable<void> = of(undefined);
+
     constructor(private messages: MessageConfig) {}
 
     init(): Observable<void> {

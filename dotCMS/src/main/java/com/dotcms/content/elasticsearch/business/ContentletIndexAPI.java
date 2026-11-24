@@ -5,6 +5,7 @@ import com.dotcms.content.index.domain.IndexBulkProcessor;
 import com.dotcms.content.index.domain.IndexBulkRequest;
 import com.dotcms.content.index.domain.IndexStartResult;
 import com.dotcms.content.model.annotation.IndexLibraryIndependent;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.common.reindex.ReindexEntry;
 import com.dotmarketing.exception.DotDataException;
@@ -47,6 +48,19 @@ public interface ContentletIndexAPI {
     boolean createContentIndex(String indexName) throws DotIndexException, IOException;
 
     boolean createContentIndex(String indexName, int shards) throws DotIndexException, IOException;
+
+    /**
+     * Applies the custom index mapping of a newly created field to the indices that are currently
+     * live on every search provider that receives writes.
+     *
+     * <p>Each provider is asked for the index names it owns, because the providers' names do not
+     * match once an instance has been migrated — one store's name cannot be translated into the
+     * other's. Failures are logged and swallowed: setting a mapping must never fail the
+     * transaction that created the field.</p>
+     *
+     * @param field the {@link Field} that was just created
+     */
+    void addCustomMappingForNewField(Field field);
 
     /**
      * Creates new working and live indexes with reading aliases pointing to old index and write

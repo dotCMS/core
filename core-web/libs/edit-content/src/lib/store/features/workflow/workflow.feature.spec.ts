@@ -132,6 +132,40 @@ describe('WorkflowFeature', () => {
                 formData: {}
             };
 
+            // The editor fires every action in the experiment variant it was opened on
+            // (#38303, FR-022), so an edit from a variant page never leaks into DEFAULT.
+            it('should fire in the variant the editor was opened on', fakeAsync(() => {
+                const updatedContentlet = { ...MOCK_CONTENTLET_1_TAB, inode: '456' };
+                dotEditContentService.getContentById.mockReturnValue(of(updatedContentlet));
+                workflowActionsFireService.fireTo.mockReturnValue(of(updatedContentlet));
+                dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+                store.initializeExistingContent(MOCK_CONTENTLET_1_TAB.inode);
+                patchState(store, { variantName: 'variant-a' });
+
+                store.fireWorkflowAction(mockOptions);
+                tick();
+                flush();
+
+                expect(workflowActionsFireService.fireTo).toHaveBeenCalledWith(
+                    expect.objectContaining({ ...mockOptions, variantName: 'variant-a' })
+                );
+            }));
+
+            it('should fire with no variant when the editor was opened on none', fakeAsync(() => {
+                const updatedContentlet = { ...MOCK_CONTENTLET_1_TAB, inode: '456' };
+                dotEditContentService.getContentById.mockReturnValue(of(updatedContentlet));
+                workflowActionsFireService.fireTo.mockReturnValue(of(updatedContentlet));
+                dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+                store.initializeExistingContent(MOCK_CONTENTLET_1_TAB.inode);
+
+                store.fireWorkflowAction(mockOptions);
+                tick();
+                flush();
+
+                const [options] = workflowActionsFireService.fireTo.mock.calls[0];
+                expect(options).not.toHaveProperty('variantName');
+            }));
+
             it('should fire workflow action successfully', fakeAsync(() => {
                 const updatedContentlet = { ...MOCK_CONTENTLET_1_TAB, inode: '456' };
                 dotEditContentService.getContentById.mockReturnValue(of(updatedContentlet));

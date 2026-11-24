@@ -1,0 +1,266 @@
+# Contract: the opener
+
+**Lives in**: `core-web/libs/edit-content/src/lib/opener/` (new): `dot-edit-content-opener.service.ts` and `inject-edit-content-panel.ts`, both exported from the barrel.
+
+**Builds on**: `DotSidePanelService` and `injectSidePanel` from `@dotcms/ui`; `DotContentletEditUrlService` from `@dotcms/data-access` for the editor decision (extended, see below); `DotActionUrlService` for the legacy create URL; `DotContentletService` for fetching contentlets by inode.
+
+## The editor decision (extension of an existing service)
+
+```ts
+// libs/data-access/src/lib/dot-contentlet-edit-url/dot-contentlet-edit-url.service.ts
+export type DotContentEditor = 'new' | 'legacy';
+
+export interface DotContentEditorChoice {
+    editor: DotContentEditor;
+    /** The resolved content type, or null when the lookup failed (then `editor` is 'legacy'). */
+    contentType: DotCMSContentType | null;
+}
+
+export class DotContentletEditUrlService {
+    /**
+     * Which editor a content type uses: 'new' when its metadata has CONTENT_EDITOR2_ENABLED,
+     * 'legacy' otherwise or when the lookup fails. Cached per variable for the application's life.
+     */
+    resolveEditor(contentTypeVariableOrId: string): Observable<DotContentEditorChoice>;
+
+    /** Unchanged signature; now implemented on top of resolveEditor. */
+    resolveEditUrl(contentlet: DotCMSContentlet): Observable<string>;
+}
+```
+
+## The service
+
+```ts
+export interface DotEditContentOpenOptions extends DotEditContentPanelHandlers {
+    /**
+     * The opener's injector. The panel resolves its dependencies through it, never through where the
+     * outlet sits: route-level providers, and PrimeNG MessageService for toasts, so it must sit under
+     * a component that provides one and renders a <p-toast /> (the root Injector reaches none). The
+     * panel closes when it is destroyed. Required.
+     */
+    injector: Injector;
+    /**
+     * Called once with the editor the panel shows, as soon as it is known and before it loads; never
+     * for a refused request. The UVE reloads the page on close only for the legacy editor.
+     */
+    editorResolved?: (editor: DotContentEditor) => void;
+    /** The editor choice the caller already has; the opener does not look the type up again. */
+    resolved?: DotContentEditorChoice;
+    /** A legacy create's screen the caller already has (the UVE's translate screen); not asked for. */
+    createUrl?: string;
+}
+
+@Injectable({ providedIn: 'root' })
+export class DotEditContentOpenerService {
+    /**
+     * Opens the side panel for a request. Resolves everything server-side first (the editor, and the
+     * create URL for a legacy create), so the outlet's spinner covers the wait and a refused request
+     * shows the standard error and opens no editor. Returns the panel ref, so the caller can route
+     * browser Back through `requestClose()`.
+     */
+    open(request: DotEditContentRequest, options: DotEditContentOpenOptions): DotSidePanelRef;
+}
+```
+
+Behaviour of `open()`:
+
+1. Validate the request (edit-request.md). An edit names an `inode`, or an identifier-shaped `identifier` (it reaches a Lucene query). Invalid → standard error, return a ref that is already closed.
+2. `mode: 'edit'` without `inode` → find the working version by `identifier`: `+identifier:<id> +working:true +languageId:<lang>` through `DotContentSearchService`, then without the language when the content has none in that one (Content Drive's two-step lookup, moved here); nothing found → standard error (404), close the panel. The version found is what opens: its inode and its language fill the request, whatever language was asked for. `mode: 'edit'` with `inode` but without `contentType`, without `title`, or with the `url` option and without `identifier` → fetch the contentlet by inode, fill `contentType`, `identifier`, `title`, `languageId` from it where the request left them out. (The Publishing Queue dialogs name the inode and the content type, not the title the heading needs or the identifier the URL needs.)
+3. `resolveEditor(request.contentType)`.
+4. `editor === 'legacy'` and `mode === 'new'` → `DotActionUrlService.getCreateContentletUrl(contentType, languageId)`. A failure → standard error, close the pending panel.
+5. Report the editor to `editorResolved`, if the caller passed one.
+6. Call `DotSidePanelService.open(componentPromise, { heading, inputs: { request, createUrl? }, outputs, injector })`, where `componentPromise` resolves to `loadDotEditContentSidePanel()` or `loadDotLegacyEditorSidePanel()` only after steps 2 to 4 complete. The panel's spinner shows meanwhile.
+7. Wire outputs: the five events to the caller's handlers; `openContent` (from either panel, see open-content-from-fields.md) to a nested `open()` with the hosting panel's injector, which the panel puts on the event (`DotOpenContentEvent.injector`), so the stacked panel closes when its host does; routing that panel's `saved` to the event's `onSaved`. The nested open is one level deeper than the panel that asked (next section). `saved` and `deleted` are always listened to, whatever the caller passed, for the content change notification; both editors declare both outputs, so the outlet can bind them.
+8. `closed` is taken from the ref, so it fires even when the content component never loaded.
+9. With the `url` option, register the panel with `DotPanelUrlStateService`: before step 2 for an edit that names its `identifier`, in the language it asks for, so a lookup that finds nothing closes a panel the URL names and that close takes its params out (and step 2's version renames it in place when it is in another language); after step 2 for an edit whose identifier only the fetch tells (identifier and language known, before the editor is chosen); at once for a create. In place when the option says `inPlace`. Route `languageChanged`, the first `saved` of a create and the first `saved` of a new translation to it as `update` calls; the service forgets the panel on the ref's `closed` itself (next section).
+
+### The panel in the URL (FR-044 to FR-050)
+
+```ts
+export interface DotEditContentOpenOptions extends DotEditContentPanelHandlers {
+    injector: Injector;
+    /**
+     * When set, the open panel is written to the current URL and browser Back closes it. Every surface
+     * except UVE sets it.
+     */
+    url?: DotEditContentUrlOption;
+}
+
+/** Most surfaces pass it empty: `url: {}`. It names no route: the params go beside the surface's own. */
+export interface DotEditContentUrlOption {
+    /**
+     * Written beside the panel params and cleared with them. No surface passes any yet: Content
+     * Drive's folder for a create is its own `path` param, already in the URL. Not passed on to the
+     * panels stacked from inside this one.
+     */
+    extraParams?: Record<string, string>;
+    /**
+     * Writes the panel into the current history entry instead of adding one, for a panel that takes
+     * the place of one the surface has just closed (Content Drive's reopen in the legacy editor), so
+     * Back still leaves it in one step. Not passed on to stacked panels. Remove with the legacy editor.
+     */
+    inPlace?: boolean;
+}
+
+// DOT_PANEL_URL_PARAM, DotPanelUrlIntent and readPanelUrlIntent live in @dotcms/utils
+// (libs/utils/src/lib/panel-url/read-panel-url-intent.ts) and are re-exported from @dotcms/edit-content.
+// The admin app loads @dotcms/edit-content on demand and may not import it statically, so its screens
+// read their URL from @dotcms/utils without loading the editor library.
+
+/** The query params that name an open panel, the same on every surface. */
+export const DOT_PANEL_URL_PARAM = {
+    EDIT_CONTENT: 'editContent', // identifier
+    EDIT_CONTENT_LANG: 'editContentLang', // language id
+    CREATE_CONTENT: 'createContent', // content type variable or id
+    EDIT_CODE: 'editCode' // inode, Edit Source
+} as const;
+
+/** Why a URL's panel params open nothing: more than one panel, or a value of the wrong shape. */
+export type DotPanelUrlRefusal = 'conflict' | 'malformed';
+
+export type DotPanelUrlIntent =
+    | { kind: 'none' }
+    | { kind: 'edit'; identifier: string; languageId?: number }
+    | { kind: 'create'; contentType: string }
+    | { kind: 'editCode'; inode: string }
+    | { kind: 'refused'; reason: DotPanelUrlRefusal };
+
+/**
+ * What a URL asks to open, read by a surface on init (and, on Pages and the legacy portlets, on
+ * every app navigation). Accepts only an identifier for `editContent`, a positive integer for
+ * `editContentLang`, a content type variable or id for `createContent`, an inode for `editCode`. A
+ * panel param of any other shape, or repeated, is `refused` as `malformed`, even beside a valid
+ * one; the value never reaches a query or a path. The retired `editContent=new` marker is one, so
+ * an old bookmark gets the error rather than silence. More than one panel named is `refused` as a
+ * `conflict`. An empty value names nothing and reads as absent. On `refused` a surface opens
+ * nothing and calls `DotPanelUrlStateService.refuse` (T172).
+ */
+export function readPanelUrlIntent(queryParams: Record<string, unknown>): DotPanelUrlIntent;
+
+/**
+ * Root service the opener registers every panel opened with the `url` option with. Keeps a stack of
+ * open panels and their params; the URL shows the front one merged with the surface's own query
+ * string. Read from and written to `Location` only, never through the router, so the surface
+ * underneath is not reloaded or recreated.
+ */
+export interface DotPanelUrlRegisterOptions {
+    /** Rewrites the current history entry instead of adding one. Remove with the legacy editor. */
+    inPlace?: boolean;
+}
+
+export class DotPanelUrlStateService {
+    /**
+     * Pushes one history entry with the panel's params (or rewrites the current one with `inPlace`),
+     * records the surface's path, and forgets the panel on its `closed`. Called by the opener once
+     * identifier and language are known, and by a surface for a panel the opener does not open
+     * (Content Drive's Edit Code, from `injectSidePanel`'s `opened` hook).
+     */
+    register(
+        ref: DotSidePanelRef,
+        params: Record<string, string>,
+        options?: DotPanelUrlRegisterOptions
+    ): void;
+    /** Rewrites the registered panel's params in place (language switch, a create's or a new translation's first save). */
+    update(ref: DotSidePanelRef, params: Record<string, string>): void;
+    /** Removes every panel param, and `extraKeys`, in place, without a word: for a param a surface does not reopen from a link (Content Drive's `editCode`). */
+    clear(extraKeys?: readonly string[]): void;
+    /**
+     * Refuses a link the author cannot have meant (`readPanelUrlIntent`'s `refused`): shows the
+     * standard not-found error, the one the opener shows for content that does not exist, so every
+     * bad link reads the same, then clears like `clear`. Content Drive passes `createFolder`,
+     * `editFolder` and `folderPermissions`, the legacy portlets `folder`. The admin app's screens call
+     * it through `refusePanelUrl(injector, extraKeys)`, beside `openEditContentPanel`. Both the
+     * error and the clear wait for `DotMessageService.ready$` (replayed once the messages are
+     * loaded, from the server or local storage): a surface refuses on init, before they arrive on
+     * a fresh load, and the error manager builds the dialog's text when it is handed the error, so
+     * it showed the raw keys (T175).
+     */
+    refuse(extraKeys?: readonly string[]): void;
+}
+```
+
+Behaviour: register → `Location.go` (`replaceState` with `inPlace`), unless the URL already names the panel (a link opened on load): then nothing is written, since a second entry for the same URL would make Back do nothing. The path of the URL, without its query string, is recorded with the panel. `languageChanged` → `update` with the new `editContentLang`, `replaceState`. A create's first `saved` → `update` swapping `createContent` for `editContent` + `editContentLang`, `replaceState`; `extraParams` stay with the panel. A `saved` of the content the URL names in another language → `update` with that `editContentLang`: switching to a language the content lacks reports no language, so a new translation's first save is the first the URL hears of it; a `saved` of other content (related content opened in place) changes nothing. `closed` → pop; `replaceState` with the new front panel's params, or with the params removed when the stack is empty, so Forward never reopens a closed panel. The surface's own params are read from `Location.path(true)`, parsed and written back with Angular's `UrlSerializer`, not from the router: the router does not see URLs written with `Location`, such as the Query Tool's search params, so a router-built URL can drop them. The service subscribes to `Location` on its first `register`. Nested opens from `openContent` (step 7) get `url: {}` when the opener had the option, not its `extraParams` or `inPlace`, so a stacked panel pushes its own entry; without the option (UVE) they get none, so what is stacked on an unwritten panel stays out of the URL too. Every stacked panel comes through there, from either editor: the new editor's `OverlayEditContentHost` hands what a field stacks to its panel's `openContent` output rather than opening it. `injectEditContentPanel` passes the option through its binding, read on every open, so a getter can decide per open.
+
+Back and Forward. A `Location` `popstate` on the path the front panel was registered on, whose URL lacks that panel's params → `replaceState` restoring them, then `ref.requestClose()`; the panel underneath is untouched. The restore waits for the router: dotcms-ui sets `onSameUrlNavigation: 'reload'`, so once the router has navigated it answers every Back with a navigation of its own, even to a URL it holds, and that navigation ends with a `replaceState` of the URL Back landed on. So the service waits for the first `NavigationEnd`, `NavigationCancel`, `NavigationError` or `NavigationSkipped` after the `popstate`, then checks the URL again; it restores at once only when the router has never navigated. A `NavigationCancel` with `code === NavigationCancellationCode.SupersededByNewNavigation` does not end the wait: a second Back pressed before the first navigation ended cancels it while its own navigation still runs, and that navigation's `replaceState` would undo a restore written then. The `hashchange` that hash routing reports after a `popstate` is the same move and is ignored. A `popstate` on another path has left the surface: nothing is restored and nothing is asked to close through its guard.
+
+Leaving the surface. Any router navigation whose `NavigationEnd` (`urlAfterRedirects`) lands on a path other than the one a registered panel was opened on has left that panel's surface, whether Back, the menu or a link in a legacy portlet's frame started it: the service closes every such panel, front first, with `ref.close()` (no guard: the navigation has already happened), and writes nothing, since the URL is another screen's and may name a panel of its own. A navigation that ends on the same path (a Back that pops a param, a surface's own query change, a deep link's redirect) closes nothing. A panel opened under its surface's injector would go with the surface anyway; this is for the ones that would not, such as the legacy portlets' panels, opened under the app-level `DotSidePanelHostComponent`'s injector (QA of layer 8 found them still open after Back to another portlet).
+
+A route with `data: { reuseRoute: false }` is rebuilt by the router's navigation on Back, which discards the panel and its prompt. The Query Tool's and the Publishing Queue's routes drop the flag (neither has path params, so the flag only ever mattered there), and so does the `/c/:id/:asset` child, whose Workflow Tasks route keeps a panel in its URL (FR-025a): `DotWorkflowTaskComponent` follows the route's `asset` param and `DotPortletDetailComponent` the parent's `id`, so another task or another portlet on the reused route still shows. `DotCustomReuseStrategyService` is unchanged, because UVE (`/edit-page`) reads its page from the URL once and depends on a query-only navigation rebuilding it. Content Drive's and Pages' routes have no flag.
+
+The legacy (JSP) portlets and Pages read their panel params from the router's `queryParams`, on load and on every navigation of the app's own, not once: a deep link redirects there with a router navigation, after the portlet was built. They skip an emission while the router's `currentNavigation()` has `trigger === 'popstate'`: Back and Forward are the service's, and the router replays an entry that may name a panel still open, which opening again would duplicate. So Forward to an entry that still names a closed panel reopens nothing there either. What is left is deduplicated with `panelUrlIntentKey(intent)` (beside `readPanelUrlIntent` in `@dotcms/utils`), skipped emissions left out, since an app navigation that changes only other params carries the panel params the router last saw. Content Drive, the Query Tool and the Publishing Queue read their URL once.
+
+### The content change notification (T174)
+
+```ts
+// @dotcms/data-access: the admin app reaches it without importing @dotcms/edit-content.
+export interface DotContentChange {
+    kind: 'saved' | 'deleted';
+    /** The saved contentlet; for a delete, the content as last saved, or as the panel opened it. */
+    contentlet: DotCMSContentlet;
+    /** 0 for a panel a surface opened, one more for each panel stacked from inside another. */
+    depth: number;
+}
+
+@Injectable({ providedIn: 'root' })
+export class DotContentChangeService {
+    readonly changes$: Observable<DotContentChange>;
+    notify(change: DotContentChange): void;
+}
+```
+
+The opener announces every `saved` and `deleted` of every panel it opens, the stacked ones and the legacy editor's included, after the panel's own handler (the caller's, or a stacked panel's `onSaved`) and after the URL has followed a save. Only the opener calls `notify`. A delete is announced with the content as it was last saved, or as the panel opened it (the fetched contentlet, else what the request named). A close announces nothing.
+
+This is how a listing learns its content changed: each listing surface subscribes once, for as long as it is shown, and refreshes as it did on its own panel's `saved`. So content saved from a relationship's "New" inside the panel a row opened is in the list too, though the surface never opened that panel. Per-open handlers are for what only the opener of that panel can do; refreshing a listing is the notification's job (panel-events.md). A surface keeps its `closed` refresh: a move or a language switch inside the legacy editor sends no event (FR-017).
+
+| Surface | Subscribes in | Refreshes with |
+|---|---|---|
+| Pages | `DotPageActionsService` (provided by the portlet component) | `DotCMSPagesStore.getPages()` |
+| Content Drive | the shell | `reloadContentDrive({ quiet: true })` |
+| Query Tool | the page component | the search again, when a query ran |
+| Publishing Queue | the shell, and each of its two dialogs while open | the bundle list; the dialog's assets |
+| Legacy (JSP) portlets, Workflow Tasks list included | `IframePortletLegacyComponent` | `DotIframeService.reloadData(currentPortlet.id)` |
+
+UVE is the exception: it keeps its own handlers (insert the new content, reload the page), since a page is not a listing, and it subscribes to nothing. The Workflow Tasks detail keeps `saved: viewTask` too: viewing the task again is not a listing refresh. A panel stacked from a parent the opener did not open (UVE's translate panel, `RouterEditContentHost`) goes through the public `open()` and reports depth 0; nothing listens on those screens.
+
+## The signal helper
+
+```ts
+export interface DotEditContentPanelBinding extends DotEditContentPanelHandlers {
+    /** Called when the panel closes itself (X, Escape, mask, delete, Back). Not called when the request is cleared. */
+    closed?: () => void;
+    /** Passed to the opener on every open, read each time, so a getter can decide per open; see `DotEditContentOpenOptions.url`. */
+    url?: DotEditContentUrlOption;
+}
+
+export interface DotEditContentPanelHandle {
+    readonly isOpen: Signal<boolean>;
+    /** Routes a close through the content's unsaved-changes guard (for browser Back). */
+    requestClose(): void;
+}
+
+/**
+ * Same shape as `injectSidePanel`: opens when `request` becomes set, updates heading and inputs while
+ * open, closes (unguarded) when it is cleared. Call from an injection context.
+ */
+export function injectEditContentPanel(
+    request: Signal<DotEditContentRequest | null | undefined>,
+    binding: DotEditContentPanelBinding
+): DotEditContentPanelHandle;
+```
+
+Behaviour notes: a request that changes while the panel is open keeps the panel when it names the same content (`mode`, `inode`, `contentType`) in the same editor, as a new title does; one that names other content, or a binding whose `editor` getter changes, closes the panel (no guard, no `closed`) and opens a fresh one in the same pass. The editor panel's `@for` tracks `inode ?? contentType`, so the layout and its store are recreated when the identity changes.
+
+## Who uses which
+
+| Surface | Entry point | `url` option |
+|---|---|---|
+| Content Drive shell | `injectEditContentPanel` (one call replaces two `injectSidePanel` calls) | yes, `{}` (its own `path` param carries a create's folder), `{ inPlace: true }` on the reopen in the legacy editor; Edit Code is an `injectSidePanel` whose `opened` hook registers `editCode` with `DotPanelUrlStateService` |
+| UVE editor | `injectEditContentPanel` on the editor component | no, the URL names the page |
+| UVE shell (Properties outside the content route) | `open()` with the shell's injector | no |
+| Query Tool | `injectEditContentPanel` | yes, `{}` |
+| Pages portlet | `open()` through `DotPageActionsService.openContent(request)` with the component's injector, for Edit (from either row menu) and for what the URL names on load; the service refreshes the listing on `closed`, and on every save and delete through the content change notification | yes, `{}` |
+| Publishing Queue dialogs | `open()` with the dialog component's injector | yes, `{}` |
+| Publishing Queue shell | `open()` with the shell's injector, for what the URL names on load: the panel reopens over the list, not the dialog | yes, `{}` |
+| Custom-event handler (legacy JSP portlets) | `open()` through its public `openContent(request)`, with the side panel host's injector, for the portlets' events and for what a portlet's URL names (`IframePortletLegacyComponent`) | yes, `{}` |
+| Deep-link component | none: it redirects to the portlet's URL with the panel params | — |
+| `RouterEditContentHost`, `OverlayEditContentHost` | `open()` with the shell's or the panel's injector | no |

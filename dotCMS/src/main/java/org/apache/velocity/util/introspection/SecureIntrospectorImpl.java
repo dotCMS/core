@@ -25,6 +25,7 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.io.Reader;
 import java.io.Writer;
+import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URL;
@@ -39,6 +40,7 @@ import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import javax.servlet.AsyncContext;
@@ -55,6 +57,11 @@ import javax.servlet.http.PushBuilder;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
+import com.liferay.portal.model.CompanyModel;
+import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.commons.beanutils.BeanUtilsBean;
+import org.apache.commons.beanutils.NestedNullException;
+import org.apache.commons.beanutils.expression.Resolver;
 
 /**
  * <p>Prevent "dangerous" classloader/reflection related calls.  Use this
@@ -183,6 +190,11 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
         }
 
         if (isRequestValueMutator(clazz, methodName))
+        {
+            return false;
+        }
+
+        if (isCompanyKeyAccessor(clazz, methodName))
         {
             return false;
         }
@@ -559,6 +571,105 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
         }
 
         return false;
+    }
+
+    /**
+     * Methods that return the company key. The key is only for server code, so a template that gets hold of a
+     * company, through {@code $UtilMethods}, a request attribute or any other value, can read everything on it
+     * except the key. The key digest stays readable: it cannot be turned back into the key.
+     */
+    private static final Set<String> COMPANY_KEY_ACCESSORS = Set.of("getKey", "getKeyObj");
+
+    /**
+     * Determines whether the call is one of {@link #COMPANY_KEY_ACCESSORS} on a company. Template helpers that
+     * read an object's properties by reflection, outside this introspector, use it too, so they leave the key out.
+     *
+     * @param clazz class a method is about to be resolved on
+     * @param methodName name of the method to be called
+     * @return {@code true} if the call is restricted (deny), {@code false} otherwise
+     */
+    public static boolean isCompanyKeyAccessor(final Class<?> clazz, final String methodName)
+    {
+        return clazz != null && methodName != null && CompanyModel.class.isAssignableFrom(clazz)
+                && COMPANY_KEY_ACCESSORS.contains(methodName);
+    }
+
+    /**
+     * Reads a property path the way {@link PropertyUtils#getProperty(Object, String)} does, but refuses a path that
+     * reads the company key at any step. Template helpers that resolve a path by reflection, such as
+     * {@code $math.getTotal} and {@code $sorter.sort}, never go through this introspector, so they read paths with
+     * this method instead. Each step is checked and read once.
+     *
+     * @param bean the object the path starts from
+     * @param path the property path, in {@link PropertyUtils} syntax (for example {@code item.price} or
+     *             {@code items[0].name})
+     * @return the value at the end of the path
+     * @throws RestrictedPropertyException if a step of the path reads the company key
+     * @throws Exception if the path cannot be read, as {@link PropertyUtils#getProperty(Object, String)} reports it
+     */
+    public static Object readPropertyPath(final Object bean, final String path) throws Exception
+    {
+        final Resolver resolver = BeanUtilsBean.getInstance().getPropertyUtils().getResolver();
+        Object current = bean;
+        String remaining = path;
+        while (remaining != null && !remaining.isEmpty())
+        {
+            if (current == null)
+            {
+                throw new NestedNullException("Null value in the property path '" + path + "'");
+            }
+            final String step = resolver.next(remaining);
+            if (readsCompanyKey(current, resolver.getProperty(step)))
+            {
+                throw new RestrictedPropertyException(path);
+            }
+            current = PropertyUtils.getProperty(current, step);
+            remaining = resolver.remove(remaining);
+        }
+        return current;
+    }
+
+    /**
+     * Thrown by {@link #readPropertyPath(Object, String)} when a path reads the company key.
+     */
+    public static class RestrictedPropertyException extends IllegalArgumentException
+    {
+        private static final long serialVersionUID = 1L;
+
+        /**
+         * Creates the exception for a refused path.
+         *
+         * @param path the path that was refused
+         */
+        public RestrictedPropertyException(final String path)
+        {
+            super("The property path '" + path + "' cannot be read from a template");
+        }
+    }
+
+    /**
+     * Tells whether reading the named property of an object calls a company key getter.
+     *
+     * @param bean the object the property is read from
+     * @param name the property name, without index or key
+     * @return {@code true} if the property's getter is a company key getter
+     */
+    private static boolean readsCompanyKey(final Object bean, final String name)
+    {
+        if (bean instanceof Map)
+        {
+            return false;
+        }
+        try
+        {
+            final PropertyDescriptor descriptor = PropertyUtils.getPropertyDescriptor(bean, name);
+            return descriptor != null && descriptor.getReadMethod() != null
+                    && isCompanyKeyAccessor(bean.getClass(), descriptor.getReadMethod().getName());
+        }
+        catch (Exception e)
+        {
+            return false;
+        }
     }
 
     /**

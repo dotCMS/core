@@ -8,10 +8,12 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.MultiPartUtils;
+import com.dotcms.util.YamlUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -436,6 +438,15 @@ public class PushPublishFilterResource {
         final FilterDescriptor filterDescriptor = new FilterDescriptor(filterDescriptorForm.getKey(),
                 filterDescriptorForm.getTitle(), filterDescriptorForm.getSort(), filterDescriptorForm.getFilters(),
                 filterDescriptorForm.isDefaultFilter(), filterDescriptorForm.getRoles());
+        try {
+            // Reject an invalid filter here: otherwise it is written to disk and only dropped,
+            // with a log warning, when the filter list is reloaded
+            filterDescriptor.validate();
+        } catch (final DotDataValidationException e) {
+            Logger.debug(this, () -> String.format("Filter '%s' is invalid: %s",
+                    filterDescriptor.getKey(), e.getMessage()));
+            throw new IllegalArgumentException(e.getMessage(), e);
+        }
         this.publisherAPI.get().upsertFilterDescriptor(filterDescriptor);
         return this.publisherAPI.get().getFiltersDescriptorsByRole(user).stream().map(FilterDescriptor::getKey).collect(Collectors.toList());
     }
@@ -450,7 +461,8 @@ public class PushPublishFilterResource {
      *
      * @throws DotDataException         An error occurred when interacting with the data source.
      * @throws IOException              An error occurred when copying the YML files.
-     * @throws IllegalArgumentException At least one of the specified Filters already exist.
+     * @throws IllegalArgumentException At least one of the specified Filters already exist, or is not a valid
+     *                                  Filter. Nothing is saved in that case.
      */
     protected List<String> saveAndReloadFiltersFromFile(final FormDataMultiPart multipart, final User user) throws DotDataException, IOException {
         final List<File> filterFiles = this.multiPartUtils.getBinariesFromMultipart(multipart);
@@ -462,6 +474,7 @@ public class PushPublishFilterResource {
                 throw new IllegalArgumentException(errorMsg);
             }
         }
+        validateFilterFiles(filterFiles);
         this.publisherAPI.get().saveFilterDescriptors(filterFiles);
         return this.publisherAPI.get().getFiltersDescriptorsByRole(user).stream().map(FilterDescriptor::getKey).collect(Collectors.toList());
     }
@@ -476,7 +489,8 @@ public class PushPublishFilterResource {
      *
      * @throws DotDataException         An error occurred when interacting with the data source.
      * @throws IOException              An error occurred when copying the YML files.
-     * @throws IllegalArgumentException At least one of the specified Filters does not exist.
+     * @throws IllegalArgumentException At least one of the specified Filters does not exist, or is not a valid
+     *                                  Filter. Nothing is saved in that case.
      */
     protected List<String> updateAndReloadFiltersFromFile(final FormDataMultiPart multipart, final User user) throws DotDataException, IOException {
         final List<File> filterFiles = this.multiPartUtils.getBinariesFromMultipart(multipart);
@@ -488,8 +502,45 @@ public class PushPublishFilterResource {
                 throw new IllegalArgumentException(errorMsg);
             }
         }
+        validateFilterFiles(filterFiles);
         this.publisherAPI.get().saveFilterDescriptors(filterFiles);
         return this.publisherAPI.get().getFiltersDescriptorsByRole(user).stream().map(FilterDescriptor::getKey).collect(Collectors.toList());
+    }
+
+    /**
+     * Reads and validates every uploaded Filter file before any of them is saved. Without this
+     * check an invalid file is copied to the filters folder and then dropped, with only a log
+     * warning, when the filter list is reloaded, so the caller would get a 200 for a filter that
+     * was never loaded.
+     *
+     * @param filterFiles The uploaded YML files. Each file name is the Filter key.
+     *
+     * @throws IllegalArgumentException A file cannot be read as a Filter, or the Filter is not valid.
+     */
+    private void validateFilterFiles(final List<File> filterFiles) {
+        for (final File file : filterFiles) {
+            try {
+                final FilterDescriptor filterDescriptor = YamlUtil.parse(file, FilterDescriptor.class);
+                if (null == filterDescriptor) {
+                    throw new IllegalArgumentException(
+                            String.format("Filter '%s' is empty", file.getName()));
+                }
+                filterDescriptor.setKey(file.getName());
+                filterDescriptor.validate();
+            } catch (final DotDataValidationException e) {
+                Logger.debug(this, () -> String.format("Filter '%s' is invalid: %s",
+                        file.getName(), e.getMessage()));
+                throw new IllegalArgumentException(
+                        String.format("Filter '%s' is invalid: %s", file.getName(), e.getMessage()), e);
+            } catch (final IllegalArgumentException e) {
+                throw e;
+            } catch (final RuntimeException e) {
+                Logger.debug(this, () -> String.format("Filter '%s' could not be read: %s",
+                        file.getName(), e.getMessage()));
+                throw new IllegalArgumentException(
+                        String.format("Filter '%s' could not be read as a YML Filter", file.getName()), e);
+            }
+        }
     }
 
 }

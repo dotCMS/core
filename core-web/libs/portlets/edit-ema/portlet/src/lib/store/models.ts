@@ -105,6 +105,12 @@ export interface UVEState {
     // ============ EDITOR STATE (withEditor) ============
     editorDragItem: EmaDragItem | null;
     editorBounds: Container[];
+    /**
+     * The page's vertical scroll offset, as the page last reported it with a `scroll` message;
+     * 0 before any report and after the page loads. Pages on an older `@dotcms/uve` never
+     * report it. During a drag, `editorBounds` is shifted by how far the page scrolled from it.
+     */
+    editorScrollY: number;
     editorState: EDITOR_STATE;
     editorContentArea: ContentletArea | null;
     /**

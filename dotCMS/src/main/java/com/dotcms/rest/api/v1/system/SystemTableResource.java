@@ -1,11 +1,11 @@
 package com.dotcms.rest.api.v1.system;
 
 import com.dotcms.business.SystemTable;
+import com.dotcms.config.SystemTableConfigSource;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource.InitBuilder;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.WhiteBlackList;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
@@ -16,9 +16,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
-import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -34,10 +31,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.io.Serializable;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -56,56 +51,14 @@ import static com.dotcms.util.DotPreconditions.checkNotNull;
 public class SystemTableResource implements Serializable {
 
 	private final SystemTable systemTable = APILocator.getSystemAPI().getSystemTable();
-	private static final String[] DEFAULT_BLACKLISTED_PROPS = new String[]{"DOTCMS_CLUSTER_ID", "DOTCMS_CLUSTER_SALT"};
-	/** The blacklist built for the last value read of {@code SYSTEM_TABLE_BLACKLISTED_KEYS}, rebuilt when it changes. */
-	private static final AtomicReference<Tuple2<List<String>, WhiteBlackList>> REFUSED_KEYS = new AtomicReference<>();
-	private final WhiteBlackList whiteBlackList = new WhiteBlackList.Builder()
-							.addWhitePatterns(Config.getStringArrayProperty("SYSTEM_TABLE_WHITELISTED_KEYS",
-									new String[]{StringPool.BLANK}))
-			.addBlackPatterns(blacklistedKeys()).build();
-
-	/** Refuses every key; used while {@code SYSTEM_TABLE_BLACKLISTED_KEYS} holds a pattern that does not compile. */
-	private static final WhiteBlackList REFUSE_ALL = new WhiteBlackList.Builder().addBlackPatterns(".*").build();
+	private final WhiteBlackList whiteBlackList = SystemTableConfigSource.tableAccessRules(
+			Config.getStringArrayProperty("SYSTEM_TABLE_WHITELISTED_KEYS", new String[]{StringPool.BLANK}));
 
 	/**
-	 * Returns a check of whether this resource refuses to read or write a key because it is on the blacklist:
-	 * {@code DOTCMS_CLUSTER_ID}, {@code DOTCMS_CLUSTER_SALT} and the patterns in {@code SYSTEM_TABLE_BLACKLISTED_KEYS}.
-	 * The blacklist is read when this method is called, so callers that check many keys in a row read it once. Other
-	 * resources that show configuration values use it to hide the same keys. While
-	 * {@code SYSTEM_TABLE_BLACKLISTED_KEYS} holds a pattern that does not compile, every key is treated as refused and
-	 * a warning is logged.
-	 *
-	 * @return a predicate that is {@code true} for a key on the blacklist
+	 * Returns a check for keys blocked by the system table access rules.
 	 */
 	public static Predicate<String> refusedKeys() {
-		final WhiteBlackList refused = refusedKeyList();
-		return key -> UtilMethods.isSet(key) && !refused.isAllowed(key);
-	}
-
-	/**
-	 * Returns the blacklist for the current value of {@code SYSTEM_TABLE_BLACKLISTED_KEYS}, built again only when that
-	 * value changes.
-	 */
-	private static WhiteBlackList refusedKeyList() {
-		final List<String> patterns = List.of(blacklistedKeys());
-		Tuple2<List<String>, WhiteBlackList> refused = REFUSED_KEYS.get();
-		if (refused == null || !refused._1().equals(patterns)) {
-			final WhiteBlackList list = Try.of(() -> new WhiteBlackList.Builder().addBlackPatterns(patterns).build())
-					.onFailure(e -> Logger.warn(SystemTableResource.class, "SYSTEM_TABLE_BLACKLISTED_KEYS holds an "
-							+ "invalid pattern, every key is treated as blacklisted: " + e.getMessage()))
-					.getOrElse(REFUSE_ALL);
-			refused = Tuple.of(patterns, list);
-			REFUSED_KEYS.set(refused);
-		}
-		return refused._2();
-	}
-
-	/**
-	 * Returns the blacklisted key patterns: {@code SYSTEM_TABLE_BLACKLISTED_KEYS} plus the default ones.
-	 */
-	private static String[] blacklistedKeys() {
-		return CollectionsUtils.concat(Config.getStringArrayProperty(
-				"SYSTEM_TABLE_BLACKLISTED_KEYS", new String[]{}), DEFAULT_BLACKLISTED_PROPS);
+		return SystemTableConfigSource.refusedKeys();
 	}
 
 	/**
@@ -201,6 +154,22 @@ public class SystemTableResource implements Serializable {
 	}
 
 	/**
+	 * Checks that the key may be stored: it is not blacklisted and it is not a provisioning key.
+	 *
+	 * @param key The key to check.
+	 *
+	 * @throws IllegalArgumentException If the key may not be stored.
+	 */
+	private void checkWriteAllowed(final String key) throws IllegalArgumentException {
+		this.checkBlackList(key);
+		if (SystemTableConfigSource.isProvisioningKey(key)) {
+			Logger.debug(this, ()-> "Key is read from the environment or the properties file only: " + key);
+			throw new IllegalArgumentException("Key not allowed: " + key
+					+ " is set in the environment or the properties file only");
+		}
+	}
+
+	/**
 	 * Saves or updates the value of a given key to the system table.
 	 *
 	 * @param request  The current instance of the {@link HttpServletRequest}.
@@ -209,7 +178,8 @@ public class SystemTableResource implements Serializable {
 	 *
 	 * @return The key that was saved.
 	 *
-	 * @throws IllegalArgumentException If the key is blacklisted.
+	 * @throws IllegalArgumentException If the key is blacklisted, or is read from the
+	 * 									environment or the properties file only.
 	 */
 	@POST
 	@JSONP
@@ -218,14 +188,16 @@ public class SystemTableResource implements Serializable {
 	@Operation(summary = "Saves or updates a system table entry",
 			description = "Saves or updates the value of a key in the system table. The change is applied " +
 					"cluster wide: every node is notified and re-resolves the key, so the request does not " +
-					"need to be repeated against each node.")
+					"need to be repeated against each node. Keys the server reads from the environment or " +
+					"the properties file only are refused with a 400, since a value stored for them would " +
+					"have no effect.")
 	public ResponseEntityStringView save(
 			@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response,
 			final KeyValueForm form) throws IllegalAccessException {
 		checkNotNull(form, IllegalArgumentException.class, "KeyValueForm cannot be null");
 		this.init(request, response);
-		this.checkBlackList(form.getKey());
+		this.checkWriteAllowed(form.getKey());
 		Logger.debug(this, ()-> "Saving/updating system table value for key: " + form.getKey());
 		this.systemTable.set(form.getKey(), form.getValue());
 		
@@ -239,7 +211,8 @@ public class SystemTableResource implements Serializable {
 	 *
 	 * @return The key that was updated.
 	 *
-	 * @throws IllegalArgumentException If the key is blacklisted.
+	 * @throws IllegalArgumentException If the key is blacklisted, or is read from the
+	 * 									environment or the properties file only.
 	 */
 	@PUT
 	@JSONP
@@ -249,14 +222,16 @@ public class SystemTableResource implements Serializable {
 	@Operation(summary = "Updates an existing system table entry",
 			description = "Updates the value of an existing key in the system table, or returns a 404 if the " +
 					"key does not exist. The change is applied cluster wide: every node is notified and " +
-					"re-resolves the key, so the request does not need to be repeated against each node.")
+					"re-resolves the key, so the request does not need to be repeated against each node. " +
+					"Keys the server reads from the environment or the properties file only are refused " +
+					"with a 400, since a value stored for them would have no effect.")
 	public ResponseEntityStringView update(
 			@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response,
 			final KeyValueForm form) throws IllegalAccessException {
 		checkNotNull(form, IllegalArgumentException.class, "KeyValueForm cannot be null");
 		this.init(request, response);
-		this.checkBlackList(form.getKey());
+		this.checkWriteAllowed(form.getKey());
 
 		final Optional<String> valueOpt = this.systemTable.get(form.getKey());
 		if (valueOpt.isEmpty()) {

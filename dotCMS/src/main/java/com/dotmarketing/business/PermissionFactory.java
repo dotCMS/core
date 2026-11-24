@@ -354,4 +354,42 @@ public abstract class PermissionFactory {
 		return Set.of();
 	}
 
+	/**
+	 * Value object holding the result of a batch permission check:
+	 * permitted IDs (access granted) and uncached IDs (items having neither
+	 * a row in permission_reference nor individual permissions).
+	 */
+	public static class BatchPermissionsResult {
+		private final Set<String> permittedIds;
+		private final Set<String> uncachedIds;
+
+		public BatchPermissionsResult(final Set<String> permittedIds, final Set<String> uncachedIds) {
+			this.permittedIds = permittedIds != null ? permittedIds : Set.of();
+			this.uncachedIds = uncachedIds != null ? uncachedIds : Set.of();
+		}
+
+		public Set<String> getPermittedIds() {
+			return permittedIds;
+		}
+
+		public Set<String> getUncachedIds() {
+			return uncachedIds;
+		}
+	}
+
+	/**
+	 * Queries the database in batches to determine which IDs are permitted and which IDs are
+	 * uncached (having neither an individual permission nor an entry in permission_reference).
+	 *
+	 * @param inodeIds   permissionable IDs to check
+	 * @param permission required permission bit mask (e.g. PermissionAPI.PERMISSION_READ)
+	 * @param roleIds    already-resolved role IDs for the user
+	 * @return a BatchPermissionsResult containing permitted IDs and uncached IDs
+	 * @throws DotDataException on database access error
+	 */
+	BatchPermissionsResult getBatchPermissions(Collection<String> inodeIds, int permission, List<String> roleIds)
+			throws DotDataException {
+		return new BatchPermissionsResult(getPermittedIds(inodeIds, permission, roleIds), Set.of());
+	}
+
 }

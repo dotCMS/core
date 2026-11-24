@@ -26,7 +26,6 @@ import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -378,7 +377,11 @@ public class PublisherQueueJob implements StatefulJob {
 		final Map<String, Map<String, EndpointDetail>> endpointsMap = localHistory.getEndpointsMap();
 
 		final Client client = getRestClient();
-		final Map<String, BundlesToSent> bundlesToSent = new HashMap<>();
+		// Keyed by environment and endpoint, like the audit entries, so an endpoint the audit tracks
+		// under two environments (it was moved and the bundle retried) is polled for each entry
+		final Map<Map.Entry<String, String>, BundlesToSent> bundlesToSent = new HashMap<>();
+		// Endpoints this pass is responsible for, as environment id -> endpoint ids
+		final Map<String, Set<String>> trackedEndpoints = new HashMap<>();
 
 		// For each group (environment)
 		for (final String groupID : endpointsMap.keySet() ) {
@@ -388,24 +391,22 @@ public class PublisherQueueJob implements StatefulJob {
 				final PublishingEndPoint targetEndpoint = endpointAPI.findEndPointById(endpointID);
 
 				if (targetEndpoint != null && !targetEndpoint.isSending()) {
+					trackedEndpoints.computeIfAbsent(groupID, key -> new HashSet<>()).add(endpointID);
 					ThreadContext.put(ENDPOINT_NAME, ENDPOINT_NAME + "=" + targetEndpoint.getServerName());
 					// Don't poll status for static publishing
 					if (!AWSS3Publisher.PROTOCOL_AWS_S3.equalsIgnoreCase(targetEndpoint.getProtocol())
 							&& !StaticPublisher.PROTOCOL_STATIC.equalsIgnoreCase(targetEndpoint.getProtocol())) {
 
-						final BundlesToSent bundleToSend = bundlesToSent.computeIfAbsent(targetEndpoint.getId(),
-								key -> new BundlesToSent(targetEndpoint));
+						final BundlesToSent bundleToSend = bundlesToSent.computeIfAbsent(Map.entry(groupID, targetEndpoint.getId()),
+								key -> new BundlesToSent(targetEndpoint, groupID));
 
 						bundleToSend.add(bundleAudit.getBundleId());
 
 						if (bundleToSend.limitReach()) {
 							sendBundle(bundleToSend.bundleIds,  bundleToSend.targetEndpoint,
-									client, localHistory, endpointTrackingMap);
+									bundleToSend.groupId, client, localHistory);
 							bundleToSend.reset();
 						}
-					} else {
-						final PublishAuditStatus auditStatus = pubAuditAPI.getPublishAuditStatus(bundleAudit.getBundleId());
-						endpointTrackingMap.putAll(auditStatus.getStatusPojo().getEndpointsMap());
 					}
 				}
 			}
@@ -420,15 +421,36 @@ public class PublisherQueueJob implements StatefulJob {
 			List<List<String>> partitions = Lists.partition(toSent.bundleIds, MAX_SIZE_PP_AUDIT_PAYLOAD);
 
 			for (List<String> partition : partitions) {
-				sendBundle(partition, toSent.targetEndpoint, client, localHistory, endpointTrackingMap);
+				sendBundle(partition, toSent.targetEndpoint, toSent.groupId, client, localHistory);
 			}
 		}
+
+		// The remote answers were merged into the local history per endpoint, so the tracking map
+		// is read from it: one entry per endpoint, whichever key the receiver used (#34434)
+		trackedEndpoints.forEach((groupID, endpointIDs) -> endpointIDs.forEach(endpointID -> {
+			final EndpointDetail detail = localHistory.getEndpointsMap()
+					.getOrDefault(groupID, Map.of()).get(endpointID);
+			if (detail != null) {
+				endpointTrackingMap.computeIfAbsent(groupID, key -> new HashMap<>()).put(endpointID, detail);
+			}
+		}));
 
 		return endpointTrackingMap;
 	}
 
-	private void sendBundle(List<String> bundleIds, PublishingEndPoint targetEndpoint, Client client,
-							PublishAuditHistory localHistory, Map<String, Map<String, EndpointDetail>> endpointTrackingMap)
+	/**
+	 * Asks a remote endpoint for the audit of the given bundles and merges each answer into the
+	 * local history.
+	 *
+	 * @param bundleIds      the bundles to ask about
+	 * @param targetEndpoint the endpoint to ask
+	 * @param groupID        the environment the audit tracks the endpoint under
+	 * @param client         the REST client used for the call
+	 * @param localHistory   the local audit history that receives the remote details
+	 * @throws DotDataException the endpoint could not be reached or its answer was not readable
+	 */
+	private void sendBundle(List<String> bundleIds, PublishingEndPoint targetEndpoint, String groupID,
+							Client client, PublishAuditHistory localHistory)
 			throws DotDataException {
 
 			// Try to get the status of the remote end-points to
@@ -437,28 +459,40 @@ public class PublisherQueueJob implements StatefulJob {
 					 .stream()
 					 .filter(Objects::nonNull)
 					 .forEach(remoteHistory -> {
-						 sendBundle(bundleIds, targetEndpoint, localHistory,
-								 endpointTrackingMap, remoteHistory);
+						 sendBundle(bundleIds, targetEndpoint, groupID, localHistory, remoteHistory);
 					 });
 
 	}
 
-	private void sendBundle(List<String> bundleIds, PublishingEndPoint targetEndpoint, PublishAuditHistory localHistory,
-							Map<String, Map<String, EndpointDetail>> endpointTrackingMap, PublishAuditHistory remoteHistory) {
+	/**
+	 * Merges one remote history into the local one for the given endpoint. When the remote answer
+	 * cannot be processed, the endpoint itself is marked as failed in the local history.
+	 *
+	 * @param bundleIds      the bundles that were asked about
+	 * @param targetEndpoint the endpoint the answer came from
+	 * @param groupID        the environment the audit tracks the endpoint under. It can differ from
+	 *                       the endpoint's current environment when the endpoint was moved while
+	 *                       the bundle was publishing, and the result must land where it is counted
+	 * @param localHistory   the local audit history to update
+	 * @param remoteHistory  the history the endpoint returned
+	 */
+	private void sendBundle(List<String> bundleIds, PublishingEndPoint targetEndpoint, String groupID,
+							PublishAuditHistory localHistory, PublishAuditHistory remoteHistory) {
 		try {
 			updateLocalPublishDatesFromRemote(localHistory, remoteHistory);
-			endpointTrackingMap.putAll(remoteHistory.getEndpointsMap());
-			updateLocalEndpointDetailFromRemote(localHistory, targetEndpoint.getGroupId(), targetEndpoint.getId(), remoteHistory);
+			updateLocalEndpointDetailFromRemote(localHistory, groupID, targetEndpoint.getId(), remoteHistory);
 		} catch (final Exception e) {
 			// An error occurred when retrieving the end-point's audit info.
 			// Usually caused by a network problem.
 			Logger.error(PublisherQueueJob.class, "An error occurred when updating audit status from " +
 					"endpoint=[" + targetEndpoint.toURL() + "], bundle=[" + bundleIds.get(0)
 					+ "] : " + ExceptionUtil.getErrorMessage(e), e);
-			final String failedAuditUpdate = "failed-remote-group-" + System.currentTimeMillis();
+			// The failure is recorded on the endpoint itself, so the audit names it (#34434)
 			final EndpointDetail detail = new EndpointDetail();
 			detail.setStatus(Status.FAILED_TO_PUBLISH.getCode());
-			endpointTrackingMap.put(failedAuditUpdate, Map.of(failedAuditUpdate, detail));
+			detail.setInfo("Could not update the audit status from the endpoint: "
+					+ ExceptionUtil.getErrorMessage(e));
+			localHistory.addOrUpdateEndpoint(groupID, targetEndpoint.getId(), detail);
 			PushPublishLogger.log(this.getClass(), "Status update: Failed to update bundle audit status.");
 		}
 	}
@@ -485,6 +519,7 @@ public class PublisherQueueJob implements StatefulJob {
 									final GroupPushStats groupPushStats, final List<Map<String, Object>> bundlesInQueue)
 			throws DotDataException, DotPublisherException, LanguageException {
 		Status bundleStatus;
+		final int totalEndpoints = countEndpoints(endpointTrackingMap);
 		final PublishAuditHistory localHistory = bundleAudit.getStatusPojo();
 		final String auditedBundleId = bundleAudit.getBundleId();
 		// Info needed to generate the Growl Notification
@@ -522,16 +557,17 @@ public class PublisherQueueJob implements StatefulJob {
 					notificationMessageArgument));
 			message.setLife(86400000);
 			message.setSeverity(MessageSeverity.ERROR);
-		} else if (groupPushStats.getCountGroupFailed() > 0 && groupPushStats.getCountGroupFailed() == endpointTrackingMap.size()) {
+		} else if (groupPushStats.getCountGroupFailed() > 0 && groupPushStats.getCountGroupFailed() == totalEndpoints) {
 			// If bundle cannot be installed in all groups
 			bundleStatus = Status.FAILED_TO_SEND_TO_ALL_GROUPS;
 			pubAuditAPI.updatePublishAuditStatus(auditedBundleId, bundleStatus, localHistory);
 		} else if (groupPushStats.getCountGroupFailed() > 0
-				&& (groupPushStats.getCountGroupOk() + groupPushStats.getCountGroupFailed()) == endpointTrackingMap.size()) {
-			// If bundle was installed in some groups only
+				&& (groupPushStats.getCountGroupOk() + groupPushStats.getCountGroupSaved()
+					+ groupPushStats.getCountGroupFailed()) == totalEndpoints) {
+			// If bundle was installed in some endpoints only (a saved static bundle counts as delivered)
 			bundleStatus = Status.FAILED_TO_SEND_TO_SOME_GROUPS;
 			pubAuditAPI.updatePublishAuditStatus(auditedBundleId, bundleStatus, localHistory);
-		} else if (groupPushStats.getCountGroupOk() > 0 && groupPushStats.getCountGroupOk() == endpointTrackingMap.size()) {
+		} else if (groupPushStats.getCountGroupOk() > 0 && groupPushStats.getCountGroupOk() == totalEndpoints) {
 			// If bundle was installed in all groups
 			PushPublishLogger.log(this.getClass(), "Status Update: Success");
             bundleStatus =
@@ -555,9 +591,16 @@ public class PublisherQueueJob implements StatefulJob {
 			message.setMessage(LanguageUtil.get(
 					notificationMessage,
 					notificationMessageArgument));
-		} else if ( groupPushStats.getCountGroupPublishing() == endpointTrackingMap.size() ) {
+		} else if ( groupPushStats.getCountGroupPublishing() == totalEndpoints ) {
 			// If bundle is still publishing in all groups
 			bundleStatus = Status.PUBLISHING_BUNDLE;
+			pubAuditAPI.updatePublishAuditStatus(auditedBundleId, bundleStatus, localHistory);
+		} else if (groupPushStats.getCountGroupOk() + groupPushStats.getCountGroupSaved()
+				+ groupPushStats.getCountGroupFailed() < totalEndpoints) {
+			// Some endpoint has no final result yet (still installing, or sent and not answered). A saved
+			// static endpoint must not close the bundle, because a saved bundle is no longer polled and
+			// the failure of the unfinished endpoint would never be seen (#34434)
+			bundleStatus = Status.WAITING_FOR_PUBLISHING;
 			pubAuditAPI.updatePublishAuditStatus(auditedBundleId, bundleStatus, localHistory);
 		} else if (groupPushStats.getCountGroupSaved() > 0){
 			// If the static bundle was saved but has not been sent
@@ -664,48 +707,48 @@ public class PublisherQueueJob implements StatefulJob {
 		return Boolean.FALSE;
 	}
 
+	/**
+	 * Counts the endpoints of a tracking map. The bundle status is decided by comparing the number of
+	 * endpoints in each state against this total, not the number of environments.
+	 *
+	 * @param endpointTrackingMap environment id -> endpoint id -> that endpoint's result
+	 * @return the total number of endpoints in the map
+	 */
+	private int countEndpoints(final Map<String, Map<String, EndpointDetail>> endpointTrackingMap) {
+		return endpointTrackingMap.values().stream().mapToInt(Map::size).sum();
+	}
+
+	/**
+	 * Counts how many endpoints succeeded, failed, are still publishing or only saved their bundle.
+	 * Every endpoint counts once, so two endpoints of one environment are two results. An endpoint
+	 * counts as failed when its publish failed ({@link Status#FAILED_TO_PUBLISH}), when the bundle could
+	 * not be sent to it ({@link Status#FAILED_TO_SENT}, what {@code PushPublisher} records for an
+	 * unreachable receiver) and when the receiver refused it ({@link Status#INVALID_TOKEN} for a wrong
+	 * token, {@link Status#LICENSE_REQUIRED} for a 403 answer). Leaving those out made a later audit pass
+	 * rewrite the bundle as saved and hide the endpoint that never got it (#34434).
+	 *
+	 * @param endpointTrackingMap environment id -> endpoint id -> that endpoint's result
+	 * @return the number of endpoints in each state
+	 */
 	private GroupPushStats getGroupStats(final Map<String, Map<String, EndpointDetail>> endpointTrackingMap) {
 		final GroupPushStats groupPushStats = new GroupPushStats();
 
 		for (final Map<String, EndpointDetail> group : endpointTrackingMap.values()) {
-			boolean isGroupOk = false;
-			boolean isGroupWithWarnings = false;
-			boolean isGroupPublishing = false;
-			boolean isGroupFailed = false;
-			boolean isGroupSaved = false;
-			for (final EndpointDetail detail : group.values() ) {
-                if (detail.getStatus() == Status.SUCCESS.getCode()
-                        || detail.getStatus() == Status.SUCCESS_WITH_WARNINGS.getCode()) {
-					isGroupOk = true;
-
-					if (detail.getStatus() == Status.SUCCESS_WITH_WARNINGS.getCode()){
-                        isGroupWithWarnings = true;
-                    }
-				} else if ( detail.getStatus() == Status.PUBLISHING_BUNDLE
-						.getCode() ) {
-					isGroupPublishing = true;
-				} else if ( detail.getStatus() == Status.FAILED_TO_PUBLISH
-						.getCode() ) {
-					isGroupFailed = true;
-				} else if ( detail.getStatus() == Status.BUNDLE_SAVED_SUCCESSFULLY
-						.getCode() ) {
-					isGroupSaved = true;
+			for (final EndpointDetail detail : group.values()) {
+				final int status = detail.getStatus();
+				if (status == Status.SUCCESS.getCode() || status == Status.SUCCESS_WITH_WARNINGS.getCode()) {
+					groupPushStats.increaseCountGroupOk();
+					if (status == Status.SUCCESS_WITH_WARNINGS.getCode()) {
+						groupPushStats.increaseCountGroupWithWarnings();
+					}
+				} else if (status == Status.PUBLISHING_BUNDLE.getCode()) {
+					groupPushStats.increaseCountGroupPublishing();
+				} else if (status == Status.FAILED_TO_PUBLISH.getCode() || status == Status.FAILED_TO_SENT.getCode()
+						|| status == Status.INVALID_TOKEN.getCode() || status == Status.LICENSE_REQUIRED.getCode()) {
+					groupPushStats.increaseCountGroupFailed();
+				} else if (status == Status.BUNDLE_SAVED_SUCCESSFULLY.getCode()) {
+					groupPushStats.increaseCountGroupSaved();
 				}
-			}
-			if ( isGroupOk ) {
-				groupPushStats.increaseCountGroupOk();
-			}
-            if ( isGroupWithWarnings ) {
-                groupPushStats.increaseCountGroupWithWarnings();
-            }
-			if ( isGroupPublishing ) {
-				groupPushStats.increaseCountGroupPublishing();
-			}
-			if ( isGroupFailed ) {
-				groupPushStats.increaseCountGroupFailed();
-			}
-			if ( isGroupSaved ) {
-				groupPushStats.increaseCountGroupSaved();
 			}
 		}
 
@@ -766,7 +809,10 @@ public class PublisherQueueJob implements StatefulJob {
 
 	/**
 	 * Get the Publisher needed depending on the protocol of the end-points of
-	 * the bundle.
+	 * the bundle. The publishers come back in a fixed order (S3, static, push), so the logs of a
+	 * bundle read the same on every server. Push goes last on purpose: the publisher that runs last
+	 * sets the overall bundle status, and the one push sets is re-checked by this job, so a failed
+	 * endpoint is retried (#34434).
 	 *
 	 * @param bundleId
 	 *            - The Id of the generated bundle.
@@ -774,15 +820,15 @@ public class PublisherQueueJob implements StatefulJob {
 	 */
 	private Set<Class<? extends IPublisher>> getPublishersForBundle(String bundleId){
 
-		Set<Class<? extends IPublisher>> publishersClasses = new HashSet<>();
+		final Set<Class<? extends IPublisher>> publishersClasses = new LinkedHashSet<>();
 
 		try{
 			Map<String, Class<? extends IPublisher>> protocolPublisherMap = Maps.newConcurrentMap();
 			//TODO: for OSGI we need to get this list from implementations of IPublisher or something else.
-			final Set<Class<?>> publishers = Sets.newHashSet(
-					PushPublisher.class,
+			final Set<Class<?>> publishers = new LinkedHashSet<>(List.of(
 					AWSS3Publisher.class,
-					StaticPublisher.class);
+					StaticPublisher.class,
+					PushPublisher.class));
 
 			//Fill protocolPublisherMap with protocol -> publisher.
 			for (final Class publisherClass : publishers) {
@@ -793,6 +839,7 @@ public class PublisherQueueJob implements StatefulJob {
 			}
 
 			//For each environment in the bundle we need to get the end-points.
+			final Set<Class<? extends IPublisher>> needed = new HashSet<>();
 			List<Environment> environments = this.environmentAPI.findEnvironmentsByBundleId(bundleId);
 
 			for (Environment environment : environments) {
@@ -803,8 +850,17 @@ public class PublisherQueueJob implements StatefulJob {
 				for (PublishingEndPoint endpoint : endpoints) {
 					//Only if the end-point is enabled.
 					if (endpoint.isEnabled() && protocolPublisherMap.containsKey(endpoint.getProtocol())){
-						publishersClasses.add(protocolPublisherMap.get(endpoint.getProtocol()));
+						needed.add(protocolPublisherMap.get(endpoint.getProtocol()));
 
+					}
+				}
+			}
+
+			// Keep the declaration order above, whatever order the endpoints were created in
+			for (final Class<?> publisherClass : publishers) {
+				for (final Class<? extends IPublisher> neededClass : needed) {
+					if (neededClass.equals(publisherClass)) {
+						publishersClasses.add(neededClass);
 					}
 				}
 			}
@@ -929,11 +985,14 @@ public class PublisherQueueJob implements StatefulJob {
 
 	private static class BundlesToSent {
 		final PublishingEndPoint targetEndpoint;
+		// The environment the audit tracks the endpoint under
+		final String groupId;
 		List<String>  bundleIds;
 
 
-		public BundlesToSent(final PublishingEndPoint targetEndpoint) {
+		public BundlesToSent(final PublishingEndPoint targetEndpoint, final String groupId) {
 			this.targetEndpoint = targetEndpoint;
+			this.groupId = groupId;
 			this.bundleIds = new ArrayList<>();
 		}
 

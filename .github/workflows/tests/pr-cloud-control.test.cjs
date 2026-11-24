@@ -50,7 +50,7 @@ async function deploy({ metadata = {}, pr = {}, existing = null, status = 200, c
         const responseStatus = method === 'GET'
             ? (url.includes('/detail?') ? 403 : (reads++ ? 200 : status)) : mutationStatus;
         const row = reads > 1 ? afterConflict : existing;
-        const body = row ? [{ org_key: 'dotpr', env_key: '1234-feat-my-branch-with-dots', ...row }] : [];
+        const body = row ? [{ org_key: 'dotpr', env_key: '1234', ...row }] : [];
         return { status: responseStatus, ok: responseStatus >= 200 && responseStatus < 300,
             json: async () => body };
     };
@@ -149,11 +149,11 @@ test('only a non-expired manifest from this run is selected', async () => {
 test('missing environment is provisioned with the existing mutable image tag', async () => {
     const { calls } = await deploy({ mutationStatus: 201 });
     assert.equal(calls.length, 2);
-    assert.equal(calls[0].url, 'https://cloud.dotcms.dev/api/envs?org_key=dotpr&name=1234-feat-my-branch-with-dots&scope=all');
+    assert.equal(calls[0].url, 'https://cloud.dotcms.dev/api/envs?org_key=dotpr&name=1234&scope=all');
     assert.equal(calls[1].url, 'https://cloud.dotcms.dev/api/provision');
     assert.equal(calls[1].method, 'POST');
     assert.deepEqual(calls[1].body, { wizard: true, org: { org_key: 'dotpr' },
-        env: { env_key: '1234-feat-my-branch-with-dots', image, replicas: 1 } });
+        env: { env_key: '1234', image, replicas: 1 } });
     assert.equal(calls[1].headers.Authorization, 'Bearer test-token');
 });
 
@@ -179,7 +179,7 @@ test('stopped matching environment starts without changing its image', async () 
     const { calls } = await deploy({ existing: stopped });
     assert.equal(calls.length, 2);
     assert.equal(calls[1].method, 'PATCH');
-    assert.equal(calls[1].url, 'https://cloud.dotcms.dev/api/envs/dotpr/detail?env_key=1234-feat-my-branch-with-dots');
+    assert.equal(calls[1].url, 'https://cloud.dotcms.dev/api/envs/dotpr/detail?env_key=1234');
     assert.deepEqual(calls[1].body, { replicas: 1 });
 });
 
@@ -201,25 +201,19 @@ test('failed, deleting and decommissioned environments are not restarted', async
     }
 });
 
-test('names keep the PR number, fit 53 characters and have no trailing hyphen', async () => {
-    for (const branch of ['feature/' + 'a-'.repeat(100), 'a'.repeat(100), '._/☃', 'UPPER.case_under/branch']) {
+test('environment keys use only the PR number regardless of branch name', async () => {
+    for (const branch of ['feature/' + 'a-'.repeat(100), 'UPPER.case_under/branch']) {
         const head = { sha: 'a'.repeat(40), ref: branch, repo: { full_name: 'dotcms/core' } };
         const { calls } = await deploy({ pr: { head }, mutationStatus: 201 });
-        const name = calls[1].body.env.env_key;
-        assert.ok(name.length <= 53);
-        assert.ok(`dot-dotpr-${name}`.length <= 63, 'tenant database name must fit PostgreSQL identifiers');
-        assert.ok(`dotpr-${name}-hl`.length <= 63, 'headless service name must fit a DNS label');
-        if (branch.startsWith('feature/')) assert.ok(name.length > 32);
-        if (branch === 'a'.repeat(100)) assert.equal(name.length, 53);
-        assert.match(name, /^1234(?:-[a-z0-9]+(?:-[a-z0-9]+)*)?$/);
+        assert.equal(calls[1].body.env.env_key, '1234');
     }
 });
 
-test('the example PR keeps its full descriptive environment name', async () => {
+test('the reported PR uses a short numeric environment key', async () => {
     const branch = 'issue-38556-preserve-legacy-tools-on-reorder';
     const head = { sha: 'a'.repeat(40), ref: branch, repo: { full_name: 'dotcms/core' } };
     const { calls } = await deploy({ metadata: { pr: 38557 }, pr: { number: 38557, head }, mutationStatus: 201 });
-    assert.equal(calls[1].body.env.env_key, '38557-issue-38556-preserve-legacy-tools-on-reorder');
+    assert.equal(calls[1].body.env.env_key, '38557');
 });
 
 test('image tag normalization matches the existing publisher, including long and unusual branches', async () => {
@@ -253,7 +247,7 @@ fi
             for (const branch of ['feat/My_branch.with-dots', 'feature/' + 'a-'.repeat(100), '._/☃']) {
                 const head = { sha: 'a'.repeat(40), ref: branch, repo: { full_name: 'dotcms/core' } };
                 const { calls } = await deploy({ pr: { head }, mutationStatus: 201 });
-                const envKey = calls[1].body.env.env_key;
+                assert.equal(calls[1].body.env.env_key, '1234');
                 const mutable = calls[1].body.env.image;
                 execFileSync('bash', ['-e', '-c', shell], { cwd: dir, env: {
                     ...process.env, PATH: `${dir}:${process.env.PATH}`, COMMENT_ID: commentId,
@@ -264,7 +258,7 @@ fi
                 assert.match(body, /<!-- pr-docker-image-sticky -->/);
                 assert.ok(body.includes(`docker pull ${mutable}\n`));
                 assert.ok(body.includes(`docker pull ${mutable}_aaaaaaa\n`));
-                assert.ok(body.includes(`https://cloud.dotcms.dev/admin/envs/dotpr%2F${envKey}`));
+                assert.ok(body.includes('https://cloud.dotcms.dev/admin/envs/dotpr%2F1234)'));
                 assert.match(body, /[Ss]ign in.*Cloud Control/);
                 assert.match(body, /permissions/);
                 assert.doesNotMatch(body, /fake-github-token|test-token/);
