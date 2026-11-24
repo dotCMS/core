@@ -39,7 +39,7 @@ test.describe('Content Drive workflow actions', () => {
 
         await basics.selectRow(title);
         await basics.runWorkflowAction('Unpublish');
-        await expect(basics.status(title)).not.toContainText('Published', { timeout: 20000 });
+        await expect(basics.status(title)).toHaveText('Draft', { timeout: 20000 });
 
         await basics.selectRow(title);
         await basics.runWorkflowAction('Publish');
@@ -65,17 +65,19 @@ test.describe('Content Drive workflow actions', () => {
         // System Workflow archives only unpublished content.
         await basics.selectRow(title);
         await basics.runWorkflowAction('Unpublish');
-        await expect(basics.status(title)).not.toContainText('Published', { timeout: 20000 });
+        await expect(basics.status(title)).toHaveText('Draft', { timeout: 20000 });
 
         await basics.selectRow(title);
         await basics.runWorkflowAction('Archive');
-        await expect(basics.drive.row(title)).toHaveCount(0, { timeout: 20000 });
+        // The folder holds only this item, so the listing ends empty. The empty state never shows
+        // while a listing loads, so this cannot pass on the skeleton.
+        await expect(basics.emptyState).toBeVisible({ timeout: 20000 });
 
         await basics.chooseStatus('Archived');
-        await expect(basics.drive.row(title)).toHaveCount(1, { timeout: 20000 });
+        await expect(basics.status(title)).toHaveText('Archived', { timeout: 20000 });
 
         await basics.selectRow(title);
         await basics.runWorkflowAction('Delete');
-        await expect(basics.drive.row(title)).toHaveCount(0, { timeout: 20000 });
+        await expect(basics.emptyState).toBeVisible({ timeout: 20000 });
     });
 });

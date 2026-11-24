@@ -50,7 +50,11 @@ test.describe('Content Drive filters', () => {
 
         await basics.chooseContentType(seed.contentType.name);
 
-        await expect(basics.drive.row(filteredOut)).toHaveCount(0, { timeout: 20000 });
-        await basics.drive.expectListContainsTitle(kept);
+        // Both at once: while the filtered listing loads, the list shows skeletons and no row at
+        // all, which alone would satisfy "the other type is gone".
+        await expect(async () => {
+            await expect(basics.drive.row(kept)).toHaveCount(1);
+            await expect(basics.drive.row(filteredOut)).toHaveCount(0);
+        }).toPass({ timeout: 20000 });
     });
 });

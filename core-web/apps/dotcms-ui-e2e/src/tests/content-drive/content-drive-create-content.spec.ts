@@ -44,6 +44,9 @@ test.describe('Content Drive create content', () => {
         await sidePanel.expectClosed();
 
         await basics.drive.expectListContainsTitle(title);
-        await expect(basics.status(title)).toBeVisible();
+        // Filed in this folder, not under System Host: the seed type lives on System Host, and the
+        // listing also shows System Host content, marked as shared.
+        await expect(basics.drive.row(title).getByTestId('shared-asset-hint')).toHaveCount(0);
+        await expect(basics.status(title)).toHaveText(/Draft|Published/);
     });
 });

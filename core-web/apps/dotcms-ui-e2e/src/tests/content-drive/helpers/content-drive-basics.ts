@@ -12,11 +12,14 @@ export class ContentDriveBasics {
     readonly drive: ContentDrivePage;
     readonly actionCenter: Locator;
     readonly folderDialogSubmit: Locator;
+    /** The listing's empty state, shown in place of the table when nothing matches. */
+    readonly emptyState: Locator;
 
     constructor(private page: Page) {
         this.drive = new ContentDrivePage(page);
         this.actionCenter = page.getByTestId('action-center-dialog');
         this.folderDialogSubmit = page.getByTestId('content-drive-dialog-folder-create');
+        this.emptyState = page.getByTestId('empty-state');
     }
 
     /** Ticks a row's selection checkbox. */
@@ -29,8 +32,11 @@ export class ContentDriveBasics {
      * dialog to close once it ran.
      *
      * @param actionName The action's name as the scheme lists it, e.g. `Publish`.
+     * @param options.configure Whether the action stops at a configuration screen (a comment, a
+     * destination) before its preview. Stated by the caller rather than guessed from the screen,
+     * so a missing or unexpected step fails instead of being skipped.
      */
-    async runWorkflowAction(actionName: string) {
+    async runWorkflowAction(actionName: string, { configure = false } = {}) {
         await this.drive.toolbar.getByTestId('action-center-button').click();
         await expect(this.actionCenter).toBeVisible({ timeout: 10000 });
 
@@ -49,14 +55,11 @@ export class ContentDriveBasics {
         await action.click();
         await this.actionCenter.getByTestId('action-center-continue').click();
 
-        // Actions that take input (a comment, a destination) stop at a configuration screen first.
-        const execute = this.actionCenter.getByTestId('action-preview-execute');
-        const configure = this.actionCenter.getByTestId('action-configure-continue');
-        await expect(execute.or(configure)).toBeVisible({ timeout: 10000 });
-        if (await configure.isVisible()) {
-            await configure.click();
+        if (configure) {
+            await this.actionCenter.getByTestId('action-configure-continue').click();
         }
 
+        const execute = this.actionCenter.getByTestId('action-preview-execute');
         await execute.click();
         await expect(this.actionCenter).toBeHidden({ timeout: 30000 });
     }
