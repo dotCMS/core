@@ -106,6 +106,7 @@ public class SchedulerJobResource {
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ResponseEntitySchedulerJobView.class))),
                     @ApiResponse(responseCode = "400", description = "A required value is missing, "
+                            + "the job name is longer than 72 characters, "
                             + "or the cron expression, dates or class are not valid",
                             content = @Content(mediaType = "application/json")),
                     @ApiResponse(responseCode = "401", description = "Not authenticated as a back-end "
@@ -126,7 +127,8 @@ public class SchedulerJobResource {
 
         final User user = init(request, response);
         final String jobName = form == null ? null : form.jobName();
-        if (!UtilMethods.isSet(jobName)) {
+        // Quartz names the trigger <name>_trigger, and both names must fit an 80-character column
+        if (!UtilMethods.isSet(jobName) || (jobName + "_trigger").length() > 80) {
             throw refused(Response.Status.BAD_REQUEST, user, "message.Scheduler.invalidJobName");
         }
         if (exists(jobName)) {
@@ -290,6 +292,8 @@ public class SchedulerJobResource {
      * Reads a date in the {@code yyyy-MM-dd HH:mm} format, in the server's time zone.
      *
      * @return the date, or null when none was given
+     * A time that occurs twice when the clocks go back is read as the second occurrence.
+     *
      * @throws WebApplicationException 400 when the value is not a whole, existing date in that format,
      *                                  or names a time the clocks skip when daylight saving starts
      */
@@ -308,7 +312,9 @@ public class SchedulerJobResource {
         if (zone.getRules().getValidOffsets(local).isEmpty()) {
             throw refused(Response.Status.BAD_REQUEST, user, "message.Scheduler.invalidDate");
         }
-        return Date.from(local.atZone(zone).toInstant());
+        // A time that occurs twice when daylight saving ends is read as the second one, as the
+        // Scheduler form's earlier date parsing and Quartz's cron trigger both do
+        return Date.from(local.atZone(zone).withLaterOffsetAtOverlap().toInstant());
     }
 
     /**
