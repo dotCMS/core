@@ -345,9 +345,12 @@ jobs:
                       if status not in (200, 404):
                           raise RuntimeError(f"read of the published version failed: HTTP {status} {data}")
                       on_prod = production_page(ident)
-                      # Fails closed if the read returned the draft instead of the published version.
+                      # Fails closed if the read returned the draft instead of the published version, a
+                      # fallback language, or a version mapped to another README than the draft's.
                       if (published is None or published.get("live") is not True
                               or published.get("inode") == content.get("inode")
+                              or published.get("languageId") != 1
+                              or (published.get("readmeSource") or "").strip() != url
                               or normalize(published.get("documentation") or "") != normalize(body)
                               or (on_prod is not None
                                   and normalize(on_prod.get("documentation") or "") != normalize(body))):
