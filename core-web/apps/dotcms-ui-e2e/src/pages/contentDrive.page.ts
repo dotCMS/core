@@ -267,6 +267,25 @@ export class ContentDrivePage {
         ).toEqual([]);
     }
 
+    /** A link in the admin breadcrumb trail, by its label: how an author comes back here. */
+    crumb(label: string): Locator {
+        return this.page
+            .getByTestId('breadcrumb-crumbs')
+            .getByRole('link', { name: label, exact: true });
+    }
+
+    /** The list row whose title is `title`. */
+    row(title: string): Locator {
+        return this.page
+            .getByRole('row')
+            .filter({ has: this.listTitles.filter({ hasText: title }) });
+    }
+
+    /** Opens an item as a click on its title does: a page in the page editor, other content in the side panel. */
+    async openItem(title: string) {
+        await this.listTitles.filter({ hasText: title }).first().click();
+    }
+
     /** Navigates into a folder by clicking its row in the tree. */
     async openFolder(name: string) {
         await this.treeNodeLabels.filter({ hasText: name }).first().click();
