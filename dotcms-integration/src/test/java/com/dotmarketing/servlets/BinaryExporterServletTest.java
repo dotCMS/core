@@ -1,6 +1,12 @@
 package com.dotmarketing.servlets;
 
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.datagen.VariantDataGen;
+import com.dotcms.mock.request.MockParameterRequest;
+import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.model.Variant;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
@@ -47,6 +53,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
+import java.util.Map;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -442,5 +449,150 @@ public class BinaryExporterServletTest {
 
     }
 
+    /**
+     * Method to test: {@link BinaryExporterServlet#doGet(HttpServletRequest, HttpServletResponse)}
+     * Given scenario: a published file asset that also has a published version on a named variant, carrying
+     * different bytes, requested by identifier by an anonymous caller who puts the variant name in the URL.
+     * Expected result: the bytes of the default variant are served. The variant name in the URL is the only
+     * thing distinguishing the two requests, so a caller without back-end access must not be able to pick the
+     * version the servlet resolves with it.
+     */
+    @Test
+    public void requestBinaryFile_anonymousUserNamingAVariant_servesTheDefaultVariant()
+            throws Exception {
+
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Path defaultBytesPath = Files.createTempFile("variant-default-", ".png");
+        final Path variantBytesPath = Files.createTempFile("variant-named-", ".png");
+        Files.write(defaultBytesPath, ShortyServletAndTitleImageTest.pngPixel);
+        // A distinct payload, so the assertion reads which version was served rather than that one exists
+        Files.write(variantBytesPath, concat(ShortyServletAndTitleImageTest.pngPixel,
+                "named-variant".getBytes(StandardCharsets.UTF_8)));
+
+        Contentlet onDefaultVariant = null;
+        try {
+            onDefaultVariant = new FileAssetDataGen(new FolderDataGen().site(host).nextPersisted(), defaultBytesPath.toFile())
+                    .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+            ContentletDataGen.publish(onDefaultVariant);
+
+            final Contentlet onNamedVariant = ContentletDataGen.createNewVersion(onDefaultVariant,
+                    variant, Map.of(FileAssetAPI.BINARY_FIELD, variantBytesPath.toFile()));
+            ContentletDataGen.publish(onNamedVariant);
+
+            final byte[] served = fetchAsAnonymous(onDefaultVariant.getIdentifier(), variant.name());
+            assertArrayEquals("a caller without back-end access must not be able to choose the version "
+                            + "the servlet resolves by naming a variant in the URL",
+                    ShortyServletAndTitleImageTest.pngPixel, served);
+        } finally {
+            if (onDefaultVariant != null) {
+                ContentletDataGen.destroy(onDefaultVariant);
+            }
+            Files.deleteIfExists(defaultBytesPath);
+            Files.deleteIfExists(variantBytesPath);
+        }
+    }
+
+    /**
+     * Requests a file asset by identifier as an anonymous caller, with the given variant name in the URL,
+     * and returns the bytes the servlet wrote.
+     *
+     * @param identifier the file asset identifier
+     * @param variantName the value of the variantName request parameter
+     * @return the bytes written to the response
+     * @throws Exception if the request fails
+     */
+    private byte[] fetchAsAnonymous(final String identifier, final String variantName)
+            throws Exception {
+        try (TmpBinaryFile captured = new TmpBinaryFile(false)) {
+            final String fileURI = "/contentAsset/raw-data/" + identifier + "/fileAsset/";
+            final HttpServletRequest request = new MockParameterRequest(mockServletRequest(fileURI),
+                    Map.of(VariantAPI.VARIANT_KEY, variantName));
+            final HttpServletResponse response = mockServletResponse(captured);
+
+            // The servlet reads the current variant off the thread-local request, which a filter sets in
+            // production and nothing sets here
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+            try {
+                sendRequest(request, response);
+            } finally {
+                HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+            }
+            return Files.readAllBytes(captured.getPath());
+        }
+    }
+
+    /**
+     * Method to test: {@link BinaryExporterServlet#doGet(HttpServletRequest, HttpServletResponse)}
+     * Given scenario: the same two published versions, requested by an anonymous caller that names the inode
+     * of the version living on the named variant. An inode names one exact version, so nothing is resolved
+     * here and the request carries no variant name.
+     * Expected result: the request is answered as a miss. The control runs first: the inode of the
+     * default-variant version is served through the very same call, so a failure below is about the variant
+     * and not about inodes being unreachable.
+     */
+    @Test
+    public void requestBinaryFile_anonymousUserNamingTheVariantInode_isAnsweredNotFound()
+            throws Exception {
+
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Path defaultBytesPath = Files.createTempFile("variant-inode-default-", ".png");
+        final Path variantBytesPath = Files.createTempFile("variant-inode-named-", ".png");
+        Files.write(defaultBytesPath, ShortyServletAndTitleImageTest.pngPixel);
+        Files.write(variantBytesPath, concat(ShortyServletAndTitleImageTest.pngPixel,
+                "named-variant".getBytes(StandardCharsets.UTF_8)));
+
+        Contentlet onDefaultVariant = null;
+        try {
+            onDefaultVariant = new FileAssetDataGen(new FolderDataGen().site(host).nextPersisted(), defaultBytesPath.toFile())
+                    .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+            ContentletDataGen.publish(onDefaultVariant);
+
+            final Contentlet onNamedVariant = ContentletDataGen.createNewVersion(onDefaultVariant,
+                    variant, Map.of(FileAssetAPI.BINARY_FIELD, variantBytesPath.toFile()));
+            ContentletDataGen.publish(onNamedVariant);
+
+            assertEquals("fixture problem: a version is not served by inode at all, so refusing another "
+                            + "one proves nothing", HttpServletResponse.SC_OK,
+                    fetchByInodeAsAnonymous(onDefaultVariant.getInode()));
+
+            assertEquals("a caller without back-end access must not reach a version on another variant "
+                            + "by naming its inode", HttpServletResponse.SC_NOT_FOUND,
+                    fetchByInodeAsAnonymous(onNamedVariant.getInode()));
+        } finally {
+            if (onDefaultVariant != null) {
+                ContentletDataGen.destroy(onDefaultVariant);
+            }
+            Files.deleteIfExists(defaultBytesPath);
+            Files.deleteIfExists(variantBytesPath);
+        }
+    }
+
+    /**
+     * Requests a file asset by inode as an anonymous caller and returns the status the servlet answered
+     * with.
+     *
+     * @param inode the version's inode
+     * @return the response status
+     * @throws Exception if the request fails
+     */
+    private int fetchByInodeAsAnonymous(final String inode) throws Exception {
+        try (TmpBinaryFile captured = new TmpBinaryFile(false)) {
+            final HttpServletRequest request = mockServletRequest(
+                    "/contentAsset/raw-data/" + inode + "/fileAsset/");
+            final HttpServletResponse response = mockServletResponse(captured);
+            sendRequest(request, response);
+            return response.getStatus();
+        }
+    }
+
+    /**
+     * @return the two arrays joined, used to build a payload that differs from a known one
+     */
+    private static byte[] concat(final byte[] first, final byte[] second) {
+        final byte[] joined = new byte[first.length + second.length];
+        System.arraycopy(first, 0, joined, 0, first.length);
+        System.arraycopy(second, 0, joined, first.length, second.length);
+        return joined;
+    }
 
 }

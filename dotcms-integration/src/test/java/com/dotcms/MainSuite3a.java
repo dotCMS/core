@@ -25,6 +25,8 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
         DeterministicIdentifierAPITest.class,
         ExperimentFeatureFlagMetricTypeTest.class,
+        com.dotcms.variant.business.web.CurrentVariantWebInterceptorTest.class,
+        com.dotcms.graphql.datafetcher.ContentletDataFetcherTest.class,
         CountPagesWithAllEndedExperimentsMetricTypeTest.class,
         CountPagesWithArchivedExperimentsMetricTypeTest.class,
         CountPagesWithDraftExperimentsMetricTypeTest.class,
