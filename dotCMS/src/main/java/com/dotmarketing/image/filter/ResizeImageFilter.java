@@ -1,94 +1,97 @@
 package com.dotmarketing.image.filter;
 
+import com.dotmarketing.exception.DotRuntimeException;
+import io.vavr.control.Try;
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.imageio.ImageIO;
-import com.dotmarketing.exception.DotRuntimeException;
-import io.vavr.control.Try;
 
 public class ResizeImageFilter extends ImageFilter {
-	public String[] getAcceptedParameters(){
-		return  new String[] {
-				"w (int) specifies width",
-				"h (int) specifies height",
-				"i (int) interpolation",
-				"maxw (int) specifies maxWidth",
-				"maxh (int) specifies maxHeight",
-                "minw (int) specifies minWidth",
-                "minh (int) specifies minHeight"
-		};
-	}
-	public File runFilter(final File file,    Map<String, String[]> parameters) {
 
-        final int w = Try.of(()-> Integer.parseInt(parameters.getOrDefault(getPrefix() + "w", new String[]{"0"})[0])).getOrElse(0);
-		final int h = Try.of(()-> Integer.parseInt(parameters.getOrDefault(getPrefix() + "h", new String[]{"0"})[0])).getOrElse(0);
-		final int resampleOpts = Try.of(()-> Integer.parseInt(parameters.get(getPrefix() +"ro")[0])).getOrElse(ImageFilterApiImpl.DEFAULT_RESAMPLE_OPT);
-		final int mxw = Try.of(()-> Integer.parseInt(parameters.getOrDefault(getPrefix() + "maxw", new String[]{"0"})[0])).getOrElse(0);
-		final int mxh = Try.of(()-> Integer.parseInt(parameters.getOrDefault(getPrefix() + "maxh", new String[]{"0"})[0])).getOrElse(0);
-		final int mnw = Try.of(()-> Integer.parseInt(parameters.getOrDefault(getPrefix() + "minw", new String[]{"0"})[0])).getOrElse(0);
-		final int mnh = Try.of(()-> Integer.parseInt(parameters.getOrDefault(getPrefix() + "minh", new String[]{"0"})[0])).getOrElse(0);
-        
-        
-        
-		if(file.getName().endsWith(".gif")) {
-		  return new ResizeGifImageFilter().runFilter(file, parameters);
-		}
-
-		
-        if (w == 0 && h == 0 && mxh == 0 && mxw == 0&& mnh == 0 && mnw == 0) {
-            return file;
-        }
-		
-		File resultFile = getResultsFile(file, parameters);
-		
-		if(!overwrite(resultFile,parameters)){
-			return resultFile;
-		}
-		resultFile.delete();
-		
-		
-		final Dimension originalSize = ImageFilterAPI.apiInstance.get().getWidthHeight(file);
-
-		final Dimension newSize = new ResizeCalc.Builder(originalSize)
-		                .desiredHeight(h)
-		                .desiredWidth(w)
-		                .maxWidth(mxw)
-		                .maxHeight(mxh)
-		                .minHeight(mnh)
-		                .minWidth(mnw)
-		                .build()
-		                .getDim();
-		
-		
-		if(originalSize.equals(newSize)) {
-		    return file;
-		}
-		
-
-        try {
-            File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() + ".tmp");
-            // resample from stream
-            BufferedImage srcImage = ImageFilterAPI.apiInstance.get().intelligentResize(file, newSize.width, newSize.height,resampleOpts);
-            ImageIO.write(srcImage, "png", tempResultFile);
-            srcImage.flush();
-            srcImage = null;
-            if(tempResultFile.renameTo(resultFile)) {
-                return resultFile;
-            }
-			throw new DotRuntimeException("unable to create tmp file :" + resultFile);
-        } catch (Exception e) {
-            throw new DotRuntimeException("unable to convert file:" +file + " : " +  e.getMessage(),e);
-        }
-
+    @Override
+    public String[] getAcceptedParameters() {
+        return new String[]{"w (int) specifies width", "h (int) specifies height",
+                "i (int) interpolation", "maxw (int) specifies maxWidth",
+                "maxh (int) specifies maxHeight", "minw (int) specifies minWidth",
+                "minh (int) specifies minHeight"};
     }
 
-	
-	
-	
-	
-	
+    /** Resolve a width-only or height-only request using source metadata, not decoded pixels. */
+    @Override
+    public File prepare(final File file, final File metadataSource,
+            final Map<String, String[]> parameters) {
+        if (!metadataSource.isFile()) {
+            return null;
+        }
+        final Dimension source = ImageFilterAPI.apiInstance.get().getWidthHeight(metadataSource);
+        final Dimension target = ResizeCalc.target(source, getPrefix(), parameters);
+        ResizeCalc.normalize(target, getPrefix(), parameters);
+        return isNoOp(file, source, target, parameters) ? file : getResultsFile(file, parameters);
+    }
 
+    /** Generate the bounded rendition, using the GIF encoder when animation must be preserved. */
+    @Override
+    public File runFilter(final File file, final Map<String, String[]> parameters) {
+        final Dimension original = ImageFilterAPI.apiInstance.get().getWidthHeight(file);
+        final Dimension target = ResizeCalc.target(original, getPrefix(), parameters);
+        if (isNoOp(file, original, target, parameters)) {
+            return file;
+        }
 
+        // Direct callers must use the bounded cache key too.
+        final Map<String, String[]> normalized = new LinkedHashMap<>(parameters);
+        normalized.putIfAbsent("filter", new String[]{getFilterName()});
+        ResizeCalc.normalize(target, getPrefix(), normalized);
+        final File result = getResultsFile(file, normalized);
+        if (!overwrite(result, normalized)) {
+            return result;
+        }
+
+        if (isGif(file)) {
+            return new ResizeGifImageFilter().resize(file, result, target, getPrefix(), parameters);
+        }
+
+        final int resample = Try.of(() -> Integer.parseInt(parameters.get(getPrefix() + "ro")[0]))
+                .getOrElse(ImageFilterApiImpl.DEFAULT_RESAMPLE_OPT);
+        final File tmp = new File(result.getAbsolutePath() + "_" + System.nanoTime() + ".tmp");
+        try {
+            final BufferedImage image = ImageFilterAPI.apiInstance.get()
+                    .intelligentResize(file, target.width, target.height, resample);
+            try {
+                ImageIO.write(image, FILE_EXT, tmp);
+            } finally {
+                image.flush();
+            }
+            if (tmp.renameTo(result)) {
+                return result;
+            }
+            throw new DotRuntimeException("unable to create file: " + result);
+        } catch (Exception e) {
+            throw new DotRuntimeException("unable to convert file: " + file, e);
+        } finally {
+            tmp.delete();
+        }
+    }
+
+    /** Keep original GIF playback unless the request explicitly changes animation settings. */
+    private boolean isNoOp(final File file, final Dimension source, final Dimension target,
+            final Map<String, String[]> parameters) {
+        return source.equals(target) && (!isGif(file)
+                || (!parameters.containsKey(getPrefix() + "loop")
+                        && !parameters.containsKey(getPrefix() + "frames")));
+    }
+
+    /** Only actual GIFs use the animated writer. */
+    private static boolean isGif(final File file) {
+        return "gif".equalsIgnoreCase(com.dotmarketing.util.UtilMethods.getFileExtension(file.getName()));
+    }
+
+    /** Use the same rendition path in the cache lookup and in the GIF writer. */
+    @Override
+    public File getResultsFile(final File file, final Map<String, String[]> parameters) {
+        return getResultsFile(file, parameters, isGif(file) ? "gif" : FILE_EXT);
+    }
 }

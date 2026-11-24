@@ -29,9 +29,10 @@ import java.awt.image.*;
  *
  * @author Kevin Weiner, FM Software; LZW decoder adapted from John Cristy's ImageMagick.
  * @version 1.03 November 2003
- *
+ * @deprecated Retained for the legacy Java resize path. Use the libvips image engine
+ *     for new animated GIF processing.
  */
-
+@Deprecated
 public class GifDecoder {
 
   /**

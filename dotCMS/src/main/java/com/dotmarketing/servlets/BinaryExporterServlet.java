@@ -58,6 +58,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporter;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporterException;
+import com.dotmarketing.portlets.contentlet.business.exporter.ImageGenerationBusyException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ResourceLink;
@@ -688,6 +689,12 @@ public class BinaryExporterServlet extends HttpServlet {
 	            if(!resp.isCommitted()){
 	              resp.sendError(HttpServletResponse.SC_NOT_FOUND);
 	            }
+			}
+		} catch (ImageGenerationBusyException e) {
+			if (!resp.isCommitted()) {
+				resp.setHeader(CACHE_CONTROL, "no-store");
+				// A custom 503 error page may redirect; keep this overload response as-is.
+				resp.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
 			}
 		} catch (BinaryContentExporterException e) {
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);

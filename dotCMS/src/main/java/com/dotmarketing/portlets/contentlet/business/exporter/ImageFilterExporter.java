@@ -6,13 +6,14 @@ import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
-import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.image.ImageEngine;
 import com.dotmarketing.image.filter.ImageFilter;
@@ -38,142 +39,97 @@ import io.vavr.control.Try;
 
 public class ImageFilterExporter implements BinaryContentExporter {
     
-    private final int allowedRequests = Config.getIntProperty("IMAGE_GENERATION_SIMULTANEOUS_REQUESTS", 10);
+    private static final int DEFAULT_GENERATION_LIMIT = 2;
+    private static final Semaphore semaphore = new Semaphore(Math.max(1,
+            Config.getIntProperty("IMAGE_GENERATION_SIMULTANEOUS_REQUESTS", DEFAULT_GENERATION_LIMIT)));
+    private static final long MIN_VALID_FILE_LENGTH = 50L;
 
-    private final Semaphore semaphore  = new Semaphore(allowedRequests);
-
-    /**
-     * Selects the image engine per the {@code IMAGE_API_USE_LIBVIPS} feature flag. The choice only
-     * affects which {@link ImageFilter} subclasses {@code resolveFilters} returns — the URL parameter
-     * contract is identical for both engines.
-     */
-    // package-visible for tests that pin the feature-flag selection behaviour
+    /** Resolve the active engine without changing the URL parameter contract. */
     ImageFilterAPI imageFilterAPI() {
         return ImageEngine.resolve();
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * com.dotmarketing.portlets.contentlet.business.BinaryContentExporter#exportContent(java.io.File,
-     * java.util.Map)
-     */
-    public BinaryContentExporterData exportContent(File file, final Map<String, String[]> parameters)
-                    throws BinaryContentExporterException {
-
-        final String fileExtension = UtilMethods.getFileExtension(file.getName());
-        if (UtilMethods.isVectorImage(fileExtension)) {
-            Logger.info(this.getClass(), "Skipping vector image transformation for " + fileExtension);
+    /** Serve a cached rendition or reserve capacity for the entire filter chain. */
+    @Override
+    public BinaryContentExporterData exportContent(File file, final Map<String, String[]> input)
+            throws BinaryContentExporterException {
+        final String extension = UtilMethods.getFileExtension(file.getName());
+        if (UtilMethods.isVectorImage(extension)) {
             return new BinaryContentExporterData(file);
         }
 
-        Class<? extends ImageFilter> errorClass = ImageFilter.class;
         try {
-
-            final Map<String,Class<? extends ImageFilter>> filters = imageFilterAPI().resolveFilters(parameters);
-            parameters.put("filter", filters.keySet().toArray(new String[0]));
-            parameters.put("filters", filters.keySet().toArray(new String[0]));
-            
-            // run pdf filter first (if a pdf)
-            if(!filters.isEmpty() && "pdf".equals(fileExtension) && !filters.containsKey("pdf")) {
-                file = runFilter(new PDFImageFilter(), file, parameters);
+            final Map<String, String[]> parameters = new LinkedHashMap<>(input);
+            final Map<String, Class<? extends ImageFilter>> resolved = imageFilterAPI().resolveFilters(parameters);
+            if (resolved.isEmpty()) {
+                return new BinaryContentExporterData(file);
             }
-            
-            Optional<File> tempFile = alreadyGenerated(filters.values(), file, parameters);
-
-            //short circuit if we already have it generated locally
-            if (tempFile.isPresent()) {
-                return new BinaryContentExporterData(tempFile.get());
+            final List<ImageFilter> filters = new ArrayList<>();
+            if ("pdf".equalsIgnoreCase(extension) && !resolved.containsKey("pdf")) {
+                filters.add(new PDFImageFilter());
+            }
+            for (final Class<? extends ImageFilter> type : resolved.values()) {
+                filters.add(type.getDeclaredConstructor().newInstance());
+            }
+            parameters.put("filter", resolved.keySet().toArray(String[]::new));
+            parameters.put("filters", parameters.get("filter"));
+            final boolean shared = ConfigUtils.isDotGeneratedSharedCompleted();
+            final File cached = cachedResult(filters, file, new LinkedHashMap<>(parameters), shared);
+            if (cached != null) {
+                return new BinaryContentExporterData(cached);
+            }
+            if (!semaphore.tryAcquire()) {
+                throw new ImageGenerationBusyException();
             }
 
-            // SHARED_COMPLETED: if another instance (or this instance, pre-restart) already published
-            // this exact rendition to the shared store, serve it directly and skip regeneration.
-            if (ConfigUtils.isDotGeneratedSharedCompleted()) {
-                final File shared = toSharedFile(finalResultFile(filters.values(), file, parameters));
-                if (shared != null && shared.exists() && shared.length() >= MIN_VALID_FILE_LENGTH) {
-                    return new BinaryContentExporterData(shared);
+            try {
+                for (final ImageFilter filter : filters) {
+                    final File output = filter.prepare(file, file, parameters);
+                    if (output == null) {
+                        throw new DotRuntimeException("Missing input for " + filter.getClass().getSimpleName());
+                    }
+                    if (!output.equals(file)) {
+                        file = filter.runFilter(file, parameters);
+                    }
                 }
-            }
-
-            for (final Class<? extends ImageFilter> filter : filters.values()) {
-                errorClass=filter;
-                final ImageFilter imageFilter =  filter.getDeclaredConstructor().newInstance();
-
-                file = runFilter(imageFilter, file, parameters);
-            }
-
-            // The final rendition is ready locally under dotsecure; publish it to the shared store on a
-            // background virtual thread so the request returns immediately and no other instance — nor a
-            // restart of this one — has to regenerate it.
-            if (ConfigUtils.isDotGeneratedSharedCompleted()) {
-                publishToShared(file);
-            }
-
-            return new BinaryContentExporterData(file);
-        } catch (Exception e) {
-
-            Logger.warnAndDebug(errorClass,  e);
-            throw new BinaryContentExporterException(e.getMessage(), e);
-        }
-
-    }
-    
-    
-    private File runFilter(ImageFilter imageFilter, final File fileIn,final Map<String, String[]> parameters)  {
-        
-        boolean canRun=false;
-        try {
-            
-            canRun = semaphore.tryAcquire();
-            Logger.debug(getClass(), "Image permits/requests : " + allowedRequests + "/" + (allowedRequests-semaphore.availablePermits()));
-            
-            if(!canRun) {
-                Logger.warn(getClass(), "Image permits exhausted : " + allowedRequests + "/" + (allowedRequests-semaphore.availablePermits()));
-                
-                Try.run(()->HttpServletResponseThreadLocal.INSTANCE.getResponse().setHeader("cache-control", "max-age=0"));
-                
-                return fileIn;
-                
-            }
-
-            return imageFilter.runFilter(fileIn, parameters);
-        } 
-        finally {
-            if(canRun) {
+                if (shared) {
+                    publishToShared(file);
+                }
+                return new BinaryContentExporterData(file);
+            } finally {
                 semaphore.release();
             }
+        } catch (ImageGenerationBusyException e) {
+            throw e;
+        } catch (Exception e) {
+            Logger.warnAndDebug(getClass(), e);
+            throw new BinaryContentExporterException(e.getMessage(), e);
         }
     }
 
-    /** Renditions smaller than this are treated as missing/corrupt (matches the legacy guard). */
-    private static final long MIN_VALID_FILE_LENGTH = 50L;
-
-    private Optional<File> alreadyGenerated(final Collection<Class<? extends ImageFilter>> clazzes, final File fileIn,
-                    final Map<String, String[]> parameters)  {
-
-        final File fileToReturn = finalResultFile(clazzes, fileIn, parameters);
-
-        if (fileToReturn == null || ! fileToReturn.exists() ||  fileToReturn.length() < MIN_VALID_FILE_LENGTH) {
-            return Optional.empty();
+    /** Resolve normalized cache paths without rendering missing intermediate images. */
+    private File cachedResult(final List<ImageFilter> filters, final File source,
+            final Map<String, String[]> parameters, final boolean shared) {
+        File path = source;
+        for (final ImageFilter filter : filters) {
+            final File sharedInput = shared && !path.equals(source) && !valid(path)
+                    ? toSharedFile(path) : null;
+            path = filter.prepare(path, valid(sharedInput) ? sharedInput : path, parameters);
+            // shortcut: a cold node can miss a shared final result; cache intermediate metadata if needed.
+            if (path == null) {
+                return null;
+            }
         }
-        return Optional.of(fileToReturn);
+        if (valid(path)) {
+            return path;
+        }
+        final File sharedResult = shared ? toSharedFile(path) : null;
+        return valid(sharedResult) ? sharedResult : null;
     }
 
-    /**
-     * Resolves the final cache file for a filter chain WITHOUT running any pixel work or checking
-     * existence — it walks {@link ImageFilter#getResultsFile} through every filter exactly as the
-     * generation loop would, returning the path the last filter would write to.
-     */
-    private File finalResultFile(final Collection<Class<? extends ImageFilter>> clazzes, final File fileIn,
-                    final Map<String, String[]> parameters) {
-        File fileToReturn = fileIn;
-        for (final Class<? extends ImageFilter> filter : clazzes) {
-            final ImageFilter imageFilter =
-                    Try.of(() -> filter.getDeclaredConstructor().newInstance()).getOrElseThrow(DotRuntimeException::new);
-            fileToReturn = imageFilter.getResultsFile(fileToReturn, parameters);
-        }
-        return fileToReturn;
+    /** Ignore absent, empty, or incomplete cache files. */
+    private static boolean valid(final File file) {
+        return file != null && file.isFile() && file.length() >= MIN_VALID_FILE_LENGTH;
     }
 
     /**

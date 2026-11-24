@@ -30,6 +30,7 @@ import static com.dotmarketing.business.Role.DOTCMS_BACK_END_USER;
 import static com.dotmarketing.business.Role.DOTCMS_FRONT_END_USER;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.exporter.ImageFilterExporter;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -42,11 +43,15 @@ import com.liferay.portal.util.WebKeys;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -57,6 +62,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Semaphore;
+import javax.imageio.ImageIO;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -73,6 +80,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(DataProviderRunner.class)
@@ -516,6 +526,53 @@ public class BinaryExporterServletTest {
 
         assertEquals(expectedContentType, response.getContentType());
 
+    }
+
+    /** Full generation capacity rejects cache misses across exporters, but not cached or raw reads. */
+    @Test
+    public void busyImageGenerationReturns503() throws Exception {
+        final BinaryExporterServlet first = new BinaryExporterServlet();
+        first.init();
+        final BinaryExporterServlet second = new BinaryExporterServlet();
+        second.init();
+        final String asset = sharedFileAsset.getInode() + "/fileAsset/byInode/true";
+        final String image = "/contentAsset/image/" + asset;
+        final int cachedWidth = 32;
+        final String cached = image + "/resize_w/" + cachedWidth;
+        final String uncached = image + "/resize_w/48";
+
+        final byte[] rendition = captureBinary(first, cached, HttpServletResponse.SC_OK);
+        final BufferedImage rendered = ImageIO.read(new ByteArrayInputStream(rendition));
+        assertEquals(cachedWidth, rendered.getWidth());
+
+        // Reserve all permits without concurrent requests or real image-processing load.
+        final Field field = ImageFilterExporter.class.getDeclaredField("semaphore");
+        field.setAccessible(true);
+        final Semaphore permits = (Semaphore) field.get(first.exportersByPathMapping.get("image"));
+        final int reserved = permits.drainPermits();
+        try {
+            assertEquals("A busy response must not include the original image", 0,
+                    captureBinary(second, uncached, HttpServletResponse.SC_SERVICE_UNAVAILABLE).length);
+            assertArrayEquals(rendition, captureBinary(second, cached, HttpServletResponse.SC_OK));
+            assertArrayEquals(ShortyServletAndTitleImageTest.pngPixel,
+                    captureBinary(second, "/contentAsset/raw-data/" + asset, HttpServletResponse.SC_OK));
+        } finally {
+            permits.release(reserved);
+        }
+    }
+
+    /** Invoke the servlet in-process and capture its status and bytes. */
+    private byte[] captureBinary(final BinaryExporterServlet servlet, final String uri,
+            final int expectedStatus) throws ServletException, IOException {
+        final ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        final HttpServletResponse response = spy(new MockHttpStatusResponse(
+                new MockHttpCaptureResponse(mock(HttpServletResponse.class), bytes)));
+        servlet.doGet(mockServletRequest(uri), response);
+        assertEquals(expectedStatus, response.getStatus());
+        if (expectedStatus == HttpServletResponse.SC_SERVICE_UNAVAILABLE) {
+            verify(response, never()).sendError(expectedStatus);
+        }
+        return bytes.toByteArray();
     }
 
     public static boolean equalsIgnoreNewlineStyle(String s1, String s2) {

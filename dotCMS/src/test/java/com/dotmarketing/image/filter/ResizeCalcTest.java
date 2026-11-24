@@ -1,10 +1,70 @@
 package com.dotmarketing.image.filter;
 
+import com.dotmarketing.util.Config;
 import java.awt.Dimension;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 public class ResizeCalcTest {
+
+    private static final int DEFAULT_MAX_SIDE = 5_000;
+    private static final String MAX_WIDTH = "image.resize.max.width";
+    private static final String MAX_HEIGHT = "image.resize.max.height";
+    private static final String MAX_PIXELS = "image.resize.max.pixels";
+
+    /** A one-axis request still respects the cap on the derived axis. */
+    @Test
+    public void testOneAxisFitsBothCaps() {
+        assertEquals(new Dimension(1, DEFAULT_MAX_SIDE),
+                new ResizeCalc.Builder(1, DEFAULT_MAX_SIDE)
+                        .desiredWidth(DEFAULT_MAX_SIDE).build().getDim());
+        assertEquals(new Dimension(DEFAULT_MAX_SIDE, 1),
+                new ResizeCalc.Builder(DEFAULT_MAX_SIDE, 1)
+                        .desiredHeight(DEFAULT_MAX_SIDE).build().getDim());
+    }
+
+    /** A two-axis request is scaled down as a unit, not clipped on one axis. */
+    @Test
+    public void testBothAxesScaleTogether() {
+        final String previous = Config.getStringProperty(MAX_PIXELS, null);
+        try {
+            Config.setProperty(MAX_PIXELS, DEFAULT_MAX_SIDE * DEFAULT_MAX_SIDE);
+            assertEquals(new Dimension(DEFAULT_MAX_SIDE, 3_333),
+                    new ResizeCalc.Builder(600, 400)
+                            .desiredWidth(6_000).desiredHeight(4_000).build().getDim());
+        } finally {
+            Config.setProperty(MAX_PIXELS, previous);
+        }
+    }
+
+    /** The output pixel budget can bind even when both sides are within their caps. */
+    @Test
+    public void testPixelBudgetScalesBothAxes() {
+        final String previous = Config.getStringProperty(MAX_PIXELS, null);
+        try {
+            Config.setProperty(MAX_PIXELS, 60_000);
+            assertEquals(new Dimension(300, 200),
+                    new ResizeCalc.Builder(90, 60).desiredWidth(900).build().getDim());
+        } finally {
+            Config.setProperty(MAX_PIXELS, previous);
+        }
+    }
+
+    /** Per-axis overrides take precedence over a requested minimum. */
+    @Test
+    public void testConfiguredCapsLimitMinSize() {
+        final String previousWidth = Config.getStringProperty(MAX_WIDTH, null);
+        final String previousHeight = Config.getStringProperty(MAX_HEIGHT, null);
+        try {
+            Config.setProperty(MAX_WIDTH, 160);
+            Config.setProperty(MAX_HEIGHT, 60);
+            assertEquals(new Dimension(120, 60),
+                    new ResizeCalc.Builder(80, 40).minWidth(180).build().getDim());
+        } finally {
+            Config.setProperty(MAX_WIDTH, previousWidth);
+            Config.setProperty(MAX_HEIGHT, previousHeight);
+        }
+    }
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {}
