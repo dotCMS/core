@@ -2,19 +2,43 @@ import { createServiceFactory, mockProvider, SpectatorService } from '@openng/sp
 import { EMPTY } from 'rxjs';
 import { Mock, Mocked, vi } from 'vitest';
 
-import { signal } from '@angular/core';
+import { Injector, signal } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRouteSnapshot, Router } from '@angular/router';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { GlobalStore } from '@dotcms/store';
+import { DotSidePanelRef } from '@dotcms/ui';
+import { createFakeContentlet } from '@dotcms/utils-testing';
 
+import { EditContentHost } from './edit-content-host.model';
 import { RouterEditContentHost } from './router-edit-content-host';
 
+import { DotOpenContentEvent } from '../../models/dot-open-content-event.model';
+import {
+    DotEditContentOpenerService,
+    DotEditContentOpenOptions
+} from '../../opener/dot-edit-content-opener.service';
 import {
     DotRelatedContentCrumb,
     DotRelatedContentNavigationStore
 } from '../../store/dot-related-content-navigation.store';
+
+/**
+ * Asks a host to open content, as a field would (#38303). Fails with a clear message while the
+ * host has no `openContent`.
+ *
+ * @param host The host under test.
+ * @param event What the field hands it.
+ */
+const openContent = (host: EditContentHost, event: DotOpenContentEvent): void => {
+    const withOpenContent = host as EditContentHost & {
+        openContent?: (event: DotOpenContentEvent) => void;
+    };
+
+    expect(typeof withOpenContent.openContent, 'the host can open content').toBe('function');
+    withOpenContent.openContent?.(event);
+};
 
 // Builds a fake ActivatedRouteSnapshot tree (root → ...leaf) so resolveIdentity's
 // firstChild walk can be exercised.
@@ -74,6 +98,9 @@ describe('RouterEditContentHost', () => {
             }),
             mockProvider(DotMessageService, {
                 get: vi.fn().mockReturnValue('dotCMS')
+            }),
+            mockProvider(DotEditContentOpenerService, {
+                open: vi.fn(() => new DotSidePanelRef(() => undefined))
             })
         ]
     });
@@ -95,6 +122,7 @@ describe('RouterEditContentHost', () => {
         relatedNav.registerTitle.mockClear();
         relatedNav.buildTrailForSavedInode.mockClear();
         relatedNav.appendToTrail.mockClear();
+        (spectator.inject(DotEditContentOpenerService).open as Mock).mockClear();
     });
 
     it('reports that it does not navigate in place', () => {
@@ -276,6 +304,74 @@ describe('RouterEditContentHost', () => {
                 queryParams: { rc: null },
                 queryParamsHandling: 'merge'
             });
+        });
+    });
+
+    /**
+     * A field asks the full-screen editor's host to open other content (#38303, R8). The editor
+     * is a route, not a panel, so whatever the field asks for opens in a panel over it: the editor
+     * stays mounted with its unsaved edits, and nothing navigates.
+     */
+    describe('openContent', () => {
+        /** The opener's `open`, as the mock records it. */
+        const opened = () => spectator.inject(DotEditContentOpenerService).open as Mock;
+
+        it.each<[string, DotOpenContentEvent['request'], DotOpenContentEvent['source']]>([
+            [
+                'an existing item from a Relationship field',
+                { mode: 'edit', inode: 'inode-b', title: 'B' },
+                'relationship'
+            ],
+            [
+                'a create from a Relationship field',
+                {
+                    mode: 'new',
+                    contentType: 'Blog',
+                    title: 'New Blog',
+                    relationship: {
+                        parentContentletId: 'parent-inode',
+                        relationshipName: 'blogs',
+                        isParent: true
+                    }
+                },
+                'relationship'
+            ],
+            [
+                'content a block editor names',
+                { mode: 'edit', inode: 'inode-c', contentType: 'Blog' },
+                'block-editor'
+            ],
+            ['an edit that names no source', { mode: 'edit', inode: 'inode-d' }, undefined]
+        ])(
+            'should open %s in a panel through the opener, with the host injector',
+            (_label, request, source) => {
+                const onSaved = vi.fn();
+                const contentlet = createFakeContentlet({ identifier: 'saved-id' });
+
+                openContent(host, { request, source, onSaved });
+
+                expect(opened().mock.calls.length, 'the host opens a panel').toBe(1);
+                const [openedRequest, options] = opened().mock.calls[0] as [
+                    DotOpenContentEvent['request'],
+                    DotEditContentOpenOptions
+                ];
+                expect(openedRequest).toEqual(request);
+                // Compared by identity: printing an injector runs the worker out of memory.
+                expect(options.injector === spectator.inject(Injector)).toBe(true);
+
+                options.saved?.(contentlet);
+                expect(onSaved).toHaveBeenCalledWith(contentlet);
+            }
+        );
+
+        it('should never navigate or extend the related-content trail', () => {
+            openContent(host, {
+                request: { mode: 'edit', inode: 'inode-b', title: 'B' },
+                source: 'relationship'
+            });
+
+            expect(router.navigate).not.toHaveBeenCalled();
+            expect(relatedNav.appendToTrail).not.toHaveBeenCalled();
         });
     });
 });

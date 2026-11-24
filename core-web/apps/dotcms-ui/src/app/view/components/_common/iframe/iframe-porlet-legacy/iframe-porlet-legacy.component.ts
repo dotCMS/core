@@ -3,6 +3,7 @@ import { BehaviorSubject, Subject } from 'rxjs';
 import { AsyncPipe } from '@angular/common';
 import {
     Component,
+    Injector,
     OnDestroy,
     OnInit,
     inject,
@@ -10,7 +11,7 @@ import {
     ChangeDetectionStrategy
 } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterModule, UrlSegment } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule, UrlSegment } from '@angular/router';
 
 import {
     distinctUntilChanged,
@@ -23,6 +24,7 @@ import {
 } from 'rxjs/operators';
 
 import {
+    DotContentChangeService,
     DotContentTypeService,
     DotEventsSocket,
     DotIframeService,
@@ -36,6 +38,8 @@ import { DotLoadingIndicatorService } from '@dotcms/utils';
 
 import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
+import { refusePanelUrl } from '../../../../../api/util/open-edit-content-panel';
+import { PORTLET_FOLDER_PARAM, portletPanelUrl$ } from '../../../../../api/util/portlet-panel-url';
 import { IframeComponent } from '../iframe-component/iframe.component';
 
 @Component({
@@ -51,12 +55,18 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
     private dotMenuService = inject(DotMenuService);
     private dotRouterService = inject(DotRouterService);
     private route = inject(ActivatedRoute);
+    readonly #router = inject(Router);
     private dotCustomEventHandlerService = inject(DotCustomEventHandlerService);
     loggerService = inject(LoggerService);
     readonly #globalStore = inject(GlobalStore);
     readonly #siteChange$ = toObservable(this.#globalStore.siteDetails);
     private dotEventsSocket = inject(DotEventsSocket);
     private dotIframeService = inject(DotIframeService);
+    readonly #contentChanges = inject(DotContentChangeService);
+    readonly #injector = inject(Injector);
+
+    /** Whether the panel params in the URL are being followed; from the first access granted on. */
+    #followingPanelUrl = false;
 
     canAccessPortlet: boolean;
     url: BehaviorSubject<string> = new BehaviorSubject('');
@@ -91,12 +101,14 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
             .subscribe((canAccessPortlet: boolean) => {
                 if (canAccessPortlet) {
                     this.setIframeSrc();
+                    this.#followPanelUrl();
                 }
 
                 this.canAccessPortlet = canAccessPortlet;
             });
 
         this.subscribeToAIGeneration();
+        this.#reloadOnContentChange();
 
         // Workaroud to remove edit-content ui state
         this.#initContentEditSessionStorage();
@@ -133,6 +145,65 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
         } else {
             this.setUrl(this.url.getValue());
         }
+    }
+
+    /**
+     * Reloads the portlet's list on every save and delete in a side panel, at any depth, for as long
+     * as the portlet is shown (#38303, T174): content saved from a relationship inside the panel a
+     * row opened is in the list too. The portlet is the current one when the change arrives, as
+     * when the panel's close reloads it (`DotCustomEventHandlerService.openContent`).
+     */
+    #reloadOnContentChange(): void {
+        this.#contentChanges.changes$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+            const portletId = this.dotRouterService.currentPortlet.id;
+
+            if (portletId) {
+                this.dotIframeService.reloadData(portletId);
+            }
+        });
+    }
+
+    /**
+     * Opens what the portlet's URL names in the side panel (#38303, FR-049), on load and on every
+     * navigation of the app's own that changes it: a deep link redirected here, a pasted link. The
+     * panel opens through the same path as the portlet's own events, so it is written to the URL and
+     * reloads the portlet the same way. `Location` writes, which is how the panel URL service
+     * writes, never arrive here.
+     *
+     * A navigation the browser's Back or Forward started opens nothing: those belong to the panel
+     * URL service (FR-048), and the router replays an entry that may name a panel still open. A URL
+     * whose panel did not change opens nothing again, since an app navigation that changes other
+     * params carries the panel params the router last saw. A link the author cannot have meant (a
+     * panel param of the wrong shape, or two panels) opens nothing, shows the standard error, and
+     * loses its params with the create's folder. While a Workflow task's detail is shown, the detail
+     * opens it instead ({@link #showsTask}).
+     */
+    #followPanelUrl(): void {
+        if (this.#followingPanelUrl) {
+            return;
+        }
+
+        this.#followingPanelUrl = true;
+        portletPanelUrl$(this.route, this.#router, () => !this.#showsTask())
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(({ request, refused }) => {
+                if (request) {
+                    this.dotCustomEventHandlerService.openContent(request);
+                } else if (refused) {
+                    void refusePanelUrl(this.#injector, [PORTLET_FOLDER_PARAM]);
+                }
+            });
+    }
+
+    /**
+     * Whether a Workflow task's detail is shown (`/c/workflow/<task>`). It opens what the URL names
+     * itself, once its dialog has shown, so the panel always lands above the dialog (#38303).
+     */
+    #showsTask(): boolean {
+        return (
+            this.route.snapshot?.params?.['id'] === 'workflow' &&
+            !!this.route.firstChild?.snapshot?.params?.['asset']
+        );
     }
 
     private setIframeSrc(): void {

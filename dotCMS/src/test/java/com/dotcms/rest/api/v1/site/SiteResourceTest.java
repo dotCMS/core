@@ -4,12 +4,16 @@ import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.mapAll;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.UnitTestBase;
@@ -18,6 +22,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.util.PaginationUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
@@ -198,7 +203,7 @@ public class SiteResourceTest extends UnitTestBase {
 
             when(initDataObject.getUser()).thenReturn(user);
             when(webResource.init((WebResource.InitBuilder)any())).thenReturn(initDataObject);
-            when(hostAPI.find("48190c8c-42c4-46af-8d1a-0cd5db894798", user, Boolean.TRUE)).thenReturn(host);
+            when(hostAPI.find("48190c8c-42c4-46af-8d1a-0cd5db894798", user, Boolean.FALSE)).thenReturn(host);
             when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
             when(request.getSession()).thenReturn(session);
             when(request.getSession(false)).thenReturn(session);
@@ -248,6 +253,46 @@ public class SiteResourceTest extends UnitTestBase {
         } finally {
             Config.CONTEXT = null;
         }
+    }
+
+    /**
+     * Switching to a site the user can only see through front-end roles is refused, and the
+     * selected site in the session is left untouched.
+     */
+    @Test
+    public void testSwitchSiteRequiresBackendReadOnSite() throws DotSecurityException, DotDataException {
+        final HttpServletRequest request  = mock(HttpServletRequest.class);
+        final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
+        final HttpSession session  = mock(HttpSession.class);
+        final HostAPI hostAPI     = mock(HostAPI.class);
+        final HostVariableAPI hostVariableAPI = mock(HostVariableAPI.class);
+        final WebResource webResource       = mock(WebResource.class);
+        final InitDataObject initDataObject = mock(InitDataObject.class);
+        final PaginationUtil paginationUtil = mock(PaginationUtil.class);
+        final User user = new User();
+        final Host host = getSite().get(0);
+        final String siteId = "48190c8c-42c4-46af-8d1a-0cd5db894798";
+
+        when(initDataObject.getUser()).thenReturn(user);
+        when(webResource.init((WebResource.InitBuilder)any())).thenReturn(initDataObject);
+        when(request.getSession()).thenReturn(session);
+        when(request.getSession(false)).thenReturn(session);
+        // Readable with front-end roles only
+        when(hostAPI.find(siteId, user, Boolean.TRUE)).thenReturn(host);
+        when(hostAPI.find(siteId, user, Boolean.FALSE)).thenThrow(new DotSecurityException("no READ"));
+
+        final SiteResource siteResource =
+                new SiteResource(webResource, new SiteHelper(hostAPI, hostVariableAPI), paginationUtil);
+
+        Response response = null;
+        try {
+            response = siteResource.switchSite(request, httpServletResponse, siteId);
+        } catch (final ForbiddenException expected) {
+            // refused
+        }
+
+        assertNull("the switch must be refused", response);
+        verify(session, never()).setAttribute(eq(WebKeys.CMS_SELECTED_HOST_ID), any());
     }
 
     /**
