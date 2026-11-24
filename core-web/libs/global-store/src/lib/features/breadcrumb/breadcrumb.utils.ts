@@ -95,6 +95,34 @@ function contentDriveCrumbUrl(url: string): string {
 const CONTENT_DRIVE_ROUTE = '/content-drive';
 
 /**
+ * Whether the last crumb follows a Content Drive address the router never saw, so the router's
+ * own URL is stale and must not rebuild the trail. Content Drive writes its folder, filters and
+ * tree with `Location`, and its crumb follows them ({@link followUrl}); the router still reports
+ * the URL Content Drive was opened on. The menu effect re-runs on a later menu reload (portlet
+ * layouts change) and would otherwise reset the crumb to that URL.
+ *
+ * @param address The address bar's path, as `Location.path(true)` reports it.
+ * @param routerUrl The URL the router last navigated to.
+ * @param last The last crumb of the trail.
+ * @returns `true` when the address and the last crumb are both Content Drive's and the router
+ * lags behind the address.
+ */
+export function followsContentDrive(
+    address: string,
+    routerUrl: string,
+    last: MenuItem | null
+): boolean {
+    const path = address.replace(/^.*#/, '');
+    const lastRoute = (last?.url ?? '').replace(/^.*#/, '').split('?')[0];
+
+    return (
+        path !== routerUrl &&
+        path.split('?')[0] === CONTENT_DRIVE_ROUTE &&
+        lastRoute === CONTENT_DRIVE_ROUTE
+    );
+}
+
+/**
  * The last crumb after Content Drive moved its own URL, or `null` when the trail should stay as it
  * is.
  *

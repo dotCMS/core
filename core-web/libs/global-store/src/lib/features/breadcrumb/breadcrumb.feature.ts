@@ -18,7 +18,12 @@ import { filter, map } from 'rxjs/operators';
 
 import { MenuItemEntity } from '@dotcms/dotcms-models';
 
-import { followUrl, processSpecialRoute, shouldReplaceLastCrumb } from './breadcrumb.utils';
+import {
+    followsContentDrive,
+    followUrl,
+    processSpecialRoute,
+    shouldReplaceLastCrumb
+} from './breadcrumb.utils';
 
 /**
  * State interface for the Breadcrumb feature.
@@ -320,6 +325,19 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
 
                     untracked(() => {
                         const currentUrl = store.router.url;
+
+                        // The menu also reloads later (portlet layouts change). If Content Drive
+                        // has written its own address since, and its crumb follows it, the
+                        // router's URL is stale and processing it would reset that crumb.
+                        if (
+                            followsContentDrive(
+                                store.location.path(true),
+                                currentUrl,
+                                store.lastBreadcrumb()
+                            )
+                        ) {
+                            return;
+                        }
 
                         // When `menuItems` is loaded and we have a current URL, process the route
                         if (menu.length > 0 && currentUrl) {

@@ -30,6 +30,9 @@ export async function seedDrive(
 ): Promise<DriveSeed> {
     const folderName = `${prefix}-${suffix}`;
     const folderInode = await createFolder(request, siteName, `/${folderName}`);
+    // The folder is made first, so a failed type create must take it back: teardown only sees
+    // what this returns, and a folder leaked at the site root can push later seeds off the
+    // tree's first page.
     const contentType = await createFakeContentType(request, {
         name: `E2E ${prefix} ${suffix}`,
         fields: [
@@ -40,6 +43,9 @@ export async function seedDrive(
                 sortOrder: 2
             })
         ]
+    }).catch(async (error: unknown) => {
+        await deleteFolders(request, siteName, [`/${folderName}`]).catch(() => undefined);
+        throw error;
     });
 
     return { siteName, folderName, folderInode, contentType };
