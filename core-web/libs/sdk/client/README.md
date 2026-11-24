@@ -94,7 +94,7 @@ them when you upgrade dotCMS — or when the console tells you to.
 
 ##### How the Version Check Works
 
-Every response from your dotCMS instance — REST and GraphQL alike — includes two headers:
+dotCMS adds two headers to REST and GraphQL responses for requests that carry valid credentials (a logged-in session or a valid auth token). Every request the SDK makes includes its auth token, so SDK requests receive them; anonymous requests get neither header by default.
 
 | Header             | Meaning                                                                 |
 | ------------------- | ------------------------------------------------------------------------ |
@@ -103,25 +103,32 @@ Every response from your dotCMS instance — REST and GraphQL alike — includes
 
 Both headers use the same `YY.MM.DD-N` naming convention as dotCMS releases, where `-N` counts builds made on the same day (so `26.10.28-2` is the second build from October 28, 2026). The `@dotcms/*` packages use the same scheme, except that npm drops leading zeros: dotCMS `26.11.02-01` is published as `@dotcms/client@26.11.2-1`.
 
-`@dotcms/client` reads these headers off responses it already makes — no extra network calls — and compares them, as numeric version segments (e.g. `26.10.5-1` is treated as newer than `26.7.21-1`, never as a string comparison), against its own version:
+`X-DotCMS-Min-SDK` can also be `0.0.0`, which means the dotCMS instance hasn't declared a minimum SDK version yet. In that case no SDK version counts as too old, so the upgrade error below can't appear.
 
-- If the SDK's own version is **older** than `X-DotCMS-Min-SDK`, it logs one `console.error` per session:
+`@dotcms/client`'s built-in HTTP client (`FetchHttpClient`) reads these headers off responses it already gets — no extra network calls — and compares them, as numeric version segments (e.g. `26.10.5-1` is treated as newer than `26.7.21-1`, never as a string comparison), against the SDK's own version. It makes two separate comparisons:
+
+- If the SDK's own version is **older** than `X-DotCMS-Min-SDK`, it logs one `console.error`:
     ```
     [dotCMS SDK] SDK <your-version> is not supported by dotCMS <server-version> (minimum required: <min-sdk-version>). Upgrade required: <docs link>
     ```
-- If the SDK's own version is **newer** than `X-DotCMS-Version`, it logs one `console.warn` per session. This usually means your SDK was built against a newer dotCMS environment (e.g. local dev) than the one it's currently talking to, and it may be calling APIs that instance doesn't have yet.
-- If either header is missing — for example, an older dotCMS instance that doesn't send them yet — or a version string can't be parsed, the check fails silently: no warning is logged and no request/response behavior changes.
-- Prerelease builds published under the `next` tag (e.g. `26.11.17-1-next.3119`) fall into this case too: the `next` segment isn't numeric, so the check never runs and you won't see either warning. If you're on a `next` build, confirm compatibility yourself.
+- If the SDK's own version is **newer** than `X-DotCMS-Version`, it logs one `console.warn`. This usually means your SDK was built against a newer dotCMS environment (e.g. local dev) than the one it's currently talking to, and it may be calling APIs that instance doesn't have yet.
 
-"Once per session" means once per page load in the browser, or once per server process lifetime in Node.js/SSR — not on every individual request.
+Each message is logged at most once per page load in the browser, or once per server process in Node.js/SSR — not on every request.
+
+The check never changes request or response behavior, and in several cases it logs nothing:
+
+- **Either header is missing** (for example, an older dotCMS instance that doesn't send them yet, or a request without valid credentials): neither comparison runs.
+- **A header's version can't be parsed**: only the comparison that uses it is skipped. For example, an LTS server version such as `26.7.14_lts_v1` skips the "newer" warning, but a parseable `X-DotCMS-Min-SDK` can still trigger the upgrade error.
+- **The SDK itself is a prerelease build** published under the `next` tag (e.g. `26.11.17-1-next.3119`): its own version can't be parsed, so neither comparison runs.
+- **You replaced the built-in HTTP client**: the check runs only inside `FetchHttpClient`, so a custom `httpClient` skips it entirely (see [HTTP Client Configuration](#http-client-configuration)).
 
 > [!TIP]
-> **Troubleshooting:** if you run into any issue with the SDKs, first check your logs for `[dotCMS SDK]` compatibility messages — the browser console for client-side code, and your server logs for Node.js/SSR — to rule out a version mismatch before digging further. Because the message is logged only once per session, look back to the start of the page load or server process rather than just at the most recent requests.
+> **Troubleshooting:** if you run into any issue with the SDKs, check your logs for `[dotCMS SDK]` messages — the browser console for client-side code, your server logs for Node.js/SSR. Because each message is logged only once, look back to the start of the page load or server process, not just the most recent requests. **No message doesn't confirm compatibility**: for any of the reasons above, the check may not have run. If there's no message, compare your installed `@dotcms/*` version against your dotCMS version directly.
 
-Because `@dotcms/react` and `@dotcms/angular` route all of their requests through `@dotcms/client`'s `FetchHttpClient`, they inherit this check automatically; you don't need to add anything extra to see the warning when using those frameworks.
+`@dotcms/react` and `@dotcms/angular` make their requests through `@dotcms/client`, so they get this check automatically as long as you keep its default `FetchHttpClient`. If you supply your own transport — for example, an Angular `HttpClient`-based adapter passed to the provider's `httpClient` option — the check doesn't run.
 
 > [!NOTE]
-> If you're self-hosting and have customized [CORS headers](https://dev.dotcms.com/docs/cors-header-configuration) by overriding `Access-Control-Expose-Headers` for the `graphql` resource specifically, make sure `X-DotCMS-Version` and `X-DotCMS-Min-SDK` stay in that list — otherwise the SDK's browser-side version check silently stops seeing them. The global default already exposes both headers, so most instances need no changes here.
+> If you're self-hosting and have customized [CORS headers](https://dev.dotcms.com/docs/cors-header-configuration) by overriding `Access-Control-Expose-Headers` for a specific REST or GraphQL resource, make sure `X-DotCMS-Version` and `X-DotCMS-Min-SDK` stay in that list — otherwise the SDK's browser-side version check silently stops seeing them. The global default (`*`) exposes both headers, so most instances need no changes here. The one exception: if you pass `credentials: 'include'` in your request options, browsers don't honor `*`, so list both headers explicitly.
 
 #### Environment Setup
 
@@ -872,7 +879,7 @@ const client = createDotCMSClient({
 ```
 
 > [!NOTE]
-> If you provide a custom `httpClient`, the SDK version-compatibility check described above still runs as long as your implementation returns the raw response headers — it reads them off whatever response your `request()` method resolves with.
+> A custom `httpClient` replaces the built-in `FetchHttpClient`, so the [SDK version-compatibility check](#how-the-version-check-works) doesn't run. Keep returning parsed data from `request()` as usual; if you want the same diagnostics, read the `X-DotCMS-Version` and `X-DotCMS-Min-SDK` headers inside your adapter.
 
 #### When You Might Need a Custom HTTP Client
 
