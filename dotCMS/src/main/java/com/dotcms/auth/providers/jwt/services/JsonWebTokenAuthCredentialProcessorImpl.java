@@ -87,8 +87,9 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
     /**
      * Resolves the user of a JWT header, or {@code null} when the token is not valid or the account
      * cannot be used interactively. Nothing is stored on the session: the token identifies its user
-     * only to the caller, as it does for a REST request, so the session does not become logged in
-     * and nothing outlives the token's revocation or expiry.
+     * only to the caller, as it does for a REST request, so the HTTP session does not become logged
+     * in. Revocation and expiry are checked on new handshakes; they do not close a WebSocket
+     * connection that was already authenticated.
      *
      * @param authorizationHeader the {@code Authorization} header value
      * @param session             the HTTP session of the call, may be {@code null}; read only to log a
