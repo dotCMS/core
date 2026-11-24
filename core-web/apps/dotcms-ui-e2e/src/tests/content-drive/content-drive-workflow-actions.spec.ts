@@ -1,4 +1,5 @@
 import { expect } from '@playwright/test';
+import { countIndexedVersions } from '@requests/contentlets';
 
 import { ContentDriveBasics } from './helpers/content-drive-basics';
 import { type DriveSeed, removeSeed, seedContent, seedDrive } from './helpers/content-drive-seed';
@@ -55,7 +56,7 @@ test.describe('Content Drive workflow actions', () => {
         const site = await apiHelpers.getDefaultSite();
         seed = await seedDrive(request, site.hostname, 'e2e-archive', testSuffix);
         const title = `Archive me ${testSuffix}`;
-        await seedContent(request, seed, title);
+        const content = await seedContent(request, seed, title);
 
         const basics = new ContentDriveBasics(adminPage);
         await basics.drive.goTo();
@@ -76,8 +77,15 @@ test.describe('Content Drive workflow actions', () => {
         await basics.chooseStatus('Archived');
         await expect(basics.status(title)).toHaveText('Archived', { timeout: 20000 });
 
+        // Still on the server while archived: the check below is what tells Delete from Unarchive,
+        // since either empties the Archived listing.
+        expect(await countIndexedVersions(request, content.identifier)).toBeGreaterThan(0);
+
         await basics.selectRow(title);
         await basics.runWorkflowAction('Delete');
         await expect(basics.emptyState).toBeVisible({ timeout: 20000 });
+        await expect
+            .poll(() => countIndexedVersions(request, content.identifier), { timeout: 20000 })
+            .toBe(0);
     });
 });
