@@ -144,8 +144,9 @@ export class DotFolderListViewContextMenuComponent {
 
     /**
      * The latest right-click. Each one replaces it, so the answer to an earlier one, arriving late,
-     * is dropped instead of replacing the newer menu. A dismissal does not clear it: the menu's hide
-     * can fire while the next right-click is already being answered.
+     * is dropped instead of replacing the newer menu. The listing's own reset (scroll, drag) clears
+     * it; the menu's `onHide` does not, since it can fire while the next right-click is already
+     * being answered.
      */
     #currentTrigger: Event | null = null;
 
@@ -229,8 +230,14 @@ export class DotFolderListViewContextMenuComponent {
     readonly closeOnContextMenuReset = effect(() => {
         const data = this.#store.contextMenu();
 
-        if (!data?.contentlet && this.contextMenu()?.visible()) {
-            this.contextMenu()?.hide();
+        if (!data?.contentlet) {
+            // The listing dismissed the menu (scroll, drag): an answer still pending for it must
+            // not reopen it.
+            this.#currentTrigger = null;
+
+            if (this.contextMenu()?.visible()) {
+                this.contextMenu()?.hide();
+            }
         }
     });
 
@@ -394,8 +401,8 @@ export class DotFolderListViewContextMenuComponent {
             this.#workflowsActionsService.getByInode(contentlet.inode, DotRenderMode.LISTING)
         );
 
-        // Another right-click while the requests were pending: its menu is the one on screen, and
-        // this late answer would replace it with another row's entries.
+        // Another right-click, or the listing's reset, while the requests were pending: this late
+        // answer would replace the newer menu, or reopen a dismissed one.
         if (this.#currentTrigger !== triggeredEvent) {
             return;
         }

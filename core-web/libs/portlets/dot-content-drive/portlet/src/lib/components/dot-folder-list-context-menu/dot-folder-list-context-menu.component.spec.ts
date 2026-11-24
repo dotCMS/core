@@ -1953,6 +1953,40 @@ describe('DotFolderListViewContextMenuComponent', () => {
             expect(mockContextMenu.hide).toHaveBeenCalled();
         });
 
+        // Scrolling or dragging resets the listing's menu while a right-click is still being
+        // answered; the late answer must not reopen what was dismissed.
+        it('should drop a pending answer once the listing dismisses the menu', async () => {
+            const mockContextMenu = {
+                show: vi.fn(),
+                hide: vi.fn(),
+                visible: vi.fn().mockReturnValue(false)
+            } as unknown as ContextMenu;
+            vi.spyOn(component, 'contextMenu').mockReturnValue(mockContextMenu);
+            dotContentletService.canLock.mockReturnValueOnce(of(createMockCanLock(true, false)));
+            const pending = new Subject<typeof mockWorkflowActions>();
+            workflowsActionsService.getByInode.mockReturnValueOnce(pending);
+
+            const answer = component.getMenuItems({
+                triggeredEvent: new MouseEvent('contextmenu'),
+                contentlet: mockContentlet,
+                showAddToBundle: false
+            });
+            store.patchContextMenu({
+                contentlet: null,
+                triggeredEvent: null,
+                showAddToBundle: false
+            });
+            spectator.detectChanges();
+            // Let the menu reach its second request before answering it.
+            await new Promise((resolve) => setTimeout(resolve));
+
+            pending.next(mockWorkflowActions);
+            pending.complete();
+            await answer;
+
+            expect(mockContextMenu.show).not.toHaveBeenCalled();
+        });
+
         it('should not hide context menu when contentlet is null and menu is not visible', () => {
             const mockContextMenu = {
                 hide: vi.fn(),
