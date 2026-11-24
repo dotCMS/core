@@ -44,6 +44,9 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import java.util.Map;
+import java.util.Set;
+import com.dotmarketing.common.db.DotConnect;
 
 @RunWith(DataProviderRunner.class)
 public class PublisherAPIImplTest {
@@ -299,7 +302,7 @@ public class PublisherAPIImplTest {
         final Language language = new UniqueLanguageDataGen().nextPersisted();
         final ContentType contentType = new ContentTypeDataGen().host(host).nextPersisted();
 
-        final java.util.Map<String, PublishQueueElement> firstElementByBundle =
+        final Map<String, PublishQueueElement> firstElementByBundle =
                 new java.util.LinkedHashMap<>();
         final List<Contentlet> seededAssets = new java.util.ArrayList<>();
 
@@ -339,7 +342,7 @@ public class PublisherAPIImplTest {
         final List<User> users = list(APILocator.systemUser(), limitedUser);
 
         for (final User user : users) {
-            final java.util.Set<String> expected = new java.util.HashSet<>();
+            final Set<String> expected = new java.util.HashSet<>();
 
             for (final java.util.Map.Entry<String, PublishQueueElement> entry
                     : firstElementByBundle.entrySet()) {
@@ -356,7 +359,7 @@ public class PublisherAPIImplTest {
                 }
             }
 
-            final java.util.Set<String> actual =
+            final Set<String> actual =
                     PublishQueuePermissionFilter.permittedBundleIds(firstElementByBundle, user);
 
             Assert.assertEquals(
@@ -369,7 +372,7 @@ public class PublisherAPIImplTest {
         // short-circuit for it, so an implementation returning "all" or "none" would still satisfy
         // the loop above. These pin the limited user to a STRICT, NON-EMPTY SUBSET - one bundle of
         // three - which neither a `return keySet()` nor a `return emptySet()` stub can produce.
-        final java.util.Set<String> limitedResult =
+        final Set<String> limitedResult =
                 PublishQueuePermissionFilter.permittedBundleIds(firstElementByBundle, limitedUser);
 
         Assert.assertEquals("the limited user must see exactly the one bundle it was granted",
@@ -388,14 +391,62 @@ public class PublisherAPIImplTest {
      */
     @Test
     public void test_bundlePermissionFilter_toleratesUnresolvableBundle() throws Exception {
-        final java.util.Map<String, PublishQueueElement> withNull = new java.util.LinkedHashMap<>();
+        final Map<String, PublishQueueElement> withNull = new java.util.LinkedHashMap<>();
         withNull.put("bundle-with-no-resolvable-element", null);
 
-        final java.util.Set<String> permitted =
+        final Set<String> permitted =
                 PublishQueuePermissionFilter.permittedBundleIds(withNull, APILocator.systemUser());
 
         Assert.assertTrue("An unresolvable bundle must be absent, not an error",
                 permitted.isEmpty());
+    }
+
+    /**
+     * AC-013: Batched publish-queue permission filter includes bundles whose head asset
+     * inherits PUBLISH permissions and has no cached permission_reference row.
+     */
+    @Test
+    public void test_bundlePermissionFilter_includesUncachedInheritingAsset_AC013() throws Exception {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Language language = new UniqueLanguageDataGen().nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().host(host).nextPersisted();
+
+        final Role limitedRole = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(limitedRole).nextPersisted();
+
+        // Grant inheritable READ + PUBLISH on the host for the content under it
+        APILocator.getPermissionAPI().save(
+                new Permission(Contentlet.class.getCanonicalName(),
+                        host.getPermissionId(), limitedRole.getId(),
+                        PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_PUBLISH, true),
+                host, APILocator.systemUser(), false);
+
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .languageId(language.getId()).host(host).modeDate(new Date()).nextPersisted();
+
+        final Bundle bundle = new BundleDataGen()
+                .setSavePublishQueueElements(true)
+                .addAssets(CollectionsUtils.list(contentlet))
+                .nextPersisted();
+
+        final List<PublishQueueElement> elements =
+                PublisherAPIImpl.getInstance().getQueueElementsByBundleId(bundle.getId());
+        Assert.assertFalse("seeded bundle should have a queue element", elements.isEmpty());
+
+        final Map<String, PublishQueueElement> firstElementByBundle =
+                Map.of(bundle.getId(), elements.get(0));
+
+        // Make the contentlet uncached
+        new DotConnect()
+                .setSQL("DELETE FROM permission_reference WHERE asset_id = ?")
+                .addParam(contentlet.getPermissionId()).loadResult();
+        APILocator.getPermissionAPI().removePermissionableFromCache(contentlet.getPermissionId());
+
+        final Set<String> permitted =
+                PublishQueuePermissionFilter.permittedBundleIds(firstElementByBundle, limitedUser);
+
+        Assert.assertTrue("Uncached inheriting asset should be permitted in bundle queue",
+                permitted.contains(bundle.getId()));
     }
 
     private void insertPublishAuditStatus(final Status status, final String bundleID) throws DotPublisherException {

@@ -2,9 +2,12 @@ package com.dotcms.cms.login;
 
 import static com.dotcms.util.FunctionUtils.ifTrue;
 
+import com.dotcms.auth.LoginLockout;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import io.vavr.Lazy;
 import java.io.Serializable;
+import java.time.Duration;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -32,6 +35,50 @@ public interface LoginServiceAPI extends Serializable {
 
     // max expiration day allowed for a json web token
     public static final String JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS = "json.web.token.max.allowed.expiration.days";
+
+    /**
+     * Value used for {@link #JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS} when the property is not
+     * set anywhere. Every reader of the property must fall back to this same number, so that the
+     * current and the deprecated token endpoints cap new tokens at the same lifetime.
+     */
+    public static final int JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS_DEFAULT = 365;
+
+    /**
+     * Lifetime, in minutes, of the login token set as a browser-session cookie when the user logs
+     * in without "remember me". While the user keeps working in the back end the token is renewed
+     * before it runs out, so this is in effect how long an idle browser can recover a lost HTTP
+     * session without logging in again. Defaults to
+     * {@link #JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES_DEFAULT}; tokens set by "remember me" use
+     * {@link #JSON_WEB_TOKEN_DAYS_MAX_AGE} instead.
+     */
+    public static final String JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES = "json.web.token.session.max.age.minutes";
+
+    /** Value used for {@link #JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES} when the property is not set. */
+    public static final int JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES_DEFAULT = 60;
+
+    /**
+     * HTTP session attribute holding the time (epoch millis) after which the session's login token
+     * cookie is renewed. It is only present on sessions whose cookie holds a session login token.
+     */
+    public static final String SESSION_LOGIN_TOKEN_RENEW_AT = "com.dotcms.SESSION_LOGIN_TOKEN_RENEW_AT";
+
+    /**
+     * The configured session login token lifetime ({@link #JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES}).
+     * A value below one minute is ignored with a warning and the default is used instead.
+     *
+     * @return the lifetime of a session login token
+     */
+    static Duration sessionLoginTokenLifetime() {
+        final int minutes = Config.getIntProperty(JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES,
+                JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES_DEFAULT);
+        if (minutes < 1) {
+            Logger.warn(LoginServiceAPI.class, () -> String.format(
+                    "'%s' is %d; it must be at least 1, using the default of %d minutes",
+                    JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES, minutes, JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES_DEFAULT));
+            return Duration.ofMinutes(JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES_DEFAULT);
+        }
+        return Duration.ofMinutes(minutes);
+    }
 
     public final static Lazy<Integer> JWT_TOKEN_MAX_AGE_DAYS = Lazy.of(() -> Config.getIntProperty(
             JSON_WEB_TOKEN_DAYS_MAX_AGE,
@@ -97,6 +144,22 @@ public interface LoginServiceAPI extends Serializable {
                       final HttpServletResponse res,
                       final User user,
                       final boolean rememberMe);
+
+    /**
+     * Sets a browser-session login cookie whose token carries the given token id, and schedules
+     * its renewal. A renewal passes the id of the login token it just validated rather than the id
+     * read from the user, which a logout or password change may have replaced in the meantime, so
+     * the new token stops validating together with the old one.
+     *
+     * @param req     the current request
+     * @param res     the response the cookie is set on
+     * @param user    the user the token logs in
+     * @param tokenId the id the new token carries
+     */
+    void issueSessionLoginToken(final HttpServletRequest req,
+                                final HttpServletResponse res,
+                                final User user,
+                                final String tokenId);
 
     /**
      * Do the remember me, usually a cookie approach with a specific strategy such as JWT
@@ -211,11 +274,13 @@ public interface LoginServiceAPI extends Serializable {
 	 *            MUST be loaded from db with all the information because we are
 	 *            going to save this object if rehash process required
 	 * @return If passwords match, returns {@code true}. Otherwise, returns
-	 *         {@code false}.
+	 *         {@code false}. While login lockout applies to the request's address or the account, returns
+	 *         {@code false} for any password; a wrong password counts toward the lockout (see
+	 *         {@link LoginLockout}).
 	 */
     default boolean passwordMatch(final String password, final User user) {
 
-        return LoginFactory.passwordMatch(password, user);
+        return LoginLockout.getInstance().passwordMatch(password, user);
     }
 
     /**

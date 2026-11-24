@@ -4,12 +4,18 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
+import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
+import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.datagen.CompanyDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.enterprise.cluster.ClusterFactory;
@@ -20,6 +26,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.ejb.CompanyUtil;
@@ -31,6 +38,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.NoSuchElementException;
+import javax.servlet.http.HttpServletRequest;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -274,6 +282,43 @@ public class ApiTokenAPITest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Method to test: {@link JsonWebTokenAuthCredentialProcessorImpl#processAuthHeaderFromJWT}
+     * Given scenario: a token limited to {@link #IP_NETWORK} is sent in the Authorization header
+     * with an X-Forwarded-For header that names an address on the other side of the limit.
+     * The request's remote address is what Tomcat's RemoteIpValve resolved: the connecting
+     * address, or the client address a trusted proxy forwarded (see ClientAddressResolutionTest)
+     * Expected result: the remote address decides; the header is not read. A request from outside
+     * the network naming an inside address is refused, and a request from inside naming an
+     * outside address is accepted
+     */
+    @Test
+    public void test_processAuthHeaderFromJWT_ip_limit_uses_remote_addr_not_forwarded_header() {
+        final ApiToken token = apiTokenAPI.persistApiToken(
+                ApiToken.from(getSkinnyToken()).withAllowNetwork(IP_NETWORK).build(),
+                APILocator.systemUser());
+        final String jwt = apiTokenAPI.getJWT(token, APILocator.systemUser());
+        final JsonWebTokenAuthCredentialProcessorImpl processor =
+                JsonWebTokenAuthCredentialProcessorImpl.getInstance();
+
+        assertNull("a request from outside the network must be refused",
+                processor.processAuthHeaderFromJWT(bearerRequest(jwt, OUT_OF_NETWORK, IN_NETWORK)));
+
+        final User user = processor.processAuthHeaderFromJWT(bearerRequest(jwt, IN_NETWORK, OUT_OF_NETWORK));
+        assertNotNull("a request from inside the network must be accepted", user);
+        assertEquals(TOKEN_USER.getUserId(), user.getUserId());
+    }
+
+    /** A request carrying the JWT as a bearer token, from {@code remoteAddr}, with the given X-Forwarded-For. */
+    private static HttpServletRequest bearerRequest(final String jwt, final String remoteAddr,
+            final String forwardedFor) {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getHeader("Authorization")).thenReturn(JsonWebTokenAuthCredentialProcessor.BEARER + jwt);
+        when(request.getHeader("X-Forwarded-For")).thenReturn(forwardedFor);
+        when(request.getRemoteAddr()).thenReturn(remoteAddr);
+        return request;
+    }
+
     @Test
     public void test_revoke_ApiToken() {
         User user = new UserDataGen().nextPersisted();
@@ -433,6 +478,74 @@ public class ApiTokenAPITest extends IntegrationTestBase {
         assertEquals(REQUESTING_USER_ID, issue.requestingUserId);
         assertEquals(expireDate, issue.expiresDate);
 
+    }
+
+    /**
+     * Given: a maximum token lifetime of 10 days
+     * When: a token valid for 100 days is requested
+     * Then: the persisted token expires no later than 10 days from now
+     */
+    @Test
+    public void test_persistApiToken_expirationBeyondMax_isCapped() {
+        final String previous = Config.getStringProperty(
+                LoginServiceAPI.JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS, null);
+        Config.setProperty(LoginServiceAPI.JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS, 10);
+        try {
+            final Date maxExpireDate = futureDate(Duration.ofDays(10).plusMinutes(1));
+            final ApiToken issue = apiTokenAPI.persistApiToken(TOKEN_USER.getUserId(),
+                    futureDate(Duration.ofDays(100)), REQUESTING_USER_ID, REQUESTING_IP);
+
+            assertTrue("Token expiration must be capped to the configured maximum",
+                    issue.expiresDate.before(maxExpireDate));
+            assertTrue(issue.expiresDate.after(futureDate(Duration.ofDays(9))));
+            assertEquals(issue.expiresDate, apiTokenAPI.findApiToken(issue.id).get().expiresDate);
+        } finally {
+            Config.setProperty(LoginServiceAPI.JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS, previous);
+        }
+    }
+
+    /**
+     * Given: a maximum token lifetime of 10 days
+     * When: a token valid for 5 days is requested
+     * Then: the requested expiration date is kept
+     */
+    @Test
+    public void test_persistApiToken_expirationWithinMax_isKept() {
+        final String previous = Config.getStringProperty(
+                LoginServiceAPI.JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS, null);
+        Config.setProperty(LoginServiceAPI.JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS, 10);
+        try {
+            final Date expireDate = Date.from(Instant.now().plus(Duration.ofDays(5))
+                    .truncatedTo(java.time.temporal.ChronoUnit.SECONDS));
+            final ApiToken issue = apiTokenAPI.persistApiToken(TOKEN_USER.getUserId(), expireDate,
+                    REQUESTING_USER_ID, REQUESTING_IP);
+
+            assertEquals(expireDate, issue.expiresDate);
+        } finally {
+            Config.setProperty(LoginServiceAPI.JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS, previous);
+        }
+    }
+
+    /**
+     * Given: the maximum token lifetime is disabled (0)
+     * When: a token valid for 100 days is requested
+     * Then: the requested expiration date is kept
+     */
+    @Test
+    public void test_persistApiToken_maxDisabled_expirationIsKept() {
+        final String previous = Config.getStringProperty(
+                LoginServiceAPI.JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS, null);
+        Config.setProperty(LoginServiceAPI.JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS, 0);
+        try {
+            final Date expireDate = Date.from(Instant.now().plus(Duration.ofDays(100))
+                    .truncatedTo(java.time.temporal.ChronoUnit.SECONDS));
+            final ApiToken issue = apiTokenAPI.persistApiToken(TOKEN_USER.getUserId(), expireDate,
+                    REQUESTING_USER_ID, REQUESTING_IP);
+
+            assertEquals(expireDate, issue.expiresDate);
+        } finally {
+            Config.setProperty(LoginServiceAPI.JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS, previous);
+        }
     }
 
     @Test

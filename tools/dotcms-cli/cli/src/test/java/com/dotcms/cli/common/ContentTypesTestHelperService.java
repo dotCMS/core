@@ -23,14 +23,18 @@ import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.LongSupplier;
 import org.testcontainers.shaded.org.awaitility.core.ConditionTimeoutException;
 
 @ApplicationScoped
@@ -42,8 +46,22 @@ public class ContentTypesTestHelperService {
     public static final String SYSTEM_WORKFLOW_ID = "d61a59e1-a49c-46f2-a929-db2b4bfa88b2";
     public static final String SYSTEM_WORKFLOW_VARIABLE_NAME = "SystemWorkflow";
 
+    /**
+     * Makes generated variables unique within a single JVM, which is enough while the CLI tests run
+     * in a single JVM with no parallel execution (the failsafe configuration). If forking or
+     * parallel execution is ever enabled, two JVMs could generate the same variable in the same
+     * millisecond against the shared server, and this would need a per-JVM component such as a UUID.
+     */
+    private static final AtomicLong VARIABLE_SEQUENCE = new AtomicLong();
+
     @Inject
     RestClientFactory clientFactory;
+
+    /**
+     * The source of the current time in milliseconds. Tests can replace it to freeze the clock and
+     * prove that generated variables stay unique even when the clock does not advance.
+     */
+    LongSupplier clock = System::currentTimeMillis;
 
     /**
      * This method creates a content type on the server
@@ -165,9 +183,7 @@ public class ContentTypesTestHelperService {
         final ObjectMapper objectMapper = new ClientObjectMapper().getContext(null);
         final String asString = objectMapper.writeValueAsString(contentType);
 
-        final Path path = Path.of(workspace.contentTypes().toString(),
-                String.format("%s.json", contentType.variable()));
-        Files.writeString(path, asString);
+        final Path path = writeDescriptor(workspace, contentType.variable(), asString);
 
         return new ContentTypeDescriptorCreationResult(contentType.variable(), path);
     }
@@ -192,11 +208,45 @@ public class ContentTypesTestHelperService {
         final ObjectMapper objectMapper = new ClientObjectMapper().getContext(null);
         final String asString = objectMapper.writeValueAsString(contentType);
 
-        final Path path = Path.of(workspace.contentTypes().toString(),
-                String.format("%s.json", contentType.variable()));
-        Files.writeString(path, asString);
+        final Path path = writeDescriptor(workspace, contentType.variable(), asString);
 
         return new ContentTypeDescriptorCreationResult(contentType.variable(), path);
+    }
+
+    /**
+     * Writes a content type descriptor to the workspace, refusing to replace an existing one so
+     * that a variable collision shows up as an error instead of a silently missing descriptor.
+     *
+     * @param workspace The workspace in which the content type descriptor should be created.
+     * @param variable  The variable of the content type, used as the file name.
+     * @param content   The serialized content type.
+     * @return The path of the written descriptor.
+     * @throws IOException If the descriptor already exists or cannot be written to disk.
+     */
+    private Path writeDescriptor(final Workspace workspace, final String variable,
+            final String content) throws IOException {
+
+        final Path path = Path.of(workspace.contentTypes().toString(),
+                String.format("%s.json", variable));
+        try {
+            Files.writeString(path, content, StandardOpenOption.CREATE_NEW);
+        } catch (FileAlreadyExistsException e) {
+            throw new IOException(
+                    "Content type descriptor already exists, refusing to overwrite it: " + path, e);
+        }
+
+        return path;
+    }
+
+    /**
+     * Generates a content type variable that is unique within this JVM, even when called several
+     * times within the same millisecond.
+     *
+     * @param millis The current time in milliseconds.
+     * @return A variable of the form {@code var_<millis>_<sequence>}.
+     */
+    private String generateVariable(final long millis) {
+        return "var_" + millis + "_" + VARIABLE_SEQUENCE.incrementAndGet();
     }
 
     /**
@@ -211,9 +261,9 @@ public class ContentTypesTestHelperService {
     private ImmutableSimpleContentType buildContentType(final String identifier,
             final String variable, final String detailPage, final String urlMapPattern) {
 
-        final long millis = System.currentTimeMillis();
+        final long millis = clock.getAsLong();
         final String contentTypeVariable = Objects.requireNonNullElseGet(variable,
-                () -> "var_" + millis);
+                () -> generateVariable(millis));
 
         var builder = ImmutableSimpleContentType.builder()
                 .baseType(BaseContentType.CONTENT)
@@ -283,9 +333,9 @@ public class ContentTypesTestHelperService {
     private ImmutablePageContentType buildPageContentType(
             final String identifier, final String variable) {
 
-        final long millis = System.currentTimeMillis();
+        final long millis = clock.getAsLong();
         final String contentTypeVariable = Objects.requireNonNullElseGet(variable,
-                () -> "var_" + millis);
+                () -> generateVariable(millis));
 
         var builder = ImmutablePageContentType.builder()
                 .baseType(BaseContentType.HTMLPAGE)

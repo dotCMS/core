@@ -729,8 +729,36 @@ public class FolderAPIImpl implements FolderAPI  {
 
 
 	@WrapInTransaction
+	@Override
 	public Folder createFolders(String path, Host host, User user, boolean respectFrontEndPermissions) throws
 			DotSecurityException, DotDataException {
+		return createFolders(path, host, user, respectFrontEndPermissions, folder -> { });
+	}
+
+	/**
+	 * Returns the folder at the given path, creating every missing folder on the way, and tells
+	 * {@code onCreated} about each folder it creates, parents included. Folders that already exist
+	 * are reused and not reported.
+	 *
+	 * @param path                       the folder path, such as {@code /a/b}
+	 * @param host                       the site the folders belong to
+	 * @param user                       the user creating the folders
+	 * @param respectFrontEndPermissions whether front-end roles are taken into account
+	 * @param onCreated                  called once for each folder this method creates, inside
+	 *                                   this method's transaction: an exception it throws aborts the
+	 *                                   whole path, and a later rollback removes the folders it was
+	 *                                   given
+	 *
+	 * @return the folder at the end of the path
+	 *
+	 * @throws DotSecurityException the user may not create the folders
+	 * @throws DotDataException     an error occurred when interacting with the database
+	 */
+	@WrapInTransaction
+	@Override
+	public Folder createFolders(final String path, final Host host, final User user,
+			final boolean respectFrontEndPermissions, final Consumer<Folder> onCreated)
+			throws DotSecurityException, DotDataException {
 
 		if(!UtilMethods.isSet(host)){
 			throw new IllegalArgumentException("Host is not set");
@@ -771,6 +799,7 @@ public class FolderAPIImpl implements FolderAPI  {
 				}
 
 				save(folder,  user,  respectFrontEndPermissions);
+				onCreated.accept(folder);
 			}
 			parent = folder;
 		}
@@ -1081,11 +1110,17 @@ public class FolderAPIImpl implements FolderAPI  {
 		return folderFactory.getSubFoldersTitleSort(folder);
 	}
 
+	/**
+	 * Moves a folder, with everything it contains, under another folder. The user needs READ and
+	 * EDIT permission on the folder being moved and CAN_ADD_CHILDREN permission on the new parent.
+	 *
+	 * @return {@code false} if the new parent already contains a folder with the same name
+	 * @throws DotSecurityException if the user lacks one of the permissions above
+	 */
+	@Override
 	@WrapInTransaction
 	public boolean move(Folder folderToMove, Folder newParentFolder,User user,boolean respectFrontEndPermissions)throws DotDataException, DotSecurityException {
-		if (!permissionAPI.doesUserHavePermission(folderToMove, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to read Folder " + folderToMove.getPath());
-		}
+		checkCanMove(folderToMove, user, respectFrontEndPermissions);
 
 		if (!permissionAPI.doesUserHavePermission(newParentFolder, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontEndPermissions)) {
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to add to Folder " + newParentFolder.getName());
@@ -1105,16 +1140,21 @@ public class FolderAPIImpl implements FolderAPI  {
 		return newFolder.isPresent();
 	}
 
+	/**
+	 * Moves a folder, with everything it contains, to the root of a site. The user needs READ and
+	 * EDIT permission on the folder being moved and CAN_ADD_CHILDREN permission on the site.
+	 *
+	 * @return {@code false} if the site root already contains a folder with the same name
+	 * @throws DotSecurityException if the user lacks one of the permissions above
+	 */
+	@Override
 	@WrapInTransaction
 	public boolean move(final Folder folderToMove,
 						final Host newParentHost,
 						final User user,
 						final boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 
-		if (!permissionAPI.doesUserHavePermission(folderToMove, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
-
-			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to read Folder " + folderToMove.getPath());
-		}
+		checkCanMove(folderToMove, user, respectFrontEndPermissions);
 
 		if (!permissionAPI.doesUserHavePermission(newParentHost, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontEndPermissions)) {
 
@@ -1132,6 +1172,25 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 
 		return newFolder.isPresent();
+	}
+
+	/**
+	 * Checks that the user may move the given folder: READ and EDIT permission on it are required.
+	 *
+	 * @throws DotDataException if the permissions cannot be loaded
+	 * @throws DotSecurityException if the user lacks READ or EDIT permission on the folder
+	 */
+	private void checkCanMove(final Folder folderToMove, final User user,
+			final boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
+		final String userId = user.getUserId() != null ? user.getUserId() : BLANK;
+		if (!permissionAPI.doesUserHavePermission(folderToMove, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
+			throw new DotSecurityException("User " + userId + " does not have permission to read Folder " + folderToMove.getPath());
+		}
+		if (!permissionAPI.doesUserHavePermission(folderToMove, PermissionAPI.PERMISSION_EDIT, user, respectFrontEndPermissions)) {
+			Logger.warn(this, "FolderAPI.move: user " + userId + " cannot move folder "
+					+ folderToMove.getPath() + " because EDIT permission on the folder is required");
+			throw new DotSecurityException("User " + userId + " does not have permission to edit Folder " + folderToMove.getPath());
+		}
 	}
 
 	@Override

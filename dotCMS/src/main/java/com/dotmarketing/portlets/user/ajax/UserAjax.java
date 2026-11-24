@@ -8,8 +8,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.velocity.tools.generic.SortTool;
@@ -46,6 +48,7 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.NoSuchRoleException;
@@ -111,7 +114,9 @@ public class UserAjax {
 
 	/**
 	 * Creates a new system user. Validations regarding password security
-	 * policies are enforced during the process.
+	 * policies are enforced during the process. Only a CMS Administrator can
+	 * create users; this is checked before the user record is created, so a
+	 * refused request creates nothing.
 	 * 
 	 * @param userId
 	 *            - The internal user ID.
@@ -137,7 +142,13 @@ public class UserAjax {
 	public Map<String, Object> addUser(String userId, String firstName, String lastName, String email, String password) throws DotDataException, DotRuntimeException, PortalException, SystemException, DotSecurityException {
 
 		//Validate if this logged in user has the required permissions to access the users portlet
-		validateUsersPortletPermissions(getLoggedInUser());
+		final User caller = getLoggedInUser();
+		validateUsersPortletPermissions(caller);
+		// creating users requires a CMS Administrator; checked before the user record is created
+		if (!caller.isAdmin()) {
+			SecurityLogger.logInfo(getClass(), "User '" + caller.getUserId() + "' is not allowed to create users");
+			throw new DotSecurityException("Only a CMS Administrator can create users");
+		}
 		validateMaximumLength(firstName,lastName,email);
 
         //auth
@@ -501,74 +512,96 @@ public class UserAjax {
 	}
 
 	/**
-	 * 
-	 * @param userId
-	 * @param roleIds
-	 * @throws DotDataException
-	 * @throws NoSuchUserException
-	 * @throws DotRuntimeException
-	 * @throws PortalException
-	 * @throws SystemException
-	 * @throws DotSecurityException
+	 * Sets the roles of a user from the Users screen. The given role ids are the complete set of
+	 * user-assignable roles the user should hold: assignable roles the user holds directly and that are
+	 * not in the list are removed, and assignable roles in the list that the user does not hold yet are
+	 * added. Roles that are not user-assignable are never added or removed, and ids that match no role
+	 * are skipped.
+	 * <p>Only a CMS Administrator can change a user's roles. The whole change is validated before
+	 * anything is written, so a refused request changes nothing. A request that does not change the
+	 * roles always succeeds.</p>
+	 *
+	 * @param userId  The id of the user whose roles are set.
+	 * @param roleIds The ids of the user-assignable roles the user should hold. This list is not modified.
+	 *
+	 * @throws DotDataException     An error occurred when reading or writing the roles.
+	 * @throws NoSuchUserException  The user does not exist.
+	 * @throws DotRuntimeException  An unexpected error occurred.
+	 * @throws PortalException      The logged-in user could not be resolved.
+	 * @throws SystemException      The logged-in user could not be resolved.
+	 * @throws DotSecurityException The logged-in user may not access the Users tool, may not read the
+	 *                              user, or is not allowed to change the user's roles.
 	 */
-	public void updateUserRoles (String userId, List<String> roleIds) throws DotDataException, NoSuchUserException, DotRuntimeException, PortalException, SystemException, DotSecurityException {
+	public void updateUserRoles(final String userId, final List<String> roleIds) throws DotDataException,
+			NoSuchUserException, DotRuntimeException, PortalException, SystemException, DotSecurityException {
 
 		//Validate if this logged in user has the required permissions to access the users portlet
 		validateUsersPortletPermissions(getLoggedInUser());
 
-		String date = DateUtil.getCurrentDate();
+		final String date = DateUtil.getCurrentDate();
 		//auth
-		User modUser = getAdminUser();
+		final User modUser = getAdminUser();
 
 		ActivityLogger.logInfo(getClass(), "Modifying User Roles", "User Beign Modified:" + userId + "; "+ "Modificator User:" + modUser.getUserId() + "; Date:" + date );
 		AdminLogger.log(getClass(), "Modifying User Roles", "User Beign Modified:" + userId + "; "+ "Modificator User:" + modUser.getUserId() + "; Date:" + date );
 
-		WebContext ctx = WebContextFactory.get();
-		RoleAPI roleAPI = APILocator.getRoleAPI();
-		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-		HttpServletRequest request = ctx.getHttpServletRequest();
-		UserAPI uAPI = APILocator.getUserAPI();
+		final WebContext ctx = WebContextFactory.get();
+		final RoleAPI roleAPI = APILocator.getRoleAPI();
+		final UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
+		final HttpServletRequest request = ctx.getHttpServletRequest();
+		final UserAPI uAPI = APILocator.getUserAPI();
+		final User loggedInUser = uWebAPI.getLoggedInUser(request);
 
-		List<com.dotmarketing.business.Role> userRoles = roleAPI.loadRolesForUser(userId);
+		final User user = uAPI.loadUserById(userId, loggedInUser, false);
 
-		User user = uAPI.loadUserById(userId,uWebAPI.getLoggedInUser(request),false);
+		final Set<String> requestedRoleIds = null == roleIds ? Set.of() : new LinkedHashSet<>(roleIds);
 
-		//Remove all roles not assigned
-		for(com.dotmarketing.business.Role r : userRoles) {
-			if(!roleIds.contains(r.getId())) {
-				if(r.isEditUsers()) {
-					try {
-						roleAPI.removeRoleFromUser(r, user);
-					} catch(DotDataException | DotStateException e) {
-						ActivityLogger.logInfo(getClass(), "Error Removing User Role", "User Beign Modified:" + userId + "; "+ "Modificator User:" + modUser.getUserId() + "; RoleID: " + r.getId() + "; Date:" + date );
-						AdminLogger.log(getClass(), "Error Removing User Role", "User Beign Modified:" + userId + "; "+ "Modificator User:" + modUser.getUserId() + "; RoleID: " + r.getId() + "; Date:" + date );
-						throw e;
-					}
+		// assignable roles held directly and not requested are removed
+		final List<Role> rolesToRemove = new ArrayList<>();
+		for (final Role r : roleAPI.loadRolesForUser(userId, false)) {
+			if (r.isEditUsers() && !requestedRoleIds.contains(r.getId())) {
+				rolesToRemove.add(r);
+			}
+		}
+
+		// requested assignable roles are granted after the removals; addRoleToUser skips the ones the
+		// user still holds at that point (directly or inherited)
+		final List<Role> rolesToGrant = new ArrayList<>();
+		// ...and the ones the user does not hold now make the request a change
+		final List<Role> rolesToAdd = new ArrayList<>();
+		for (final String roleId : requestedRoleIds) {
+			final Role r = roleAPI.loadRoleById(roleId);
+			if (null == r) {
+				Logger.debug(this, () -> "Role id '" + roleId + "' does not exist. Ignoring it...");
+				continue;
+			}
+			if (r.isEditUsers()) {
+				rolesToGrant.add(r);
+				if (!roleAPI.doesUserHaveRole(user, r)) {
+					rolesToAdd.add(r);
 				}
 			}
 		}
 
-		for(com.dotmarketing.business.Role r : roleAPI.loadRolesForUser(userId)) {
-			if(roleIds.contains(r.getId())) {
-				roleIds.remove(r.getId());
+		roleAPI.checkUserRolesChange(loggedInUser, user, rolesToAdd, rolesToRemove);
+
+		for (final Role r : rolesToRemove) {
+			try {
+				roleAPI.removeRoleFromUser(r, user);
+			} catch(DotDataException | DotStateException e) {
+				ActivityLogger.logInfo(getClass(), "Error Removing User Role", "User Beign Modified:" + userId + "; "+ "Modificator User:" + modUser.getUserId() + "; RoleID: " + r.getId() + "; Date:" + date );
+				AdminLogger.log(getClass(), "Error Removing User Role", "User Beign Modified:" + userId + "; "+ "Modificator User:" + modUser.getUserId() + "; RoleID: " + r.getId() + "; Date:" + date );
+				throw e;
 			}
 		}
 
-		//Adding missing roles
-		for(String roleId : roleIds) {
-			com.dotmarketing.business.Role r = roleAPI.loadRoleById(roleId);
-			if(r.isEditUsers()) {
-				try {
-					roleAPI.addRoleToUser(r, user);
-				} catch(DotDataException e) {
-					ActivityLogger.logInfo(getClass(), "Error Adding User Role", "User Beign Modified:" + userId + "; "+ "Modificator User:" + modUser.getUserId() + "; RoleID: " + r.getId() + "; Date:" + date );
-					AdminLogger.log(getClass(), "Error Adding User Role", "User Beign Modified:" + userId + "; "+ "Modificator User:" + modUser.getUserId() + "; RoleID: " + r.getId() + "; Date:" + date );
-					throw e;
-				} catch(DotStateException e) {
-					ActivityLogger.logInfo(getClass(), "Error Adding User Role", "User Beign Modified:" + userId + "; "+ "Modificator User:" + modUser.getUserId() + "; RoleID: " + r.getId() + "; Date:" + date );
-					AdminLogger.log(getClass(), "Error Adding User Role", "User Beign Modified:" + userId + "; "+ "Modificator User:" + modUser.getUserId() + "; RoleID: " + r.getId() + "; Date:" + date );
-					throw e;
-				}
+		for (final Role r : rolesToGrant) {
+			try {
+				roleAPI.addRoleToUser(r, user);
+			} catch(DotDataException | DotStateException e) {
+				ActivityLogger.logInfo(getClass(), "Error Adding User Role", "User Beign Modified:" + userId + "; "+ "Modificator User:" + modUser.getUserId() + "; RoleID: " + r.getId() + "; Date:" + date );
+				AdminLogger.log(getClass(), "Error Adding User Role", "User Beign Modified:" + userId + "; "+ "Modificator User:" + modUser.getUserId() + "; RoleID: " + r.getId() + "; Date:" + date );
+				throw e;
 			}
 		}
 
@@ -682,6 +715,16 @@ public class UserAjax {
 		return aRecord;
 	}
 
+	/**
+	 * Turns one of a user's access flags on or off from the Users screen's checkboxes: the account's
+	 * active flag, the CMS Administrator role, or the back-end or front-end user role. The caller
+	 * needs the Users portlet or the old Users screen kept as {@code users-legacy}.
+	 *
+	 * @param params {@code userid} of the user to change, {@code access} naming the flag, and
+	 *               {@code granted} ({@code true} or {@code false})
+	 * @return the flag's new value, the flag that changed, and the changed user's data
+	 * @throws Exception if the caller may not make the change or the user cannot be saved
+	 */
 	@WrapInTransaction
   public Map<String, Object> assignUserAccess(Map<String, String> params) throws Exception {
     final WebContext ctx = WebContextFactory.get();
@@ -692,7 +735,7 @@ public class UserAjax {
     final User loggedInUser = new WebResource.InitBuilder(request,response)
         .requiredBackendUser(true)
         .requiredAnonAccess(AnonymousAccess.NONE)
-        .requiredPortlet("users")
+        .requiredPortlet(PortletID.USERS.toString(), PortletID.USERS_LEGACY.toString())
         .init()
         .getUser();
     final User userToModify = uApi.loadUserById(params.get("userid"),loggedInUser,false);
@@ -1232,17 +1275,20 @@ public class UserAjax {
 	}
 
 	/**
-	 * Verifies 
-	 * @param userId
-	 * @param roles
-	 * @return
-	 * @throws Exception
+	 * Tells whether a user holds at least one of the given roles, on behalf of the logged-in user.
+	 * Legacy DWR entry point kept as a delegate: the rule lives in
+	 * {@link RoleAPI#doesUserHaveRoles(String, List, User)}, which lets any user check their own
+	 * roles and requires the role membership privilege for another user's.
+	 *
+	 * @param userId the id of the {@link User} whose roles are checked
+	 * @param roles  the ids of the roles to look for
+	 * @return {@code true} if the user holds at least one of the roles
+	 * @throws DotSecurityException if there is no logged-in user, or if the user to check is not the
+	 *                              caller and the caller does not have the role membership privilege
+	 * @throws Exception            if the logged-in user or the roles cannot be resolved
 	 */
-	public boolean hasUserRoles(String userId, String[] roles) throws Exception {
-		// Make sure the DWR request calling this method is authenticated
-		getLoggedInUser();
-		RoleAPI roleAPI = APILocator.getRoleAPI();
-		return roleAPI.doesUserHaveRoles(userId, Arrays.asList(roles));
+	public boolean hasUserRoles(final String userId, final String[] roles) throws Exception {
+		return APILocator.getRoleAPI().doesUserHaveRoles(userId, Arrays.asList(roles), getLoggedInUser());
 	}
 
 

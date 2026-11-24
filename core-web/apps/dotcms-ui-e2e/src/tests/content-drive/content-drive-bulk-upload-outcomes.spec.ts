@@ -1,6 +1,8 @@
 import { ContentDrivePage } from '@pages';
 import { type Page } from '@playwright/test';
 
+import { reloadWhileBatchIsRunning } from './helpers/content-drive-upload-restore';
+
 import { type ContentDriveApiHelpers, test } from '../../fixtures/content-drive.fixture';
 
 /**
@@ -102,15 +104,16 @@ test.describe('Content Drive bulk upload outcomes', () => {
         inSeededFolder(
             { adminPage, apiHelpers, name: `cd-reload-${testSuffix}` },
             async (drive) => {
-                // A few files are enough: the page reloads straight after handing the batch off, so
-                // it is still queued or running when the page reads the queue back. More only
-                // lengthens the wait, and CI processes each file in about fifteen seconds.
-                await drive.chooseGeneratedFilesForUpload(8, `reload-${testSuffix}`);
-                await drive.expectHandedToBackground();
-
-                // The status used to go with the page while the batch carried on. It is put
-                // back from the upload queue's active listing, and the completion ends it.
-                await adminPage.reload();
+                // The status is put back from the upload queue's active listing, and the completion
+                // ends it. The reload is arranged so the batch is certain to be running when the
+                // page reads that listing (see the helper), rather than racing a reload against a
+                // batch that finishes in about six seconds.
+                await reloadWhileBatchIsRunning(
+                    adminPage,
+                    `cd-reload-${testSuffix}`,
+                    8,
+                    `reload-${testSuffix}`
+                );
                 // By its own count: every test here uploads as the same admin, and the restore
                 // puts back each of that user's batches, so a sibling's status can be on screen too.
                 // No other test sends eight files.

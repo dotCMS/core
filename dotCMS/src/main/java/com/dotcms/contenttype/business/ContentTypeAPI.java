@@ -298,7 +298,7 @@ public interface ContentTypeAPI {
    * @param type Content Type that is going the be the default one.
    * @return The same Content Type Object given in the parameter
    * @throws DotDataException Error occurred when performing the action.
-   * @throws DotSecurityException The user does not have permissions to perform this action.
+   * @throws DotSecurityException The user does not have EDIT_PERMISSIONS on the Content Type.
    */
   ContentType setAsDefault(ContentType type) throws DotDataException, DotSecurityException;
 

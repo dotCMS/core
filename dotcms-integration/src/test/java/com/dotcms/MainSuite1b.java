@@ -15,6 +15,7 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+        com.dotcms.test.util.ApiTokenTestUtilsTest.class,
         com.dotcms.keyvalue.busines.KeyValueAPIImplTest.class,
         com.dotcms.keyvalue.business.KeyValueAPITest.class,
         com.dotcms.tika.TikaUtilsTest.class,
@@ -75,18 +76,22 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v2.tags.TagResourceIntegrationTest.class,
         com.dotcms.rest.MapToContentletPopulatorTest.class,
         com.dotcms.rest.WebResourceIntegrationTest.class,
+        com.dotcms.auth.InteractiveUserResolutionIT.class,
+        com.dotcms.auth.ServerBuiltFlowsInteractiveUserIT.class,
         com.dotcms.rest.api.v1.company.CompanyResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.configuration.ConfigurationResourceTest.class,
         com.dotcms.rest.api.v1.page.NavResourceTest.class,
         com.dotcms.rest.api.v1.page.PageResourceTest.class,
         com.dotcms.rest.api.v1.page.PageRenderSourcesResourceTest.class,
         com.dotcms.rest.api.v1.temp.TempFileResourceTest.class,
+        com.dotcms.rest.api.v1.temp.TempFileAPITest.class,
         com.dotcms.rest.api.v1.content.ContentVersionResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.content.ContentResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.container.ContainerResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.container.ContainerResourceHostResolutionIT.class,
         com.dotcms.rest.api.v1.theme.ThemeResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.vtl.VTLResourceIntegrationTest.class,
+        com.dotcms.rest.api.v1.vtl.ScriptingAnonymousAccessIntegrationTest.class,
         com.dotcms.rest.api.v1.contenttype.ContentTypeResourceIssue15124Test.class,
         com.dotcms.rest.api.v1.contenttype.FieldResourceTest.class,
         com.dotcms.rest.api.v1.contenttype.ContentTypeResourceTest.class,
@@ -108,7 +113,10 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.StoryBlockMarkdownPopulatorTest.class,
         com.dotcms.content.elasticsearch.business.ContentletDestroyIndexRemovalTest.class,
         com.dotcms.content.elasticsearch.business.ContentletIndexPartialFailurePhaseTest.class,
-        com.dotcms.content.elasticsearch.business.ContentletIndexProviderSkipTest.class
+        com.dotcms.content.elasticsearch.business.ContentletIndexProviderSkipTest.class,
+        com.dotcms.rendering.velocity.viewtools.ScriptingFileForgeryIntegrationTest.class,
+        com.dotcms.auth.LoginLockoutTest.class,
+        com.dotcms.graphql.GraphqlCacheWebInterceptorIntegrationTest.class,
 })
 
 public class MainSuite1b {

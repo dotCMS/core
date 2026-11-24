@@ -1,6 +1,4 @@
-import { DotCMSContentlet, DotCMSContentTypeBaseField } from '@dotcms/dotcms-models';
-
-import { ContainerPayload } from '../../../shared/models';
+import { DotCMSContentTypeBaseField } from '@dotcms/dotcms-models';
 
 /** Sentinel value emitted by the UVE SDK when hovering over an empty container. */
 export const TEMP_EMPTY_CONTENTLET_TYPE = 'TEMP_EMPTY_CONTENTLET_TYPE';
@@ -35,8 +33,3 @@ export type ContentletField = Pick<
     regexCheck?: string;
     options?: Array<{ label: string; value: string }>;
 };
-
-export interface ContentletEditData {
-    container: ContainerPayload | undefined;
-    contentlet: DotCMSContentlet;
-}

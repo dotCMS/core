@@ -16,7 +16,10 @@
 
 package org.apache.velocity.tools.generic;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.rendering.velocity.viewtools.RestrictedViewToolAccess;
 import java.io.StringWriter;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
@@ -116,6 +119,12 @@ public class RenderTool
      * and returns the result as a String.  If this fails, then 
      * <code>null</code> will be returned.  This evaluation is not
      * recursive.</p>
+     *
+     * <p>The string is data the surrounding code assembled, often out of request input, so it is
+     * run with no author of its own: view tools that decide by who wrote the code being run see
+     * an unknown author here and refuse, instead of letting the evaluated string borrow the
+     * standing of the page, container or script file that evaluated it. See
+     * {@link RestrictedViewToolAccess#announceRenderingAuthor(HttpServletRequest, String)}.</p>
      * 
      * @param ctx the current Context
      * @param vtl the code to be evaluated
@@ -127,22 +136,32 @@ public class RenderTool
         {
             return null;
         }
-        StringWriter sw = new StringWriter();
-        boolean success;
-        if (engine == null)
+        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        final Object surroundingAuthor =
+                RestrictedViewToolAccess.announceRenderingAuthor(request, null);
+        try
         {
-            success = Velocity.evaluate(ctx, sw, LOG_TAG, vtl);
+            StringWriter sw = new StringWriter();
+            boolean success;
+            if (engine == null)
+            {
+                success = Velocity.evaluate(ctx, sw, LOG_TAG, vtl);
+            }
+            else
+            {
+                success = engine.evaluate(ctx, sw, LOG_TAG, vtl);
+            }
+            if (success)
+            {
+                return sw.toString();
+            }
+            /* or would it be preferable to return the original? */
+            return null;
         }
-        else
+        finally
         {
-            success = engine.evaluate(ctx, sw, LOG_TAG, vtl);
+            RestrictedViewToolAccess.restoreRenderingAuthor(request, surroundingAuthor);
         }
-        if (success)
-        {
-            return sw.toString();
-        }
-        /* or would it be preferable to return the original? */
-        return null;
     }
 
     /**

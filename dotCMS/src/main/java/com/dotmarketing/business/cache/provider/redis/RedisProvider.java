@@ -1,16 +1,15 @@
 package com.dotmarketing.business.cache.provider.redis;
 
+import com.dotcms.cache.CacheObjectInputFilter;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.provider.CacheStats;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
+import java.io.InvalidClassException;
 import java.io.NotSerializableException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -188,6 +187,14 @@ public class RedisProvider extends CacheProvider {
         }
     }
 
+    /**
+     * Reads a value from Redis. Only the classes allowed by {@link CacheObjectInputFilter} are
+     * deserialized; a value of any other class is returned as a miss, and the filter logs the class once.
+     *
+     * @param group the cache group
+     * @param key   the key inside the group
+     * @return the cached value, or {@code null} when there is none or it cannot be read
+     */
     @Override
     public Object get ( String group, String key ) {
 
@@ -214,39 +221,13 @@ public class RedisProvider extends CacheProvider {
         }
 
         //Reconstructing the object to send it back
-        ObjectInputStream input = null;
-        InputStream bin = null;
-        InputStream is = null;
-
-        try {
-            is = new ByteArrayInputStream(data);
-            bin = new BufferedInputStream(is, 8192);
-            input = new ObjectInputStream(bin);
+        try ( ObjectInputStream input = CacheObjectInputFilter.newObjectInputStream(data) ) {
             return input.readObject();
+        } catch ( InvalidClassException e ) {
+            // the filter already logged the class once; the value is read as a miss
+            Logger.debug(this, "Cache value not read back: group [" + group + "] - key [" + key + "]: " + e.getMessage());
         } catch ( Exception e ) {
             Logger.error(this, "Error retrieving from Redis: group [" + group + "] - key [" + key + "].", e);
-        } finally {
-            try {
-                if ( input != null ) {
-                    input.close();
-                }
-            } catch ( Exception e ) {
-                Logger.error(this, "Error trying to close Stream.", e);
-            }
-            try {
-                if ( bin != null ) {
-                    bin.close();
-                }
-            } catch ( Exception e ) {
-                Logger.error(this, "Error trying to close Stream.", e);
-            }
-            try {
-                if ( is != null ) {
-                    is.close();
-                }
-            } catch ( Exception e ) {
-                Logger.error(this, "Error trying to close Stream.", e);
-            }
         }
 
         return null;

@@ -12,7 +12,11 @@ import static org.mockito.Mockito.when;
 import com.dotcms.UnitTestBase;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import javax.crypto.spec.SecretKeySpec;
 import java.util.Base64;
 import org.junit.Assert;
 import org.junit.Test;
@@ -712,4 +716,81 @@ public class UtilMethodsTest extends UnitTestBase {
       assertFalse(decoded.contains("&#58;"));
       assertFalse(decoded.contains("&#44;"));
    }
+
+	/**
+	 * Method to test: {@link UtilMethods#cleanFileSystemPathURI(String)}
+	 * When: the path is a plain folder or file name under the web application root
+	 * Should: return the same path
+	 */
+	@Test
+	public void cleanFileSystemPathURI_keepsRegularPaths() {
+		assertEquals("/html/images", UtilMethods.cleanFileSystemPathURI("/html/images"));
+		assertEquals("logo-dark_2.png", UtilMethods.cleanFileSystemPathURI("logo-dark_2.png"));
+		assertEquals("/application/my folder", UtilMethods.cleanFileSystemPathURI("/application/my folder"));
+		// names that only contain the protected words or two dots are regular names
+		assertEquals("/html/web-info", UtilMethods.cleanFileSystemPathURI("/html/web-info"));
+		assertEquals("/meta-info/a", UtilMethods.cleanFileSystemPathURI("/meta-info/a"));
+		assertEquals("/html/report..final", UtilMethods.cleanFileSystemPathURI("/html/report..final"));
+	}
+
+	/**
+	 * Method to test: {@link UtilMethods#cleanFileSystemPathURI(String)}
+	 * When: the path is empty, contains a parent-directory segment, refers to WEB-INF or
+	 * META-INF in any case, or contains a disallowed character
+	 * Should: return null for each one of them
+	 */
+	@Test
+	public void cleanFileSystemPathURI_rejectsDisallowedPaths() {
+		final String[] disallowed = {
+				null, "", "/WEB-INF", "/web-inf/classes", "/META-INF", "/Meta-Inf/context.xml",
+				"/WEB-INF.", "/html/WEB-INF ", "/WEB-INF../x", "/x/meta-inf",
+				"..", "/html/../../etc", "/html/..", "..\\windows", "/html\\images",
+				"/html/images?x=1", "/html;jsessionid=1", "file:/etc", "/html/*", "/html/%2e%2e",
+				"/html/$x", "/html/a|b", "/html/a,b", "/html/a=b", "/html/a&b", "/html/[a]",
+				"/html/a\"b", "/html/a!b", "/html/<a>", "~/x", "/html/a\nb", "/html/a\u0000b"};
+		for (final String path : disallowed) {
+			assertNull("Should reject: " + path, UtilMethods.cleanFileSystemPathURI(path));
+		}
+	}
+
+	/**
+	 * Method to test: {@link UtilMethods#toMap(Object)}.
+	 * Given scenario: a company that holds its key is turned into a map, as a template can do with
+	 * {@code $UtilMethods.toMap(...)}.
+	 * Expected result: the map has the company's other simple values and no key.
+	 */
+	@Test
+	public void testToMap_WhenCompanyHoldsKey_ShouldLeaveKeyOut() {
+		final Company company = new Company("sample.company");
+		company.setName("Sample Company");
+		company.setEmailAddress("dotcms@sample.example");
+		company.setKeyObj(new SecretKeySpec("0123456789abcdef".getBytes(StandardCharsets.UTF_8), "AES"));
+
+		final Map<String, Object> map = UtilMethods.toMap(company);
+
+		assertEquals("Sample Company", map.get("name"));
+		assertEquals("dotcms@sample.example", map.get("emailAddress"));
+		// Checked without printing the map, so a failure does not write a key to the build log
+		assertFalse("the map must not hold the key", map.containsKey("key"));
+		assertNotNull(company.getKey());
+	}
+
+	/**
+	 * Method to test: {@link UtilMethods#convertListToHashMap(java.util.List, String, Class)}.
+	 * Given scenario: a template keys a list of companies by the method that returns the key.
+	 * Expected result: the call is refused, so the key never becomes a map key, while keying by another method still
+	 * works.
+	 */
+	@Test
+	public void testConvertListToHashMap_WhenKeyedByCompanyKey_ShouldRefuse() throws Exception {
+		final Company company = new Company("sample.company");
+		company.setKeyObj(new SecretKeySpec("0123456789abcdef".getBytes(StandardCharsets.UTF_8), "AES"));
+
+		Assertions.assertThrows(IllegalArgumentException.class,
+				() -> UtilMethods.convertListToHashMap(java.util.List.of(company), "getKey", String.class));
+		Assertions.assertThrows(IllegalArgumentException.class,
+				() -> UtilMethods.convertListToHashMap(java.util.List.of(company), "getKeyObj", java.security.Key.class));
+		assertEquals(company, UtilMethods.convertListToHashMap(java.util.List.of(company), "getCompanyId", String.class)
+				.get("sample.company"));
+	}
 }

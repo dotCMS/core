@@ -130,21 +130,8 @@ public class PropsUtil {
 
 	public static final String PORTAL_CONFIGURATION = "portal.configuration";
 
-	// Authentication Pipeline
+	// Login lockout
 
-	public static final String AUTH_PIPELINE_PRE = "auth.pipeline.pre";
-	public static final String AUTH_PIPELINE_POST = "auth.pipeline.post";
-
-	public static final String AUTH_IMPL_ADS_INITIAL_CONTEXT_FACTORY = "auth.impl.ads.initial.context.factory";
-	public static final String AUTH_IMPL_ADS_SECURITY_AUTHENTICATION = "auth.impl.ads.security.authentication";
-	public static final String AUTH_IMPL_ADS_HOST = "auth.impl.ads.host";
-	public static final String AUTH_IMPL_ADS_PORT = "auth.impl.ads.port";
-	public static final String AUTH_IMPL_ADS_USERID = "auth.impl.ads.userid";
-	public static final String AUTH_IMPL_ADS_PASSWORD = "auth.impl.ads.password";
-	public static final String AUTH_IMPL_ADS_DOMAINLOOKUP = "auth.impl.ads.domainlookup";
-
-	public static final String AUTH_FAILURE = "auth.failure";
-	public static final String AUTH_MAX_FAILURES = "auth.max.failures";
 	public static final String AUTH_MAX_FAILURES_LIMIT = "auth.max.failures.limit";
 
 	public static final String AUTH_SIMULTANEOUS_LOGINS = "auth.simultaneous.logins";

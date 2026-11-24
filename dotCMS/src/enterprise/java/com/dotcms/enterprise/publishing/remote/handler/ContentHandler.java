@@ -55,6 +55,7 @@ import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.MultiTreeCache;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.ReindexQueueFactory.Priority;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
@@ -89,6 +90,7 @@ import com.dotmarketing.util.PushPublishLogger.PushPublishAction;
 import com.dotmarketing.util.PushPublishLogger.PushPublishHandler;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
@@ -103,6 +105,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -142,8 +145,21 @@ public class ContentHandler implements IHandler {
     // tuple3(identifier, lang, shouldReindex)
     private final HashSet<Tuple3<String, Long, Boolean>> contentToRefresh = new HashSet<>();
 	private final ExistingContentMapping existingContentMap = new ExistingContentMapping();
+	// Relationships of the content pushed with the relationships filter set to false, applied
+	// once the whole bundle is saved so the result doesn't depend on processing order
+	private final List<Tree> pushedTrees = new ArrayList<>();
+	// Pushed content whose relationships are replaced with the ones in the bundle, mapped to the
+	// relation types in which its Content Type is the parent (left) and the child (right)
+	private final Map<String, Pair<Set<String>, Set<String>>> pushedContent = new LinkedHashMap<>();
 
 	private static final boolean RESPECT_FRONTEND_ROLES = true;
+	/**
+	 * Receiver-side property. When {@code true}, content pushed with a filter that sets
+	 * {@code relationships: false} gets its relationships replaced with the sender's, to related
+	 * content that exists in the receiver. It's off by default because it removes relationships
+	 * created only in the receiver, which matters to clients that edit content in both.
+	 */
+	public static final String SYNC_RELATIONSHIPS_PROPERTY = "PUSH_PUBLISHING_SYNC_RELATIONSHIPS";
 
 	private final PublisherConfig config;
 
@@ -192,6 +208,7 @@ public class ContentHandler implements IHandler {
 		Collections.sort(contents);
 		contents = contents.stream().filter(File::isFile).collect(Collectors.toList());
 		handleContents(contents, bundleFolder, isHost);
+		this.applyPushedRelationships();
 		HandlerUtil.setExistingContent(config.getId(), existingContentMap);
 
 		String identToRemove = null;
@@ -613,12 +630,35 @@ public class ContentHandler implements IHandler {
 		}
     }
 
+	/**
+	 * Checks whether the pushed Contentlet doesn't exist in the receiver yet, i.e., no Identifier
+	 * record has been created for it.
+	 *
+	 * @param content The {@link Contentlet} coming from the bundle.
+	 *
+	 * @return If the Contentlet's Identifier doesn't exist in the receiver, returns {@code true}.
+	 */
+	private boolean isNewInReceiver(final Contentlet content) {
+		return !UtilMethods.isSet(Try.of(() -> this.identifierAPI.find(content.getIdentifier()).getId()).getOrNull());
+	}
+
+	/**
+	 * Returns the Identifier the pushed Contentlet has in the receiver. If its Identifier already
+	 * exists there, it's used as is. Otherwise, HTML Pages and File Assets are matched by Site and
+	 * URI, so that an existing asset created with a different Identifier is updated instead of
+	 * duplicated.
+	 *
+	 * @param content The {@link Contentlet} coming from the bundle.
+	 *
+	 * @return The Identifier of the matching Contentlet in the receiver, or the bundle's own
+	 * Identifier if there is no match.
+	 *
+	 * @throws DotDataException An error occurred when looking up the Identifier by Site and URI.
+	 */
 	private String findLocalIdentifier(final Contentlet content) throws DotDataException {
 
-		String localIdentifier = Try.of(()->APILocator.getIdentifierAPI().find(content.getIdentifier()).getId()).getOrNull();
-
-		if(UtilMethods.isSet(localIdentifier)){
-			return localIdentifier;
+		if (!this.isNewInReceiver(content)) {
+			return content.getIdentifier();
 		}
 
 
@@ -840,6 +880,9 @@ public class ContentHandler implements IHandler {
 			holdDefaultHostConfiguration(content, userToUse);
 		}
 
+      // Must be checked before the check-in below creates the Identifier in the receiver
+      final boolean isNewInReceiver = !updateExisting && this.isNewInReceiver(content);
+
       // Wiping out the thumbnails and resized versions (if a fileAsset)
       APILocator.getFileAssetAPI().cleanThumbnailsFromContentlet(content);
 
@@ -871,10 +914,23 @@ public class ContentHandler implements IHandler {
 			// in order to add the new ones, if the relationships filter is set to false, we shouldn't remove the trees
 			this.cleanTrees(content);
 			this.regenerateTree(wrapper, remoteLocalLanguages.getLeft());
+		} else if (Config.getBooleanProperty(SYNC_RELATIONSHIPS_PROPERTY, false)) {
+			// With the relationships filter set to false and the sync property on, the pushed
+			// content's relationships are replaced with the ones in the bundle, to content that
+			// exists in the receiver. The related content isn't pushed
+			this.collectPushedTrees(wrapper, identifier, content, true);
+		} else if (isNewInReceiver) {
+			// Otherwise, existing content keeps the relationships it has in the receiver (#30998),
+			// and new content is only related to content that exists there
+			this.collectPushedTrees(wrapper, identifier, content, false);
 		}
-        // Categories
+        // Categories. The check-in above copies the categories the content already has in the
+        // receiver, and the trees are only cleaned with the relationships filter on (#30998), so
+        // they're always removed here for the content to get exactly the ones in the bundle,
+        // including none (#38429). Categories are linked by inode, so relationships aren't touched
+        this.categoryAPI.removeParents(content, this.userAPI.getSystemUser(), !RESPECT_FRONTEND_ROLES);
         if (UtilMethods.isSet(wrapper.getCategories())) {
-            handleContentCategories(content.getInode(), wrapper.getCategories());
+            handleContentCategories(content, wrapper.getCategories());
         }
         CacheLocator.getCategoryCache().removeParents(content);
 
@@ -1045,6 +1101,220 @@ public class ContentHandler implements IHandler {
 			}
 			TreeFactory.saveTree(tree);
 		}
+	}
+
+	/**
+	 * Keeps the bundle's tree rows of the pushed content, as parent or as child, so that they can
+	 * be applied once the whole bundle is saved.
+	 *
+	 * @param wrapper          The wrapped Contentlet coming from the bundle.
+	 * @param bundleIdentifier The Identifier of the Contentlet in the sender.
+	 * @param content          The Contentlet saved in the receiver.
+	 * @param sync             If the relationships the pushed content has in the receiver must be
+	 *                         replaced with the ones in the bundle. Otherwise, they're only added.
+	 *
+	 * @throws DotDataException An error occurred when reading the relationships of the Content Type.
+	 */
+	private void collectPushedTrees(final ContentWrapper wrapper, final String bundleIdentifier,
+			final Contentlet content, final boolean sync) throws DotDataException {
+		final String identifier = content.getIdentifier();
+		if (sync && !this.pushedContent.containsKey(identifier)) {
+			final ContentType contentType = content.getContentType();
+			final List<Relationship> relationships = APILocator.getRelationshipAPI().byContentType(contentType);
+			this.pushedContent.put(identifier, Pair.of(
+					relationships.stream().filter(relationship -> contentType.id()
+									.equals(relationship.getParentStructureInode()))
+							.map(Relationship::getRelationTypeValue).collect(Collectors.toSet()),
+					relationships.stream().filter(relationship -> contentType.id()
+									.equals(relationship.getChildStructureInode()))
+							.map(Relationship::getRelationTypeValue).collect(Collectors.toSet())));
+		}
+		for (final Map<String, Object> tRow : wrapper.getTree()) {
+			final boolean isParent = bundleIdentifier.equals(tRow.get("parent"));
+			final boolean isChild = bundleIdentifier.equals(tRow.get("child"));
+			if (!isParent && !isChild) {
+				continue;
+			}
+			final Tree tree = new Tree();
+			tree.setParent(isParent ? identifier : (String) tRow.get("parent"));
+			tree.setChild(isChild ? identifier : (String) tRow.get("child"));
+			tree.setRelationType((String) tRow.get("relation_type"));
+			tree.setTreeOrder(Integer.parseInt(tRow.get("tree_order").toString()));
+			this.pushedTrees.add(tree);
+		}
+	}
+
+	/**
+	 * Applies the relationships of the pushed content, matched by Identifier. First, if the filter
+	 * syncs relationships, the pushed content's relationships, as parent and as child, are removed,
+	 * so that they match the sender. Then, the bundle's rows are added as long as both sides exist in the receiver. Relationships
+	 * to content that doesn't exist there are skipped, leaving them blank. So are relationships
+	 * that would give the related content more related items than the relationship allows, keeping
+	 * the ones it has in the receiver. Only the {@code tree} table changes: the related content
+	 * isn't pushed or updated otherwise.
+	 *
+	 * @throws DotDataException An error occurred when saving the relationships.
+	 */
+	@WrapInTransaction
+	private void applyPushedRelationships() throws DotDataException {
+		final Set<String> toRefresh = new HashSet<>();
+		for (final Map.Entry<String, Pair<Set<String>, Set<String>>> pushed : this.pushedContent.entrySet()) {
+			for (final String relationType : pushed.getValue().getLeft()) {
+				this.removeRelationships(CHILDREN_SQL, DELETE_CHILDREN_SQL, pushed.getKey(), relationType, toRefresh);
+			}
+			for (final String relationType : pushed.getValue().getRight()) {
+				this.removeRelationships(PARENTS_SQL, DELETE_PARENTS_SQL, pushed.getKey(), relationType, toRefresh);
+			}
+			toRefresh.add(pushed.getKey());
+		}
+		for (final Tree tree : this.pushedTrees) {
+			final List<String> sides = List.of(tree.getParent(), tree.getChild());
+			if (!sides.stream().allMatch(id -> UtilMethods.isSet(
+					Try.of(() -> this.identifierAPI.find(id).getId()).getOrNull()))) {
+				Logger.debug(this, () -> "Skipping relationship '" + tree.getRelationType() + "' between '" +
+						tree.getParent() + "' and '" + tree.getChild() + "': one of them doesn't exist in the receiver");
+				continue;
+			}
+			final Tree existing = TreeFactory.getTree(tree);
+			if (null != existing && UtilMethods.isSet(existing.getParent())) {
+				// The same row comes once per language, and from both sides when both are pushed
+				continue;
+			}
+			if (this.exceedsCardinality(tree)) {
+				Logger.info(this, "Skipping relationship '" + tree.getRelationType() + "' between '" +
+						tree.getParent() + "' and '" + tree.getChild() + "': it allows only one related " +
+						"item, and the receiver already has one");
+				continue;
+			}
+			TreeFactory.saveTree(tree);
+			toRefresh.addAll(sides);
+		}
+		for (final String id : toRefresh) {
+			final Contentlet related = Try.of(() -> this.contentletAPI.findContentletByIdentifierAnyLanguage(id))
+					.getOrNull();
+			this.invalidateRelationshipsCache(related);
+			APILocator.getReindexQueueAPI().addIdentifierReindex(id, Priority.STRUCTURE.dbValue());
+		}
+		this.pushedTrees.clear();
+		this.pushedContent.clear();
+	}
+
+	private static final String CHILDREN_SQL =
+			"select child as related from tree where parent = ? and relation_type = ?";
+	private static final String DELETE_CHILDREN_SQL =
+			"delete from tree where parent = ? and relation_type = ?";
+	private static final String PARENTS_SQL =
+			"select parent as related from tree where child = ? and relation_type = ?";
+	private static final String DELETE_PARENTS_SQL =
+			"delete from tree where child = ? and relation_type = ?";
+
+	/**
+	 * Removes the relationships of the specified content through the given relation type, using
+	 * one of the {@code *_SQL} query pairs, and keeps the related content to refresh.
+	 */
+	private void removeRelationships(final String selectSql, final String deleteSql, final String identifier,
+			final String relationType, final Set<String> toRefresh) throws DotDataException {
+		new DotConnect().setSQL(selectSql).addParam(identifier).addParam(relationType)
+				.loadObjectResults().forEach(row -> toRefresh.add(row.get("related").toString()));
+		new DotConnect().setSQL(deleteSql).addParam(identifier).addParam(relationType).loadResult();
+	}
+
+	/**
+	 * Checks whether saving the specified {@code tree} row would give its parent or its child more
+	 * related items than the relationship allows: one child per parent and one parent per child for
+	 * {@code ONE_TO_ONE}, one parent per child for {@code ONE_TO_MANY}, and, for
+	 * {@code MANY_TO_ONE}, one related item per content of the type that holds the field the
+	 * relationship was created from.
+	 * <p>
+	 * A {@code MANY_TO_ONE} relationship can be stored with the field on either side. A field created
+	 * as many-to-one is stored with the related ("one") type as the parent and the field's type as
+	 * the child, so the child can have one parent only. A field on the parent whose cardinality is
+	 * changed to many-to-one keeps its sides, so the parent can have one child only
+	 * (<a href="https://github.com/dotCMS/core/issues/38538">#38538</a>).
+	 *
+	 * @param tree The {@code tree} row to check.
+	 *
+	 * @return If the parent or the child already has its only allowed related item in the receiver,
+	 * returns {@code true}.
+	 *
+	 * @throws DotDataException An error occurred when reading the {@code tree} table.
+	 */
+	private boolean exceedsCardinality(final Tree tree) throws DotDataException {
+		final Relationship relationship = APILocator.getRelationshipAPI().byTypeValue(tree.getRelationType());
+		if (null == relationship) {
+			return false;
+		}
+		final RELATIONSHIP_CARDINALITY cardinality = RELATIONSHIP_CARDINALITY.fromOrdinal(relationship.getCardinality());
+		final boolean manyToOneFromParent = cardinality == RELATIONSHIP_CARDINALITY.MANY_TO_ONE
+				&& isOriginatingFieldOnParent(relationship);
+		final boolean oneChildPerParent = cardinality == RELATIONSHIP_CARDINALITY.ONE_TO_ONE || manyToOneFromParent;
+		final boolean oneParentPerChild = cardinality == RELATIONSHIP_CARDINALITY.ONE_TO_ONE
+				|| cardinality == RELATIONSHIP_CARDINALITY.ONE_TO_MANY
+				|| (cardinality == RELATIONSHIP_CARDINALITY.MANY_TO_ONE && !manyToOneFromParent);
+		return (oneChildPerParent && this.hasOtherRelated(OTHER_CHILDREN_SQL, tree.getParent(), tree.getChild(),
+						tree.getRelationType()))
+				|| (oneParentPerChild && this.hasOtherRelated(OTHER_PARENTS_SQL, tree.getChild(), tree.getParent(),
+						tree.getRelationType()));
+	}
+
+	/**
+	 * Checks whether the field the relationship was created from, named in its
+	 * {@code <Content Type>.<field>} relation type, is on the parent type. When the parent and child
+	 * types differ, the Content Type in the relation type tells the side. A type related to itself
+	 * is told apart by the relation names: a field on the parent is stored as the child relation
+	 * name, and a field on the child as the parent relation name. A relationship that wasn't created
+	 * from a field, or whose side can't be told, is treated as having it on the child, which is how
+	 * dotCMS stores a relationship created as many-to-one.
+	 *
+	 * @param relationship The relationship to check.
+	 *
+	 * @return If the originating field is on the parent type, returns {@code true}.
+	 *
+	 * @throws DotDataException The parent Content Type couldn't be read. The bundle fails instead
+	 *                          of applying the relationship with the wrong side limited.
+	 */
+	private static boolean isOriginatingFieldOnParent(final Relationship relationship) throws DotDataException {
+		final String relationType = relationship.getRelationTypeValue();
+		final int separator = null == relationType ? -1 : relationType.indexOf('.');
+		if (separator < 0) {
+			return false;
+		}
+		final String typeVariable = relationType.substring(0, separator);
+		final String fieldVariable = relationType.substring(separator + 1);
+		if (!relationship.getParentStructureInode().equals(relationship.getChildStructureInode())) {
+			final String parentVariable;
+			try {
+				parentVariable = APILocator.getContentTypeAPI(APILocator.systemUser())
+						.find(relationship.getParentStructureInode()).variable();
+			} catch (final DotSecurityException e) {
+				throw new DotDataException(e);
+			}
+			return typeVariable.equalsIgnoreCase(parentVariable);
+		}
+		// For a type related to itself, deleting the originating field clears its relation name
+		// but keeps the relationship, so a cleared child relation name next to a different parent
+		// one still means the originating field was on the parent
+		return !fieldVariable.equals(relationship.getParentRelationName())
+				&& (fieldVariable.equals(relationship.getChildRelationName())
+						|| null == relationship.getChildRelationName());
+	}
+
+	private static final String OTHER_CHILDREN_SQL =
+			"select count(*) as total from tree where parent = ? and child <> ? and relation_type = ?";
+	private static final String OTHER_PARENTS_SQL =
+			"select count(*) as total from tree where child = ? and parent <> ? and relation_type = ?";
+
+	/**
+	 * Checks whether the content is related to anything other than the specified content through
+	 * the given relationship, using one of the {@code OTHER_*_SQL} queries.
+	 */
+	private boolean hasOtherRelated(final String sql, final String identifier, final String otherIdentifier,
+			final String relationType) throws DotDataException {
+		return new DotConnect().setSQL(sql)
+				.addParam(identifier)
+				.addParam(otherIdentifier)
+				.addParam(relationType)
+				.getInt("total") > 0;
 	}
 
     /**
@@ -1240,19 +1510,30 @@ public class ContentHandler implements IHandler {
 	}
 
     /**
-     * Handles categories included in the bundle by creating/ensuring a tree for each category is associated to the content inode
+     * Links the pushed content to each category in the bundle, in the bundle's order. Categories
+     * are matched by their key path, and are never created here: one that doesn't exist in the
+     * receiver is skipped with a warning, since the content is still saved without it. They only
+     * reach the receiver when pushed themselves, either as dependencies or with a category sync.
      *
-     * @param inode corresponding to the content
-     * @param categories list of category-qualified-names included in the bundle
-     * @throws DotSecurityException
-     * @throws DotDataException
+     * @param content    The pushed content, already checked in on the receiver.
+     * @param categories The category-qualified-names included in the bundle.
+     * @throws DotSecurityException The category lookup was not allowed.
+     * @throws DotDataException     An error occurred when reading categories or saving the links.
      */
 	@WrapInTransaction
-	private void handleContentCategories(String inode, List<String> categories) throws DotSecurityException, DotDataException {
+	private void handleContentCategories(final Contentlet content, final List<String> categories)
+			throws DotSecurityException, DotDataException {
+		final String inode = content.getInode();
 		for(int i = 0; i < categories.size(); i++) {
 			Category category = findCategory(categories.get(i));
 
-			if (category != null) {
+			if (category == null) {
+				Logger.warn(this, String.format("Category '%s' of the pushed content with Identifier '%s' "
+						+ "doesn't exist in the receiver, so the content was saved without it. Push the "
+						+ "categories, or use a filter that includes dependencies, and push the content again",
+						categories.get(i).replace(ContentBundler.CATEGORY_SEPARATOR, " > "),
+						content.getIdentifier()));
+			} else {
 		        Tree tree = new Tree();
 		        tree.setChild(inode);
 		        tree.setParent(category.getInode());

@@ -155,27 +155,36 @@ test.describe('Content listing portlet — UI integrity', () => {
 
 test.describe('Content listing portlet — search filter', () => {
     let contentType: ContentType | null = null;
-    let contentlet: Contentlet | null = null;
+    let contentlets: Contentlet[] = [];
     let seededTitle = '';
+    let otherTitle = '';
+    let contentTypeVariable = '';
 
     test.beforeEach(async ({ request }) => {
         const suffix = Date.now();
-        seededTitle = `E2E Search Content ${suffix}`;
+        // One token: the listing search matches a multi-word query on any of its words
+        seededTitle = `E2ESearchContent${suffix}`;
+        otherTitle = `Unrelated Entry ${suffix}`;
 
         contentType = await createFakeContentType(request, {
             name: `E2ESearchType${suffix}`
         });
+        contentTypeVariable = contentType.variable;
 
-        contentlet = await createContentlet(request, {
-            contentType: contentType.variable,
-            title: seededTitle
-        });
+        for (const title of [seededTitle, otherTitle]) {
+            contentlets.push(
+                await createContentlet(request, { contentType: contentTypeVariable, title })
+            );
+        }
     });
 
     test.afterEach(async ({ request }) => {
-        if (contentlet) {
-            await deleteContentlets(request, [contentlet.identifier]);
-            contentlet = null;
+        if (contentlets.length) {
+            await deleteContentlets(
+                request,
+                contentlets.map((c) => c.identifier)
+            );
+            contentlets = [];
         }
 
         if (contentType) {
@@ -186,19 +195,20 @@ test.describe('Content listing portlet — search filter', () => {
 
     test('search filter returns matching content @critical', async ({ page }) => {
         const listing = new ContentListingHelper(page);
-        await listing.goto();
+        // Pin the listing to the seeded type: unfiltered, it opens on whichever type another
+        // test last fetched through the shared session, which may hold no content at all.
+        await listing.goto(contentTypeVariable);
 
-        // Wait for the results table to have at least one row before filtering
-        await listing.resultsTable
-            .locator('tbody tr')
-            .first()
-            .waitFor({ state: 'visible', timeout: 15000 });
+        await expect(listing.frame.getByRole('link', { name: otherTitle })).toBeVisible({
+            timeout: 15000
+        });
 
         await listing.searchFor(seededTitle);
 
-        // After filtering, the seeded item should appear in the results
+        // After filtering, only the seeded item should remain
         await expect(listing.frame.getByRole('link', { name: seededTitle }).first()).toBeVisible({
             timeout: 15000
         });
+        await expect(listing.frame.getByRole('link', { name: otherTitle })).toBeHidden();
     });
 });

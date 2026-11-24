@@ -21,8 +21,8 @@ interface RequestTokenDialogData {
 /**
  * Sub-dialog opened from the API Tokens tab. Collects Label + Expires
  * Date + Allow Network, POSTs to `/api/v1/apitoken`, and closes with
- * the created token plus a first JWT for the parent tab's reveal
- * surface. The parent can re-mint the JWT later via `getApiTokenJwt`.
+ * the created token plus its JWT for the parent tab's reveal surface.
+ * That is the only time the JWT is available.
  */
 @Component({
     selector: 'dot-users-request-token-dialog',

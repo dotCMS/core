@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page, type Request } from '@playwright/test';
 import { Portlet } from '@utils/portlets';
+import { trackRunTrail, withRunTrail } from '@utils/run-trail';
 
 /**
  * Page object for the Content Drive portlet shell.
@@ -52,6 +53,7 @@ export class ContentDrivePage {
     readonly toasts: Locator;
 
     constructor(private page: Page) {
+        trackRunTrail(page);
         this.toolbar = page.getByTestId('toolbar');
         this.treeSelector = page.getByTestId('tree-selector');
         this.sidebar = page.getByTestId('sidebar');
@@ -324,6 +326,13 @@ export class ContentDrivePage {
         });
     }
 
+    /** {@link chooseFilesAndAwaitAcceptance} for `count` generated files named from `prefix`. */
+    async chooseGeneratedFilesForAcceptedUpload(count: number, prefix: string) {
+        await this.chooseFilesAndAwaitAcceptance(
+            Array.from({ length: count }, (_, index) => `${prefix}-${index}.png`)
+        );
+    }
+
     /**
      * Chooses files and waits for the server to accept the batch.
      *
@@ -413,16 +422,20 @@ export class ContentDrivePage {
         // leave — so its presence is the indicator, and there is no second element to check.
         // It used to be two: a wide advisory toast plus the toolbar's indicator, which meant a
         // backgrounded upload announced itself twice.
-        await expect(this.statusToastSummary.filter({ hasText: 'in the background' })).toBeVisible({
-            timeout: OUTCOME_TIMEOUT
-        });
+        await withRunTrail(this.page, () =>
+            expect(this.statusToastSummary.filter({ hasText: 'in the background' })).toBeVisible({
+                timeout: OUTCOME_TIMEOUT
+            })
+        );
     }
 
     /** What the status toast is saying right now, if anything. */
     async expectStatusToastContaining(text: string) {
-        await expect(this.statusToastSummary.filter({ hasText: text }).first()).toBeVisible({
-            timeout: OUTCOME_TIMEOUT
-        });
+        await withRunTrail(this.page, () =>
+            expect(this.statusToastSummary.filter({ hasText: text }).first()).toBeVisible({
+                timeout: OUTCOME_TIMEOUT
+            })
+        );
     }
 
     /**
@@ -435,7 +448,9 @@ export class ContentDrivePage {
      * @param timeout how long the run may take to end, for one known to outlast the usual wait
      */
     async expectStatusToastGone(timeout = OUTCOME_TIMEOUT) {
-        await expect(this.statusToastSummary).toHaveCount(0, { timeout });
+        await withRunTrail(this.page, () =>
+            expect(this.statusToastSummary).toHaveCount(0, { timeout })
+        );
     }
 
     /**
@@ -446,9 +461,9 @@ export class ContentDrivePage {
      * @param timeout how long the run may take to end
      */
     async expectStatusToastGoneContaining(text: string, timeout = OUTCOME_TIMEOUT) {
-        await expect(this.statusToastSummary.filter({ hasText: text })).toHaveCount(0, {
-            timeout
-        });
+        await withRunTrail(this.page, () =>
+            expect(this.statusToastSummary.filter({ hasText: text })).toHaveCount(0, { timeout })
+        );
     }
 
     /**
@@ -538,9 +553,11 @@ export class ContentDrivePage {
     }
 
     async expectToastContaining(text: string) {
-        await expect(this.toasts.filter({ hasText: text }).first()).toBeVisible({
-            timeout: OUTCOME_TIMEOUT
-        });
+        await withRunTrail(this.page, () =>
+            expect(this.toasts.filter({ hasText: text }).first()).toBeVisible({
+                timeout: OUTCOME_TIMEOUT
+            })
+        );
     }
 
     /**

@@ -1,10 +1,12 @@
 package com.dotcms.rest.api.v1.user;
 
+import com.dotcms.auth.InteractiveUserPolicy;
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.auth.LoginLockout;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ResponseEntityView;
@@ -25,11 +27,11 @@ import com.dotmarketing.business.UserProxyAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -66,6 +68,12 @@ import static com.dotcms.util.ConversionUtils.toInt;
  *
  */
 public class UserResourceHelper implements Serializable {
+
+	/**
+	 * When {@code true} (the default), only Administrators or CMS Administrators can use Login As
+	 * to impersonate an Administrator or CMS Administrator user.
+	 */
+	public static final String LOGIN_AS_ADMIN_REQUIRES_ADMIN = "LOGIN_AS_ADMIN_REQUIRES_ADMIN";
 
 	private final RoleAPI roleAPI;
 	private final UserAPI userAPI;
@@ -177,13 +185,17 @@ public class UserResourceHelper implements Serializable {
 	 *            user.
 	 * @param loginAsUserPwd
 	 *            - If the user to imitate is an Administrator or CMS
-	 *            Administrator, that user's password is required (for security
-	 *            reasons).
+	 *            Administrator, the current user must re-enter their own
+	 *            password to confirm the operation. In that case, unless
+	 *            {@link #LOGIN_AS_ADMIN_REQUIRES_ADMIN} is set to
+	 *            {@code false}, the current user must also be an
+	 *            Administrator or CMS Administrator.
 	 * @param serverName
 	 *            - The server name obtained via the request URL to try to
 	 *            figure out the Site that will be displayed.
 	 * @return A {@link Map} containing all the parameters that must be changed
-	 *         in order to perform the temporary 'Login As'.
+	 *         in order to perform the temporary 'Login As'. The user id in it is the one
+	 *         stored in the record of the user to log in as, whatever spelling was given.
 	 * @throws DotDataException
 	 *             An error occurred with the input parameters, or when
 	 *             retrieving roles and Site information.
@@ -201,6 +213,10 @@ public class UserResourceHelper implements Serializable {
 			throw new DotDataException("Current user [" + currentUser.getUserId() + "] trying to log in as himself.",
 					"loginas.error.selfloginas");
 		}
+		if (!InteractiveUserPolicy.isEligible(currentUser)) {
+			throw new DotSecurityException("User [" + currentUser.getUserId()
+					+ "] is not eligible for interactive use and cannot Login As another user.");
+		}
 		checkLoginAsRole(currentUser);
 		final User systemUser = this.userAPI.getSystemUser();
 		final User loginAsUser = this.userAPI.loadUserById(loginAsUserId, systemUser, false);
@@ -210,12 +226,14 @@ public class UserResourceHelper implements Serializable {
 			throw new DotDataException("User [" + loginAsUser.getUserId() + "] does not have any layouts.",
 					"loginas.error.nolayouts");
 		}
-		final Role administratorRole = roleAPI.findRoleByFQN(Role.SYSTEM + " --> " + Role.ADMINISTRATOR);
-		if (this.roleAPI.doesUserHaveRole(loginAsUser, administratorRole) || this.roleAPI.doesUserHaveRole(loginAsUser,
-				com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole())) {
+		if (isAdministrator(loginAsUser)) {
+			if (Config.getBooleanProperty(LOGIN_AS_ADMIN_REQUIRES_ADMIN, true) && !isAdministrator(currentUser)) {
+				throw new DotSecurityException("User [" + currentUser.getUserId()
+						+ "] must be an administrator to Login As administrator user [" + loginAsUser.getUserId() + "].");
+			}
 			if (!UtilMethods.isSet(loginAsUserPwd)) {
 				throw new DotDataException("The 'Login As' user password is required.", "loginas.error.missingloginaspwd");
-			} else if (!LoginFactory.passwordMatch(loginAsUserPwd, currentUser)) {
+			} else if (!LoginLockout.getInstance().passwordMatch(loginAsUserPwd, currentUser)) {
 				throw new DotDataException("The 'Login As' user password is invalid.",
 						"loginas.error.invalidloginascredentials");
 			}
@@ -233,8 +251,21 @@ public class UserResourceHelper implements Serializable {
 			host = this.hostWebAPI.findDefaultHost(systemUser, false);
 		}
 		final Map<String, Object> sessionData = Map.of(WebKeys.PRINCIPAL_USER_ID, currentUser.getUserId(), WebKeys.USER_ID,
-				loginAsUserId, com.dotmarketing.util.WebKeys.CURRENT_HOST, host);
+				loginAsUser.getUserId(), com.dotmarketing.util.WebKeys.CURRENT_HOST, host);
 		return sessionData;
+	}
+
+	/**
+	 * Determines whether the given user has the Administrator or the CMS Administrator role.
+	 *
+	 * @param user the user to check
+	 * @return {@code true} when the user holds either role
+	 * @throws DotDataException if the roles cannot be loaded
+	 */
+	private boolean isAdministrator(final User user) throws DotDataException {
+		final Role administratorRole = this.roleAPI.findRoleByFQN(Role.SYSTEM + " --> " + Role.ADMINISTRATOR);
+		return this.roleAPI.doesUserHaveRole(user, administratorRole)
+				|| this.roleAPI.doesUserHaveRole(user, this.roleAPI.loadCMSAdminRole());
 	}
 
 	/**
@@ -297,7 +328,8 @@ public class UserResourceHelper implements Serializable {
 	 * @return A {@link Map} containing all the parameters that must be changed
 	 *         in order to logout form the 'Login As'.
 	 * @throws DotDataException
-	 *             An error occurred with the input parameters, or when
+	 *             No principal user was given because the session has no
+	 *             active Login As (logged at WARN), or an error occurred when
 	 *             retrieving Site information.
 	 * @throws DotSecurityException
 	 *             The operation is not supported by the user.
@@ -305,6 +337,8 @@ public class UserResourceHelper implements Serializable {
 	public Map<String, Object> doLogoutAs(final String principalUserId, final User currentLoginAsUser,
 			final String serverName) throws DotDataException, DotSecurityException {
 		if (!UtilMethods.isSet(principalUserId)) {
+			Logger.warn(this, String.format("Logout As was requested by user '%s', but the session has no active " +
+					"Login As; the session user was not changed.", currentLoginAsUser.getUserId()));
 			throw new DotDataException("Current user [" + currentLoginAsUser.getUserId()
 			+ "] is not logged in as a different user.");
 		}
@@ -421,6 +455,7 @@ public class UserResourceHelper implements Serializable {
 
 			if (userToSave.getUserId().equalsIgnoreCase(modUser.getUserId())) {
 
+				// Goes through login lockout: counted, and refused under a lock, like any other password check
 				boolean passwordMatch = loginService.passwordMatch(updateUserForm.getCurrentPassword(), modUser);
 
 				if (!passwordMatch){

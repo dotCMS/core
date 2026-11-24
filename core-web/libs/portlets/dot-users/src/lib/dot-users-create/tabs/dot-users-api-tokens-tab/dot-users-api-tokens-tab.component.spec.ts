@@ -10,6 +10,7 @@ import { Mock, vi } from 'vitest';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ConfirmationService } from 'primeng/api';
+import { Dialog } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
@@ -41,11 +42,9 @@ const MESSAGES = {
     'users.dialog.tokens.create-mode-hint': 'Save the user first.',
     'users.dialog.tokens.reveal.title': 'API token',
     'users.dialog.tokens.reveal.description': 'copy me',
-    'users.dialog.tokens.reveal.loading': 'loading',
     'users.dialog.tokens.reveal.accept': 'Accept',
     'users.dialog.tokens.reveal.copy': 'Copy',
-    'users.dialog.tokens.reveal.copied': 'Copied!',
-    'users.dialog.tokens.row.reveal-hint': 'Click to reveal the JWT'
+    'users.dialog.tokens.reveal.copied': 'Copied!'
 };
 
 function tokenFactory(overrides: Partial<DotApiToken> = {}): DotApiToken {
@@ -88,7 +87,6 @@ describe('DotUsersApiTokensTabComponent', () => {
             { provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) },
             mockProvider(DotUsersService, {
                 getApiTokens: vi.fn().mockReturnValue(of([])),
-                getApiTokenJwt: vi.fn().mockReturnValue(of('jwt-value')),
                 revokeApiToken: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotHttpErrorManagerService, { handle: vi.fn() })
@@ -216,55 +214,16 @@ describe('DotUsersApiTokensTabComponent', () => {
             expect(copy?.textContent?.trim()).toBe('This user has no API tokens.');
         });
 
-        it('should reveal the JWT on row click for a valid row', () => {
-            const token = tokenFactory();
-            spectator.component['onRowClick'](token);
-            expect(usersService.getApiTokenJwt).toHaveBeenCalledWith('tok-1');
-            expect(spectator.component['$revealVisible']()).toBe(true);
-            expect(spectator.component['$revealJwt']()).toBe('jwt-value');
-        });
+        it('should not open the JWT dialog when a valid row is clicked', () => {
+            (usersService.getApiTokens as Mock).mockReturnValueOnce(of([tokenFactory()]));
+            spectator.component['onShowRevokedChange'](true);
+            spectator.detectChanges();
 
-        it('should ignore row clicks on inactive rows', () => {
-            spectator.component['onRowClick'](tokenFactory({ revoked: true, valid: false }));
-            expect(usersService.getApiTokenJwt).not.toHaveBeenCalled();
-        });
+            const row = spectator.query(byTestId('users-api-tokens-row-tok-1')) as HTMLElement;
+            expect(row.getAttribute('role')).toBeNull();
+            expect(row.getAttribute('tabindex')).toBeNull();
 
-        it('should reveal on Enter and Space for valid rows and ignore other keys', () => {
-            const token = tokenFactory();
-            const enter = new KeyboardEvent('keydown', { key: 'Enter' });
-            const space = new KeyboardEvent('keydown', { key: ' ' });
-            const tab = new KeyboardEvent('keydown', { key: 'Tab' });
-            const enterPreventSpy = vi.spyOn(enter, 'preventDefault');
-            const spacePreventSpy = vi.spyOn(space, 'preventDefault');
-
-            spectator.component['onRowKeydown'](token, enter);
-            expect(usersService.getApiTokenJwt).toHaveBeenCalledTimes(1);
-            expect(enterPreventSpy).toHaveBeenCalled();
-
-            spectator.component['onRowKeydown'](token, space);
-            expect(usersService.getApiTokenJwt).toHaveBeenCalledTimes(2);
-            expect(spacePreventSpy).toHaveBeenCalled();
-
-            spectator.component['onRowKeydown'](token, tab);
-            expect(usersService.getApiTokenJwt).toHaveBeenCalledTimes(2);
-        });
-
-        it('should ignore keydown reveal on inactive rows', () => {
-            const enter = new KeyboardEvent('keydown', { key: 'Enter' });
-            spectator.component['onRowKeydown'](
-                tokenFactory({ expired: true, valid: false }),
-                enter
-            );
-            expect(usersService.getApiTokenJwt).not.toHaveBeenCalled();
-        });
-
-        it('should surface a reveal error through httpErrorManager and hide the dialog', () => {
-            const error = new Error('malformed');
-            (usersService.getApiTokenJwt as Mock).mockReturnValueOnce(throwError(() => error));
-
-            spectator.component['reveal']('tok-1');
-
-            expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalledWith(error);
+            spectator.click(row);
             expect(spectator.component['$revealVisible']()).toBe(false);
         });
 
@@ -292,6 +251,14 @@ describe('DotUsersApiTokensTabComponent', () => {
             expect(usersService.getApiTokens).toHaveBeenCalledTimes(2);
             expect(spectator.component['$revealVisible']()).toBe(true);
             expect(spectator.component['$revealJwt']()).toBe('new-jwt');
+        });
+
+        it('should not let Escape or the X dismiss the reveal dialog, only Accept', () => {
+            const dialog = spectator.queryAll(Dialog).find((d) => d.header === 'API token');
+
+            expect(dialog).toBeDefined();
+            expect(dialog?.closable).toBe(false);
+            expect(dialog?.closeOnEscape).toBe(false);
         });
     });
 });

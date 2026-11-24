@@ -65,6 +65,12 @@ public final class OAuthAppConfig implements Serializable {
     public static final String KEY_CALLBACK_URL        = "callbackUrl";
     public static final String KEY_HASH_USERID         = "hashUserId";
     public static final String KEY_AUTO_PROVISION      = "autoProvision";
+    /**
+     * Opt-in: link an IdP identity to an existing dotCMS user by email when the IdP sends no
+     * {@code email_verified} claim at all. Off by default; an explicit {@code email_verified=false}
+     * is never linked regardless of this setting. See {@code OAuthHelper#resolveUser}.
+     */
+    public static final String KEY_TRUST_EMAIL_WITHOUT_VERIFIED_CLAIM = "trustEmailWithoutVerifiedClaim";
 
 
     public final boolean  enabled;
@@ -72,6 +78,7 @@ public final class OAuthAppConfig implements Serializable {
     public final boolean  enableFrontend;
     public final boolean  hashUserId;
     public final boolean  autoProvision;
+    public final boolean  trustEmailWithoutVerifiedClaim;
     public final String   providerType;
     public final String   issuerUrl;
     public final String   clientId;
@@ -110,6 +117,10 @@ public final class OAuthAppConfig implements Serializable {
         // dotcms.user.id.maxlength. Mirrors SAMLHelper's hash.userid default behavior.
         this.hashUserId       = bool(secrets, KEY_HASH_USERID,      true);
         this.autoProvision    = bool(secrets, KEY_AUTO_PROVISION,   true);
+        // Default CLOSED: an email from an IdP that does not say it verified the address is not
+        // enough to link into an existing account. Operators of IdPs whose email is
+        // administrator-controlled but unflagged (e.g. Okta custom authorization servers) opt in.
+        this.trustEmailWithoutVerifiedClaim = bool(secrets, KEY_TRUST_EMAIL_WITHOUT_VERIFIED_CLAIM, false);
         this.providerType     = str (secrets, KEY_PROVIDER_TYPE,    OAuthConstants.PROVIDER_TYPE_OIDC);
         this.issuerUrl        = validateUrl(str(secrets, KEY_ISSUER_URL,        null), KEY_ISSUER_URL);
         this.clientId         = str (secrets, KEY_CLIENT_ID,        null);
@@ -156,6 +167,8 @@ public final class OAuthAppConfig implements Serializable {
         this.enableFrontend   = true;
         this.hashUserId       = bool(headlessSecrets, "hashUserId", true);
         this.autoProvision    = bool(headlessSecrets, "autoProvision", true);
+        this.trustEmailWithoutVerifiedClaim =
+                bool(headlessSecrets, KEY_TRUST_EMAIL_WITHOUT_VERIFIED_CLAIM, false);
         this.providerType     = str (headlessSecrets, "providerType", OAuthConstants.PROVIDER_TYPE_OIDC);
         this.issuerUrl        = validateUrl(str(headlessSecrets, "issuerUrl", null), "issuerUrl");
         this.clientId         = str (headlessSecrets, "clientId", null);
@@ -319,6 +332,8 @@ public final class OAuthAppConfig implements Serializable {
         this.groupFilterPattern  = idpStr(idpOverrides, "groupFilterPattern",  base.groupFilterPattern);
         this.buildRolesStrategy = idpStr(idpOverrides, "roleBehavior",   base.buildRolesStrategy);
         this.autoProvision      = idpBool(idpOverrides, "autoProvision", base.autoProvision);
+        this.trustEmailWithoutVerifiedClaim = idpBool(idpOverrides,
+                KEY_TRUST_EMAIL_WITHOUT_VERIFIED_CLAIM, base.trustEmailWithoutVerifiedClaim);
         final String defaultRolesStr = idpStr(idpOverrides, "defaultRoles", null);
         this.extraRoles         = defaultRolesStr != null ? split(defaultRolesStr) : base.extraRoles;
     }

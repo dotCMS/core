@@ -8,6 +8,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.PaginationUtil;
@@ -17,7 +18,11 @@ import com.dotcms.util.pagination.UserPaginator;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.DuplicateRoleException;
+import com.dotmarketing.business.DuplicateRoleKeyException;
 import com.dotmarketing.business.Layout;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
@@ -50,6 +55,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
+import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import org.apache.commons.beanutils.BeanUtils;
 import org.glassfish.jersey.server.JSONP;
 
@@ -123,6 +131,11 @@ public class RoleResource implements Serializable {
 	 * not guaranteed that this method will traverse the full list of roles.
 	 * Once it finds a role that is associated to the user, it will return.
 	 * <p>
+	 * Any back-end user can check their own roles. Checking another user's roles
+	 * takes the role membership privilege: an administrator, or a user with access
+	 * to both the Roles and the Users portlets. The rule is applied by
+	 * {@link RoleAPI#doesUserHaveRoles(String, List, User)}.
+	 * <p>
 	 * Example:
 	 *
 	 * <pre>
@@ -131,6 +144,8 @@ public class RoleResource implements Serializable {
 	 *
 	 * @param request
 	 *            - The {@link HttpServletRequest} object.
+	 * @param response
+	 *            - The {@link HttpServletResponse} object.
 	 * @param userId
 	 *            - The ID of the user going through role verification.
 	 * @param roleIds
@@ -139,24 +154,28 @@ public class RoleResource implements Serializable {
 	 * @return If the user is associated to at least one role ID, returns a
 	 *         {@link Response} with {@code true}. Otherwise, returns a
 	 *         {@link Response} with {@code false}.
+	 * @throws ForbiddenException if the user to check is not the caller and the
+	 *         caller does not have the role membership privilege
 	 */
 	@Operation(
 		operationId = "checkUserRoles",
 		summary = "Check user roles",
-		description = "Verifies that a user is assigned to one of the specified role IDs"
+		description = "Verifies that a user is assigned to one of the specified role IDs. "
+				+ "Any back-end user can check their own roles; checking another user's roles "
+				+ "requires an administrator or access to both the Roles and the Users portlets."
 	)
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "Role check completed successfully",
 					content = @Content(mediaType = "application/json",
 									  schema = @Schema(implementation = ResponseEntityRoleOperationView.class))),
-		@ApiResponse(responseCode = "401", 
+		@ApiResponse(responseCode = "401",
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),
-		@ApiResponse(responseCode = "403", 
-					description = "Forbidden - insufficient permissions",
+		@ApiResponse(responseCode = "403",
+					description = "Forbidden - checking another user's roles requires an administrator, or Roles and Users portlet access",
 					content = @Content(mediaType = "application/json")),
-		@ApiResponse(responseCode = "500", 
+		@ApiResponse(responseCode = "500",
 					description = "Internal server error",
 					content = @Content(mediaType = "application/json"))
 	})
@@ -179,7 +198,9 @@ public class RoleResource implements Serializable {
 		boolean hasUserRole = false;
 		try {
 			String[] roles = roleIds.split(ROLE_ID_SEPARATOR);
-			hasUserRole = this.roleAPI.doesUserHaveRoles(userId, list(roles));
+			hasUserRole = this.roleAPI.doesUserHaveRoles(userId, list(roles), init.getUser());
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e.getMessage());
 		} catch (Exception e) {
 			// In case of unknown error, so we report it as a 500
 			Logger.error(this, "An error occurred when processing the request.", e);
@@ -255,7 +276,8 @@ public class RoleResource implements Serializable {
 
 	/**
 	 * Add a new role
-	 * Only admins can add roles.
+	 * Only admins can add roles. A key that is already taken, or a name already used under
+	 * the same parent, is answered with a 409 carrying the same message as an update.
 	 */
 	@Operation(
 		operationId = "createRole",
@@ -273,8 +295,11 @@ public class RoleResource implements Serializable {
 		@ApiResponse(responseCode = "401", 
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),
-		@ApiResponse(responseCode = "403", 
+		@ApiResponse(responseCode = "403",
 					description = "Forbidden - admin permissions required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "409",
+					description = "Conflict - duplicate role key, or duplicate role name under the same parent",
 					content = @Content(mediaType = "application/json"))
 	})
 	@POST
@@ -322,6 +347,16 @@ public class RoleResource implements Serializable {
 					Try.of(()->LanguageUtil.get(user,"Role-Save-Name-Failed")).getOrElse("Role Name not valid"),
 					"Role-Save-Name-Failed", e);
 
+		} catch (final DuplicateRoleKeyException e) {
+			ActivityLogger.logInfo(getClass(), "Error Adding Role. Duplicate Key", "Date: " + date + ";  "+ "User:" + user.getUserId());
+			AdminLogger.log(getClass(), "Error Adding Role. Duplicate Key", "Date: " + date + ";  "+ "User:" + user.getUserId());
+			throw new ConflictException(
+					"A role with key '" + roleForm.getRoleKey() + "' already exists", e);
+		} catch (final DuplicateRoleException e) {
+			ActivityLogger.logInfo(getClass(), "Error Adding Role. Duplicate Name", "Date: " + date + ";  "+ "User:" + user.getUserId());
+			AdminLogger.log(getClass(), "Error Adding Role. Duplicate Name", "Date: " + date + ";  "+ "User:" + user.getUserId());
+			throw new ConflictException(
+					"A role named '" + roleForm.getRoleName() + "' already exists under the same parent", e);
 		} catch(DotDataException | DotStateException e) {
 			ActivityLogger.logInfo(getClass(), "Error Adding Role", "Date: " + date + ";  "+ "User:" + user.getUserId());
 			AdminLogger.log(getClass(), "Error Adding Role", "Date: " + date + ";  "+ "User:" + user.getUserId());
@@ -479,6 +514,101 @@ public class RoleResource implements Serializable {
 				.roleId(roleId)
 				.usersAffected(usersAffected)
 				.build());
+	}
+
+	/**
+	 * Locks a role so it cannot be edited or deleted until it is unlocked. The caller must be a
+	 * backend user with access to the Roles portlet and the CMS Administrator role.
+	 *
+	 * @param request  the current request
+	 * @param response the current response
+	 * @param roleId   id of the role to lock
+	 * @return the locked role, in the same shape as GET /v1/roles/{roleid}
+	 */
+	@Operation(
+		operationId = "lockRole",
+		summary = "Lock a role",
+		description = "Locks a role. A locked role cannot be updated or deleted until it is unlocked. " +
+				"Locking a role that is already locked changes nothing."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200",
+					description = "Role locked",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityRoleDetailView.class))),
+		@ApiResponse(responseCode = "401",
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403",
+					description = "Forbidden - admin permissions required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404",
+					description = "Role not found",
+					content = @Content(mediaType = "application/json"))
+	})
+	@PUT
+	@Path("/{roleid}/_lock")
+	@Produces(MediaType.APPLICATION_JSON)
+	public ResponseEntityRoleDetailView lockRole(
+			final @Context HttpServletRequest request,
+			final @Context HttpServletResponse response,
+			@Parameter(description = "Id of the role to lock", required = true)
+			final @PathParam("roleid") String roleId) throws DotDataException, DotSecurityException {
+
+		return this.setRoleLocked(request, response, roleId, true);
+	}
+
+	/**
+	 * Unlocks a role so it can be edited and deleted again. The caller must be a backend user
+	 * with access to the Roles portlet and the CMS Administrator role.
+	 *
+	 * @param request  the current request
+	 * @param response the current response
+	 * @param roleId   id of the role to unlock
+	 * @return the unlocked role, in the same shape as GET /v1/roles/{roleid}
+	 */
+	@Operation(
+		operationId = "unlockRole",
+		summary = "Unlock a role",
+		description = "Unlocks a role so it can be updated and deleted again. Unlocking a role that is " +
+				"not locked changes nothing."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200",
+					description = "Role unlocked",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityRoleDetailView.class))),
+		@ApiResponse(responseCode = "401",
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403",
+					description = "Forbidden - admin permissions required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404",
+					description = "Role not found",
+					content = @Content(mediaType = "application/json"))
+	})
+	@PUT
+	@Path("/{roleid}/_unlock")
+	@Produces(MediaType.APPLICATION_JSON)
+	public ResponseEntityRoleDetailView unlockRole(
+			final @Context HttpServletRequest request,
+			final @Context HttpServletResponse response,
+			@Parameter(description = "Id of the role to unlock", required = true)
+			final @PathParam("roleid") String roleId) throws DotDataException, DotSecurityException {
+
+		return this.setRoleLocked(request, response, roleId, false);
+	}
+
+	/** Shared body of the lock and unlock endpoints: authorizes, applies the state, returns the role. */
+	private ResponseEntityRoleDetailView setRoleLocked(final HttpServletRequest request,
+			final HttpServletResponse response, final String roleId, final boolean locked)
+			throws DotDataException, DotSecurityException {
+
+		final User user = this.initRequireRolesPortletAndCmsAdmin(request, response);
+		final Role role = this.roleHelper.setRoleLocked(roleId, locked, user);
+		return new ResponseEntityRoleDetailView(
+				this.roleHelper.toRoleViews(List.of(role), true, this.roleAPI).get(0));
 	}
 
 	/**
@@ -723,7 +853,9 @@ public class RoleResource implements Serializable {
 	}
 
 	/**
-	 * Load the user and roles by role id.
+	 * Load the user and roles by role id. The caller must be able to read role membership (an
+	 * administrator, or Roles plus Users portlets) or hold a workflow action that assigns work
+	 * to the role, which is what the workflow assignee picker relies on.
 	 * @param request   {@link HttpServletRequest}
 	 * @param response  {@link HttpServletResponse}
 	 * @param roleId    {@link String} role
@@ -736,7 +868,9 @@ public class RoleResource implements Serializable {
 	@Operation(
 		operationId = "loadUsersAndRolesByRoleId",
 		summary = "Load users and roles by role ID",
-		description = "Load the user and roles by role id with optional hierarchy and filtering"
+		description = "Load the user and roles by role id with optional hierarchy and filtering. "
+				+ "The caller must be an administrator, have access to both the Roles and the Users "
+				+ "portlets, or hold a workflow action that assigns to the role."
 	)
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
@@ -750,7 +884,7 @@ public class RoleResource implements Serializable {
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),
 		@ApiResponse(responseCode = "403", 
-					description = "Forbidden - backend user required",
+					description = "Forbidden - membership privilege or an assigning workflow action required",
 					content = @Content(mediaType = "application/json")),
 		@ApiResponse(responseCode = "404", 
 					description = "Role not found",
@@ -769,9 +903,19 @@ public class RoleResource implements Serializable {
 											  @Parameter(description = "Role name filter prefix", required = false)
 											  @QueryParam  ("name") final String roleNameToFilter) throws DotDataException, DotSecurityException {
 
-		new WebResource.InitBuilder(this.webResource).requiredBackendUser(true)
+		final User modUser = new WebResource.InitBuilder(this.webResource).requiredBackendUser(true)
 				.requiredFrontendUser(false).requestAndResponse(request, response)
-				.rejectWhenNoUser(true).init();
+				.rejectWhenNoUser(true).init().getUser();
+
+		if (!this.canReadRoleMembership(modUser) && !this.canAssignToRole(modUser, roleId)) {
+
+			SecurityLogger.logInfo(this.getClass(), "unauthorized attempt to read the hierarchy and users of role "
+					+ roleId + " by user " + modUser.getUserId() + " from " + request.getRemoteHost());
+			final String forbiddenMessage = "The User: " + modUser.getUserId()
+					+ " does not have permissions to read the users of a role";
+			Logger.error(this, forbiddenMessage);
+			throw new ForbiddenException(forbiddenMessage);
+		}
 
 		final Role role = this.roleAPI.loadRoleById(roleId);
 
@@ -821,7 +965,8 @@ public class RoleResource implements Serializable {
 	 * user serialization (email address included). Grants inherited through the role hierarchy
 	 * are not part of the response: clients that need the effective member list walk the
 	 * ancestor chain through the {@code parent} attribute of {@link RoleView} and call this
-	 * endpoint per role.
+	 * endpoint per role. The caller must be an administrator or hold both the Roles and the
+	 * Users portlets, the same privilege {@link #loadUserRoles} asks for.
 	 *
 	 * @param request   {@link HttpServletRequest}
 	 * @param response  {@link HttpServletResponse}
@@ -839,7 +984,8 @@ public class RoleResource implements Serializable {
 		summary = "Get the users directly granted a role",
 		description = "Returns the paginated list of users directly granted the given role, "
 				+ "using the standard user serialization (email address included). Grants "
-				+ "inherited through the role hierarchy are not included."
+				+ "inherited through the role hierarchy are not included. The caller must be "
+				+ "an administrator or have access to both the Roles and the Users portlets."
 	)
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200",
@@ -853,7 +999,7 @@ public class RoleResource implements Serializable {
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),
 		@ApiResponse(responseCode = "403",
-					description = "Forbidden - roles portlet access required",
+					description = "Forbidden - administrator, or Roles and Users portlet access, required",
 					content = @Content(mediaType = "application/json")),
 		@ApiResponse(responseCode = "404",
 					description = "Role not found",
@@ -886,6 +1032,17 @@ public class RoleResource implements Serializable {
 				.requiredPortlet("roles")
 				.requestAndResponse(request, response)
 				.rejectWhenNoUser(true).init();
+
+		final User user = initData.getUser();
+		if (!this.canReadRoleMembership(user)) {
+
+			SecurityLogger.logInfo(this.getClass(), "unauthorized attempt to list the users of role "
+					+ roleId + " by user " + user.getUserId() + " from " + request.getRemoteHost());
+			final String forbiddenMessage = "The User: " + user.getUserId()
+					+ " does not have permissions to list the users of a role";
+			Logger.error(this, forbiddenMessage);
+			throw new ForbiddenException(forbiddenMessage);
+		}
 
 		Logger.debug(this, () -> "Loading the users directly granted the role: " + roleId);
 
@@ -1216,15 +1373,9 @@ public class RoleResource implements Serializable {
 				.requiredFrontendUser(false).requestAndResponse(request, response)
 				.rejectWhenNoUser(true).init().getUser();
 
-		final boolean isRoleAdministrator = modUser.isAdmin() ||
-				(
-						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
-						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
-				);
-
 		Logger.debug(this, ()-> "Loading the user roles for: " + modUser);
 
-		if (isRoleAdministrator) {
+		if (this.canReadRoleMembership(modUser)) {
 
 			User userRecover = Try.of(()->this.userAPI.loadUserById(userIdOrEmail)).getOrNull();
 			if (userRecover == null) {
@@ -1248,6 +1399,49 @@ public class RoleResource implements Serializable {
 		final String forbiddenMessage = "The User: " + modUser.getUserId() + " does not have permissions to retrieve users roles";
 		Logger.error(this, forbiddenMessage);
 		throw new ForbiddenException(forbiddenMessage);
+	}
+
+	/**
+	 * Whether a user may see which users hold a role and which roles a user holds; the rule
+	 * lives in {@link RoleHelper#canReadRoleMembership(User)} and is shared with the legacy
+	 * DWR listing.
+	 *
+	 * @param user the user making the request
+	 * @return {@code true} when the user may read role membership
+	 * @throws DotDataException if the user's portlet access cannot be resolved
+	 */
+	private boolean canReadRoleMembership(final User user) throws DotDataException {
+
+		return this.roleHelper.canReadRoleMembership(user);
+	}
+
+	/**
+	 * Whether the user may use a workflow action that assigns work to the given role. Such a
+	 * user has to pick an assignee among the role's members, so those members are visible to
+	 * them even without the membership privilege. The actions of each scheme come from the
+	 * workflow cache and are matched on their assignee role first, so the permission check
+	 * runs only for the few actions that assign to this role.
+	 *
+	 * @param user   the user making the request
+	 * @param roleId the role whose members are requested
+	 * @return {@code true} when the user may use a workflow action that assigns to the role
+	 * @throws DotDataException if the workflow schemes or actions cannot be loaded
+	 */
+	private boolean canAssignToRole(final User user, final String roleId) throws DotDataException {
+
+		final WorkFlowFactory workflowFactory = FactoryLocator.getWorkFlowFactory();
+		final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+		for (final WorkflowScheme scheme : APILocator.getWorkflowAPI().findSchemes(false)) {
+
+			for (final WorkflowAction action : workflowFactory.findActions(scheme)) {
+
+				if (roleId.equals(action.getNextAssign())
+						&& permissionAPI.doesUserHavePermission(action, PermissionAPI.PERMISSION_USE, user)) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	/**

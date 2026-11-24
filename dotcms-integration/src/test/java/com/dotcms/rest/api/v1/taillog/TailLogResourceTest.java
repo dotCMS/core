@@ -229,6 +229,50 @@ public class TailLogResourceTest {
         resource.listLogFiles(createRequestForUser(nonAdminUser), mockResponse);
     }
 
+    // ==================== GET /v1/logs/{fileName}/_tail (getLogs) ====================
+
+    /**
+     * Given scenario: a back-end user without the CMS Administrator role calls the tail endpoint
+     * Expected result: the request is rejected before any file is opened, the same way
+     *                  {@link TailLogResource#listLogFiles} rejects it
+     */
+    @Test(expected = SecurityException.class)
+    public void test_getLogs_asNonAdmin_throwsSecurity() throws IOException {
+        resource.getLogs(createRequestForUser(nonAdminUser), "dotcms.log", 10);
+    }
+
+    /**
+     * Given scenario: an administrator calls the tail endpoint on a planted {@code .log} file inside
+     *                 an isolated {@code TAIL_LOG_LOG_FOLDER}
+     * Expected result: an open {@link EventOutput} is returned (the tailer thread started); the
+     *                  test closes it so the thread ends
+     */
+    @Test
+    public void test_getLogs_asAdmin_returnsEventOutput() throws IOException {
+        final String originalLogFolder = Config.getStringProperty(
+                "TAIL_LOG_LOG_FOLDER", "./dotsecure/logs/");
+
+        final File tempLogFolder = Files.createTempDirectory("taillog-tail-").toFile();
+        tempLogFolder.deleteOnExit();
+        final File logFile = plantLogFile(tempLogFolder, "admin-ittail.log");
+
+        EventOutput eventOutput = null;
+        try {
+            Config.setProperty("TAIL_LOG_LOG_FOLDER", tempLogFolder.getAbsolutePath());
+
+            eventOutput = resource.getLogs(createRequestForUser(adminUser), logFile.getName(), 10);
+
+            assertNotNull(eventOutput);
+            assertFalse("the tail stream must be open for an administrator", eventOutput.isClosed());
+        } finally {
+            if (eventOutput != null) {
+                eventOutput.close();
+            }
+            Config.setProperty("TAIL_LOG_LOG_FOLDER", originalLogFolder);
+            FileUtils.deleteQuietly(tempLogFolder);
+        }
+    }
+
     private static HttpServletRequest createRequestForUser(final User user) {
         final HttpServletRequest request = new MockAttributeRequest(
                 new MockHttpRequestIntegrationTest("localhost", "/").request()

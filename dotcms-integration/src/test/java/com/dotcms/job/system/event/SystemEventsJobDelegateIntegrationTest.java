@@ -187,6 +187,19 @@ public class SystemEventsJobDelegateIntegrationTest {
         DbConnectionFactory.commit();
     }
 
+    /**
+     * Reads the window once so that unreadable rows this test did not write are counted and
+     * remembered before the baseline is taken. The unreadable-payload counter is a JVM-wide static
+     * and the read has no upper bound, so rows left by earlier classes in the same suite JVM (or
+     * written by other threads) that sit inside the window would otherwise be counted for the first
+     * time during the test's own poll and inflate its delta.
+     *
+     * @param floor the lower bound the test is about to read from
+     */
+    private void settleForeignUnreadableRows(final long floor) throws Exception {
+        idsSince(floor);
+    }
+
     private void deleteEvent(final String eventId) throws Exception {
         new DotConnect().setSQL("DELETE FROM system_event WHERE identifier = ?")
                 .addParam(eventId).loadResult();
@@ -300,6 +313,7 @@ public class SystemEventsJobDelegateIntegrationTest {
         final long floor = created - TimeUnit.SECONDS.toMillis(10);
 
         try {
+            settleForeignUnreadableRows(floor);
             insertPoisonEvent(poison, foreignServerId, created);
 
             final long before = SystemEventsFactory.getUnreadablePayloadCount();
@@ -333,6 +347,7 @@ public class SystemEventsJobDelegateIntegrationTest {
         final long floor = created - TimeUnit.SECONDS.toMillis(10);
 
         try {
+            settleForeignUnreadableRows(floor);
             insertPoisonEvent(firstPoison, foreignServerId, created);
             insertPoisonEvent(secondPoison, foreignServerId, created + 1);
 

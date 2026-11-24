@@ -920,16 +920,19 @@ public class CategoryFactoryImpl extends CategoryFactory {
     }
 
 	/**
-	 *  Default Implementation for {@link CategoryFactory#findAll(CategorySearchCriteria)}
-	 * @param searchCriteria Search Criteria
+	 * Default implementation of {@link CategoryFactory#findAll(CategorySearchCriteria)}. The
+	 * filter is bound as a query parameter exactly as it arrives in the criteria; callers that
+	 * read it from a request (such as {@code PaginationUtil}) prepare it before this point.
 	 *
-	 * @return
-	 * @throws DotDataException
+	 * @param searchCriteria the level, root, filter, order and paging to search with
+	 * @return the matching categories, with their parent list when the criteria ask for it
+	 * @throws DotDataException if the query fails
+	 * @throws DotSecurityException if a permission check fails
 	 */
 	public List<HierarchedCategory>   findAll(final CategorySearchCriteria searchCriteria)
 			throws DotDataException, DotSecurityException {
 
-		final String filter = SQLUtil.sanitizeParameter(searchCriteria.filter);
+		final String filter = searchCriteria.filter;
 
 		final CategoryQueryBuilder queryBuilder = CategoryQueryBuilderResolver.getQueryBuilder(searchCriteria);
 		final String query = queryBuilder.build();

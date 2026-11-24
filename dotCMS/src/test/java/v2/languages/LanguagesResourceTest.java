@@ -3,22 +3,33 @@ package v2.languages;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 
+import com.dotcms.company.CompanyAPI;
+import com.dotcms.languagevariable.business.LanguageVariable;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
+import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v2.languages.LanguageForm;
 import com.dotcms.rest.api.v2.languages.LanguageView;
 import com.dotcms.rest.api.v2.languages.LanguagesResource;
+import com.dotcms.rest.api.v2.languages.ResponseEntityLanguageMessagesView;
 import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.LanguageBundleVersion;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.PortletID;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -32,11 +43,92 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
 
 /**
  * @test LanguageResource
  */
 public class LanguagesResourceTest {
+
+    /** Build metadata stays at the envelope level even when a CMS translation has the same name. */
+    @Test
+    public void test_getAllMessages_returnsBuildMetadataOutsideTranslationKeys() throws Exception {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final LanguageAPI languageAPI = mock(LanguageAPI.class);
+        final LanguageVariableAPI variables = mock(LanguageVariableAPI.class);
+        final CompanyAPI companyAPI = mock(CompanyAPI.class, RETURNS_DEEP_STUBS);
+        when(companyAPI.getDefaultCompany().getLocale()).thenReturn(Locale.US);
+        final Language language = mock(Language.class);
+        when(language.getId()).thenReturn(1L);
+        when(languageAPI.getLanguage("en", "US")).thenReturn(language);
+        final LanguageVariable cmsVariable = mock(LanguageVariable.class);
+        when(cmsVariable.key()).thenReturn("languageBundleVersion");
+        when(cmsVariable.value()).thenReturn("CMS translation, not metadata");
+        when(variables.findVariables(1L)).thenReturn(Collections.singletonList(cmsVariable));
+        final LanguagesResource resource = new LanguagesResource(languageAPI, variables, mock(WebResource.class));
+        final InitDataObject initData = mockInitDataObject();
+
+        try (MockedStatic<APILocator> apis = mockStatic(APILocator.class);
+             MockedStatic<LanguageUtil> messages = mockStatic(LanguageUtil.class);
+             MockedStatic<LanguageAPI> languageSettings = mockStatic(LanguageAPI.class);
+             MockedConstruction<WebResource.InitBuilder> builders = mockConstruction(
+                     WebResource.InitBuilder.class, withSettings().defaultAnswer(RETURNS_SELF),
+                     (builder, context) -> when(builder.init()).thenReturn(initData))) {
+            apis.when(APILocator::getCompanyAPI).thenReturn(companyAPI);
+            messages.when(LanguageUtil::getAvailableLocales).thenReturn(new Locale[]{Locale.US});
+            messages.when(() -> LanguageUtil.getAllMessagesByLocale(Locale.US))
+                    .thenReturn(Map.of("hello", "Hello"));
+            languageSettings.when(LanguageAPI::isLocalizationEnhancementsEnabled).thenReturn(true);
+
+            final Response result = resource.getAllMessages(request, response, "en_US");
+            final ResponseEntityLanguageMessagesView view =
+                    (ResponseEntityLanguageMessagesView) result.getEntity();
+            final JsonNode json = new ObjectMapper().valueToTree(view);
+
+            assertEquals(200, result.getStatus());
+            assertEquals(LanguageBundleVersion.get(), json.get("languageBundleVersion").asText());
+            assertEquals("CMS translation, not metadata",
+                    json.get("entity").get("languageBundleVersion").asText());
+            assertEquals("Hello", json.get("entity").get("hello").asText());
+            assertEquals(2, json.get("entity").size());
+            verify(builders.constructed().get(0)).requiredAnonAccess(AnonymousAccess.READ);
+            verify(builders.constructed().get(0)).rejectWhenNoUser(false);
+            verify(variables).findVariables(1L);
+        }
+    }
+
+    /** An authorization refusal is propagated before either properties or CMS translations load. */
+    @Test
+    public void test_getAllMessages_preservesReadGateAndAuthorizationFailure() throws Exception {
+        final LanguageAPI languageAPI = mock(LanguageAPI.class);
+        final LanguageVariableAPI variables = mock(LanguageVariableAPI.class);
+        final LanguagesResource resource = new LanguagesResource(languageAPI, variables, mock(WebResource.class));
+        final com.dotcms.rest.exception.SecurityException denied =
+                new com.dotcms.rest.exception.SecurityException("Access denied", Response.Status.UNAUTHORIZED);
+
+        try (MockedStatic<LanguageUtil> messages = mockStatic(LanguageUtil.class);
+             MockedConstruction<WebResource.InitBuilder> builders = mockConstruction(
+                     WebResource.InitBuilder.class, withSettings().defaultAnswer(RETURNS_SELF),
+                     (builder, context) -> when(builder.init()).thenThrow(denied))) {
+            try {
+                resource.getAllMessages(mock(HttpServletRequest.class), mock(HttpServletResponse.class), "en_US");
+                Assert.fail("Authorization denial must not be bypassed");
+            } catch (com.dotcms.rest.exception.SecurityException actual) {
+                Assert.assertSame(denied, actual);
+                assertEquals(401, actual.getResponse().getStatus());
+            }
+
+            final WebResource.InitBuilder builder = builders.constructed().get(0);
+            verify(builder).requiredAnonAccess(AnonymousAccess.READ);
+            verify(builder).rejectWhenNoUser(false);
+            verify(builder).init();
+            verifyNoMoreInteractions(builder);
+            verifyNoInteractions(languageAPI, variables);
+            messages.verifyNoInteractions();
+        }
+    }
 
     @Test
     public void list() throws DotSecurityException, DotDataException {

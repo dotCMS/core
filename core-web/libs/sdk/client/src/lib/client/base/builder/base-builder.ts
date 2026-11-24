@@ -171,6 +171,12 @@ export abstract class BaseBuilder<T = unknown> extends BaseApiClient {
      * Setting this to true will server-side render (using velocity) any widgets
      * that are returned by the content query.
      *
+     * The widget's own code is always rendered. Velocity written inside the widget's
+     * field values is rendered only when the widget was last saved by a user holding the
+     * Scripting Developer role and the server's `FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER`
+     * is on (its default); otherwise those values come back as text and the response says
+     * so in `entity.warnings` (and `parsedCodeWarning` next to `parsedCode` on the widget).
+     *
      * More information here: {@link https://www.dotcms.com/docs/latest/content-api-retrieval-and-querying#ParamsOptional}
      *
      * @example
