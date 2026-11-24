@@ -5944,8 +5944,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         // A caller may choose the inode of new content, and the inode names the folders its
-        // binaries are stored in, so it must have the form of a generated id
-        if (InodeUtils.isSet(contentlet.getInode()) && !InodeUtils.hasIdFormat(contentlet.getInode())) {
+        // binaries are stored in, so it must have the form of a generated id. UtilMethods.isSet is
+        // the test the factory uses to keep a caller's inode, so values such as "0", which
+        // InodeUtils.isSet treats as unset, are checked too
+        if (UtilMethods.isSet(contentlet.getInode()) && !InodeUtils.hasIdFormat(contentlet.getInode())) {
             throw new DotContentletStateException("The content inode is not a valid id");
         }
 
@@ -9823,13 +9825,32 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * the transaction later rolls back, as a folder delete refused partway through its tree does.
      * Outside a transaction the removal runs at once, as before.
      *
+     * <p>
+     * A version whose inode does not name a folder inside the asset store is logged and left out
+     * of the cleanup, metadata included, so the destroy itself still goes through.
+     *
      * @param contentlets the destroyed versions
      * @param field       the binary field to remove, or null for every binary of each version
      */
-    private void deleteBinaryFiles(final List<Contentlet> contentlets, final Field field) {
-        final int count = contentlets.size();
+    @VisibleForTesting
+    void deleteBinaryFiles(final List<Contentlet> contentlets, final Field field) {
+        record Directories(File asset, File cache) { }
+        final List<Contentlet> versions = new ArrayList<>(contentlets.size());
+        final List<Directories> directories = new ArrayList<>(contentlets.size());
+        for (final Contentlet contentlet : contentlets) {
+            try {
+                directories.add(new Directories(
+                        new File(getContentletAssetPath(contentlet, field)),
+                        new File(getContentletCacheAssetPath(contentlet, field))));
+                versions.add(contentlet);
+            } catch (final DotContentletStateException e) {
+                Logger.warn(this, "Skipping the binary cleanup of content inode '"
+                        + contentlet.getInode() + "': " + e.getMessage());
+            }
+        }
+        final int count = versions.size();
         for (int index = 0; index < count; index++) {
-            final Contentlet contentlet = contentlets.get(index);
+            final Contentlet contentlet = versions.get(index);
             final Runnable metadataRemoval = fileMetadataAPI.prepareMetadataRemoval(contentlet);
             // Only strings are captured: the part is held until commit, and a folder delete
             // destroys its whole subtree in one transaction, so capturing the Contentlet would
@@ -9846,9 +9867,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
             });
         }
-        for (final Contentlet contentlet : contentlets) {
-            final File assetDirectory = new File(getContentletAssetPath(contentlet, field));
-            final File cacheDirectory = new File(getContentletCacheAssetPath(contentlet, field));
+        for (final Directories directory : directories) {
+            final File assetDirectory = directory.asset();
+            final File cacheDirectory = directory.cache();
             BinaryRemovalAfterCommit.schedule(assetDirectory.getAbsolutePath(),
                     () -> deleteDirectory(assetDirectory));
             BinaryRemovalAfterCommit.schedule(cacheDirectory.getAbsolutePath(),

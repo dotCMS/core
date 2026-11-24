@@ -456,6 +456,70 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to test: {@link ESContentletAPIImpl#checkin(Contentlet, User, boolean)}
+     * When: A new item is checked in with the inode {@code "0"}, which the factory would keep as
+     * the item's inode even though {@code InodeUtils.isSet} treats it as unset
+     * Should: Refuse the check-in and save nothing under that inode.
+     */
+    @Test
+    public void checkinWithZeroInodeIsRefused() throws Exception {
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        try {
+            final Contentlet contentlet = new ContentletDataGen(contentType.id()).next();
+            contentlet.setInode("0");
+
+            assertThrows(DotContentletStateException.class,
+                    () -> new ESContentletAPIImpl().checkin(contentlet, APILocator.systemUser(), false));
+
+            assertTrue("The item must not be saved",
+                    new DotConnect().setSQL("select inode from contentlet where inode = ?")
+                            .addParam("0").loadResults().isEmpty());
+        } finally {
+            ContentTypeDataGen.remove(contentType);
+        }
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#deleteBinaryFiles(List, com.dotmarketing.portlets.structure.model.Field)}
+     * When: The versions being destroyed include one whose inode names a folder outside the
+     * asset store, next to a version with a binary
+     * Should: Skip the rejected version without throwing, so the destroy is not rolled back, and
+     * still remove the other version's binary folder.
+     */
+    @Test
+    public void deleteBinaryFilesSkipsVersionWithRejectedPath() throws Exception {
+        final Field binaryField = new FieldDataGen()
+                .name("binary")
+                .velocityVarName("binary")
+                .type(BinaryField.class)
+                .next();
+        final ContentType contentType = new ContentTypeDataGen()
+                .fields(list(binaryField))
+                .nextPersisted();
+        try {
+            final ESContentletAPIImpl contentletAPI = new ESContentletAPIImpl();
+            final Contentlet stored = contentletAPI.checkin(new ContentletDataGen(contentType.id())
+                    .setProperty(binaryField.variable(), createFile("images/test.jpg", ".jpg"))
+                    .next(), APILocator.systemUser(), false);
+            final String inode = stored.getInode();
+            final File binaryFolder = new File(APILocator.getFileAssetAPI().getRealAssetsRootPath()
+                    + File.separator + inode.charAt(0) + File.separator + inode.charAt(1)
+                    + File.separator + inode);
+            assertTrue("The binary folder must exist before the cleanup", binaryFolder.exists());
+
+            final Contentlet rejected = new Contentlet();
+            rejected.getMap().putAll(stored.getMap());
+            rejected.setInode("../ckprobe" + UUIDGenerator.shorty());
+
+            contentletAPI.deleteBinaryFiles(List.of(rejected, stored), null);
+
+            assertFalse("The accepted version's binary folder must be removed", binaryFolder.exists());
+        } finally {
+            ContentTypeDataGen.remove(contentType);
+        }
+    }
+
     private void assertFiles(Field binaryField, File testFile, Contentlet contentletFromDataBase)
             throws IOException {
         final String inode = contentletFromDataBase.getInode();
