@@ -248,6 +248,33 @@ public class ContentHandlerTest {
 
     /**
      * Method to test: {@link ContentHandler#handle(File)}
+     * Given scenario: A bundle whose content item has a UUID inode and an identifier chosen by its
+     * author rather than generated, which check-in keeps and the sender bundles unchanged.
+     * Expected Result: The item is imported under that identifier.
+     */
+    @Test
+    public void TEST_BUNDLE_CONTENT_WITH_CUSTOM_IDENTIFIER_IS_IMPORTED() throws Exception {
+        final ContentType contentType = binaryContentType();
+        final File bundleFolder = newBundleFolder();
+        try {
+            final Contentlet source = persistedSource(contentType, "bundle binary");
+            final String inode = UUIDGenerator.generateUuid();
+            final String identifier = "custom_id-" + UUIDGenerator.shorty();
+            writeContentXml(bundleFolder, source, inode, identifier, null);
+
+            handlerFor(bundleFolder).handle(bundleFolder);
+
+            final Contentlet imported = APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false);
+            assertNotNull("The item must be imported", imported);
+            assertEquals(identifier, imported.getIdentifier());
+        } finally {
+            FileUtils.deleteQuietly(bundleFolder);
+            ContentTypeDataGen.remove(contentType);
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentHandler#handle(File)}
      * Given scenario: A bundle whose content item does not carry its binary under the bundle's
      * {@code assets} folder, while the item's binary value in the content XML names a file
      * elsewhere on the receiver.

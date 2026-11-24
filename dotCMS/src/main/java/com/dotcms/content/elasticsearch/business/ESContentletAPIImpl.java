@@ -6910,19 +6910,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final String newInode = contentlet.getInode();
         final String oldInode = workingContentlet.getInode();
 
+        // All folders are built, and so checked, before the new one is created
         final String assetsRoot = APILocator.getFileAssetAPI().getRealAssetsRootPath();
-        File newDir = inodeFolder(assetsRoot, newInode);
+        final File newDir = inodeFolder(assetsRoot, newInode);
+        final File oldDir = UtilMethods.isSet(oldInode) ? inodeFolder(assetsRoot, oldInode) : null;
+        final File tmpDir = UtilMethods.isSet(oldInode)
+                ? inodeFolder(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary(), oldInode)
+                : null;
         newDir.mkdirs();
-
-        File oldDir = null;
-        if (UtilMethods.isSet(oldInode)) {
-            oldDir = inodeFolder(assetsRoot, oldInode);
-        }
-
-        File tmpDir = null;
-        if (UtilMethods.isSet(oldInode)) {
-            tmpDir = inodeFolder(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary(), oldInode);
-        }
 
         boolean binaryHandled = false;
 
@@ -9955,14 +9950,26 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     * @param contentlets
-     * @param field
+     * Moves the binaries and resized images of a field to the trash, for each of the given content
+     * versions. A version whose inode does not name a folder inside the asset store is skipped with
+     * a warning, so it does not stop the others from being cleaned up.
+     *
+     * @param contentlets The content versions.
+     * @param field       The binary field whose files are moved.
      */
-    private void moveBinaryFilesToTrash(List<Contentlet> contentlets, Field field) {
-        contentlets.stream().forEach(con -> {
+    private void moveBinaryFilesToTrash(final List<Contentlet> contentlets, final Field field) {
+        contentlets.forEach(con -> {
 
-            String contentletAssetPath = getContentletAssetPath(con, field);
-            String contentletAssetCachePath = getContentletCacheAssetPath(con, field);
+            final String contentletAssetPath;
+            final String contentletAssetCachePath;
+            try {
+                contentletAssetPath = getContentletAssetPath(con, field);
+                contentletAssetCachePath = getContentletCacheAssetPath(con, field);
+            } catch (final DotContentletStateException e) {
+                Logger.warn(this, "Skipping the binary cleanup of content inode '" + con.getInode()
+                        + "': " + e.getMessage());
+                return;
+            }
 
             try {
                 // To delete binary files

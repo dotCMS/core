@@ -646,16 +646,20 @@ public class ContentHandler implements IHandler {
 	}
 
 	/**
-	 * Makes sure the inode and identifier of a content item read from a bundle have the form of
-	 * ids dotCMS generates. Both are used to find and create records, and the inode also names the
-	 * folders the item's binaries are read from and written to, so any other value is refused.
+	 * Makes sure the inode and identifier of a content item read from a bundle are usable. The
+	 * inode names the folders the item's binaries are read from and written to, so it must have the
+	 * form of an id dotCMS generates ({@link InodeUtils#hasIdFormat(String)}). The identifier is only
+	 * used to find and create records, and check-in keeps an identifier the author chose, so any
+	 * value that is a plain name ({@link PathContainmentUtil#isPlainSegment(String)}: set, not
+	 * {@code .} or {@code ..}, and without slashes) is accepted.
 	 *
 	 * @param content The {@link Contentlet} as read from the bundle.
 	 *
-	 * @throws DotPublishingException If the inode or the identifier is not a valid id.
+	 * @throws DotPublishingException If the inode or the identifier is not valid.
 	 */
 	private static void requireIdFormat(final Contentlet content) throws DotPublishingException {
-		if (!InodeUtils.hasIdFormat(content.getInode()) || !InodeUtils.hasIdFormat(content.getIdentifier())) {
+		if (!InodeUtils.hasIdFormat(content.getInode())
+				|| !PathContainmentUtil.isPlainSegment(content.getIdentifier())) {
 			throw new DotPublishingException("The bundle has a content item whose inode or identifier is not a valid id");
 		}
 	}

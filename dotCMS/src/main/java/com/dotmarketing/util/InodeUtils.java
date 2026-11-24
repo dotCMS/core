@@ -31,8 +31,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 public class InodeUtils {
+
+	private static final Pattern ID_FORMAT = Pattern.compile(
+			"(?i)[0-9a-f]{32}|[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}|[1-9][0-9]{1,18}");
 
 	/**
 	 * Checks whether the inodeStr isSet or not. This only tells a set value from an empty one: it
@@ -64,15 +68,17 @@ public class InodeUtils {
 
 	/**
 	 * Tells whether a value has the form of an id dotCMS generates for an inode or identifier: a
-	 * UUID, with or without its dashes, or a positive number (the form of very old inodes). Such a
-	 * value holds only hexadecimal digits and dashes, so it is safe to use as a folder name.
+	 * UUID, either in its usual 8-4-4-4-12 dashed form or as 32 hexadecimal digits without dashes,
+	 * or a positive number of at least two digits (the form of very old inodes). Such a value holds
+	 * only hexadecimal digits and dashes, so it is safe to use as a folder name, and it is long
+	 * enough for the two one-character folders the asset store places above each inode folder.
 	 *
 	 * @param id The value to check.
-	 * @return {@code true} if the value is a UUID or a positive number, {@code false} otherwise,
-	 * including for {@code null}.
+	 * @return {@code true} if the value has one of those forms, {@code false} otherwise, including
+	 * for {@code null}.
 	 */
 	public static boolean hasIdFormat(final String id) {
-		return UUIDUtil.isUUID(id) || (id != null && id.matches("[1-9][0-9]{0,18}"));
+		return id != null && ID_FORMAT.matcher(id).matches();
 	}
 
 	/**
