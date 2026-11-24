@@ -556,18 +556,25 @@
                                     -->
                                     <useMavenLogger>false</useMavenLogger>
                                     <!--
-                                      3 minutes. Measured runtime is 8.4-9.4s typical, 12s at the
-                                      tail, against the 10s budget the spike set. This ceiling is
-                                      ~15x the tail, so a slow-but-healthy run can never reach it;
-                                      only a pathological case can, chiefly the harness's
-                                      unshallow git-fetch fallback when the base ref cannot be
-                                      resolved (a full fetch here is ~1.1GB / ~20min). Timing out
-                                      fails the build through the plugin's watchdog, which throws
-                                      directly and never consults successCodes at all - so adding
-                                      a success code to "allow timeouts" would have no effect. An
-                                      unfinished check is not a passing one.
+                                      10 minutes. Runtime scales with the number of project configs
+                                      the diff touches: the harness type-checks each selected
+                                      config in sequence, with a full program per config. A usual
+                                      pull request touches a few configs and finishes in 8-12s. A
+                                      pull request that touches 29 configs (#38305, 280 core-web
+                                      files) took 133s on one runner and was killed at 180s on
+                                      others (run 45274008584, 4 of 4 attempts). The old 3-minute
+                                      ceiling was ~15x the tail for a usual pull request and about
+                                      1x for a large one.
+
+                                      The pathological case this ceiling still has to catch is the
+                                      harness's unshallow git-fetch fallback when the base ref
+                                      cannot be resolved (a full fetch here is ~1.1GB / ~20min).
+                                      Timing out fails the build through the plugin's watchdog,
+                                      which throws directly and never consults successCodes at
+                                      all - so adding a success code to "allow timeouts" would
+                                      have no effect. An unfinished check is not a passing one.
                                     -->
-                                    <timeout>180000</timeout>
+                                    <timeout>600000</timeout>
                                     <arguments>
                                         <argument>exec</argument>
                                         <argument>node</argument>

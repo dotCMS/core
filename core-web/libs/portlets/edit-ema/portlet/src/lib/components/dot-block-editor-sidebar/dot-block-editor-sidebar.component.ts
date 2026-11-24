@@ -88,6 +88,12 @@ export class DotBlockEditorSidebarComponent {
     onClose = output();
 
     /**
+     * A contentlet in the Story Block asked to be edited, from the editor's toolbar or bubble
+     * menu; the UVE opens it in the side panel (#38303).
+     */
+    readonly contentletEdit = output<{ inode: string; contentType: string }>();
+
+    /**
      * Open the sidebar with the block editor content
      *
      * @param {DotCMSInlineEditingPayload} payload

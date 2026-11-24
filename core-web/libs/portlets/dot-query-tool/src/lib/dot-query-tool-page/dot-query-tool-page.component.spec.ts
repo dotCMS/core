@@ -4,17 +4,22 @@ import {
     mockProvider,
     Spectator
 } from '@openng/spectator/vitest';
-import { of, Subject } from 'rxjs';
+import { NEVER, of } from 'rxjs';
 import { Mock, MockInstance, vi } from 'vitest';
 
-import { Location } from '@angular/common';
+import { Location, PopStateEvent } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Signal, WritableSignal, signal } from '@angular/core';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 
 import {
     buildPersistedQueryKey,
+    DotActionUrlService,
+    DotContentChangeService,
     DotContentletEditUrlService,
+    DotContentletService,
     DotContentSearchService,
     DotCurrentUserService,
     DotGlobalMessageService,
@@ -22,48 +27,138 @@ import {
     DotMessageService,
     DotPropertiesService
 } from '@dotcms/data-access';
-import { ComponentStatus, FeaturedFlags } from '@dotcms/dotcms-models';
-import { DotClipboardUtil, DotSidePanelConfig, DotSidePanelService } from '@dotcms/ui';
+import { ComponentStatus } from '@dotcms/dotcms-models';
+import {
+    DotEditContentOpenerService,
+    DotEditContentOpenOptions,
+    DotEditContentRequest
+} from '@dotcms/edit-content';
+import { DotClipboardUtil, DotSidePanelRef, DotSidePanelService } from '@dotcms/ui';
 
 import { DotQueryToolPageComponent } from './dot-query-tool-page.component';
 import { DEFAULT_LIMIT, DotQueryToolStore } from './store/dot-query-tool.store';
 
 import { DotQueryToolService } from '../services/dot-query-tool.service';
 
-/** A side panel the page opened, as the fake {@link DotSidePanelService} records it. */
-interface OpenedPanel {
-    config: DotSidePanelConfig;
-    ref: { closed: Subject<void>; close: Mock; requestClose: Mock };
+/** Content the page opened, as the fake {@link DotEditContentOpenerService} records it. */
+interface OpenedContent {
+    request: DotEditContentRequest | Signal<DotEditContentRequest>;
+    options: DotEditContentOpenOptions;
+    ref: DotSidePanelRef;
 }
 
-/** Stands in for the root side-panel outlet: records each panel opened, renders none. */
-const createSidePanelsFake = () => {
-    const opened: OpenedPanel[] = [];
+/**
+ * Stands in for the opener: records each open and hands back a real panel ref, so `closed` and
+ * `isClosed` behave as the outlet's would. Like the real opener, it reports `closed` from the ref.
+ * `requestClose` is a spy that does nothing, as a guard holding the panel open would.
+ */
+const createOpenerFake = () => {
+    const opened: OpenedContent[] = [];
 
     return {
         opened,
-        open: vi.fn((_component: unknown, config: DotSidePanelConfig) => {
-            const closed = new Subject<void>();
-            const ref = {
-                closed,
-                close: vi.fn(() => {
-                    closed.next();
-                    closed.complete();
-                }),
-                requestClose: vi.fn()
-            };
-            opened.push({ config, ref });
+        open: vi.fn(
+            (
+                request: DotEditContentRequest | Signal<DotEditContentRequest>,
+                options: DotEditContentOpenOptions
+            ) => {
+                const ref = new DotSidePanelRef(() => undefined);
+                vi.spyOn(ref, 'requestClose').mockImplementation(() => undefined);
+                ref.closed.subscribe(() => options.closed?.());
+                opened.push({ request, options, ref });
 
-            return ref;
-        })
+                return ref;
+            }
+        )
     };
 };
 
+/** The request the page handed the opener, read through the signal when it passed one. */
+const requestOf = (value: OpenedContent['request']): DotEditContentRequest =>
+    typeof value === 'function' ? value() : value;
+
+/** The route the page is on, with `params` in its query string, read either way the router offers. */
+const routeWith = (params: Record<string, string> = {}) => ({
+    snapshot: { queryParams: params, queryParamMap: convertToParamMap(params) }
+});
+
+/** The Query Tool's URL with `params`, as the address bar holds it. */
+const queryToolUrl = (params: Record<string, string> = {}): string => {
+    const query = new URLSearchParams(params).toString();
+
+    return query ? `/c/query-tool?${query}` : '/c/query-tool';
+};
+
+/**
+ * Stands in for Angular's `Location`: keeps the URL the last write left, as the browser does, and
+ * plays Back or Forward to everyone subscribed.
+ */
+const createLocationDouble = (initialUrl: string) => {
+    let current = initialUrl;
+    const listeners: Array<(event: PopStateEvent) => void> = [];
+    const write = (path: string, query = ''): void => {
+        current = query ? `${path}?${query.replace(/^\?/, '')}` : path;
+    };
+
+    return {
+        path: vi.fn(() => current),
+        go: vi.fn(write),
+        replaceState: vi.fn(write),
+        subscribe: vi.fn((onNext: (event: PopStateEvent) => void) => {
+            listeners.push(onNext);
+
+            return { unsubscribe: vi.fn() };
+        }),
+        /** Browser Back or Forward, landing on `url`. */
+        pop(url: string): void {
+            current = url;
+            listeners.forEach((listener) =>
+                listener({ url, pop: true, type: 'popstate', state: null })
+            );
+        }
+    };
+};
+
+/** The params of the last URL written with `write`, decoded, whatever their encoding or order. */
+const lastWrittenParams = (write: { mock: { calls: unknown[][] } }): Record<string, string> => {
+    const [path, query = ''] = write.mock.calls[write.mock.calls.length - 1] as [string, string?];
+    const url = new URL(query ? `${path}?${query.replace(/^\?/, '')}` : path, 'http://dotcms.test');
+
+    return Object.fromEntries(url.searchParams);
+};
+
+/** An identifier a shared link names: only identifier-shaped values open anything (FR-049). */
+const LINKED_IDENTIFIER = '3f0c8e5a-7b2d-4c1e-9a6f-0d4b8e2c1a57';
+
+/** A result of a content type on the new editor. */
 const SAMPLE_CONTENTLET = {
     inode: 'inode-1',
     identifier: 'id-1',
     title: 'Home',
-    contentType: 'htmlpageasset'
+    contentType: 'Blog',
+    baseType: 'CONTENT',
+    languageId: 1
+};
+
+/** A result of a content type still on the legacy editor. The page cannot tell them apart. */
+const LEGACY_CONTENTLET = {
+    inode: 'inode-2',
+    identifier: 'id-2',
+    title: 'Promo',
+    contentType: 'Banner',
+    baseType: 'CONTENT',
+    languageId: 2
+};
+
+/** A page result: it still opens the page editor in a new tab. */
+const PAGE_CONTENTLET = {
+    inode: 'inode-3',
+    identifier: 'id-3',
+    title: 'About us',
+    contentType: 'htmlpageasset',
+    baseType: 'HTMLPAGE',
+    languageId: 1,
+    url: '/about-us'
 };
 
 const buildStoreMock = (overrides: Partial<Record<string, Mock>> = {}) => ({
@@ -90,8 +185,6 @@ const buildStoreMock = (overrides: Partial<Record<string, Mock>> = {}) => ({
         .fn()
         .mockReturnValue({ query: '', sort: '', offset: 0, limit: DEFAULT_LIMIT }),
     limitWasCapped: vi.fn().mockReturnValue(false),
-    // `withFlags` slice — side panel off by default (empty map ⇒ `flags()[FLAG] ?? false` is false).
-    flags: vi.fn().mockReturnValue({}),
     emptyStateConfig: vi.fn().mockReturnValue({
         title: 'Empty',
         icon: 'search',
@@ -139,6 +232,7 @@ describe('DotQueryToolPageComponent', () => {
     let spectator: Spectator<DotQueryToolPageComponent>;
     let locationReplaceStateSpy: Mock;
     let pendingStoreOverrides: Partial<Record<string, Mock>> = {};
+    let opener: ReturnType<typeof createOpenerFake>;
 
     const createComponent = createComponentFactory({
         component: DotQueryToolPageComponent,
@@ -162,12 +256,13 @@ describe('DotQueryToolPageComponent', () => {
             // Deep-link resolve for `?editContent=`; empty by default (no panel opens on load).
             mockProvider(DotContentSearchService, {
                 get: vi.fn().mockReturnValue(of({ jsonObjectView: { contentlets: [] } }))
-            })
+            }),
+            // Records the panels the page opens instead of rendering an editor (#38303).
+            { provide: DotEditContentOpenerService, useFactory: () => opener }
         ],
         componentProviders: [
             { provide: DotQueryToolStore, useFactory: () => buildStoreMock(pendingStoreOverrides) },
             DotClipboardUtil
-            // Flag off by default (store mock's `flags()` returns `{}`) → results open in a new tab.
         ]
     });
 
@@ -175,14 +270,12 @@ describe('DotQueryToolPageComponent', () => {
         params: Record<string, string> = {},
         storeOverrides: Partial<Record<string, Mock>> = {}
     ) => {
+        opener = createOpenerFake();
         locationReplaceStateSpy = vi.fn();
         pendingStoreOverrides = storeOverrides;
         spectator = createComponent({
             providers: [
-                {
-                    provide: ActivatedRoute,
-                    useValue: { snapshot: { queryParamMap: convertToParamMap(params) } }
-                },
+                { provide: ActivatedRoute, useValue: routeWith(params) },
                 {
                     provide: Location,
                     useValue: {
@@ -367,55 +460,186 @@ describe('DotQueryToolPageComponent', () => {
         });
     });
 
+    /**
+     * #38303 (R13) — every non-page result opens in the side panel over the results, in whichever
+     * editor its type uses: the opener decides, so the page no longer resolves an editor URL or
+     * reads a flag. Pages still open the page editor in a new tab, as today.
+     */
     describe('Result title click', () => {
         let windowOpenSpy: MockInstance;
-        let placeholderWindow: { location: { href: string }; close: Mock };
+        let resolveEditUrl: Mock;
+
+        /** Clicks a result's title, as the template does, and lets the panel binding run. */
+        const clickResult = (contentlet: object): void => {
+            spectator.component.onResultClick(contentlet as never, new MouseEvent('click'));
+            spectator.flushEffects();
+        };
 
         beforeEach(() => {
-            placeholderWindow = { location: { href: '' }, close: vi.fn() };
-            windowOpenSpy = vi
-                .spyOn(window, 'open')
-                .mockReturnValue(placeholderWindow as unknown as Window);
+            windowOpenSpy = vi.spyOn(window, 'open').mockReturnValue(null);
+            setup();
+            resolveEditUrl = spectator.inject(DotContentletEditUrlService).resolveEditUrl as Mock;
+            resolveEditUrl.mockReturnValue(
+                of('/dotAdmin/#/edit-page/content?url=%2Fabout-us&language_id=1&mId=edit')
+            );
         });
 
         afterEach(() => {
             windowOpenSpy.mockRestore();
         });
 
-        it('opens a placeholder tab synchronously, then assigns the resolved URL', () => {
-            setup();
-            const resolver = spectator.inject(DotContentletEditUrlService);
-            (resolver.resolveEditUrl as Mock).mockReturnValue(
-                of('/dotAdmin/#/edit-page/content?url=%2Fabout-us&language_id=1&mId=edit')
-            );
+        describe.each([
+            ['a new-editor type', SAMPLE_CONTENTLET],
+            ['a legacy type', LEGACY_CONTENTLET]
+        ])('a result of %s', (_label, contentlet) => {
+            it('opens it in the side panel for editing', () => {
+                clickResult(contentlet);
 
-            spectator.component.onResultClick(SAMPLE_CONTENTLET as never, new MouseEvent('click'));
+                expect(opener.open.mock.calls.length, 'the page opens one panel').toBe(1);
+                expect(requestOf(opener.opened[0].request)).toEqual({
+                    mode: 'edit',
+                    inode: contentlet.inode,
+                    identifier: contentlet.identifier,
+                    contentType: contentlet.contentType,
+                    languageId: contentlet.languageId,
+                    title: contentlet.title
+                });
+            });
 
-            expect(windowOpenSpy).toHaveBeenCalledWith('about:blank', '_blank');
-            expect(resolver.resolveEditUrl).toHaveBeenCalledWith(SAMPLE_CONTENTLET);
-            expect(placeholderWindow.location.href).toBe(
-                '/dotAdmin/#/edit-page/content?url=%2Fabout-us&language_id=1&mId=edit'
-            );
+            it('never opens a tab', () => {
+                clickResult(contentlet);
+
+                expect(windowOpenSpy.mock.calls.length).toBe(0);
+            });
+
+            // The opener picks the editor; the page no longer resolves a URL to tell them apart.
+            it('resolves no edit URL', () => {
+                clickResult(contentlet);
+
+                expect(resolveEditUrl.mock.calls.length).toBe(0);
+            });
         });
 
-        it('forwards the contentlet to the resolver and assigns the new-editor URL', () => {
-            setup();
-            const resolver = spectator.inject(DotContentletEditUrlService);
-            (resolver.resolveEditUrl as Mock).mockReturnValue(of('/dotAdmin/#/content/inode-1'));
+        describe('a page result', () => {
+            it('still opens the page editor in a new tab', () => {
+                clickResult(PAGE_CONTENTLET);
 
-            spectator.component.onResultClick(SAMPLE_CONTENTLET as never, new MouseEvent('click'));
+                expect(resolveEditUrl).toHaveBeenCalledWith(PAGE_CONTENTLET);
+                expect(windowOpenSpy).toHaveBeenCalledWith(
+                    '/dotAdmin/#/edit-page/content?url=%2Fabout-us&language_id=1&mId=edit',
+                    '_blank'
+                );
+            });
 
-            expect(placeholderWindow.location.href).toBe('/dotAdmin/#/content/inode-1');
+            it('opens no panel', () => {
+                clickResult(PAGE_CONTENTLET);
+
+                expect(opener.open.mock.calls.length).toBe(0);
+            });
+
+            /**
+             * A page result without `url` or `urlMap` has no page editor URL to open, and asking
+             * the server for one would open the tab outside the click, where the popup blocker
+             * stops it. It opens in the side panel instead (stack review L7-5).
+             */
+            it('opens a page without a URL in the side panel, not a tab', () => {
+                resolveEditUrl.mockClear();
+
+                clickResult({ ...PAGE_CONTENTLET, url: undefined });
+
+                expect(resolveEditUrl.mock.calls.length).toBe(0);
+                expect(windowOpenSpy.mock.calls.length).toBe(0);
+                expect(opener.open.mock.calls.length).toBe(1);
+                expect(requestOf(opener.opened[0].request)).toEqual(
+                    expect.objectContaining({ mode: 'edit', inode: PAGE_CONTENTLET.inode })
+                );
+            });
         });
 
-        it('assigns the legacy-editor URL when the resolver returns the legacy path', () => {
-            setup();
-            const resolver = spectator.inject(DotContentletEditUrlService);
-            (resolver.resolveEditUrl as Mock).mockReturnValue(of('/dotAdmin/#/c/content/inode-1'));
+        describe('the panel', () => {
+            // The panel then closes with the Query Tool, not with the admin root.
+            it("opens with the page's injector", () => {
+                clickResult(SAMPLE_CONTENTLET);
 
-            spectator.component.onResultClick(SAMPLE_CONTENTLET as never, new MouseEvent('click'));
+                const { injector } = opener.opened[0].options;
+                // Compared by identity: printing an injector runs the worker out of memory.
+                expect(injector.get(DotQueryToolPageComponent, null) === spectator.component).toBe(
+                    true
+                );
+            });
 
-            expect(placeholderWindow.location.href).toBe('/dotAdmin/#/c/content/inode-1');
+            /**
+             * #38303, T174: every save and delete in a side panel, at any depth (a relationship's
+             * "New" inside the result's panel), reruns the search through the content change
+             * notification, once each; the panel has no save handler of its own for it.
+             */
+            it('reruns the search on every content change, at any depth', () => {
+                const store = spectator.inject(DotQueryToolStore, true);
+                stubbed(store)['query'] = vi.fn().mockReturnValue('+live:true');
+                clickResult(SAMPLE_CONTENTLET);
+                const changes = spectator.inject(DotContentChangeService);
+
+                changes.notify({ kind: 'saved', contentlet: SAMPLE_CONTENTLET as never, depth: 0 });
+                changes.notify({ kind: 'saved', contentlet: SAMPLE_CONTENTLET as never, depth: 1 });
+
+                expect(opener.opened[0].options.saved).toBeUndefined();
+                expect(store.runSearch).toHaveBeenCalledTimes(2);
+            });
+
+            it('reruns the search and clears the request when it closes', () => {
+                const store = spectator.inject(DotQueryToolStore, true);
+                stubbed(store)['query'] = vi.fn().mockReturnValue('+live:true');
+                clickResult(SAMPLE_CONTENTLET);
+
+                opener.opened[0].ref.close();
+                spectator.flushEffects();
+
+                expect(store.runSearch).toHaveBeenCalledTimes(1);
+                expect(spectator.component.$editRequest()).toBeNull();
+            });
+
+            /**
+             * A link with no `q` opens a panel over a page that ran no search. A save or a close
+             * reruns what is shown (FR-017), and nothing is, so it runs nothing, as Run does with an
+             * empty query.
+             */
+            it('runs no search on a save or a close when there is no query', () => {
+                const store = spectator.inject(DotQueryToolStore, true);
+                stubbed(store)['query'] = vi.fn().mockReturnValue('  ');
+                clickResult(SAMPLE_CONTENTLET);
+
+                spectator
+                    .inject(DotContentChangeService)
+                    .notify({ kind: 'saved', contentlet: SAMPLE_CONTENTLET as never, depth: 0 });
+                opener.opened[0].ref.close();
+                spectator.flushEffects();
+
+                expect(store.runSearch).not.toHaveBeenCalled();
+                expect(spectator.component.$editRequest()).toBeNull();
+            });
+
+            // The opener writes the panel to the URL; the page only asks for it (FR-050).
+            it('opens with the url option', () => {
+                clickResult(SAMPLE_CONTENTLET);
+
+                expect(opener.opened[0].options.url).toEqual({});
+            });
+
+            it('writes nothing to the URL itself when the panel opens or closes', () => {
+                const location = spectator.inject(Location);
+
+                clickResult(SAMPLE_CONTENTLET);
+                opener.opened[0].ref.close();
+                spectator.flushEffects();
+
+                expect(location.go).not.toHaveBeenCalled();
+                expect(location.replaceState).not.toHaveBeenCalled();
+            });
+        });
+
+        // The flag read, the flag-off placeholder tab and the new-editor URL check are gone.
+        it('reads no side-panel flag', () => {
+            expect('$sidePanelEnabled' in spectator.component).toBe(false);
         });
     });
 
@@ -502,12 +726,21 @@ describe('DotQueryToolPageComponent', () => {
     });
 });
 
-// Sibling top-level describe (own TestBed): the side panel feature flag is ON. New-editor results
-// open in the in-page panel instead of a new tab; legacy/page results still open in a new tab.
-describe('DotQueryToolPageComponent (side panel enabled)', () => {
+// Sibling top-level describe (own TestBed): the open panel is in the URL and browser Back closes it
+// through the editor's guard, as before, now written by the shared DotPanelUrlStateService behind
+// the real opener (#38303, FR-050). Only the panel itself is faked: the side-panel service hands
+// out refs whose guard holds the panel open, and the editor is never chosen, so no editor loads.
+describe('DotQueryToolPageComponent (panel URL and Back)', () => {
     let spectator: Spectator<DotQueryToolPageComponent>;
     let windowOpenSpy: MockInstance;
-    let sidePanels: ReturnType<typeof createSidePanelsFake>;
+    let location: ReturnType<typeof createLocationDouble>;
+    /** The panels the opener put on screen, in order. */
+    let panels: DotSidePanelRef[];
+    /** The search's status, a signal, so the page's URL effect follows it as it does the store's. */
+    let status: WritableSignal<ComponentStatus>;
+
+    /** The page's URL after a search: no panel write may change its params (FR-044). */
+    const SEARCHED_URL = queryToolUrl({ q: '+live:true' });
 
     const createComponent = createComponentFactory({
         component: DotQueryToolPageComponent,
@@ -518,173 +751,128 @@ describe('DotQueryToolPageComponent (side panel enabled)', () => {
             ]
         ],
         providers: [
-            // Records the panels the page opens instead of rendering the real editor.
-            { provide: DotSidePanelService, useFactory: () => sidePanels },
+            mockProvider(DotSidePanelService, {
+                open: vi.fn(() => {
+                    const ref = new DotSidePanelRef(() => undefined);
+                    vi.spyOn(ref, 'requestClose').mockImplementation(() => undefined);
+                    panels.push(ref);
+
+                    return ref;
+                })
+            }),
+            mockProvider(DotContentletEditUrlService, {
+                resolveEditUrl: vi.fn(),
+                resolveEditor: vi.fn(() => NEVER)
+            }),
+            mockProvider(DotContentletService),
+            mockProvider(DotActionUrlService),
             mockProvider(DotMessageService, { get: vi.fn().mockReturnValue('') }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotGlobalMessageService, { error: vi.fn() }),
             mockProvider(DotQueryToolService),
-            mockProvider(DotContentletEditUrlService, { resolveEditUrl: vi.fn() }),
             mockProvider(DotContentSearchService, {
                 get: vi.fn().mockReturnValue(of({ jsonObjectView: { contentlets: [] } }))
             })
         ],
         componentProviders: [
-            // Flag on (store mock's `flags()` reports the side panel enabled) → new-editor results
-            // open in the side panel instead of a new tab.
             {
                 provide: DotQueryToolStore,
                 useFactory: () =>
                     buildStoreMock({
-                        flags: vi.fn().mockReturnValue({
-                            [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true
-                        })
+                        status: status as unknown as Mock,
+                        query: vi.fn().mockReturnValue('+live:true')
                     })
             },
             DotClipboardUtil
         ]
     });
 
+    /** Clicks a result's title, as the template does, and lets the panel binding run. */
+    const clickResult = (contentlet: object): void => {
+        spectator.component.onResultClick(contentlet as never, new MouseEvent('click'));
+        spectator.flushEffects();
+    };
+
     beforeEach(() => {
-        sidePanels = createSidePanelsFake();
+        status = signal(ComponentStatus.INIT);
+        panels = [];
+        location = createLocationDouble(SEARCHED_URL);
         windowOpenSpy = vi.spyOn(window, 'open').mockReturnValue(null);
         spectator = createComponent({
             providers: [
-                {
-                    provide: ActivatedRoute,
-                    useValue: { snapshot: { queryParamMap: convertToParamMap({}) } }
-                },
-                {
-                    provide: Location,
-                    useValue: {
-                        replaceState: vi.fn(),
-                        go: vi.fn(),
-                        path: vi.fn().mockReturnValue(''),
-                        subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
-                    }
-                }
+                { provide: ActivatedRoute, useValue: routeWith() },
+                { provide: Location, useValue: location }
             ]
         });
     });
 
     afterEach(() => windowOpenSpy.mockRestore());
 
-    it('opens the new-editor result in the side panel (no new tab)', () => {
-        const resolver = spectator.inject(DotContentletEditUrlService);
-        (resolver.resolveEditUrl as Mock).mockReturnValue(of('/dotAdmin/#/content/inode-1'));
+    it('names the open panel and its language in one history entry, beside the search params', () => {
+        clickResult(SAMPLE_CONTENTLET);
 
-        spectator.component.onResultClick(SAMPLE_CONTENTLET as never, new MouseEvent('click'));
-
-        expect(windowOpenSpy).not.toHaveBeenCalled();
-        expect(spectator.component.$editPanelRequest()).toEqual({
-            mode: 'edit',
-            contentletInode: 'inode-1',
-            identifier: 'id-1',
-            title: 'Home'
+        expect(location.go).toHaveBeenCalledTimes(1);
+        expect(lastWrittenParams(location.go)).toEqual({
+            q: '+live:true',
+            editContent: 'id-1',
+            editContentLang: '1'
         });
     });
 
-    it('reflects the open panel in the URL via editContent (history push, so Back can pop it)', () => {
-        const resolver = spectator.inject(DotContentletEditUrlService);
-        (resolver.resolveEditUrl as Mock).mockReturnValue(of('/dotAdmin/#/content/inode-1'));
-        const location = spectator.inject(Location);
+    it('clears the params in place when the panel closes, so Forward cannot reopen it', () => {
+        clickResult(SAMPLE_CONTENTLET);
 
-        spectator.component.onResultClick(SAMPLE_CONTENTLET as never, new MouseEvent('click'));
+        panels[0].close();
         spectator.flushEffects();
 
-        expect(location.go).toHaveBeenCalledWith(expect.stringContaining('editContent=id-1'));
-    });
-
-    it('uses replaceState (not go) when the panel closes, so Back cannot resurrect the removed param', () => {
-        const resolver = spectator.inject(DotContentletEditUrlService);
-        (resolver.resolveEditUrl as Mock).mockReturnValue(of('/dotAdmin/#/content/inode-1'));
-        const location = spectator.inject(Location);
-
-        spectator.component.onResultClick(SAMPLE_CONTENTLET as never, new MouseEvent('click'));
-        spectator.flushEffects();
-        (location.go as Mock).mockClear();
-        (location.replaceState as Mock).mockClear();
-
-        spectator.component.$editPanelRequest.set(null);
-        spectator.flushEffects();
-
+        expect(location.go).toHaveBeenCalledTimes(1);
         expect(location.replaceState).toHaveBeenCalledTimes(1);
-        expect(location.go).not.toHaveBeenCalled();
+        expect(lastWrittenParams(location.replaceState)).toEqual({ q: '+live:true' });
     });
 
-    it('opens the panel on the request, headed with the content title', () => {
-        spectator.component.$editPanelRequest.set({
-            mode: 'edit',
-            contentletInode: 'inode-1',
-            identifier: 'id-1',
-            title: 'Home'
+    it("routes browser Back through the panel's guard, and keeps naming the panel meanwhile", () => {
+        clickResult(SAMPLE_CONTENTLET);
+
+        location.pop(SEARCHED_URL);
+
+        expect(panels[0].requestClose).toHaveBeenCalledTimes(1);
+        expect(lastWrittenParams(location.replaceState)).toEqual({
+            q: '+live:true',
+            editContent: 'id-1',
+            editContentLang: '1'
         });
-        spectator.detectChanges();
-
-        const [{ config }] = sidePanels.opened;
-        expect((config.heading as () => string)()).toBe('Home');
-        expect((config.inputs?.['data'] as () => unknown)()).toEqual(
-            expect.objectContaining({ contentletInode: 'inode-1' })
-        );
     });
 
-    it('routes browser Back through the panel close guard (does not clear silently)', () => {
-        spectator.component.$editPanelRequest.set({
-            mode: 'edit',
-            contentletInode: 'inode-1',
-            identifier: 'id-1'
-        });
-        spectator.detectChanges();
-        const { requestClose } = sidePanels.opened[0].ref;
-        const location = spectator.inject(Location);
-        const popstate = (location.subscribe as Mock).mock.calls[0][0] as (event: {
-            url: string;
-        }) => void;
-
-        popstate({ url: '/query-tool?q=x' });
-
-        expect(requestClose).toHaveBeenCalledTimes(1);
-        expect(location.replaceState).toHaveBeenCalled();
-    });
-
-    it('opens legacy-editor results in a new tab (not the panel)', () => {
-        const resolver = spectator.inject(DotContentletEditUrlService);
-        (resolver.resolveEditUrl as Mock).mockReturnValue(of('/dotAdmin/#/c/content/inode-1'));
-
-        spectator.component.onResultClick(SAMPLE_CONTENTLET as never, new MouseEvent('click'));
-
-        expect(windowOpenSpy).toHaveBeenCalledWith('/dotAdmin/#/c/content/inode-1', '_blank');
-        expect(spectator.component.$editPanelRequest()).toBeNull();
-    });
-
-    it('reloads results when the panel reports a save, and clears the request when it closes itself', () => {
+    /**
+     * The page writes its own search params once a search settles, as a save reruns it. It changes
+     * only those: the panel the URL names stays named (FR-044), as with Content Drive's filters.
+     */
+    it('keeps the open panel in the URL when a search settles while it is open', () => {
         const store = spectator.inject(DotQueryToolStore, true);
-        spectator.component.$editPanelRequest.set({ mode: 'edit', contentletInode: 'inode-1' });
-        spectator.detectChanges();
-        const [{ config, ref }] = sidePanels.opened;
+        clickResult(SAMPLE_CONTENTLET);
+        stubbed(store)['query'] = vi.fn().mockReturnValue('+live:true +contentType:Blog');
 
-        const changed = config.outputs?.['changed'] as (change: unknown) => void;
+        status.set(ComponentStatus.LOADED);
+        spectator.flushEffects();
 
-        // Only a save changes the results; a lock or a language switch does not (#38379).
-        changed({ kind: 'lock', contentlet: { inode: 'inode-1', locked: true } });
-        changed({ kind: 'language', languageId: 2 });
-        expect(store.runSearch).not.toHaveBeenCalled();
-
-        changed({ kind: 'saved', contentlet: { inode: 'inode-1' } });
-        expect(store.runSearch).toHaveBeenCalledTimes(1);
-
-        ref.close();
-        expect(spectator.component.$editPanelRequest()).toBeNull();
+        expect(
+            Object.fromEntries(new URL(location.path(), 'http://dotcms.test').searchParams)
+        ).toEqual({
+            q: '+live:true +contentType:Blog',
+            editContent: 'id-1',
+            editContentLang: '1'
+        });
     });
 });
 
-// Sibling top-level describe (own TestBed): the `?editContent=` deep link is read in `ngOnInit`,
-// so — unlike the shell's constructor-time read — it CAN share this factory's shape, but each test
-// still needs its own `ActivatedRoute`/flag value before construction, hence a dedicated describe.
-describe('DotQueryToolPageComponent (editContent deep link)', () => {
+// Sibling top-level describe (own TestBed): a shared link is read in `ngOnInit` with the shared
+// `readPanelUrlIntent` (#38303, FR-049), so each test needs its own `ActivatedRoute` and address bar
+// before construction, hence a dedicated describe.
+describe('DotQueryToolPageComponent (panel deep link)', () => {
     let spectator: Spectator<DotQueryToolPageComponent>;
-    // Side-panel flag as reported by the store's `withFlags` slice; set per test before mounting.
-    let flagsValue: Partial<Record<FeaturedFlags, boolean>>;
+    let opener: ReturnType<typeof createOpenerFake>;
+    let location: ReturnType<typeof createLocationDouble>;
+    let search: Mock;
 
     const createComponent = createComponentFactory({
         component: DotQueryToolPageComponent,
@@ -696,42 +884,34 @@ describe('DotQueryToolPageComponent (editContent deep link)', () => {
         ],
         providers: [
             // Records the panel a deep link opens instead of rendering the real editor.
-            { provide: DotSidePanelService, useFactory: () => createSidePanelsFake() },
-            mockProvider(DotMessageService, { get: vi.fn().mockReturnValue('') }),
+            { provide: DotEditContentOpenerService, useFactory: () => opener },
+            // Loaded: the panel URL service waits for the messages before it refuses a link.
+            mockProvider(DotMessageService, {
+                get: vi.fn().mockReturnValue(''),
+                ready$: of(undefined)
+            }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotGlobalMessageService, { error: vi.fn() }),
             mockProvider(DotQueryToolService),
             mockProvider(DotContentletEditUrlService, { resolveEditUrl: vi.fn() })
         ],
         componentProviders: [
-            {
-                provide: DotQueryToolStore,
-                useFactory: () => buildStoreMock({ flags: vi.fn(() => flagsValue) })
-            },
+            { provide: DotQueryToolStore, useFactory: () => buildStoreMock() },
             DotClipboardUtil
         ]
     });
 
     beforeEach(() => {
-        flagsValue = { [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true };
+        opener = createOpenerFake();
     });
 
-    const mount = (editContent: string) =>
-        createComponent({
+    /** Loads the Query Tool on a URL carrying `params`. */
+    const mount = (params: Record<string, string>) => {
+        location = createLocationDouble(queryToolUrl(params));
+        spectator = createComponent({
             providers: [
-                {
-                    provide: ActivatedRoute,
-                    useValue: { snapshot: { queryParamMap: convertToParamMap({ editContent }) } }
-                },
-                {
-                    provide: Location,
-                    useValue: {
-                        replaceState: vi.fn(),
-                        go: vi.fn(),
-                        path: vi.fn().mockReturnValue(''),
-                        subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
-                    }
-                },
+                { provide: ActivatedRoute, useValue: routeWith(params) },
+                { provide: Location, useValue: location },
                 mockProvider(DotContentSearchService, {
                     get: vi
                         .fn()
@@ -741,33 +921,85 @@ describe('DotQueryToolPageComponent (editContent deep link)', () => {
                 })
             ]
         });
+        search = spectator.inject(DotContentSearchService).get as Mock;
+        spectator.flushEffects();
+    };
 
-    it('resolves and opens the panel from a shared link when the side panel flag is on', () => {
-        spectator = mount('id-1');
+    /**
+     * The opener finds the working version by identifier, with its language fallback and the
+     * standard error for content that cannot be opened (FR-050): the page runs no search of its
+     * own.
+     */
+    it('hands the opener the identifier a shared link names, and searches nothing itself', () => {
+        mount({ editContent: LINKED_IDENTIFIER });
 
-        expect(spectator.component.$editPanelRequest()).toEqual({
+        expect(opener.open.mock.calls.length, 'the page opens one panel').toBe(1);
+        expect(requestOf(opener.opened[0].request)).toEqual({
             mode: 'edit',
-            contentletInode: 'inode-1',
-            identifier: 'id-1',
-            title: 'Home'
+            identifier: LINKED_IDENTIFIER
         });
+        expect(search).not.toHaveBeenCalled();
     });
 
-    it('ignores the deep link when the side panel flag is off (no in-page editor to open it in)', () => {
-        flagsValue = {};
+    // The opener keeps the panel in the URL, and Back closes it, as for a panel opened by a click.
+    it('opens it with the url option', () => {
+        mount({ editContent: LINKED_IDENTIFIER });
 
-        spectator = mount('id-1');
-
-        expect(spectator.component.$editPanelRequest()).toBeNull();
+        expect(opener.opened[0].options.url).toEqual({});
     });
 
-    it('ignores the deep link when the flag never resolved (empty slice ⇒ off, same as #3)', () => {
-        // withFlags degrades to an empty slice on a failed config read; the deep link must not throw
-        // and must not open the panel — same safe outcome as the flag being explicitly off.
-        flagsValue = {};
+    // An identifier has one version per language; the link names the one that was open.
+    it('asks for the version in the language the link names', () => {
+        mount({ editContent: LINKED_IDENTIFIER, editContentLang: '2' });
 
-        expect(() => (spectator = mount('id-1'))).not.toThrow();
-        expect(spectator.component.$editPanelRequest()).toBeNull();
+        expect(requestOf(opener.opened[0].request)).toEqual({
+            mode: 'edit',
+            identifier: LINKED_IDENTIFIER,
+            languageId: 2
+        });
+        expect(search).not.toHaveBeenCalled();
+    });
+
+    /** The status of each error the page showed through the standard handler. */
+    const shownErrors = (): number[] =>
+        (spectator.inject(DotHttpErrorManagerService).handle as Mock).mock.calls.map(
+            ([error]) => (error as HttpErrorResponse).status
+        );
+
+    // The value reaches a Lucene query, so only an identifier's shape is looked up (FR-049). A link
+    // of another shape tells the author, as a link to missing content does, and loses its params
+    // (T172).
+    it.each(['new', 'id-1', 'abc OR +live:true'])(
+        'refuses editContent=%j: searches nothing, shows the not-found error, removes the params',
+        (editContent) => {
+            mount({ q: '+live:true', editContent });
+
+            expect(search).not.toHaveBeenCalled();
+            expect(opener.open).not.toHaveBeenCalled();
+            expect(shownErrors()).toEqual([404]);
+            expect(location.go).not.toHaveBeenCalled();
+            expect(lastWrittenParams(location.replaceState)).toEqual({ q: '+live:true' });
+        }
+    );
+
+    it('refuses a link naming two panels: the not-found error, the params removed in place', () => {
+        mount({ q: '+live:true', editContent: LINKED_IDENTIFIER, createContent: 'Blog' });
+
+        expect(opener.open).not.toHaveBeenCalled();
+        expect(search).not.toHaveBeenCalled();
+        expect(shownErrors()).toEqual([404]);
+        expect(location.go).not.toHaveBeenCalled();
+        expect(location.replaceState).toHaveBeenCalledTimes(1);
+        expect(lastWrittenParams(location.replaceState)).toEqual({ q: '+live:true' });
+    });
+
+    // A create stacked over a result's panel names itself in the URL, and a refresh reopens only the
+    // front panel (FR-048), so the Query Tool reopens a create too.
+    it('opens a create the link names', () => {
+        mount({ createContent: 'Blog' });
+
+        expect(opener.open.mock.calls.length).toBe(1);
+        expect(requestOf(opener.opened[0].request)).toEqual({ mode: 'new', contentType: 'Blog' });
     });
 });
 
@@ -793,7 +1025,11 @@ describe('DotQueryToolPageComponent (persisted query, real store)', () => {
             mockProvider(DotContentSearchService, {
                 get: vi.fn().mockReturnValue(of({ jsonObjectView: { contentlets: [] } }))
             }),
-            mockProvider(DotPropertiesService, { getFeatureFlags: vi.fn().mockReturnValue(of({})) })
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
+            }),
+            // The page binds its panel to the opener (#38303); nothing opens in these cases.
+            mockProvider(DotEditContentOpenerService)
         ],
         // Spectator REPLACES the component's own `providers` with this list, so the real store has
         // to be named here — that is the whole point of this describe.
@@ -802,8 +1038,8 @@ describe('DotQueryToolPageComponent (persisted query, real store)', () => {
             mockProvider(DotCurrentUserService, {
                 getCurrentUser: vi.fn().mockReturnValue(of({ admin: true }))
             }),
-            // The store is built by the component injector, so `withFlags`' DotPropertiesService
-            // has to be reachable from here rather than only at the TestBed root.
+            // Neutral: the store reads no flag once its `withFlags` goes (#38303); until then it is
+            // built by the component injector, so its DotPropertiesService has to be reachable here.
             mockProvider(DotPropertiesService, {
                 getFeatureFlags: vi.fn().mockReturnValue(of({}))
             }),
@@ -815,10 +1051,7 @@ describe('DotQueryToolPageComponent (persisted query, real store)', () => {
     const mount = (params: Record<string, string> = {}) =>
         createComponent({
             providers: [
-                {
-                    provide: ActivatedRoute,
-                    useValue: { snapshot: { queryParamMap: convertToParamMap(params) } }
-                },
+                { provide: ActivatedRoute, useValue: routeWith(params) },
                 {
                     provide: Location,
                     useValue: {

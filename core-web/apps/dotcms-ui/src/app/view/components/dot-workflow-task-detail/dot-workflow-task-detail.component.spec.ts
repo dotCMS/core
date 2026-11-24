@@ -100,6 +100,19 @@ describe('DotWorkflowTaskDetailComponent', () => {
         });
 
         describe('events', () => {
+            it('should emit shown when the task dialog has shown', () => {
+                const shown = vi.fn();
+                (
+                    spectator.component as unknown as {
+                        shown?: { subscribe: (fn: () => void) => void };
+                    }
+                ).shown?.subscribe(shown);
+
+                spectator.triggerEventHandler('dot-iframe-dialog', 'shown', undefined);
+
+                expect(shown).toHaveBeenCalledTimes(1);
+            });
+
             it('should call clear and emit close', () => {
                 spectator.triggerEventHandler('dot-iframe-dialog', 'shutdown', {});
                 expect(dotWorkflowTaskDetailService.clear).toHaveBeenCalledTimes(1);
