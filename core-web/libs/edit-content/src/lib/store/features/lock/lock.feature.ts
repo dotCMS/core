@@ -22,6 +22,7 @@ import {
 } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSContentlet, DotContentletCanLock } from '@dotcms/dotcms-models';
 
+import { EDIT_CONTENT_HOST } from '../../../services/host/edit-content-host.model';
 import { escapeHtml, resolveLocker } from '../../../utils/functions.util';
 import { EditContentState } from '../../edit-content.store';
 
@@ -125,7 +126,8 @@ export function withLock() {
             (
                 store,
                 dotContentletService = inject(DotContentletService),
-                dotHttpErrorManagerService = inject(DotHttpErrorManagerService)
+                dotHttpErrorManagerService = inject(DotHttpErrorManagerService),
+                host = inject(EDIT_CONTENT_HOST)
             ) => ({
                 /**
                  * Locks the current content
@@ -153,16 +155,20 @@ export function withLock() {
 
                                             return;
                                         }
+                                        const contentlet = {
+                                            ...current,
+                                            locked: updated.locked,
+                                            lockedBy: updated.lockedBy,
+                                            lockedByName: updated.lockedByName,
+                                            lockedOn: updated.lockedOn
+                                        };
+
                                         patchState(store, {
                                             lockStatus: ComponentStatus.LOADED,
-                                            contentlet: {
-                                                ...current,
-                                                locked: updated.locked,
-                                                lockedBy: updated.lockedBy,
-                                                lockedByName: updated.lockedByName,
-                                                lockedOn: updated.lockedOn
-                                            }
+                                            contentlet
                                         });
+                                        // Not a save, but an opener listing it shows the lock.
+                                        host.reportLockChanged(contentlet);
                                     },
                                     error: (error: HttpErrorResponse) => {
                                         dotHttpErrorManagerService.handle(error);
@@ -203,16 +209,20 @@ export function withLock() {
 
                                             return;
                                         }
+                                        const contentlet = {
+                                            ...current,
+                                            locked: updated.locked,
+                                            lockedBy: updated.lockedBy,
+                                            lockedByName: updated.lockedByName,
+                                            lockedOn: updated.lockedOn
+                                        };
+
                                         patchState(store, {
                                             lockStatus: ComponentStatus.LOADED,
-                                            contentlet: {
-                                                ...current,
-                                                locked: updated.locked,
-                                                lockedBy: updated.lockedBy,
-                                                lockedByName: updated.lockedByName,
-                                                lockedOn: updated.lockedOn
-                                            }
+                                            contentlet
                                         });
+                                        // Not a save, but an opener listing it shows the lock.
+                                        host.reportLockChanged(contentlet);
                                     },
                                     error: (error: HttpErrorResponse) => {
                                         dotHttpErrorManagerService.handle(error);

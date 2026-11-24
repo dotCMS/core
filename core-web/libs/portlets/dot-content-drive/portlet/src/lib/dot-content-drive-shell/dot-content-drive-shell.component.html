@@ -106,9 +106,14 @@
          `layout` switches between the table and the grid of cards (#37930). It is one listing, so
          the selection, the page, the focus and the paging lock carry across a switch; the card is
          the Drive's, handed over as the `#card` template. `rows`, `sortField` and `sortOrder`
-         come from the store because a switch back rebuilds the table, which must show them. -->
+         come from the store because a switch back rebuilds the table, which must show them.
+
+         `hideEmptyTable`: an empty result shows only the empty state, as the grid does. The extra
+         columns of a selected content type can make even an empty table wider than the screen,
+         and the message scrolled away with it (#38379). -->
     <dot-folder-list-view
         [layout]="$isGridView() ? 'grid' : 'table'"
+        [hideEmptyTable]="true"
         [items]="$items()"
         [selection]="$selectedItems()"
         [loading]="$loading()"

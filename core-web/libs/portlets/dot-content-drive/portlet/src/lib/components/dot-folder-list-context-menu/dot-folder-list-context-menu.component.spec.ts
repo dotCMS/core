@@ -552,6 +552,56 @@ describe('DotFolderListViewContextMenuComponent', () => {
             });
         });
 
+        // The side panel edits one item, so opening one while several are selected reads as if all
+        // of them would open (#38379).
+        describe('with several items selected', () => {
+            const page = createFakeContentlet({
+                inode: 'page-inode',
+                identifier: 'page-id',
+                baseType: DotCMSBaseTypesContentTypes.HTMLPAGE,
+                permissions: [1, 2, 4, 8, 16] as unknown as DotCMSContentlet['permissions']
+            });
+            const other = createFakeContentlet({ inode: 'other-inode', identifier: 'other-id' });
+
+            const openMenuFor = async (contentlet: DotCMSContentlet) => {
+                await component.getMenuItems({
+                    triggeredEvent: mockEvent,
+                    contentlet,
+                    showAddToBundle: false
+                });
+
+                return labels(component.$items());
+            };
+
+            it('should not offer Edit Content or View Content for the clicked row', async () => {
+                store.setSelectedItems([mockContentlet, other]);
+
+                const items = await openMenuFor(mockContentlet);
+
+                expect(items).not.toContain('content-drive.context-menu.edit-content');
+                expect(items).not.toContain('content-drive.context-menu.view-content');
+            });
+
+            it('should not offer Edit Page for a clicked page', async () => {
+                store.setSelectedItems([page, other]);
+
+                const items = await openMenuFor(page);
+
+                expect(items).not.toContain('content-drive.context-menu.edit-page');
+                expect(items).not.toContain('content-drive.context-menu.view-page');
+            });
+
+            it('should offer Edit Content again once only the clicked row is selected', async () => {
+                store.setSelectedItems([mockContentlet, other]);
+                await openMenuFor(mockContentlet);
+
+                store.setSelectedItems([mockContentlet]);
+                const items = await openMenuFor(mockContentlet);
+
+                expect(items).toContain('content-drive.context-menu.edit-content');
+            });
+        });
+
         describe('edit code', () => {
             const everything = [1, 2, 4, 8, 16] as unknown as DotCMSContentlet['permissions'];
             const velocityFile = (overrides: Partial<DotCMSContentlet> = {}) =>

@@ -46,7 +46,12 @@
     [class.pl-4]="!$selectionMode()"
     [class.pl-8]="$selectionMode()">
     @if ($isEmpty()) {
-        <div class="grid h-full grid-cols-1 place-items-center overflow-hidden">
+        <!-- The list area pads only its left; the cards get their right padding from the grid
+             below. The empty state takes the same right padding, or it sits off centre. -->
+        <div
+            class="grid h-full grid-cols-1 place-items-center overflow-hidden"
+            [class.pr-4]="!$selectionMode()"
+            [class.pr-8]="$selectionMode()">
             <ng-container *ngTemplateOutlet="emptyStateTemplate" />
         </div>
     } @else {

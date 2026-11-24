@@ -9,6 +9,10 @@
      anyway (`readOnly`), so there is nothing to seed. -->
 @if ($isGrid()) {
     <ng-container [ngTemplateOutlet]="grid" />
+} @else if ($showEmptyStateOnly()) {
+    <ng-container
+        [ngTemplateOutlet]="emptyFrame"
+        [ngTemplateOutletContext]="{ testId: 'table-empty-state' }" />
 } @else {
     <p-table
         #dataTable
@@ -423,6 +427,14 @@
     </p-table>
 }
 
+<!-- The empty state on its own, centred in the listing's area: the grid's, and the table's when
+     the host asks for no table on an empty result (`hideEmptyTable`, #38379). -->
+<ng-template #emptyFrame let-testId="testId">
+    <div class="flex size-full items-center justify-center p-6" [attr.data-testid]="testId">
+        <ng-container [ngTemplateOutlet]="emptyState" />
+    </div>
+</ng-template>
+
 <ng-template #emptyState>
     <div class="mx-auto flex max-w-100 flex-col items-center gap-4">
         <div class="flex size-20 items-center justify-center rounded-full">
@@ -472,11 +484,9 @@
                     }
                 </div>
             } @else if (!$items().length) {
-                <div
-                    class="flex h-full items-center justify-center p-6"
-                    data-testid="grid-empty-state">
-                    <ng-container [ngTemplateOutlet]="emptyState" />
-                </div>
+                <ng-container
+                    [ngTemplateOutlet]="emptyFrame"
+                    [ngTemplateOutletContext]="{ testId: 'grid-empty-state' }" />
             } @else {
                 <!-- A listbox of options: each card is one item that can be selected, and says so
                      through `aria-selected`. The controls inside a card are mouse affordances kept
@@ -522,22 +532,26 @@
             }
         </div>
 
-        <!-- The table's paginator settings and the same lock (FR-018): same page sizes, "Page N",
-             no page links, Previous/Next truly disabled while a page loads. -->
-        <p-paginator
-            class="shrink-0 border-t border-(--p-surface-200)"
-            [first]="$offset()"
-            [rows]="$rows()"
-            [totalRecords]="$recordCount()"
-            [rowsPerPageOptions]="rowsPerPageOptions"
-            [showFirstLastIcon]="false"
-            [showPageLinks]="false"
-            [showCurrentPageReport]="true"
-            [currentPageReportTemplate]="('Page' | dm) + ' {currentPage}'"
-            [pt]="$paginatorPt()"
-            dropdownAppendTo="body"
-            data-testid="grid-paginator"
-            (onPageChange)="onGridPageChange($event)" />
+        <!-- Not on an empty result when the host asks for the empty state alone (`hideEmptyTable`):
+             there is nothing to page through, and the table shows none either (#38379). -->
+        @if (!$showEmptyStateOnly()) {
+            <!-- The table's paginator settings and the same lock (FR-018): same page sizes, "Page N",
+                 no page links, Previous/Next truly disabled while a page loads. -->
+            <p-paginator
+                class="shrink-0 border-t border-(--p-surface-200)"
+                [first]="$offset()"
+                [rows]="$rows()"
+                [totalRecords]="$recordCount()"
+                [rowsPerPageOptions]="rowsPerPageOptions"
+                [showFirstLastIcon]="false"
+                [showPageLinks]="false"
+                [showCurrentPageReport]="true"
+                [currentPageReportTemplate]="('Page' | dm) + ' {currentPage}'"
+                [pt]="$paginatorPt()"
+                dropdownAppendTo="body"
+                data-testid="grid-paginator"
+                (onPageChange)="onGridPageChange($event)" />
+        }
     </div>
 </ng-template>
 

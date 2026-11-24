@@ -368,7 +368,8 @@ export class DotContentDriveShellComponent implements OnDestroy {
         inputs: (request) => ({ data: request }),
         outputs: {
             saved: (contentlet: DotCMSContentlet) => this.onEditPanelSaved(contentlet),
-            languageChanged: (languageId: number) => this.onEditPanelLanguage(languageId)
+            languageChanged: (languageId: number) => this.onEditPanelLanguage(languageId),
+            lockChanged: () => this.onEditPanelLockChanged()
         },
         closed: () => this.onEditPanelClosed()
     });
@@ -2110,6 +2111,14 @@ export class DotContentDriveShellComponent implements OnDestroy {
             identifier: contentlet.identifier,
             languageId: contentlet.languageId
         });
+    }
+
+    /**
+     * The content was locked or unlocked in the new-editor panel. That is not a save, but the list
+     * shows the lock, so refresh it quietly (#38379).
+     */
+    protected onEditPanelLockChanged() {
+        this.#store.reloadContentDrive({ quiet: true });
     }
 
     /**

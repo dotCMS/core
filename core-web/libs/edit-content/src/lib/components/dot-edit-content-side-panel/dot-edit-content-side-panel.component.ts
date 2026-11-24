@@ -102,6 +102,12 @@ export class DotEditContentSidePanelComponent implements DotSidePanelContent, On
      */
     readonly languageChanged = output<number>();
 
+    /**
+     * The content was locked or unlocked. Not a save, so it does not reach `saved`; an opener that
+     * lists the content refreshes its lock from it (#38379).
+     */
+    readonly lockChanged = output<DotCMSContentlet>();
+
     /** Last successfully-saved contentlet, forwarded to `data.onContentSaved` when the panel closes. */
     #lastSaved: DotCMSContentlet | null = null;
 
@@ -142,6 +148,10 @@ export class DotEditContentSidePanelComponent implements DotSidePanelContent, On
             host.languageChanged$
                 .pipe(takeUntilDestroyed(this.#destroyRef))
                 .subscribe((languageId) => this.languageChanged.emit(languageId));
+
+            host.lockChanged$
+                .pipe(takeUntilDestroyed(this.#destroyRef))
+                .subscribe((contentlet) => this.lockChanged.emit(contentlet));
         });
     }
 

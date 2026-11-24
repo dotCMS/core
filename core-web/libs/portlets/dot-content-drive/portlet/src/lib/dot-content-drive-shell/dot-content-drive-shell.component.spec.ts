@@ -1841,6 +1841,14 @@ describe('DotContentDriveShellComponent', () => {
             expect(folderListView?.$items()).toEqual(MOCK_ITEMS);
         });
 
+        // Content Drive's extra columns can make even an empty table wider than the screen, so an
+        // empty result shows only the empty state, as the grid does (#38379).
+        it('should ask the listing to show no table on an empty result', () => {
+            spectator.detectChanges();
+
+            expect(spectator.query(DotFolderListViewComponent)?.$hideEmptyTable()).toBe(true);
+        });
+
         it('should have a dot-content-drive-toolbar with tree toggler', () => {
             spectator.detectChanges();
 
@@ -5527,6 +5535,20 @@ describe('DotContentDriveShellComponent', () => {
             });
             // Its own refresh after a save stays as it was.
             expect(store.reloadContentDrive).toHaveBeenCalledWith();
+        });
+
+        // A lock or unlock in the panel is not a save, but the listing shows the lock (#38379).
+        it("refreshes the list quietly when the new editor's lock changes", () => {
+            setPanelRequest(EDIT_REQUEST);
+            spectator.detectChanges();
+
+            emit(editPanel(), 'lockChanged', {
+                identifier: 'id-1',
+                locked: true
+            } as DotCMSContentlet);
+
+            expect(store.reloadContentDrive).toHaveBeenCalledWith({ quiet: true });
+            expect(navigationService.panelSaved).not.toHaveBeenCalled();
         });
 
         describe('legacy-editor panel', () => {

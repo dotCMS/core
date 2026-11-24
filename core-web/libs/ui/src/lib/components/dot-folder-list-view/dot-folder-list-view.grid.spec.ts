@@ -91,6 +91,7 @@ const HOST_TEMPLATE = `
         [offset]="offset"
         [rows]="rows"
         [readOnly]="readOnly"
+        [hideEmptyTable]="hideEmptyTable"
         [sortField]="sortField"
         [sortOrder]="sortOrder"
         dataKey="inode"
@@ -138,6 +139,7 @@ interface GridHostProps {
     offset: number;
     rows: number;
     readOnly: boolean;
+    hideEmptyTable: boolean;
     sortField: string;
     sortOrder: number;
 }
@@ -178,6 +180,7 @@ describe('DotFolderListViewComponent — grid layout (#37930)', () => {
                 offset: 0,
                 rows: 20,
                 readOnly: false,
+                hideEmptyTable: false,
                 sortField: 'modDate',
                 sortOrder: -1,
                 ...props
@@ -277,6 +280,27 @@ describe('DotFolderListViewComponent — grid layout (#37930)', () => {
             expect(spectator.query(byTestId('grid-empty-state'))?.textContent).toContain(
                 'This folder is empty'
             );
+        });
+
+        // With nothing to page through, Content Drive shows the empty state alone, in the grid as
+        // in the table (#38379).
+        it('should show no paginator on an empty result when the host asks for no empty table', () => {
+            render({ items: [], totalItems: 0, hideEmptyTable: true });
+
+            expect(spectator.query(byTestId('grid-empty-state'))).toBeTruthy();
+            expect(spectator.query(byTestId('grid-paginator'))).toBeNull();
+        });
+
+        it('should keep the paginator on an empty result by default', () => {
+            render({ items: [], totalItems: 0 });
+
+            expect(spectator.query(byTestId('grid-paginator'))).toBeTruthy();
+        });
+
+        it('should keep the paginator while an empty listing loads', () => {
+            render({ items: [], totalItems: 0, hideEmptyTable: true, loading: true });
+
+            expect(spectator.query(byTestId('grid-paginator'))).toBeTruthy();
         });
 
         it('should tell the cards of a read-only listing to offer no actions', () => {

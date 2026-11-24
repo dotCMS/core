@@ -45,6 +45,7 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
     readonly #navigation$ = new Subject<InPlaceNavigationRequest>();
     readonly #saved$ = new Subject<DotCMSContentlet>();
     readonly #left$ = new Subject<void>();
+    readonly #lockChanged$ = new Subject<DotCMSContentlet>();
 
     /** Set once the edited content is deleted; later save reports would point at content that is gone. */
     #contentDeleted = false;
@@ -59,6 +60,9 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
 
     /** Emits each successful save so the dialog can notify its opener. */
     readonly saved$ = this.#saved$.asObservable();
+
+    /** Emits each lock or unlock, so an opener that lists the content can show the new lock. */
+    readonly lockChanged$ = this.#lockChanged$.asObservable();
 
     /**
      * Emits when the edited content was deleted and the overlay must close. Overlays not opened
@@ -92,6 +96,10 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
         }
 
         this.#saved$.next(contentlet);
+    }
+
+    reportLockChanged(contentlet: DotCMSContentlet): void {
+        this.#lockChanged$.next(contentlet);
     }
 
     reloadContent(inode: string, languageId?: number): void {
@@ -176,5 +184,6 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
         this.#navigation$.complete();
         this.#saved$.complete();
         this.#left$.complete();
+        this.#lockChanged$.complete();
     }
 }

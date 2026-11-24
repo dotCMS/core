@@ -113,6 +113,20 @@ describe('OverlayEditContentHost', () => {
             }));
     });
 
+    // A lock is not a save, but an opener that lists the content shows its lock (#38379).
+    describe('lockChanged$', () => {
+        it('emits the contentlet reported via reportLockChanged', () =>
+            new Promise<void>((done) => {
+                const contentlet = { inode: 'x', locked: true } as DotCMSContentlet;
+                host.lockChanged$.subscribe((c) => {
+                    expect(c).toBe(contentlet);
+                    done();
+                });
+
+                host.reportLockChanged(contentlet);
+            }));
+    });
+
     // Chrome intents overlay another context, so they are safe no-ops.
     it('treats title/breadcrumb as no-ops', () => {
         expect(() => host.setContentTitle('x')).not.toThrow();

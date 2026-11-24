@@ -260,14 +260,57 @@ describe('DotFolderListViewComponent', () => {
     });
 
     describe('Styles and Pagination', () => {
+        // By default an empty result keeps the table, header and paging included: the Add
+        // Relationships dialog relies on them to get the editor out of an empty search.
         it('should render table when items list is empty', () => {
             spectator.setInput('items', []);
             spectator.setInput('totalItems', 0);
             spectator.detectChanges();
 
-            // Verify the table is still rendered when empty
-            const tableElement = spectator.query(byTestId('table'));
-            expect(tableElement).toBeTruthy();
+            expect(spectator.query(byTestId('table'))).toBeTruthy();
+        });
+
+        // Content Drive asks for no table on an empty result: with many extra columns its header
+        // alone was wider than the screen, so the listing scrolled sideways and the message went
+        // with it (#38379). The grid view already shows its empty state on its own; the table can
+        // do the same.
+        describe('with hideEmptyTable', () => {
+            beforeEach(() => spectator.setInput('hideEmptyTable', true));
+
+            it('should show only the empty state, with no table, when there are no items', () => {
+                spectator.setInput('loading', false);
+                spectator.setInput('items', []);
+                spectator.setInput('totalItems', 0);
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('table'))).toBeNull();
+                expect(spectator.query(byTestId('table-empty-state'))?.textContent).toContain(
+                    'content.drive.empty.state.title'
+                );
+            });
+
+            it('should keep the table, with its loading rows, while an empty listing loads', () => {
+                spectator.setInput('items', []);
+                spectator.setInput('totalItems', 0);
+                spectator.setInput('loading', true);
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('table'))).toBeTruthy();
+                expect(spectator.query(byTestId('table-empty-state'))).toBeNull();
+            });
+
+            it('should bring the table back when items arrive', () => {
+                spectator.setInput('loading', false);
+                spectator.setInput('items', []);
+                spectator.detectChanges();
+
+                spectator.setInput('items', mockItems);
+                spectator.setInput('totalItems', mockItems.length);
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('table'))).toBeTruthy();
+                expect(spectator.query(byTestId('table-empty-state'))).toBeNull();
+            });
         });
 
         it('should always show pagination regardless of totalItems', () => {

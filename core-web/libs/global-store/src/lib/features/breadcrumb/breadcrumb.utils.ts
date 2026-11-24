@@ -92,6 +92,33 @@ function contentDriveCrumbUrl(url: string): string {
 }
 
 /**
+ * The Content Drive crumb after Content Drive moved its own URL, or `null` when the trail should
+ * stay as it is.
+ *
+ * Content Drive writes its browsing (folder, filters, tree) through `Location.go` and
+ * `replaceState`, which never reach the router, so the crumb would keep the URL the author arrived
+ * on. Coming back to it from the page editor then opened that URL instead of the folder they left
+ * (#38379). Only a trail that ends on Content Drive follows: when it ends anywhere else, Content
+ * Drive is not the page being shown.
+ *
+ * @param url The URL Content Drive moved to, as `Location` reports it (`#/content-drive?…`).
+ * @param last The last crumb of the trail.
+ * @returns The last crumb pointing at the new URL, or `null` to leave the trail alone.
+ */
+export function followContentDriveUrl(url: string, last: MenuItem | null): MenuItem | null {
+    const path = url.replace(/^.*#/, '');
+    const lastPath = (last?.url ?? '').replace(/^.*#/, '');
+
+    if (!last || !/^\/content-drive(\?|$)/.test(path) || !lastPath.startsWith('/content-drive')) {
+        return null;
+    }
+
+    const crumbUrl = `/dotAdmin/#${contentDriveCrumbUrl(path)}`;
+
+    return crumbUrl === last.url ? null : { ...last, url: crumbUrl };
+}
+
+/**
  * Hashmap of special route handlers.
  * Each entry defines a test and handler for a specific route pattern.
  *

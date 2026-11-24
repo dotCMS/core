@@ -223,6 +223,20 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
     $loading = input<boolean>(false, { alias: 'loading' });
 
     /**
+     * Show only the empty state, with no table, when a loaded page has no items. Off by default:
+     * the Add Relationships dialog keeps the header and the paging footer on an empty search, since
+     * those are what get the editor out of it. Content Drive turns it on, because its extra columns
+     * can make an empty table wider than the screen, and the message scrolled away with it
+     * (#38379). The grid view always shows its empty state on its own.
+     */
+    $hideEmptyTable = input<boolean>(false, { alias: 'hideEmptyTable' });
+
+    /** No table, only the empty state: asked for, loaded, and nothing to show. */
+    protected readonly $showEmptyStateOnly = computed(
+        () => this.$hideEmptyTable() && !this.$loading() && !this.$items().length
+    );
+
+    /**
      * A signal that takes the offset.
      *
      * @alias offset

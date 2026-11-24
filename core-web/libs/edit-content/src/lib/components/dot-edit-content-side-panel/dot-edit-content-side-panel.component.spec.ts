@@ -29,6 +29,7 @@ describe('DotEditContentSidePanelComponent', () => {
     let saved$: Subject<DotCMSContentlet>;
     let left$: Subject<void>;
     let languageChanged$: Subject<number>;
+    let lockChanged$: Subject<DotCMSContentlet>;
     let panel: { close: Mock };
 
     const EDIT_DATA: EditContentDialogData = {
@@ -59,6 +60,7 @@ describe('DotEditContentSidePanelComponent', () => {
         saved$ = new Subject<DotCMSContentlet>();
         left$ = new Subject<void>();
         languageChanged$ = new Subject<number>();
+        lockChanged$ = new Subject<DotCMSContentlet>();
         panel = panelRef();
 
         spectator = createComponent({
@@ -68,7 +70,8 @@ describe('DotEditContentSidePanelComponent', () => {
                     useValue: {
                         saved$: saved$.asObservable(),
                         left$: left$.asObservable(),
-                        languageChanged$: languageChanged$.asObservable()
+                        languageChanged$: languageChanged$.asObservable(),
+                        lockChanged$: lockChanged$.asObservable()
                     }
                 },
                 { provide: DotSidePanelRef, useValue: panel }
@@ -142,6 +145,28 @@ describe('DotEditContentSidePanelComponent', () => {
         languageChanged$.next(2);
 
         expect(languageSpy).toHaveBeenCalledWith(2);
+    });
+
+    // The opener's listing shows the lock, and a lock is not a save (#38379).
+    it('should forward a lock change to the `lockChanged` output', async () => {
+        await open();
+        const lockSpy = vi.fn();
+        spectator.output('lockChanged').subscribe(lockSpy);
+
+        const contentlet = { inode: 'inode-1', locked: true } as DotCMSContentlet;
+        lockChanged$.next(contentlet);
+
+        expect(lockSpy).toHaveBeenCalledWith(contentlet);
+    });
+
+    it('should not report a lock change as a save', async () => {
+        await open();
+        const savedSpy = vi.fn();
+        spectator.output('saved').subscribe(savedSpy);
+
+        lockChanged$.next({ inode: 'inode-1', locked: true } as DotCMSContentlet);
+
+        expect(savedSpy).not.toHaveBeenCalled();
     });
 
     it('should fire data.onContentSaved (last save) and data.onCancel on close', async () => {

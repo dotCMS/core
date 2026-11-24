@@ -8,6 +8,7 @@ import {
     withState
 } from '@ngrx/signals';
 
+import { Location } from '@angular/common';
 import { computed, effect, inject, Signal } from '@angular/core';
 import { Event, NavigationEnd, Router } from '@angular/router';
 
@@ -17,7 +18,11 @@ import { filter, map } from 'rxjs/operators';
 
 import { MenuItemEntity } from '@dotcms/dotcms-models';
 
-import { processSpecialRoute, shouldReplaceLastCrumb } from './breadcrumb.utils';
+import {
+    followContentDriveUrl,
+    processSpecialRoute,
+    shouldReplaceLastCrumb
+} from './breadcrumb.utils';
 
 /**
  * State interface for the Breadcrumb feature.
@@ -63,7 +68,8 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
     return signalStoreFeature(
         withState(initialBreadcrumbState),
         withProps(() => ({
-            router: inject(Router)
+            router: inject(Router),
+            location: inject(Location)
         })),
         withComputed(({ breadcrumbs }) => {
             const breadcrumbCount = computed(() => breadcrumbs().length);
@@ -265,6 +271,16 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
                     .subscribe((url) => {
                         processUrl(url);
                     });
+
+                // Content Drive moves its URL as the author browses without a navigation, so the
+                // router never sees it; the crumb follows it here (#38379).
+                store.location.onUrlChange((url) => {
+                    const crumb = followContentDriveUrl(url, store.lastBreadcrumb());
+
+                    if (crumb) {
+                        setLastBreadcrumb(crumb);
+                    }
+                });
             };
             return {
                 setBreadcrumbs,

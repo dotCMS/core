@@ -2,6 +2,7 @@ import { signalStore, withState } from '@ngrx/signals';
 import { Observable, Subject } from 'rxjs';
 import { MockInstance, vi } from 'vitest';
 
+import { Location } from '@angular/common';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Event, NavigationEnd, Router } from '@angular/router';
@@ -857,7 +858,26 @@ describe('withBreadcrumbs Feature', () => {
             }
         }
 
+        /**
+         * Content Drive writes its browsing (folder, filters, tree) with `Location.go` and
+         * `replaceState`, which tell `onUrlChange` listeners but never reach the router.
+         */
+        class LocationMock {
+            #listeners: ((url: string) => void)[] = [];
+
+            onUrlChange(listener: (url: string) => void) {
+                this.#listeners.push(listener);
+
+                return () => undefined;
+            }
+
+            changeUrl(url: string) {
+                this.#listeners.forEach((listener) => listener(url));
+            }
+        }
+
         let routerMock: RouterMock;
+        let locationMock: LocationMock;
         let menuItemsSignal: ReturnType<typeof signal<MenuItemEntity[]>>;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let TestStoreWithRouter: any;
@@ -868,6 +888,7 @@ describe('withBreadcrumbs Feature', () => {
             TestBed.resetTestingModule();
 
             routerMock = new RouterMock();
+            locationMock = new LocationMock();
 
             // Mock menu items with proper structure
             menuItemsSignal = signal<MenuItemEntity[]>([
@@ -916,7 +937,11 @@ describe('withBreadcrumbs Feature', () => {
             TestStoreWithRouter = signalStore(withState({}), withBreadcrumbs(menuItemsSignal));
 
             TestBed.configureTestingModule({
-                providers: [{ provide: Router, useValue: routerMock }, TestStoreWithRouter]
+                providers: [
+                    { provide: Router, useValue: routerMock },
+                    { provide: Location, useValue: locationMock },
+                    TestStoreWithRouter
+                ]
             });
 
             storeWithRouter = TestBed.inject(TestStoreWithRouter);
@@ -1051,6 +1076,70 @@ describe('withBreadcrumbs Feature', () => {
                 TestBed.flushEffects();
 
                 expect(labels()).toEqual(['Home', 'Content', 'Content Drive']);
+            });
+
+            // Browsing inside Content Drive moves the URL without a navigation, so the crumb has to
+            // follow it, or coming back from the page editor lands where the author first arrived
+            // (#38379).
+            it('follows browsing in Content Drive, so its crumb goes back to the folder left', () => {
+                routerMock.triggerNavigationEnd('/content-drive?mId=content');
+                TestBed.flushEffects();
+
+                locationMock.changeUrl(
+                    '#/content-drive?path=/blog/&isTreeExpanded=true&filters=contentType:Blog&editContent=id-1'
+                );
+                storeWithRouter.addNewBreadcrumb({
+                    label: 'Blog Page',
+                    url: '/dotAdmin/#/edit-page/content?url=/blog/page'
+                });
+
+                expect(storeWithRouter.breadcrumbs().at(-2)).toEqual({
+                    label: 'Content Drive',
+                    target: '_self',
+                    url: '/dotAdmin/#/content-drive?path=/blog/&isTreeExpanded=true&filters=contentType:Blog'
+                });
+            });
+
+            it('goes back to the folder left when its crumb is clicked from the page editor', () => {
+                routerMock.triggerNavigationEnd('/content-drive?mId=content');
+                TestBed.flushEffects();
+                locationMock.changeUrl('#/content-drive?path=/blog/&filters=contentType:Blog');
+                storeWithRouter.addNewBreadcrumb({
+                    label: 'Blog Page',
+                    url: '/dotAdmin/#/edit-page/content?url=/blog/page'
+                });
+
+                routerMock.triggerNavigationEnd(
+                    '/content-drive?path=/blog/&filters=contentType:Blog'
+                );
+                TestBed.flushEffects();
+
+                expect(labels()).toEqual(['Home', 'Content', 'Content Drive']);
+                expect(storeWithRouter.breadcrumbs().at(-1)?.url).toBe(
+                    '/dotAdmin/#/content-drive?path=/blog/&filters=contentType:Blog'
+                );
+            });
+
+            it('leaves the trail alone when Content Drive is not its last crumb', () => {
+                routerMock.triggerNavigationEnd('/c/query-tool?mId=devtools');
+                TestBed.flushEffects();
+                const before = storeWithRouter.breadcrumbs();
+
+                locationMock.changeUrl('#/content-drive?path=/blog/');
+
+                expect(storeWithRouter.breadcrumbs()).toEqual(before);
+            });
+
+            it('keeps the Content Drive crumb when the URL moves somewhere else', () => {
+                routerMock.triggerNavigationEnd('/content-drive?mId=content');
+                TestBed.flushEffects();
+                locationMock.changeUrl('#/content-drive?path=/blog/');
+
+                locationMock.changeUrl('#/edit-page/content?url=/blog/page');
+
+                expect(storeWithRouter.breadcrumbs().at(-1)?.url).toBe(
+                    '/dotAdmin/#/content-drive?path=/blog/'
+                );
             });
 
             it('still resets the trail from the menu on a menu click', () => {
