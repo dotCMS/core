@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
@@ -30,6 +31,9 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.ejb.UserManagerUtil;
 import com.liferay.portal.model.User;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -209,7 +213,8 @@ public class FailedLoginRecordingTest {
      * Given: an account with login lockout on, one failure short of the limit
      * When: the failure that reaches the limit is stored, and another failed login for the account stores its own
      * failure right after that increment, before the count starts over
-     * Then: the other failure is kept, so the new count is 1 rather than 0
+     * Then: the row is locked against other connections until the count has started over, and the other failure
+     * is kept, so the new count is 1 rather than 0
      */
     @Test
     public void test_failure_stored_while_the_count_starts_over_is_kept() throws Exception {
@@ -221,6 +226,7 @@ public class FailedLoginRecordingTest {
         doAnswer(invocation -> {
             final Object count = invocation.callRealMethod();
             if (concurrent[0] == null) {
+                assertRowLocked(user);
                 concurrent[0] = otherRequest.submit(() -> {
                     try {
                         return realFactory.incrementFailedLoginAttempts(user.getUserId());
@@ -290,6 +296,22 @@ public class FailedLoginRecordingTest {
             assertTrue("the reset is still required", toBoolean(row.get("passwordreset")));
         } finally {
             cleanUp(user);
+        }
+    }
+
+    /**
+     * Asserts that the user's row is locked by another transaction: a probe from a separate pooled connection that
+     * asks for the row lock without waiting is refused with PostgreSQL's {@code lock_not_available} (55P03).
+     */
+    private static void assertRowLocked(final User user) throws SQLException {
+        try (Connection probe = DbConnectionFactory.getDataSource().getConnection();
+             PreparedStatement statement = probe.prepareStatement(
+                     "SELECT userid FROM user_ WHERE userid = ? FOR UPDATE NOWAIT")) {
+            statement.setString(1, user.getUserId().toLowerCase());
+            statement.executeQuery().close();
+            fail("the row is not locked while the count starts over");
+        } catch (final SQLException e) {
+            assertEquals("the row is locked while the count starts over", "55P03", e.getSQLState());
         }
     }
 
