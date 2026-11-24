@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -52,6 +53,10 @@ public class FailedIndexingNotifierTest {
             "Contents-Failed-Reindex-message",
             "{0} contents(s) failed to reindex and were skipped.  Please review your"
                     + " <a href=\"#/c/maintenance\">index status</a>.",
+            "Reindex-Stopped-message",
+            "The reindex was stopped and the new index was made active.  Contents that had not"
+                    + " been reindexed yet were discarded.  Please review your"
+                    + " <a href=\"#/c/maintenance\">index status</a>.",
             "Content-Failed-Index-message",
             "Content \"{0}\" failed to index and was skipped: {1}.  Please review your"
                     + " <a href=\"#/c/maintenance\">index status</a>.");
@@ -92,7 +97,7 @@ public class FailedIndexingNotifierTest {
      */
     @Test
     public void test_reindexFinished_noFailures_successOnly() throws Exception {
-        notifier.reindexFinished(0);
+        notifier.reindexFinished(0, false);
 
         final I18NMessage message = bellMessage(NotificationLevel.INFO, false);
         assertEquals("notification.reindexing.success", message.getKey());
@@ -106,7 +111,7 @@ public class FailedIndexingNotifierTest {
      */
     @Test
     public void test_reindexFinished_withFailures_sameWordsInBothChannels() throws Exception {
-        notifier.reindexFinished(11);
+        notifier.reindexFinished(11, false);
 
         assertEquals(1, pushed.size());
         assertEquals("11 contents(s) failed to reindex and were skipped.  Please review your"
@@ -117,6 +122,59 @@ public class FailedIndexingNotifierTest {
         final I18NMessage message = bellMessage(NotificationLevel.WARNING, true);
         assertEquals("Contents-Failed-Reindex-notification", message.getKey());
         assertArrayEquals(new Object[]{11L}, message.getArguments());
+    }
+
+    /**
+     * Given Scenario: The operator pressed "Stop Reindex and Make Active", so the switchover was
+     * forced; the pending journal records were deleted and nothing was parked as failed.
+     * Expected Result: No "finished successfully" message. A pop-up and a WARNING bell
+     * notification saying the reindex was stopped and the contents not yet reindexed were
+     * discarded, both pointing at the index status.
+     */
+    @Test
+    public void test_reindexFinished_switchForced_noFailures_reportsStoppedNotSuccess()
+            throws Exception {
+        notifier.reindexFinished(0, true);
+
+        assertEquals(1, pushed.size());
+        assertEquals("The reindex was stopped and the new index was made active.  Contents that"
+                + " had not been reindexed yet were discarded.  Please review your"
+                + " <a href=\"#/c/maintenance\">index status</a>.", pushed.get(0).getMessage());
+        assertEquals(MessageSeverity.WARNING, pushed.get(0).getSeverity());
+        assertEquals(List.of("admin-1", "admin-2"), pushedTo.get(0));
+
+        final I18NMessage message = bellMessage(NotificationLevel.WARNING, true);
+        assertEquals("Reindex-Stopped-notification", message.getKey());
+    }
+
+    /**
+     * Given Scenario: The switchover was forced and 11 contents had already been parked as
+     * failed.
+     * Expected Result: Both warnings, each in both channels — the parked count says nothing
+     * about how much the stop discarded, so neither replaces the other — and no "finished
+     * successfully".
+     */
+    @Test
+    public void test_reindexFinished_switchForced_withFailures_reportsBoth() throws Exception {
+        notifier.reindexFinished(11, true);
+
+        assertEquals(2, pushed.size());
+        assertTrue("the stop is reported", String.valueOf(pushed.get(0).getMessage())
+                .startsWith("The reindex was stopped"));
+        assertTrue("the parked contents are reported", String.valueOf(pushed.get(1).getMessage())
+                .startsWith("11 contents(s) failed to reindex"));
+
+        final ArgumentCaptor<I18NMessage> message = ArgumentCaptor.forClass(I18NMessage.class);
+        verify(notificationAPI, times(2)).generateNotification(any(I18NMessage.class),
+                message.capture(), any(), eq(NotificationLevel.WARNING),
+                eq(NotificationType.GENERIC), eq(Visibility.ROLE), eq("cms-admin-role"),
+                eq("system"), eq(Locale.US));
+        assertEquals(List.of("Reindex-Stopped-notification", "Contents-Failed-Reindex-notification"),
+                message.getAllValues().stream().map(I18NMessage::getKey).collect(
+                        java.util.stream.Collectors.toList()));
+        verify(notificationAPI, never()).generateNotification(any(I18NMessage.class),
+                any(I18NMessage.class), any(), eq(NotificationLevel.INFO), any(), any(),
+                anyString(), anyString(), any());
     }
 
     /**

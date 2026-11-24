@@ -1791,7 +1791,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             optimizeNewActiveIndicesAsync(
                     List.of(newInfo.getWorking(), newInfo.getLive()), newActiveOs);
 
-            notifyReindexFinished();
+            notifyReindexFinished(forceSwitch);
 
         } catch (Exception e) {
             throw new DotRuntimeException(e.getMessage(), e);
@@ -1884,7 +1884,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         final String newLive    = existing.reindexLive().orElseThrow();
         optimizeNewActiveIndicesAsync(List.of(), List.of(newWorking, newLive));
 
-        notifyReindexFinished();
+        notifyReindexFinished(forceSwitch);
         return true;
     }
 
@@ -1987,15 +1987,22 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
     /**
      * Tells the CMS administrators how the full reindex that just switched over finished: the
-     * usual "finished successfully" notification, or — when contents were skipped — a pop-up and
-     * a notification saying how many, both pointing to the index status.
+     * usual "finished successfully" notification, or — when contents were skipped or the operator
+     * stopped the reindex — a pop-up and a notification for each, both pointing to the index
+     * status.
+     *
+     * @param switchForced {@code true} when the switchover was forced from the Maintenance
+     *                     portlet's "Stop Reindex and Make Active", which deletes the pending
+     *                     journal records, so the promoted index is incomplete and the reindex
+     *                     must never be reported as having finished successfully
      */
-    private void notifyReindexFinished() {
+    private void notifyReindexFinished(final boolean switchForced) {
         try {
-            // One message per channel with the same words: a pop-up for whoever is connected and
-            // a bell notification — "finished successfully", or how many contents were skipped.
+            // One message per channel with the same words: a pop-up for whoever is connected
+            // and a bell notification — "finished successfully", how many contents were skipped,
+            // and, on a forced switchover, that the reindex was stopped before it had finished.
             new FailedIndexingNotifier().reindexFinished(
-                    queueApi.getFailedReindexRecords().size());
+                    queueApi.getFailedReindexRecords().size(), switchForced);
         } catch (Exception e) {
             Logger.warnAndDebug(this.getClass(), "Could not send failed-reindex notification: " + e.getMessage(), e);
         }
