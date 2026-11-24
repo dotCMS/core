@@ -573,7 +573,11 @@ public class UserFactoryImpl implements UserFactory {
     @Override
     public void requirePasswordReset(final String userId) throws DotDataException {
         final String id = storedUserId(userId);
-        new DotConnect().executeUpdate("update user_ set passwordreset = ? where userid = ?", true, id);
+        // Bound through addParam: executeUpdate(sql, true, id) would take the true as its logException argument
+        new DotConnect().setSQL("update user_ set passwordreset = ? where userid = ?")
+                .addParam(true)
+                .addParam(id)
+                .loadResult();
         evictNowAndOnCommit(id);
     }
 

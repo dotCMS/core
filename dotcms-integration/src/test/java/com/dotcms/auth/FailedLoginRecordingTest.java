@@ -2,12 +2,15 @@ package com.dotcms.auth;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
@@ -15,7 +18,11 @@ import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.UserFactory;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
+import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.Config;
@@ -23,11 +30,14 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.ejb.UserManagerUtil;
 import com.liferay.portal.model.User;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.After;
@@ -196,6 +206,105 @@ public class FailedLoginRecordingTest {
     }
 
     /**
+     * Given: an account with login lockout on, one failure short of the limit
+     * When: the failure that reaches the limit is stored, and another failed login for the account stores its own
+     * failure right after that increment, before the count starts over
+     * Then: the other failure is kept, so the new count is 1 rather than 0
+     */
+    @Test
+    public void test_failure_stored_while_the_count_starts_over_is_kept() throws Exception {
+        final User user = newUser();
+        final int limit = LoginLockout.maxFailures();
+        final UserFactory realFactory = FactoryLocator.getUserFactory();
+        final UserFactory factory = spy(realFactory);
+        final Future<?>[] concurrent = new Future<?>[1];
+        doAnswer(invocation -> {
+            final Object count = invocation.callRealMethod();
+            if (concurrent[0] == null) {
+                concurrent[0] = otherRequest.submit(() -> {
+                    try {
+                        return realFactory.incrementFailedLoginAttempts(user.getUserId());
+                    } finally {
+                        DbConnectionFactory.closeSilently();
+                    }
+                });
+                try {
+                    // Lets the other failure finish first when nothing holds it back
+                    concurrent[0].get(2, TimeUnit.SECONDS);
+                } catch (final TimeoutException e) {
+                    // Held back until the count has started over, which is what keeps it
+                }
+            }
+            return count;
+        }).when(factory).incrementFailedLoginAttempts(user.getUserId());
+        try {
+            for (int i = 1; i < limit; i++) {
+                assertEquals(Authenticator.FAILURE, login(user, "wrong-" + i));
+            }
+            try (MockedStatic<FactoryLocator> locator = mockStatic(FactoryLocator.class, CALLS_REAL_METHODS)) {
+                locator.when(FactoryLocator::getUserFactory).thenReturn(factory);
+                assertEquals(Authenticator.FAILURE, login(user, "wrong-" + limit));
+            }
+            concurrent[0].get(60, TimeUnit.SECONDS);
+            assertEquals("the other failure is kept", 1, storedFailures(user));
+        } finally {
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: an account whose password has expired
+     * When: it logs in with the right password
+     * Then: the login succeeds and the account is flagged to choose a new password
+     */
+    @Test
+    public void test_expired_password_login_flags_a_password_reset() throws Exception {
+        final User user = newUser();
+        try {
+            expirePassword(user);
+
+            assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
+            assertTrue("the reset is required", toBoolean(storedRow(user).get("passwordreset")));
+        } finally {
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: an account whose password has expired and is stored in the older digest format
+     * When: it logs in with the right password, so the password is hashed again and the user saved
+     * Then: the account is still flagged to choose a new password
+     */
+    @Test
+    public void test_password_reset_flag_survives_the_rehash_on_login() throws Exception {
+        final User user = newUser();
+        final String digest = PublicEncryptionFactory.digestString(PASSWORD);
+        try {
+            new DotConnect().executeUpdate("UPDATE user_ SET password_ = ? WHERE userid = ?",
+                    digest, user.getUserId());
+            expirePassword(user);
+
+            assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
+            final Map<String, Object> row = storedRow(user);
+            assertNotEquals("the password was hashed again", digest, row.get("password_"));
+            assertTrue("the reset is still required", toBoolean(row.get("passwordreset")));
+        } finally {
+            cleanUp(user);
+        }
+    }
+
+    /** Sets the user's password expiration date to yesterday and drops the cached copy. */
+    private static void expirePassword(final User user) throws Exception {
+        try {
+            new DotConnect().executeUpdate("UPDATE user_ SET passwordexpirationdate = ? WHERE userid = ?",
+                    new Date(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(1)), user.getUserId());
+            CacheLocator.getUserCache().remove(user.getUserId());
+        } finally {
+            DbConnectionFactory.closeSilently();
+        }
+    }
+
+    /**
      * Runs one login with a wrong password for the user. When the login reaches its failed-login delay, the
      * {@code change} runs on another thread, as a separate request, and the login waits for it to commit before
      * going on. Fails if the login never reaches the delay.
@@ -240,7 +349,7 @@ public class FailedLoginRecordingTest {
     private static Map<String, Object> storedRow(final User user) throws Exception {
         try {
             final List<Map<String, Object>> rows = new DotConnect()
-                    .setSQL("SELECT active_, failedloginattempts FROM user_ WHERE userid = ?")
+                    .setSQL("SELECT active_, failedloginattempts, passwordreset, password_ FROM user_ WHERE userid = ?")
                     .addParam(user.getUserId())
                     .loadObjectResults();
             assertEquals(1, rows.size());

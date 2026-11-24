@@ -36,6 +36,7 @@ import com.dotcms.util.UrlStrategyUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotInvalidPasswordException;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.UserFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
@@ -712,6 +713,8 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
             Logger.debug(this, String.format("Password for user '%s' has expired.", login));
             try {
                 FactoryLocator.getUserFactory().requirePasswordReset(user.getUserId());
+                // A password rehash later in this login saves this instance, so it has to carry the flag too
+                user.setPasswordReset(true);
             } catch (final DotDataException e) {
                 throw new SystemException(e);
             }
@@ -793,25 +796,31 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
                                           final boolean byEmailAddress, final LoginLockout.Attempt attempt)
             throws SystemException {
         this.delayFailedLogin(user, login, attempt);
+        final int maxFailures = GetterUtil.get(PropsUtil.get(PropsUtil.AUTH_MAX_FAILURES_LIMIT), 0);
+        Logger.debug(this, String.format("Maximum failed login attempts is %s", maxFailures));
+        final boolean startOverAtLimit = maxFailures != 0 && LoginLockout.getInstance().isEnabled(maxFailures);
+        final int failedLoginAttempts;
         try {
-            final int failedLoginAttempts = FactoryLocator.getUserFactory()
-                    .incrementFailedLoginAttempts(user.getUserId());
-            Logger.debug(this, String.format("Failed login attempts for user '%s' is now %s", login,
-                    failedLoginAttempts));
-            final int maxFailures = GetterUtil.get(PropsUtil.get(PropsUtil.AUTH_MAX_FAILURES_LIMIT), 0);
-            Logger.debug(this, String.format("Maximum failed login attempts is %s", maxFailures));
-            final boolean lockoutEnabled = LoginLockout.getInstance().isEnabled(maxFailures);
-            if ((failedLoginAttempts >= maxFailures) && (maxFailures != 0)) {
-                Logger.debug(this, String.format("User '%s' failed to authenticate via '%s' after %s failed attempts",
-                        login, byEmailAddress ? "email" : "user ID", failedLoginAttempts));
-                if (lockoutEnabled) {
+            // One transaction: the increment's row lock holds back other failures for this user until the count
+            // has started over, so the reset never discards one of them
+            failedLoginAttempts = LocalTransaction.wrapReturn(() -> {
+                final UserFactory userFactory = FactoryLocator.getUserFactory();
+                final int count = userFactory.incrementFailedLoginAttempts(user.getUserId());
+                if (startOverAtLimit && count >= maxFailures) {
                     // Locks are decided per address by LoginLockout. This account-wide count only paces the delay
                     // and the handlers below, so it starts over rather than growing with every failure from anywhere.
-                    FactoryLocator.getUserFactory().resetFailedLoginAttempts(user.getUserId());
+                    userFactory.resetFailedLoginAttempts(user.getUserId());
                 }
-            }
-        } catch (final DotDataException e) {
+                return count;
+            });
+        } catch (final Exception e) {
             throw new SystemException(e);
+        }
+        Logger.debug(this, String.format("Failed login attempts for user '%s' is now %s", login,
+                failedLoginAttempts));
+        if ((failedLoginAttempts >= maxFailures) && (maxFailures != 0)) {
+            Logger.debug(this, String.format("User '%s' failed to authenticate via '%s' after %s failed attempts",
+                    login, byEmailAddress ? "email" : "user ID", failedLoginAttempts));
         }
     }
 
