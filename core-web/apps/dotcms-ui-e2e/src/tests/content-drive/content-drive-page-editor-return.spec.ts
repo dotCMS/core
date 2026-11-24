@@ -26,16 +26,20 @@ function contentDriveQuery(url: string): Record<string, string> {
 
 test.describe('Content Drive after the page editor', () => {
     let uvePage: UvePage | null = null;
-    let folderName: string;
-    let siteName: string;
+    let folder: { siteName: string; name: string } | null = null;
 
     test.afterEach(async ({ request, apiHelpers }) => {
-        if (uvePage) {
-            await removeUvePage(request, uvePage);
+        try {
+            if (uvePage) {
+                await removeUvePage(request, uvePage).catch(() => undefined);
+            }
+        } finally {
             uvePage = null;
+            if (folder) {
+                await apiHelpers.deleteFolders(folder.siteName, [`/${folder.name}`]);
+                folder = null;
+            }
         }
-
-        await apiHelpers.deleteFolders(siteName, [`/${folderName}`]);
     });
 
     test('restores the folder and the tree state through the Content Drive crumb @critical', async ({
@@ -45,9 +49,9 @@ test.describe('Content Drive after the page editor', () => {
         testSuffix
     }) => {
         const site = await apiHelpers.getDefaultSite();
-        siteName = site.hostname;
-        folderName = `e2e-uve-return-${testSuffix}`;
-        const folderInode = await createFolder(request, siteName, `/${folderName}`);
+        const folderName = `e2e-uve-return-${testSuffix}`;
+        folder = { siteName: site.hostname, name: folderName };
+        const folderInode = await createFolder(request, site.hostname, `/${folderName}`);
         uvePage = await createUvePage(request, testSuffix, {
             contentTypeIds: [],
             hostFolder: folderInode
@@ -61,7 +65,10 @@ test.describe('Content Drive after the page editor', () => {
         await drive.openFolder(folderName);
         await drive.toggleTree();
         await drive.expectTreeCollapsed();
+        // Every param Content Drive writes has landed, the language filter seeded last, before the
+        // state the author leaves is taken.
         await expect(adminPage).toHaveURL(/[?&]isTreeExpanded=false/);
+        await expect(adminPage).toHaveURL(/[?&]filters=/);
         const left = contentDriveQuery(adminPage.url());
         expect(left['path']).toBe(`/${folderName}/`);
 
