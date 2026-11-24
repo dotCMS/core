@@ -44,7 +44,8 @@ export class DotContainerContentletService {
     }
 
     /**
-     * Get the HTML of a form inside a container
+     * Get the HTML of a form inside a container. It is a POST because the server creates the
+     * form's widget, as the current user, when the form does not have one yet.
      *
      * @param DotPageContainer container
      * @param string formId
@@ -57,6 +58,7 @@ export class DotContainerContentletService {
     ): Observable<{ render: string; content: { [key: string]: string } }> {
         return this.coreWebService
             .requestView({
+                method: 'POST',
                 url: `v1/containers/form/${formId}?containerId=${container.identifier}`
             })
             .pipe(pluck('entity'));

@@ -24,6 +24,7 @@ import org.junit.runners.Suite;
 @RunWith(MainBaseSuite.class)
 @Suite.SuiteClasses({
         DeterministicIdentifierAPITest.class,
+        com.dotcms.rest.api.v1.container.ContainerResourceCallerPermissionTest.class,
         ExperimentFeatureFlagMetricTypeTest.class,
         com.dotcms.variant.business.web.CurrentVariantWebInterceptorTest.class,
         com.dotcms.graphql.datafetcher.ContentletDataFetcherTest.class,

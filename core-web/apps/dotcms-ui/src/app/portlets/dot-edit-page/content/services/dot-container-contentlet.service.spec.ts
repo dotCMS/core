@@ -93,7 +93,8 @@ describe('DotContainerContentletService', () => {
         };
 
         dotContainerContentletService.getFormToContainer(pageContainer, form.id).subscribe();
-        httpMock.expectOne(`v1/containers/form/2?containerId=1`);
+        const req = httpMock.expectOne(`v1/containers/form/2?containerId=1`);
+        expect(req.request.method).toBe('POST');
     });
 
     it('should do a request for get the contentlet html code in a specific variant', () => {
