@@ -1209,6 +1209,72 @@ describe('DotFormComponent', () => {
         });
     });
 
+    describe('Form repopulation after a workflow action (R3, #38724)', () => {
+        beforeEach(() => {
+            dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                of(MOCK_CONTENTTYPE_1_TAB)
+            );
+            workflowActionsService.getByInode.mockReturnValue(
+                of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
+            );
+            dotEditContentService.getContentById.mockReturnValue(of(MOCK_CONTENTLET_1_OR_2_TABS));
+            workflowActionsService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+            dotContentletService.canLock.mockReturnValue(
+                of({ canLock: true } as DotContentletCanLock)
+            );
+
+            store.initializeExistingContent({
+                inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                depth: DotContentletDepths.ONE
+            });
+            spectator.detectChanges();
+        });
+
+        /**
+         * Fires an action whose refetched contentlet keeps the SAME inode and modDate but
+         * carries different field values — what the Move sub-action does (it only updates
+         * the identifier's host/path).
+         */
+        const fireActionReturning = (refetched: DotCMSContentlet) => {
+            workflowActionsFireService.fireTo.mockReturnValue(of(MOCK_CONTENTLET_1_OR_2_TABS));
+            dotEditContentService.getContentById.mockReturnValue(of(refetched));
+
+            store.fireWorkflowAction({
+                actionId: '1',
+                inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                data: { contentlet: {} }
+            });
+            spectator.detectChanges();
+        };
+
+        it('should repopulate the form from the refetched contentlet even when inode and modDate are unchanged', () => {
+            expect(component.form.get('text1')?.value).toBe('content text 1');
+
+            fireActionReturning({
+                ...MOCK_CONTENTLET_1_OR_2_TABS,
+                folder: 'moved-folder-id',
+                text1: 'moved by the action'
+            });
+
+            expect(component.form.get('text1')?.value).toBe('moved by the action');
+        });
+
+        it('should still not rebuild the form when the refetched values are identical', () => {
+            const initFormSpy = vi.spyOn(
+                component as DotEditContentFormComponent & { initializeForm(): void },
+                'initializeForm'
+            );
+
+            // Publish-only / Unarchive: same inode, same modDate, same field values.
+            fireActionReturning({ ...MOCK_CONTENTLET_1_OR_2_TABS });
+
+            expect(initFormSpy).not.toHaveBeenCalled();
+        });
+    });
+
     describe('Lock functionality', () => {
         beforeEach(() => {
             dotContentTypeService.getContentTypeWithRender.mockReturnValue(

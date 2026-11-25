@@ -93,6 +93,12 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
  * <dot-edit-content-form></dot-edit-content-form>
  * ```
  */
+/**
+ * Contentlet fields that lock/unlock change (`lock.feature.ts`). They are volatile state, not
+ * content, so they are left out of the form's revision key.
+ */
+const LOCK_ONLY_FIELDS = new Set(['locked', 'lockedBy', 'lockedByName', 'lockedOn']);
+
 @Component({
     selector: 'dot-edit-content-form',
     templateUrl: './dot-edit-content-form.component.html',
@@ -225,12 +231,30 @@ export class DotEditContentFormComponent implements OnInit {
     private formValueSubscription?: Subscription;
 
     /**
-     * Tracks the last contentlet version used to build the form. The effect that
-     * reinitializes the form compares this against the current contentlet's
-     * identifier|inode|modDate so that state-only updates (e.g. lock/unlock)
-     * don't discard in-flight field state.
+     * Tracks the last contentlet revision used to build the form (see {@link #revisionKeyOf}).
+     * The effect that reinitializes the form compares this against the current contentlet's
+     * key so that state-only updates (e.g. lock/unlock) don't discard in-flight field state.
      */
     #lastContentletRevisionKey: string | null = null;
+
+    /**
+     * Key of the contentlet revision the form is built from.
+     *
+     * `identifier|inode|modDate` alone is not enough: a workflow action such as Move changes
+     * the contentlet's data (host, folder, path) without a new inode or modDate, so the
+     * refetched contentlet never rebuilt the form and the Site or Folder field kept its old
+     * value until a manual reload (#38724 R3). The key therefore also carries the contentlet's
+     * values. The lock fields are left out on purpose: lock/unlock replace the contentlet with
+     * the same values plus a new lock state (`lock.feature.ts`), and that must not rebuild the
+     * form (#35388) — rebuilding races with async child components and wipes in-flight state.
+     */
+    #revisionKeyOf(contentlet: DotCMSContentlet): string {
+        const values = Object.fromEntries(
+            Object.entries(contentlet).filter(([key]) => !LOCK_ONLY_FIELDS.has(key))
+        );
+
+        return `${contentlet.identifier}|${contentlet.inode}|${contentlet.modDate}|${JSON.stringify(values)}`;
+    }
 
     #flushTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
@@ -292,7 +316,7 @@ export class DotEditContentFormComponent implements OnInit {
         if (this.$store.tabs().length) {
             const contentlet = this.$store.contentlet();
             if (contentlet) {
-                this.#lastContentletRevisionKey = `${contentlet.identifier}|${contentlet.inode}|${contentlet.modDate}`;
+                this.#lastContentletRevisionKey = this.#revisionKeyOf(contentlet);
             }
             this.initializeForm();
             this.initializeFormListener();
@@ -337,11 +361,13 @@ export class DotEditContentFormComponent implements OnInit {
 
             // Only reinitialize if we have both contentlet and tabs, and form exists
             if (contentlet && tabs.length > 0 && this.form) {
-                const revisionKey = `${contentlet.identifier}|${contentlet.inode}|${contentlet.modDate}`;
+                const revisionKey = this.#revisionKeyOf(contentlet);
 
                 // Skip rebuild when only lock/volatile state changed — rebuilding the
                 // form here races with async child components (e.g. category field)
-                // and can wipe the user's current selection.
+                // and can wipe the user's current selection. A refetch after a workflow
+                // action that changed data (e.g. Move) has a new key even with the same
+                // inode and modDate, so it does rebuild.
                 if (revisionKey === this.#lastContentletRevisionKey) {
                     return;
                 }
@@ -421,7 +447,7 @@ export class DotEditContentFormComponent implements OnInit {
                 // doesn't rebuild the form again for the same contentlet.
                 const contentlet = this.$store.contentlet();
                 if (contentlet) {
-                    this.#lastContentletRevisionKey = `${contentlet.identifier}|${contentlet.inode}|${contentlet.modDate}`;
+                    this.#lastContentletRevisionKey = this.#revisionKeyOf(contentlet);
                 }
 
                 if (isManualTranslation) {
