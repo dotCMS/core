@@ -530,7 +530,8 @@ public class PublisherQueueJob implements StatefulJob {
 
 	/**
 	 * Updates the local Publish Audit History with the information retrieved from a remote
-	 * end-point.
+	 * end-point. When the tracking map is empty there is nothing to aggregate, and the status is
+	 * left as it is.
 	 *
 	 * @param bundleAudit         The {@link PublishAuditStatus} object that contains the audit
 	 *                            status of the bundle in the local environment.
@@ -551,6 +552,11 @@ public class PublisherQueueJob implements StatefulJob {
 			throws DotDataException, DotPublisherException, LanguageException {
 		Status bundleStatus;
 		final int totalEndpoints = countEndpoints(endpointTrackingMap);
+		if (totalEndpoints == 0) {
+			// No endpoint left to ask (all were deleted or switched to sending). Zero of zero would read
+			// as "publishing on all endpoints" and keep the retry from going to their replacements.
+			return;
+		}
 		final PublishAuditHistory localHistory = bundleAudit.getStatusPojo();
 		final String auditedBundleId = bundleAudit.getBundleId();
 		// Info needed to generate the Growl Notification

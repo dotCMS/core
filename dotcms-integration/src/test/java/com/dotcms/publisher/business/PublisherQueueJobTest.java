@@ -781,6 +781,51 @@ public class PublisherQueueJobTest {
     }
 
     /**
+     * Method to test: {@link PublisherQueueJob#execute}
+     * <p>
+     * Given scenario: a bundle failed to reach the only endpoint its audit tracks. That endpoint was
+     * then deleted and a replacement added to the same environment, so the poll has no endpoint
+     * left to ask.
+     * <p>
+     * Expected result: with nothing to aggregate the audit status is left as it was, instead of
+     * reading as "publishing on all endpoints", so the re-check after the poll does not skip the
+     * bundle and the retry goes to the replacement endpoint.
+     */
+    @Test
+    public void test_execute_trackedEndpointDeleted_retryGoesToReplacement() throws Exception {
+        try (AuditStub receiver = new AuditStub(List.of())) {
+            final User user = TestUserUtils.getAdminUser();
+            final Contentlet contentlet = new ContentletDataGen(new ContentTypeDataGen().nextPersisted())
+                    .nextPersisted();
+            final Environment environment = PublisherTestUtil.createEnvironment(user, true);
+            final PublishingEndPoint replacement = PublisherTestUtil.createEndpoint(environment);
+            replacement.setPort(String.valueOf(receiver.port()));
+            APILocator.getPublisherEndPointAPI().updateEndPoint(replacement);
+            final Bundle bundle = PublisherTestUtil.createBundle("bundle-" + System.nanoTime(), user, environment);
+            try {
+                PublisherAPI.getInstance().addContentsToPublish(
+                        list(contentlet.getIdentifier()), bundle.getId(), new Date(), user);
+                // The audit tracks an endpoint that no longer exists
+                seedAudit(bundle, environment, Map.of(java.util.UUID.randomUUID().toString(), Status.FAILED_TO_SENT));
+                final PublishAuditHistory history = APILocator.getPublishAuditAPI()
+                        .getPublishAuditStatus(bundle.getId()).getStatusPojo();
+                APILocator.getPublishAuditAPI().updatePublishAuditStatus(bundle.getId(),
+                        Status.FAILED_TO_SEND_TO_ALL_GROUPS, history);
+                assertTrue("The failed bundle must be in the list of bundles to send",
+                        isBundleQueued(bundle.getId()));
+
+                runJobOnce();
+
+                assertEquals("The retry must be sent to the replacement endpoint", 1, receiver.uploads());
+            } finally {
+                cleanUpAudit(bundle);
+                PublisherAPI.getInstance().deleteElementsFromPublishQueueTable(bundle.getId());
+                PublisherTestUtil.cleanBundleEndpointEnv(bundle, replacement, environment);
+            }
+        }
+    }
+
+    /**
      * Method to test: {@code PublisherQueueJob#getPublishersForBundle}
      * Given scenario: an environment with an {@code awss3}, a {@code static} and an {@code http}
      * endpoint, created in that order (#34434, US4).
