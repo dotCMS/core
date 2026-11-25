@@ -81,6 +81,7 @@ import org.junit.runners.Suite;
         CountVariantsInAllEndedExperimentsMetricTypeTest.class,
         CountVariantsInAllRunningExperimentsMetricTypeTest.class,
         CountVariantsInAllScheduledExperimentsMetricTypeTest.class,
+    com.dotmarketing.image.filter.LegacyTruncatedImageIntegrationTest.class,
         MetricTimeoutTest.class,
         Task230630CreateRunningIdsExperimentFieldIntegrationTest.class,
         TotalSizeOfFilesPerThemeMetricTypeTest.class,
@@ -134,6 +135,7 @@ import org.junit.runners.Suite;
     com.dotmarketing.portlets.contentlet.business.web.UpdatePageTemplatePathJobTest.class,
     com.dotmarketing.portlets.user.ajax.UserAjaxHasUserRolesIntegrationTest.class,
     com.dotcms.rest.api.v1.user.UserResourcePasswordIntegrationTest.class,
+    com.dotmarketing.image.vips.VipsTruncatedImageIntegrationTest.class,
     com.dotmarketing.portlets.workflows.action.WorkflowTaskAccessTest.class,
     com.dotcms.rendering.velocity.viewtools.XsltToolTest.class,
     com.dotmarketing.portlets.htmlpageasset.business.render.page.PageViewSerializerRelatedContentTest.class,
@@ -150,6 +152,7 @@ import org.junit.runners.Suite;
     com.dotcms.rest.api.v1.system.role.RoleResourceCheckRolesIntegrationTest.class,
         RoleResourceIntegrationTest.class,
     com.dotmarketing.portlets.workflows.action.EditWorkflowTaskActionTest.class,
+    com.dotcms.auth.FailedLoginRecordingTest.class,
         FileAssetContainerPermissionInheritanceTest.class,
 
         // System event delivery in a cluster (issue #36827). The migration runs first so the

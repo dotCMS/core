@@ -28,17 +28,16 @@ public class SubSampleImageFilter extends ImageFilter {
         if (!overwrite(resultFile, parameters)) {
             return resultFile;
         }
-        resultFile.delete();
 
         // subsample from stream
         BufferedImage srcImage = ImageFilterAPI.apiInstance.get().subsampleImage(file, width, height);
 
         
-        File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() +".tmp");
+        File tempResultFile = stagingFileFor(resultFile);
 
         try{
             ImageIO.write(srcImage, "png", tempResultFile);
-            tempResultFile.renameTo(resultFile);
+            publishRendition(tempResultFile, resultFile);
         } catch (Exception e) {
             throw new DotRuntimeException("unable to convert file:" +file + " : " +  e.getMessage(),e);
         }
