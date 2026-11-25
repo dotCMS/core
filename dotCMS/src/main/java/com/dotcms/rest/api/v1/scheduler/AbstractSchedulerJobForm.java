@@ -11,7 +11,8 @@ import org.immutables.value.Value;
  * A job in the Scheduler portlet's {@code User Job} group, as {@link SchedulerJobResource} accepts
  * it when the job is saved and returns it once saved.
  */
-@Value.Style(typeImmutable = "*", typeAbstract = "Abstract*")
+// jdkOnly keeps properties a java.util.Map; OpenAPI describes a Guava ImmutableMap as an object with an "empty" flag
+@Value.Style(typeImmutable = "*", typeAbstract = "Abstract*", jdkOnly = true)
 @Value.Immutable
 @JsonSerialize(as = SchedulerJobForm.class)
 @JsonDeserialize(as = SchedulerJobForm.class)

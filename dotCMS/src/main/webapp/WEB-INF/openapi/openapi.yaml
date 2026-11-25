@@ -32693,12 +32693,6 @@ components:
       type: object
       additionalProperties:
         type: string
-        description: The name and value parameters handed to the job when it runs
-        example: "{\"structure\":\"Product\",\"path\":\"/imports/products.csv\"}"
-      description: The name and value parameters handed to the job when it runs
-      example:
-        structure: Product
-        path: /imports/products.csv
       properties:
         empty:
           type: boolean
@@ -40161,9 +40155,6 @@ components:
           example:
             path: /imports/products.csv
             structure: Product
-          properties:
-            empty:
-              type: boolean
         startDate:
           type: string
           description: "The first date and time the job may run, as yyyy-MM-dd HH:mm.\
