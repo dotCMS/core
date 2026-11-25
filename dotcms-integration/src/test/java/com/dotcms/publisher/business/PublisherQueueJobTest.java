@@ -661,14 +661,17 @@ public class PublisherQueueJobTest {
     /**
      * Method to test: {@link PublisherQueueJob} polling of the receivers of a bundle.
      * <p>
-     * Given scenario: a bundle went to two {@code http} endpoints. One has a key and its receiver
-     * answers SUCCESS; the other's stored key is only spaces, so it has no usable key, and its
-     * receiver refuses every request with a plain-text 401.
+     * Given scenario: a bundle went to three {@code http} endpoints. One has a key and its receiver
+     * answers SUCCESS; the other two have a stored key that is only spaces, so they have no usable
+     * key, and their receiver refuses every request with a plain-text 401. Of those two, one still
+     * shows the bundle as sent and the other already has a final SUCCESS.
      * <p>
-     * Expected result: the endpoint with no usable key is not asked and keeps its local result,
-     * and the other endpoint's answer is merged. Before the fix the keyless endpoint was asked
-     * with an empty {@code Authorization} header, its 401 body could not be read as a list, and
-     * the exception stopped the whole pass, so the healthy endpoint's answer was lost too.
+     * Expected result: neither endpoint without a usable key is asked. The one still in flight is
+     * recorded as FAILED_TO_PUBLISH, so the bundle counts a try instead of waiting forever for an
+     * answer that cannot come; the one with a final result keeps it. The healthy endpoint's answer
+     * is merged. Before the fix the keyless endpoint was asked with an empty {@code Authorization}
+     * header, its 401 body could not be read as a list, and the exception stopped the whole pass,
+     * so the healthy endpoint's answer was lost too.
      */
     @Test
     public void test_poll_endpointWithoutUsableKey_isSkippedAndPeersAreMerged() throws Exception {
@@ -686,24 +689,32 @@ public class PublisherQueueJobTest {
             keyless.setPort(String.valueOf(refusingStub.port()));
             keyless.setAuthKey(new StringBuilder(PublicEncryptionFactory.encryptString("   ")));
             APILocator.getPublisherEndPointAPI().updateEndPoint(keyless);
+            final PublishingEndPoint keylessDone = PublisherTestUtil.createEndpoint(environment);
+            keylessDone.setPort(String.valueOf(refusingStub.port()));
+            keylessDone.setAuthKey(new StringBuilder(PublicEncryptionFactory.encryptString("   ")));
+            APILocator.getPublisherEndPointAPI().updateEndPoint(keylessDone);
             final Bundle bundle = PublisherTestUtil.createBundle("bundle-" + System.nanoTime(), user, environment);
             try {
                 seedAudit(bundle, environment, Map.of(
                         healthy.getId(), Status.BUNDLE_SENT_SUCCESSFULLY,
-                        keyless.getId(), Status.BUNDLE_SENT_SUCCESSFULLY));
+                        keyless.getId(), Status.BUNDLE_SENT_SUCCESSFULLY,
+                        keylessDone.getId(), Status.SUCCESS));
 
                 invokeUpdateAuditStatus();
 
                 final Map<String, EndpointDetail> endpoints = endpointsOf(bundle, environment);
                 assertEquals("The healthy endpoint's answer must be merged",
                         Status.SUCCESS.getCode(), endpoints.get(healthy.getId()).getStatus());
-                assertEquals("The endpoint with no usable key must keep its local result",
-                        Status.BUNDLE_SENT_SUCCESSFULLY.getCode(), endpoints.get(keyless.getId()).getStatus());
-                assertEquals("The endpoint with no usable key must not be asked",
+                assertEquals("An in-flight endpoint with no usable key must be recorded as failed",
+                        Status.FAILED_TO_PUBLISH.getCode(), endpoints.get(keyless.getId()).getStatus());
+                assertEquals("An endpoint with no usable key must keep a final result",
+                        Status.SUCCESS.getCode(), endpoints.get(keylessDone.getId()).getStatus());
+                assertEquals("Endpoints with no usable key must not be asked",
                         0, refusingStub.requests());
             } finally {
                 cleanUpAudit(bundle);
                 APILocator.getPublisherEndPointAPI().deleteEndPointById(keyless.getId());
+                APILocator.getPublisherEndPointAPI().deleteEndPointById(keylessDone.getId());
                 PublisherTestUtil.cleanBundleEndpointEnv(bundle, healthy, environment);
             }
         }

@@ -101,6 +101,9 @@ public class PublisherQueueJob implements StatefulJob {
 
 	public static final Integer MAX_NUM_TRIES = Config.getIntProperty("PUBLISHER_QUEUE_MAX_TRIES", 3);
 	public static final int MAX_SIZE_PP_AUDIT_PAYLOAD = Config.getIntProperty("MAX_SIZE_PP_AUDIT_PAYLOAD", 10000);
+	/** Endpoint results that only the receiver can turn into a final one. */
+	private static final Set<Integer> IN_FLIGHT_STATUSES = Set.of(Status.BUNDLE_SENT_SUCCESSFULLY.getCode(),
+			Status.RECEIVED_BUNDLE.getCode(), Status.PUBLISHING_BUNDLE.getCode());
 
 	private final PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
 	private final PublishingEndPointAPI endpointAPI = APILocator.getPublisherEndPointAPI();
@@ -440,7 +443,10 @@ public class PublisherQueueJob implements StatefulJob {
 
 	/**
 	 * Asks a remote endpoint for the audit of the given bundles and merges each answer into the
-	 * local history.
+	 * local history. An endpoint with no usable key is not asked, since the receiver would refuse
+	 * the request. If its bundle is still in flight there, it is recorded as failed instead, so the
+	 * bundle counts a try and is sent again (which fails until the key is fixed) rather than
+	 * waiting forever for an answer that cannot come. A final result is kept as it is.
 	 *
 	 * @param bundleIds      the bundles to ask about
 	 * @param targetEndpoint the endpoint to ask
@@ -453,9 +459,23 @@ public class PublisherQueueJob implements StatefulJob {
 							Client client, PublishAuditHistory localHistory)
 			throws DotDataException {
 
+			final Optional<String> requestToken = AuthCredentialPushPublishUtil.INSTANCE.getRequestToken(targetEndpoint);
+			if (requestToken.isEmpty()) {
+				Logger.debug(this, () -> "Not polling endpoint " + targetEndpoint.getId() + ": it has no usable key");
+				final EndpointDetail previous = localHistory.getEndpointsMap()
+						.getOrDefault(groupID, Map.of()).get(targetEndpoint.getId());
+				if (previous != null && IN_FLIGHT_STATUSES.contains(previous.getStatus())) {
+					final EndpointDetail failure = new EndpointDetail();
+					failure.setStatus(Status.FAILED_TO_PUBLISH.getCode());
+					failure.setInfo("Cannot check the remote publish status: the endpoint has no usable key.");
+					localHistory.addOrUpdateEndpoint(groupID, targetEndpoint.getId(), failure);
+				}
+				return;
+			}
+
 			// Try to get the status of the remote end-points to
 			// update the local history
-			 getRemoteHistoryFromEndpoint(bundleIds, targetEndpoint, client)
+			 getRemoteHistoryFromEndpoint(bundleIds, targetEndpoint, client, requestToken.get())
 					 .stream()
 					 .filter(Objects::nonNull)
 					 .forEach(remoteHistory -> {
@@ -779,29 +799,24 @@ public class PublisherQueueJob implements StatefulJob {
 	}
 
 	/**
-	 * Obtains the bundle history that has been created in the specified end-point. An endpoint
-	 * with no usable key is not asked, since the receiver would refuse the request, and an empty
-	 * list is returned so its local result stays as it is.
+	 * Obtains the bundle history that has been created in the specified end-point.
 	 *
-	 * @param bundleAudit - The {@link PublishAuditStatus} object containing bundle data.
+	 * @param bundleIds - The bundles to ask about.
 	 * @param targetEndpoint - The {@link PublishingEndPoint} whose bundle history will be
 	 *        retrieved.
+	 * @param client - The REST client used for the call.
+	 * @param requestToken - The value of the {@code Authorization} header for the endpoint.
 	 * @return The {@link PublishAuditHistory} of the bundle in the specified end-point.
 	 */
 	private List<PublishAuditHistory> getRemoteHistoryFromEndpoint(final  List<String> bundleIds,
 															 final PublishingEndPoint targetEndpoint,
-															 final Client client) throws DotDataException {
-		final Optional<String> requestToken = AuthCredentialPushPublishUtil.INSTANCE.getRequestToken(targetEndpoint);
-		if (requestToken.isEmpty()) {
-			// No usable key, so the receiver would refuse the request: keep the local result
-			Logger.debug(this, () -> "Not polling endpoint " + targetEndpoint.getId() + ": it has no usable key");
-			return List.of();
-		}
+															 final Client client,
+															 final String requestToken) throws DotDataException {
 		final WebTarget webTarget = client.target(targetEndpoint.toURL() + "/api/auditPublishing/getAll");
 
 		final String responseBody = webTarget
 				.request(MediaType.APPLICATION_JSON)
-				.header("Authorization", requestToken.get())
+				.header("Authorization", requestToken)
 				.post(Entity.entity(bundleIds, MediaType.APPLICATION_JSON))
 				.readEntity(String.class);
 
