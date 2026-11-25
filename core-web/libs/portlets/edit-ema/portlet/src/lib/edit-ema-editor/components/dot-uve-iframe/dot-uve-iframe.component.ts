@@ -101,6 +101,9 @@ export class DotUveIframeComponent {
      */
     #lastScroll: { pageId: string | undefined; y: number } = { pageId: undefined, y: 0 };
 
+    /** The pending frame of `restoreScrollWhileParsing`, cancelled by a newer render. */
+    #scrollFrame = 0;
+
     /**
      * Rendered HTML for traditional pages.
      * @type {Signal<string>}
@@ -124,6 +127,10 @@ export class DotUveIframeComponent {
             this.insertPageContent(pageRender, enableInlineEdit);
         }
     });
+
+    constructor() {
+        this.destroyRef.onDestroy(() => cancelAnimationFrame(this.#scrollFrame));
+    }
 
     /**
      * The content window of the iframe, or null if not available.
@@ -180,21 +187,43 @@ export class DotUveIframeComponent {
     }
 
     /**
-     * The page HTML to load, with a script that scrolls it back to where the user left it as
-     * soon as it is parsed. `load` waits for images, so restoring only there paints the page at
-     * the top first. `restoreScroll` still runs on load, for a page whose CSP blocks the script
-     * and for images that grow the page after it is parsed.
-     * @param {string} pageRender - Rendered HTML of the page.
-     * @returns {string} the HTML to write into `srcdoc`
+     * Scrolls a re-rendered page back to where the user left it while it is still being
+     * parsed, once a frame, so it is already in place when the browser first paints it.
+     * `load` waits for images, so restoring only there paints the page at the top first.
+     * Stops once the document is parsed; `restoreScroll` on load covers images that grow the
+     * page after that.
+     * @returns {void}
      */
-    private withScrollRestore(pageRender: string): string {
-        const { pageId, y } = this.#lastScroll;
+    private restoreScrollWhileParsing(): void {
+        cancelAnimationFrame(this.#scrollFrame);
 
-        if (y <= 0 || pageId !== this.uveStore.pageAsset()?.page?.identifier) {
-            return pageRender;
+        const { pageId, y } = this.#lastScroll;
+        const iframeElement = this.iframe?.nativeElement;
+
+        if (!iframeElement || y <= 0 || pageId !== this.uveStore.pageAsset()?.page?.identifier) {
+            return;
         }
 
-        return `${pageRender}<script>addEventListener('DOMContentLoaded',()=>scrollTo({top:${y},left:0,behavior:'instant'}))</script>`;
+        // The document showing now is the one being replaced.
+        const replacedDocument = iframeElement.contentDocument;
+
+        const step = () => {
+            const doc = iframeElement.contentDocument;
+
+            if (doc && doc !== replacedDocument && doc.body) {
+                if (doc.defaultView && doc.defaultView.scrollY !== y) {
+                    doc.defaultView.scrollTo({ top: y, left: 0, behavior: 'instant' });
+                }
+
+                if (doc.readyState !== 'loading') {
+                    return;
+                }
+            }
+
+            this.#scrollFrame = requestAnimationFrame(step);
+        };
+
+        this.#scrollFrame = requestAnimationFrame(step);
     }
 
     /**
@@ -223,7 +252,8 @@ export class DotUveIframeComponent {
             // run again — even across legitimate re-renders (e.g. preview → edit
             // mode returns different server-rendered HTML that still contains the
             // same let/const declarations).
-            iframeElement.srcdoc = this.withScrollRestore(pageRender);
+            this.restoreScrollWhileParsing();
+            iframeElement.srcdoc = pageRender;
         }
 
         this.handleInlineScripts(enableInlineEdit);

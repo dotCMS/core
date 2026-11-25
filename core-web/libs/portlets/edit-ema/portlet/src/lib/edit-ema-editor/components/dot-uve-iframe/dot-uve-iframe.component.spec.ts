@@ -244,6 +244,7 @@ describe('DotUveIframeComponent', () => {
 
     describe('scroll position across re-renders', () => {
         let mockWindow: EventTarget & { scrollY: number; scrollTo: Mock };
+        let currentDocument: Document;
 
         // Scroll the page the way a user would: move it, then let it report the scroll.
         const scrollPageTo = (y: number) => {
@@ -257,14 +258,16 @@ describe('DotUveIframeComponent', () => {
             const mockIframe = document.createElement('iframe');
             mockWindow = Object.assign(new EventTarget(), { scrollY: 0, scrollTo: vi.fn() });
 
-            Object.defineProperty(mockIframe, 'contentDocument', {
-                value: document.implementation.createHTMLDocument()
-            });
+            currentDocument = document.implementation.createHTMLDocument();
+
+            Object.defineProperty(mockIframe, 'contentDocument', { get: () => currentDocument });
             Object.defineProperty(mockIframe, 'contentWindow', { value: mockWindow });
 
             component.iframe = { nativeElement: mockIframe } as any;
             component.onIframeLoad();
         });
+
+        afterEach(() => vi.restoreAllMocks());
 
         it('should scroll a re-rendered page back to where the user left it', () => {
             scrollPageTo(640);
@@ -279,25 +282,56 @@ describe('DotUveIframeComponent', () => {
             });
         });
 
-        it('should scroll the re-rendered page as soon as it is parsed, before it paints', () => {
-            scrollPageTo(640);
-            pageRenderSignal.set('<html><body>After the move</body></html>');
+        describe('while the new document is parsed', () => {
+            let frames: FrameRequestCallback[];
+            const runFrame = () => frames.shift()?.(0);
 
-            component.onIframeLoad();
+            beforeEach(() => {
+                frames = [];
+                vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) =>
+                    frames.push(callback)
+                );
+            });
 
-            expect(component.iframeElement?.srcdoc).toBe(
-                "<html><body>After the move</body></html><script>addEventListener('DOMContentLoaded',()=>scrollTo({top:640,left:0,behavior:'instant'}))</script>"
-            );
-        });
+            it('should scroll the new document into place before it paints, then stop', () => {
+                scrollPageTo(640);
+                pageRenderSignal.set('<html><body>After the move</body></html>');
+                component.onIframeLoad();
 
-        it('should load a different page without the scroll script', () => {
-            scrollPageTo(640);
-            pageAssetSignal.set({ page: { identifier: 'page-b' } });
-            pageRenderSignal.set('<html><body>Page B</body></html>');
+                // The iframe still shows the replaced document: wait.
+                runFrame();
+                expect(frames).toHaveLength(1);
 
-            component.onIframeLoad();
+                const parsing = {
+                    body: {},
+                    readyState: 'loading',
+                    defaultView: { scrollY: 0, scrollTo: vi.fn() }
+                };
+                currentDocument = parsing as unknown as Document;
+                runFrame();
 
-            expect(component.iframeElement?.srcdoc).toBe('<html><body>Page B</body></html>');
+                expect(parsing.defaultView.scrollTo).toHaveBeenCalledWith({
+                    top: 640,
+                    left: 0,
+                    behavior: 'instant'
+                });
+
+                parsing.readyState = 'interactive';
+                parsing.defaultView.scrollY = 640;
+                runFrame();
+
+                expect(frames).toHaveLength(0);
+            });
+
+            it('should not wait on a different page', () => {
+                scrollPageTo(640);
+                pageAssetSignal.set({ page: { identifier: 'page-b' } });
+                pageRenderSignal.set('<html><body>Page B</body></html>');
+
+                component.onIframeLoad();
+
+                expect(frames).toHaveLength(0);
+            });
         });
 
         it('should open a different page at the top', () => {
