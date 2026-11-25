@@ -6,7 +6,6 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.quartz.CronScheduledTask;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.ScheduledTask;
@@ -149,7 +148,7 @@ public class SchedulerJobResource {
         if (!UtilMethods.isSet(jobName) || characters(jobName + "_trigger") > NAME_LIMIT) {
             throw refused(Response.Status.BAD_REQUEST, user, "message.Scheduler.invalidJobName");
         }
-        if (exists(jobName)) {
+        if (exists(jobName, user)) {
             throw refused(Response.Status.CONFLICT, user, "message.Scheduler.jobAlreadyExists");
         }
         return save(jobName, form, user);
@@ -204,7 +203,7 @@ public class SchedulerJobResource {
             final SchedulerJobForm form) throws DotDataException {
 
         final User user = init(request, response);
-        if (!UtilMethods.isSet(jobName) || !exists(jobName)) {
+        if (!UtilMethods.isSet(jobName) || !exists(jobName, user)) {
             throw refused(Response.Status.NOT_FOUND, user, "message.Scheduler.jobNotFound");
         }
         // A job record without a trigger may have a name too long for the trigger Quartz creates
@@ -228,12 +227,18 @@ public class SchedulerJobResource {
     /**
      * Tells whether the User Job group has a job record with this name. A record that lost its
      * trigger still counts, so it can be saved again with PUT and is not overwritten by POST.
+     * A scheduler storage failure answers with a generic message; the details go to the log only.
+     *
+     * @param jobName the job name to look up
+     * @param user the caller, whose language the error message uses
+     * @return {@code true} when the User Job group has a job with this name
      */
-    private static boolean exists(final String jobName) {
+    private static boolean exists(final String jobName, final User user) {
         try {
             return QuartzUtils.isJobScheduled(jobName, USER_JOB_GROUP);
         } catch (final SchedulerException e) {
-            throw new DotRuntimeException("Unable to read the job " + jobName, e);
+            Logger.error(SchedulerJobResource.class, "Unable to read the job " + jobName, e);
+            throw refused(Response.Status.INTERNAL_SERVER_ERROR, user, "message.Scheduler.saveFailed");
         }
     }
 
@@ -316,8 +321,9 @@ public class SchedulerJobResource {
             // Not on the classpath, no public no-argument constructor, or not a Quartz job
             throw refused(Response.Status.BAD_REQUEST, user, "message.Scheduler.javaClassNotFound");
         } catch (final SchedulerException e) {
+            // The cause can carry database details, so it goes to the log and not the response
             Logger.error(SchedulerJobResource.class, "Unable to schedule the job " + jobName, e);
-            throw new DotRuntimeException("Unable to schedule the job " + jobName, e);
+            throw refused(Response.Status.INTERNAL_SERVER_ERROR, user, "message.Scheduler.saveFailed");
         }
 
         return new ResponseEntitySchedulerJobView(SchedulerJobForm.copyOf(form)
