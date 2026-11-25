@@ -17,6 +17,10 @@
       "path": "./examples/angular-ssr"
     },
     {
+      "name": "📗 example-angular-ssr-amplify",
+      "path": "./examples/angular-ssr-amplify"
+    },
+    {
       "name": "📙 example-astro",
       "path": "./examples/astro"
     },

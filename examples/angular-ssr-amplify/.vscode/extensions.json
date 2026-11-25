@@ -1,0 +1,13 @@
+{
+  "recommendations": [
+    // Angular development
+    "angular.ng-template",
+
+    // Code quality
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+
+    // EditorConfig support
+    "editorconfig.editorconfig"
+  ]
+}

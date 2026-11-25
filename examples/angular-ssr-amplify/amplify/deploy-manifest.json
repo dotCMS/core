@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "framework": { "name": "angular", "version": "0.0.0" },
+  "routes": [
+    {
+      "path": "/*.js",
+      "target": { "kind": "Static", "cacheControl": "public, max-age=31536000, immutable" },
+      "fallback": { "kind": "Compute", "src": "default" }
+    },
+    {
+      "path": "/*.css",
+      "target": { "kind": "Static", "cacheControl": "public, max-age=31536000, immutable" },
+      "fallback": { "kind": "Compute", "src": "default" }
+    },
+    {
+      "path": "/*.*",
+      "target": { "kind": "Static", "cacheControl": "public, max-age=3600" },
+      "fallback": { "kind": "Compute", "src": "default" }
+    },
+    {
+      "path": "/*",
+      "target": { "kind": "Compute", "src": "default" }
+    }
+  ],
+  "computeResources": [
+    { "name": "default", "runtime": "nodejs24.x", "entrypoint": "compute-entry.cjs" }
+  ]
+}
