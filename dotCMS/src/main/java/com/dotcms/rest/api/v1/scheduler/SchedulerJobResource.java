@@ -30,8 +30,10 @@ import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
+import java.time.temporal.ChronoField;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -74,8 +76,14 @@ public class SchedulerJobResource {
      */
     static final Set<String> ADMIN_ONLY_CLASSES = Set.of(ContentImportThread.class.getName());
 
-    /** The whole value must match, and dates that do not exist (such as February 30) are refused. */
-    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm")
+    /**
+     * The whole value must match, and dates that do not exist (such as February 30) are refused. The
+     * year takes exactly four digits: a signed year such as +999999999 does not fit a {@link Date}.
+     */
+    private static final DateTimeFormatter DATE_FORMAT = new DateTimeFormatterBuilder()
+            .appendValue(ChronoField.YEAR, 4)
+            .appendPattern("-MM-dd HH:mm")
+            .toFormatter()
             .withResolverStyle(ResolverStyle.STRICT);
 
     /** Quartz's job and trigger name columns, in characters. */
@@ -212,9 +220,13 @@ public class SchedulerJobResource {
                 .getUser();
     }
 
+    /**
+     * Tells whether the User Job group has a job record with this name. A record that lost its
+     * trigger still counts, so it can be saved again with PUT and is not overwritten by POST.
+     */
     private static boolean exists(final String jobName) {
         try {
-            return !QuartzUtils.getStandardScheduledTask(jobName, USER_JOB_GROUP).isEmpty();
+            return QuartzUtils.isJobScheduled(jobName, USER_JOB_GROUP);
         } catch (final SchedulerException e) {
             throw new DotRuntimeException("Unable to read the job " + jobName, e);
         }

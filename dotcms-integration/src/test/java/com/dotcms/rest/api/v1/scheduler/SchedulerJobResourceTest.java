@@ -35,6 +35,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.quartz.JobDetail;
 import org.quartz.SchedulerException;
 
 /**
@@ -373,14 +374,43 @@ public class SchedulerJobResourceTest {
     }
 
     /**
+     * Method to test: {@link SchedulerJobResource#createJob} and {@link SchedulerJobResource#updateJob}
+     * Given: a job record in the User Job group that has no trigger
+     * Expected: POST answers 409 and leaves the record alone; PUT saves it and gives it a trigger
+     */
+    @Test
+    public void test_saveJob_jobWithoutTrigger_shouldBeUpdatable() throws Exception {
+        final String jobName = "scheduler-job-" + UUID.randomUUID();
+        try {
+            final JobDetail detail = new JobDetail(jobName, SchedulerJobResource.USER_JOB_GROUP,
+                    Class.forName(LISTED));
+            detail.setDurability(true);
+            QuartzUtils.getScheduler().addJob(detail, false);
+            assertFalse(exists(jobName));
+
+            assertStatus(Response.Status.CONFLICT, () -> resource.createJob(requestFor(jobsPortletUser),
+                    new MockHttpResponse().response(), form(jobName, LISTED)));
+            assertFalse(exists(jobName));
+
+            resource.updateJob(requestFor(jobsPortletUser), new MockHttpResponse().response(), jobName,
+                    form(jobName, LISTED));
+            assertEquals(NEVER, ((CronScheduledTask) saved(jobName)).getCronExpression());
+        } finally {
+            remove(jobName);
+        }
+    }
+
+    /**
      * Method to test: {@link SchedulerJobResource#createJob}
-     * Given: start dates that a lenient parser would accept: a day that does not exist, and a
-     * valid date followed by extra text
+     * Given: start dates that a lenient parser would accept: a day that does not exist, a valid
+     * date followed by extra text, and signed years of more than four digits, the largest of which
+     * does not fit a {@link java.util.Date}
      * Expected: 400 for each, and no job is created
      */
     @Test
     public void test_createJob_invalidDate_shouldBeRefused() {
-        for (final String startDate : List.of("2099-02-30 10:00", "2099-01-01 10:00 tomorrow")) {
+        for (final String startDate : List.of("2099-02-30 10:00", "2099-01-01 10:00 tomorrow",
+                "+10000-01-01 10:00", "+999999999-12-31 23:59")) {
             final String jobName = "scheduler-job-" + UUID.randomUUID();
             try {
                 assertStatus(Response.Status.BAD_REQUEST, () -> resource.createJob(requestFor(admin),
