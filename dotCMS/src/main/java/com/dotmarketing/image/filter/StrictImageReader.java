@@ -100,26 +100,6 @@ public final class StrictImageReader {
     }
 
     /**
-     * Checks that a cached rendition still decodes fully, and deletes it when it does not, so the next
-     * request regenerates it. Used on the legacy engine only; with libvips the check runs natively
-     * ({@code VipsManager.decodesFully}).
-     *
-     * @param file a generated rendition
-     * @throws IOException if the file does not decode; the file is deleted when possible (a failed
-     *                     delete is logged)
-     */
-    public static void assertDecodable(final File file) throws IOException {
-        try {
-            read(file);
-        } catch (IOException | RuntimeException e) {
-            if (file.exists() && !file.delete()) {
-                Logger.warn(StrictImageReader.class, "unable to delete undecodable rendition: " + file);
-            }
-            throw new IOException("written rendition does not decode: " + file + " : " + e.getMessage(), e);
-        }
-    }
-
-    /**
      * Tells whether a reader warning only says the JPEG end marker is missing, e.g. "Truncated File -
      * Missing EOI marker". On its own it means the image data is complete.
      *

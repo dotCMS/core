@@ -204,6 +204,18 @@ public class ConfigUtils {
         return ConfigUtils.getAbsoluteAssetsRootPath() + File.separator + "dotGenerated";
     }
 
+    /**
+     * Staging folder for publishing finished renditions into the shared store. It sits inside
+     * {@link #getDotGeneratedSharedPath()}, on the same mount as the renditions, so the final move is a
+     * rename. The dot keeps it out of the {@code dotGenerated_*} names that are served or cleaned up;
+     * {@code BinaryCleanupJob} removes files abandoned in it.
+     *
+     * @return the absolute path of the shared staging folder
+     */
+    public static String getDotGeneratedSharedStagingPath() {
+        return getDotGeneratedSharedPath() + File.separator + ".staging";
+    }
+
     /** Unrecognized {@code DOTGENERATED_DEFAULT_PATH} values already reported, so each one warns only once. */
     private static final Set<String> warnedDotGeneratedModes = ConcurrentHashMap.newKeySet();
 

@@ -297,9 +297,11 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
             try {
                 return this.resizeImage(subsample, width, height, resampleOption);
             } catch (RuntimeException e) {
-                // the subsample is a cached rendition; if it no longer decodes every request would fail
-                // on it, so drop it and let the next request regenerate it from the source
+                // the subsample is a cached rendition shared by every size of this image; if it no
+                // longer decodes every request would fail on it, so drop it and let the next request
+                // regenerate it. A failure that is not about the subsample (resampling) keeps it.
                 if (subsample.getName().startsWith(WebKeys.GENERATED_FILE)
+                        && Try.run(() -> StrictImageReader.read(subsample)).isFailure()
                         && Try.of(() -> Files.deleteIfExists(subsample.toPath())).getOrElse(false)) {
                     Logger.warn(this, "Discarded a cached subsample that failed to resize: " + subsample);
                 }

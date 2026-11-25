@@ -124,6 +124,26 @@ class ImageFilterPublishRenditionTest {
         assertTrue(rendition.getName().startsWith(WebKeys.GENERATED_FILE + "12345_jpeg_"), rendition.getName());
     }
 
+    /**
+     * Given binaries stored in the {@code x/y/<inode>/<field>/<file>} layout (UUID and numeric inodes)
+     * and files that only look like it,
+     * When the version inode is read from the path,
+     * Then it is found for the real layout and nothing is returned otherwise.
+     */
+    @Test
+    void versionInodeFromBinaryPath_acceptsUuidAndNumericInodesInTheStorageLayout(@TempDir final Path dir) {
+        final String uuid = "929f6225-7c89-4cdf-9867-0bfb0c57d7b5";
+        assertEquals(uuid, ImageFilter.versionInodeFromBinaryPath(
+                dir.resolve("assets/9/2/" + uuid + "/fileAsset/hero.jpg").toFile()).orElse(null));
+        assertEquals("4815162342", ImageFilter.versionInodeFromBinaryPath(
+                dir.resolve("assets/4/8/4815162342/fileAsset/hero.jpg").toFile()).orElse(null));
+        assertTrue(ImageFilter.versionInodeFromBinaryPath(
+                dir.resolve("assets/1/2/4815162342/fileAsset/hero.jpg").toFile()).isEmpty(),
+                "the bucket folders must match the inode's first two characters");
+        assertTrue(ImageFilter.versionInodeFromBinaryPath(
+                dir.resolve("tmp_upload/temp_abc/hero.jpg").toFile()).isEmpty());
+    }
+
     private static byte[] bytes(final String text) {
         return text.getBytes(StandardCharsets.UTF_8);
     }

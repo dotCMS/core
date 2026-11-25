@@ -47,11 +47,12 @@ public abstract class VipsImageFilter extends ImageFilter {
         if (!overwrite(resultFile, parameters)) {
             return resultFile;
         }
-        // libvips infers the encoder from the file suffix, so the temp file must carry the
-        // result file's real extension (png/jpg/webp/gif), not a generic ".tmp".
+        // libvips infers the encoder from the file suffix, so the temp file must carry the result
+        // file's real extension (png/jpg/webp/gif), not a generic ".tmp". The leading dot keeps it out
+        // of the dotGenerated_<inode>_ names that inode cleanup deletes while the render is in progress.
         final String ext = com.dotmarketing.util.UtilMethods.getFileExtension(resultFile.getName());
-        final File tempResultFile =
-                new File(resultFile.getAbsoluteFile() + "_" + System.nanoTime() + "." + ext);
+        final File tempResultFile = new File(resultFile.getAbsoluteFile().getParentFile(),
+                "." + resultFile.getName() + "_" + java.util.UUID.randomUUID() + "." + ext);
         try {
             transform(file, tempResultFile, parameters);
             if (!tempResultFile.renameTo(resultFile)) {

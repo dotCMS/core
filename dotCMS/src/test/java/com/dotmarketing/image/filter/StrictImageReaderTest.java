@@ -228,25 +228,6 @@ public class StrictImageReaderTest {
     }
 
     /**
-     * Given a written rendition that does not fully decode, when checked before publishing, then
-     * the check fails and deletes it; a healthy rendition passes and is kept.
-     */
-    @Test
-    public void assertDecodable_truncatedFileIsDeletedAndRejected_healthyFileIsKept() throws Exception {
-        final File truncated = truncatedCopy("test.jpg");
-        try {
-            StrictImageReader.assertDecodable(truncated);
-            fail("a truncated rendition must not be published");
-        } catch (IOException expected) {
-            assertFalse("the undecodable rendition must be deleted", truncated.exists());
-        }
-
-        final File healthy = healthyCopy("test.png");
-        StrictImageReader.assertDecodable(healthy);
-        assertTrue(healthy.exists());
-    }
-
-    /**
      * Given a truncated JPEG source, when EVERY legacy filter runs on it, then each one throws and
      * leaves neither a result file nor a temp file behind (nothing for the exporter to cache).
      */

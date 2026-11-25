@@ -744,6 +744,36 @@ public class VipsParityTest {
         assertEquals("the repaired copy must be deleted", repairedBefore, repairedCopies());
     }
 
+    /**
+     * Given a libvips render in progress,
+     * When it writes its output,
+     * Then the staging file sits next to the rendition with a leading dot and the rendition's image
+     * suffix, so inode cleanup ({@code dotGenerated_<inode>_*}) never deletes it and libvips still
+     * picks the right encoder.
+     */
+    @Test
+    public void runFilter_stages_output_under_a_hidden_name_with_the_image_suffix() throws Exception {
+        final File in = staged("test.jpg", "jpg");
+        final File[] staging = new File[1];
+        final File out = new VipsResizeImageFilter() {
+            @Override
+            protected String getFilterName() {
+                return "resize";
+            }
+
+            @Override
+            protected void transform(final File input, final File output, final Map<String, String[]> parameters) {
+                staging[0] = output;
+                super.transform(input, output, parameters);
+            }
+        }.runFilter(in, params("resize_w", "200", "resize_h", "150"));
+
+        assertEquals(out.getParentFile(), staging[0].getParentFile());
+        assertTrue(staging[0].getName(), staging[0].getName().startsWith("." + out.getName() + "_"));
+        assertTrue(staging[0].getName(), staging[0].getName().endsWith(".png"));
+        assertEquals(new Dimension(200, 150), dims(out));
+    }
+
     /** A libvips resize whose transform always fails, to drive the retry and fallback paths. */
     private static final class FailingVipsResizeImageFilter extends VipsResizeImageFilter {
         @Override

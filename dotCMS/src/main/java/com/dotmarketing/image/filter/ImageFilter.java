@@ -282,8 +282,10 @@ public abstract class ImageFilter implements ImageFilterIf {
 	 * Resolves the inode of the content version being rendered, which is embedded in every rendition
 	 * name so {@code FileAssetAPI#cleanThumbnailsFromFileAsset} can delete only that version's files.
 	 * A chained stage reads it back from its {@code dotGenerated_<inode>_...} input; the first stage
-	 * takes it from the binary's storage path ({@code assets/x/y/<inode>/...}). The request's
-	 * {@code assetInodeOrIdentifier} is only a last resort because it may hold an identifier.
+	 * takes it from the binary's storage path ({@code assets/x/y/<inode>/<field>/<file>}), which also
+	 * covers numeric inodes from older content. The first UUID anywhere in the path and then the
+	 * request's {@code assetInodeOrIdentifier} are only fallbacks, because the request may hold an
+	 * identifier.
 	 */
 	private String resolveInode(final File file, final Map<String, String[]> parameters) {
 		final String fileName = file.getName();
@@ -293,8 +295,32 @@ public abstract class ImageFilter implements ImageFilterIf {
 			// a generated input without an embedded inode keeps the legacy behaviour of keying on its name
 			return fromName != null ? fromName : fileName;
 		}
-		return Try.of(() -> RegEX.find(file.getCanonicalPath(), UUID_REGEX).get(0).getMatch())
-				.getOrElse(() -> parameters.get("assetInodeOrIdentifier")[0]);
+		return versionInodeFromBinaryPath(file)
+				.or(() -> Try.of(() -> RegEX.find(file.getCanonicalPath(), UUID_REGEX).get(0).getMatch()).toJavaOptional())
+				.orElseGet(() -> parameters.get("assetInodeOrIdentifier")[0]);
+	}
+
+	/**
+	 * Reads the version inode from a binary's storage layout, {@code <assets>/x/y/<inode>/<field>/<file>},
+	 * where {@code x} and {@code y} are the inode's first two characters. The inode may be a UUID or a
+	 * numeric inode from older content.
+	 *
+	 * @param file the binary being rendered
+	 * @return the inode, or empty when the file is not stored in that layout
+	 */
+	static java.util.Optional<String> versionInodeFromBinaryPath(final File file) {
+		final File inodeFolder = Try.of(() -> file.getCanonicalFile().getParentFile().getParentFile()).getOrNull();
+		if (inodeFolder == null || inodeFolder.getParentFile() == null
+				|| inodeFolder.getParentFile().getParentFile() == null) {
+			return java.util.Optional.empty();
+		}
+		final String inode = inodeFolder.getName();
+		final File second = inodeFolder.getParentFile();
+		final File first = second.getParentFile();
+		return isVersionInode(inode) && inode.length() > 1
+				&& first.getName().equals(inode.substring(0, 1)) && second.getName().equals(inode.substring(1, 2))
+				? java.util.Optional.of(inode)
+				: java.util.Optional.empty();
 	}
 	
     public String[] getAcceptedParameters() {

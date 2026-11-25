@@ -307,6 +307,37 @@ class ImageFilterExporterSharedStoreTest {
     }
 
     /**
+     * Given content with a numeric (legacy) inode whose original binary is stored under that inode,
+     * requested by identifier,
+     * When the first stage's result file is resolved,
+     * Then the name embeds the numeric inode, not the identifier, so inode cleanup finds it.
+     */
+    @Test
+    void getResultsFile_firstStageReadsANumericInodeFromTheBinaryPath(@TempDir final Path tmp) {
+        final String inode = "4815162342";
+        final String identifier = UUID.randomUUID().toString();
+        final File binary = tmp.resolve("assets/4/8/" + inode + "/fileAsset/image.jpg").toFile();
+        final Map<String, String[]> parameters = new HashMap<>();
+        parameters.put("filter", new String[]{"Resize"});
+        parameters.put("resize_w", new String[]{"100"});
+        parameters.put("fieldVarName", new String[]{"fileAsset"});
+        parameters.put("assetInodeOrIdentifier", new String[]{identifier});
+        final File bucket = new File(ConfigUtils.getDotGeneratedPath() + File.separator + "4" + File.separator + "8");
+        final boolean bucketExisted = bucket.exists();
+        try {
+            final File firstStage = new ResizeImageFilter().getResultsFile(binary, parameters);
+
+            assertTrue(firstStage.getName().startsWith("dotGenerated_" + inode + "_"), firstStage.getName());
+            assertFalse(firstStage.getName().contains(identifier));
+        } finally {
+            if (!bucketExisted) {
+                bucket.delete();
+                bucket.getParentFile().delete();
+            }
+        }
+    }
+
+    /**
      * Given a temp upload, whose path holds no version inode and whose request names it by a
      * {@code temp_} id,
      * When a five-stage chain resolves the result file of each stage from the previous one,
