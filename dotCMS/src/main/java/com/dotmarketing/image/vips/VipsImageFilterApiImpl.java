@@ -115,7 +115,7 @@ public class VipsImageFilterApiImpl implements ImageFilterAPI {
         try {
             VipsManager.run(arena -> {
                 // libvips reads only the header here; SVG is rendered natively via librsvg.
-                final VImage img = VImage.newFromFile(arena, imageFile.getAbsolutePath());
+                final VImage img = VImage.newFromFile(arena, imageFile.getAbsolutePath(), VipsManager.FAIL_ON_TRUNCATED);
                 final boolean animated = VipsManager.metaInt(img, "n-pages", 1) > 1;
                 final int height = animated
                         ? VipsManager.metaInt(img, "page-height", img.getHeight())
@@ -148,7 +148,7 @@ public class VipsImageFilterApiImpl implements ImageFilterAPI {
             VipsManager.run(arena -> {
                 final VImage resized = VImage.thumbnail(arena, imageFile.getAbsolutePath(), w,
                         VipsOption.Int("height", h),
-                        VipsOption.Enum("size", VipsSize.SIZE_FORCE));
+                        VipsOption.Enum("size", VipsSize.SIZE_FORCE), VipsManager.FAIL_ON_TRUNCATED);
                 ref.set(toBufferedImage(resized));
             });
             return ref.get();
@@ -185,8 +185,9 @@ public class VipsImageFilterApiImpl implements ImageFilterAPI {
         try {
             VipsManager.run(arena -> {
                 final VImage thumb = width > 0 && height > 0
-                        ? VImage.thumbnail(arena, image.getAbsolutePath(), width, VipsOption.Int("height", height))
-                        : VImage.thumbnail(arena, image.getAbsolutePath(), Math.max(width, height));
+                        ? VImage.thumbnail(arena, image.getAbsolutePath(), width, VipsOption.Int("height", height),
+                                VipsManager.FAIL_ON_TRUNCATED)
+                        : VImage.thumbnail(arena, image.getAbsolutePath(), Math.max(width, height), VipsManager.FAIL_ON_TRUNCATED);
                 ref.set(toBufferedImage(thumb));
             });
             return ref.get();

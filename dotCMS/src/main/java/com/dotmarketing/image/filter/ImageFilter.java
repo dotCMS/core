@@ -27,6 +27,10 @@ import java.util.Optional;
 public abstract class ImageFilter implements ImageFilterIf {
 	protected static final String FILE_EXT = "png";
 	public    static final String CROP     = "crop";
+	private   static final String UUID_REGEX = "[\\w]{8}(-[\\w]{4}){3}-[\\w]{12}";
+	/** The version inode at the start of a generated name: a UUID or a legacy numeric inode, then "_". */
+	private   static final java.util.regex.Pattern EMBEDDED_INODE =
+			java.util.regex.Pattern.compile("^(" + UUID_REGEX + "|\\d+)_");
 
 
 	
@@ -95,11 +99,24 @@ public abstract class ImageFilter implements ImageFilterIf {
 			
 
 
+			// The first stage keys on the original binary's size and modification time, so a binary
+			// replaced under the same inode (push publishing, save without a new version) gets new
+			// rendition names on every node and in the shared store instead of a stale cached copy.
+			// Chained stages inherit it: their input's name already carries the previous stage's hash.
+			final String sourceVersion = file.getName().startsWith(WebKeys.GENERATED_FILE)
+					? "" : ":" + file.length() + ":" + file.lastModified();
 			MessageDigest digest = java.security.MessageDigest.getInstance("MD5");
-			digest.update((inode + sb.toString() + this.getClass() + file.getName()).getBytes());
+			digest.update((inode + sb.toString() + this.getClass() + file.getName() + sourceVersion).getBytes());
 
 			StringBuilder ret = new StringBuilder();
 			ret.append( WebKeys.GENERATED_FILE);
+			// only a real version inode (a UUID, or a legacy numeric inode) goes into the name, since
+			// cleanup matches on it; a fallback value (temp-file id, a chained input's whole name) stays
+			// in the digest only, otherwise each chained stage would embed the previous name and grow
+			// past the file name limit
+			if (isVersionInode(inode)) {
+				ret.append(inode + "_");
+			}
 			ret.append(thisFilter + "_");
 			ret.append(convertToHex(digest.digest()));
 
@@ -191,20 +208,13 @@ public abstract class ImageFilter implements ImageFilterIf {
 	protected final File getResultsFile(File file, Map<String, String[]> parameters, String fileExt) {
 		String fileFolderPath = file.getParent();
 
-		String inode =null;
+		final String inode = resolveInode(file, parameters);
 
         if (file.getName().startsWith(WebKeys.GENERATED_FILE)) {
-            inode = file.getName();
             String fileNameNoExt = this.getUniqueFileName(file, parameters, inode);
             String resultFilePath = fileFolderPath + File.separator + fileNameNoExt + "." + fileExt;
             return new File(resultFilePath);
         } else {
-            try {
-                inode = RegEX.find(file.getCanonicalPath(), "[\\w]{8}(-[\\w]{4}){3}-[\\w]{12}").get(0).getMatch();
-            } catch (Exception e) {
-                inode = parameters.get("assetInodeOrIdentifier")[0];
-            }
-
             File dirs = new File(ConfigUtils.getDotGeneratedPath() + File.separator + inode.charAt(0) + File.separator
                             + inode.charAt(1));
             if (!dirs.exists()) {
@@ -216,6 +226,101 @@ public abstract class ImageFilter implements ImageFilterIf {
             return new File(resultFilePath);
         }
 
+	}
+
+	/**
+	 * Tells whether a resolved value is a content version inode that belongs in a rendition name: a
+	 * UUID, or a numeric inode from older content.
+	 *
+	 * @param inode the resolved value
+	 * @return true for a UUID or an all-digits inode
+	 */
+	static boolean isVersionInode(final String inode) {
+		return inode != null && (inode.matches(UUID_REGEX) || inode.matches("\\d+"));
+	}
+
+	/**
+	 * Names the staging file for a rendition, in the rendition's own folder so the final move stays on
+	 * one filesystem. The name is unique per call, so concurrent renders of the same rendition never
+	 * share a staging file, and starts with a dot, so inode-scoped cleanup ({@code dotGenerated_<inode>_*})
+	 * never deletes a render in progress. Nothing is created until the filter writes to it, so a render
+	 * that fails early leaves no empty file behind.
+	 *
+	 * @param result the rendition's final file
+	 * @return a staging file next to it, not created yet
+	 */
+	protected static File stagingFileFor(final File result) {
+		return new File(result.getAbsoluteFile().getParentFile(),
+				"." + result.getName() + "_" + java.util.UUID.randomUUID() + ".tmp");
+	}
+
+	/**
+	 * Publishes a fully written temporary rendition under its final name in one step, replacing the
+	 * previous one if present. Readers see either the old rendition or the new one, never a missing or
+	 * half-written file, so a rendition is never deleted ahead of its regeneration. If the move fails,
+	 * the temporary file is removed and the error is raised.
+	 *
+	 * @param temp the temporary file, written next to {@code result} (same folder, same filesystem)
+	 * @param result the rendition's final file
+	 * @throws IOException if the rendition cannot be put in place
+	 */
+	protected static void publishRendition(final File temp, final File result) throws IOException {
+		try {
+			try {
+				java.nio.file.Files.move(temp.toPath(), result.toPath(),
+						java.nio.file.StandardCopyOption.ATOMIC_MOVE, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+			} catch (java.nio.file.AtomicMoveNotSupportedException e) {
+				java.nio.file.Files.move(temp.toPath(), result.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+			}
+		} catch (IOException | RuntimeException e) {
+			java.nio.file.Files.deleteIfExists(temp.toPath());
+			throw e;
+		}
+	}
+
+	/**
+	 * Resolves the inode of the content version being rendered, which is embedded in every rendition
+	 * name so {@code FileAssetAPI#cleanThumbnailsFromFileAsset} can delete only that version's files.
+	 * A chained stage reads it back from its {@code dotGenerated_<inode>_...} input; the first stage
+	 * takes it from the binary's storage path ({@code assets/x/y/<inode>/<field>/<file>}), which also
+	 * covers numeric inodes from older content. The first UUID anywhere in the path and then the
+	 * request's {@code assetInodeOrIdentifier} are only fallbacks, because the request may hold an
+	 * identifier.
+	 */
+	private String resolveInode(final File file, final Map<String, String[]> parameters) {
+		final String fileName = file.getName();
+		if (fileName.startsWith(WebKeys.GENERATED_FILE)) {
+			final java.util.regex.Matcher embedded = EMBEDDED_INODE.matcher(fileName.substring(WebKeys.GENERATED_FILE.length()));
+			final String fromName = embedded.find() ? embedded.group(1) : null;
+			// a generated input without an embedded inode keeps the legacy behaviour of keying on its name
+			return fromName != null ? fromName : fileName;
+		}
+		return versionInodeFromBinaryPath(file)
+				.or(() -> Try.of(() -> RegEX.find(file.getCanonicalPath(), UUID_REGEX).get(0).getMatch()).toJavaOptional())
+				.orElseGet(() -> parameters.get("assetInodeOrIdentifier")[0]);
+	}
+
+	/**
+	 * Reads the version inode from a binary's storage layout, {@code <assets>/x/y/<inode>/<field>/<file>},
+	 * where {@code x} and {@code y} are the inode's first two characters. The inode may be a UUID or a
+	 * numeric inode from older content.
+	 *
+	 * @param file the binary being rendered
+	 * @return the inode, or empty when the file is not stored in that layout
+	 */
+	static java.util.Optional<String> versionInodeFromBinaryPath(final File file) {
+		final File inodeFolder = Try.of(() -> file.getCanonicalFile().getParentFile().getParentFile()).getOrNull();
+		if (inodeFolder == null || inodeFolder.getParentFile() == null
+				|| inodeFolder.getParentFile().getParentFile() == null) {
+			return java.util.Optional.empty();
+		}
+		final String inode = inodeFolder.getName();
+		final File second = inodeFolder.getParentFile();
+		final File first = second.getParentFile();
+		return isVersionInode(inode) && inode.length() > 1
+				&& first.getName().equals(inode.substring(0, 1)) && second.getName().equals(inode.substring(1, 2))
+				? java.util.Optional.of(inode)
+				: java.util.Optional.empty();
 	}
 	
     public String[] getAcceptedParameters() {

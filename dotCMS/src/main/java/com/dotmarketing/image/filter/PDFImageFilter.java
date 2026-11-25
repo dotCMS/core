@@ -31,7 +31,7 @@ public class PDFImageFilter extends ImageFilter {
 
         float scale = dpi / 72f;
         
-        final File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() + ".tmp.png");
+        final File tempResultFile = stagingFileFor(resultFile);
 
         try (PDDocument document = PDDocument.load(file, MemoryUsageSetting.setupMixed(PDF_RENDERER_MAX_MEMORY_BYTES))) {
             PDFRenderer pdfRenderer = new PDFRenderer(document);
@@ -39,9 +39,7 @@ public class PDFImageFilter extends ImageFilter {
             pdfRenderer.setSubsamplingAllowed(true);
             BufferedImage bim = pdfRenderer.renderImage(--page, scale);
             ImageIO.write(bim, "PNG", tempResultFile);
-            if (!tempResultFile.renameTo(resultFile)) {
-                throw new DotRuntimeException("unable to create file:" + resultFile);
-            }
+            publishRendition(tempResultFile, resultFile);
             return resultFile;
 
         } catch (Exception e) {
