@@ -201,11 +201,13 @@
         data-testId="edit-content-layout__sidebar"
         class="edit-content-layout__sidebar min-w-0 overflow-x-hidden [grid-area:sidebar]" />
 } @else if ($store.isLoading()) {
-    <!-- The first load, before there is any content to show: the same spinner as a reload. -->
+    <!-- The first load, before there is any content to show. The same spinner, in the same
+         place, as the side-panel drawer shows while this component's chunk loads, so opening
+         the panel reads as one continuous loading rather than two. -->
     <div
         class="edit-content-layout__loading flex items-center justify-center"
         data-testId="edit-content-layout__loading">
-        <i class="pi pi-spin pi-spinner text-4xl text-gray-500"></i>
+        <p-progressSpinner styleClass="h-8! w-8!" strokeWidth="4" ariaLabel="Loading" />
     </div>
 }
 

@@ -154,6 +154,18 @@ describe('DotSidePanelOutletComponent', () => {
         expect(all('panel-content')).toHaveLength(1);
     });
 
+    it('centres the spinner in the panel, where the content takes over with its own', () => {
+        // A content such as Edit Content shows its own centred spinner while it loads its data.
+        // Filling the panel keeps both spinners in the same place, so the hand-over is invisible
+        // instead of reading as two different loadings (one at the top, one in the middle).
+        open(new Promise(() => undefined));
+
+        const loading = all('side-panel-loading')[0];
+
+        expect(loading).toHaveClass('h-full');
+        expect(loading.querySelector('p-progressspinner')).not.toBeNull();
+    });
+
     it("sends the close button to the content's guard", () => {
         open();
 

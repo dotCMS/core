@@ -16,6 +16,7 @@ import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { MessageModule } from 'primeng/message';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ToastModule } from 'primeng/toast';
 
 import {
@@ -66,6 +67,7 @@ import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-
         ButtonModule,
         ToastModule,
         MessageModule,
+        ProgressSpinnerModule,
         DynamicDialogModule,
         DotEditContentFormComponent,
         DotEditContentSidebarComponent,

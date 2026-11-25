@@ -1353,6 +1353,9 @@ describe.each([
             spectator.detectChanges();
 
             expect(loading()).not.toBeNull();
+            // The same spinner the side-panel drawer shows while this component's chunk loads,
+            // in the same place, so opening the panel reads as one continuous loading.
+            expect(loading()?.querySelector('p-progressspinner')).not.toBeNull();
 
             loadContentlet();
 
