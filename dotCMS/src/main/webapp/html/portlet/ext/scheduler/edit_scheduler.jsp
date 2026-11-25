@@ -41,7 +41,8 @@
 
 // Saves the job through the scheduler REST endpoint, then returns to the list of user jobs
 function submitfm(form) {
-	if (!validate()) {
+	// One save at a time, so an earlier request cannot finish last and overwrite a later one
+	if (form.dataset.saving === 'true' || !validate()) {
 		return;
 	}
 	const valueOf = (name) => (form[name] && form[name].value) ? form[name].value : null;
@@ -72,6 +73,7 @@ function submitfm(form) {
 		endDate: checked('haveEndDate') ? valueOf('endDate') : null,
 		properties: properties
 	};
+	form.dataset.saving = 'true';
 	// The name goes in the query string, not the path, so names with characters such as ';' stay editable
 	fetch('/api/v1/scheduler/jobs' + (editMode ? '?' + new URLSearchParams({jobName}) : ''), {
 		method: editMode ? 'PUT' : 'POST',
@@ -83,8 +85,12 @@ function submitfm(form) {
 			return;
 		}
 		const body = await response.json().catch(() => ({}));
+		delete form.dataset.saving;
 		showDotCMSErrorMessage((body.errors && body.errors.length) ? body.errors[0].message : response.statusText);
-	}).catch((error) => showDotCMSErrorMessage(String(error)));
+	}).catch((error) => {
+		delete form.dataset.saving;
+		showDotCMSErrorMessage(String(error));
+	});
 }
 
 function cancelEdit() {
