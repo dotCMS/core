@@ -1385,6 +1385,35 @@ describe.each([
             expect(spectator.query(byTestId('edit-content-layout__body'))).not.toBeNull();
         });
 
+        it('should keep the form mounted while the permission is re-checked after a save (#38724)', () => {
+            // The dialog's first save patches the saved contentlet straight to LOADED (no
+            // reload, no overlay): the brand-new content had no inode to check, so canLock is
+            // still null and only now gets checked. The editor on screen must stay mounted —
+            // dropping to the first-load spinner remounts the sidebar on its first tab.
+            const canLock$ = new Subject<DotContentletCanLock>();
+            spectator.inject(DotContentletService, true).canLock.mockReturnValue(canLock$);
+            patchState(unprotected(store), {
+                contentlet: null,
+                contentType: CONTENT_TYPE_MOCK,
+                state: ComponentStatus.LOADED,
+                canLock: null
+            });
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('edit-content-layout__body'))).not.toBeNull();
+
+            // Saved: the contentlet now has an identifier, its lock not yet checked.
+            patchState(unprotected(store), { contentlet: MOCK_CONTENTLET_1_TAB });
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('edit-content-layout__loading'))).toBeNull();
+            expect(spectator.query(byTestId('edit-content-layout__body'))).not.toBeNull();
+
+            canLock$.next({ canLock: true, locked: false } as DotContentletCanLock);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('edit-content-layout__body'))).not.toBeNull();
+        });
+
         it('should keep the form mounted under the reload overlay while the permission re-settles (#38724)', () => {
             // After a save in the dialog (or an in-place reload) the content re-initialises and
             // forgets canLock. The previous form must stay under the overlay until the answer is
