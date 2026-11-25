@@ -25,6 +25,7 @@ import { ZIndexUtils } from 'primeng/utils';
 import {
     AddToBundleService,
     DotAlertConfirmService,
+    DotContentChangeKind,
     DotContentChangeService,
     DotContentSearchService,
     DotContentTypeService,
@@ -546,6 +547,7 @@ describe('DotContentDriveShellComponent', () => {
                     dragItems: vi.fn().mockReturnValue({ folders: [], contentlets: [] }),
                     loadItems: vi.fn(),
                     reloadContentDrive: vi.fn(),
+                    updateItemLock: vi.fn(),
                     setPath: vi.fn(),
                     setShowAddToBundle: vi.fn(),
                     userSearchableFields: vi.fn().mockReturnValue([]),
@@ -5489,9 +5491,9 @@ describe('DotContentDriveShellComponent', () => {
              * as the portlet lives.
              */
             it.each([
-                ['a save', 'saved', 0],
-                ['a save in a stacked panel', 'saved', 1],
-                ['a delete', 'deleted', 2]
+                ['a save', DotContentChangeKind.SAVED, 0],
+                ['a save in a stacked panel', DotContentChangeKind.SAVED, 1],
+                ['a delete', DotContentChangeKind.DELETED, 2]
             ] as const)('refreshes the list quietly on %s in any panel', (_label, kind, depth) => {
                 spectator.inject(DotContentChangeService).notify({
                     kind,
@@ -5502,6 +5504,45 @@ describe('DotContentDriveShellComponent', () => {
                 expect(store.reloadContentDrive).toHaveBeenCalledTimes(1);
                 expect(store.reloadContentDrive).toHaveBeenCalledWith({ quiet: true });
                 expect(navigationService.closeEditPanel).not.toHaveBeenCalled();
+            });
+
+            // A lock changed in a panel: the row takes it from the reported content, with no list
+            // request (#38379).
+            it('gives the row a lock changed in a panel, without reloading the list', () => {
+                const contentlet = {
+                    identifier: 'id-9',
+                    inode: 'inode-9',
+                    locked: true
+                } as DotCMSContentlet;
+
+                spectator.inject(DotContentChangeService).notify({
+                    kind: DotContentChangeKind.LOCKED,
+                    contentlet,
+                    depth: 0
+                });
+
+                expect(store.updateItemLock).toHaveBeenCalledWith(contentlet);
+                expect(store.reloadContentDrive).not.toHaveBeenCalled();
+            });
+
+            // Under a Locked status filter the lock decides which rows belong in the list, so the
+            // list is reloaded quietly as well as the row patched (#38379).
+            it('also reloads the list quietly when the status filter includes Locked', () => {
+                filtersSignal.set({ status: ['LOCKED'] });
+                const contentlet = {
+                    identifier: 'id-9',
+                    inode: 'inode-9',
+                    locked: false
+                } as DotCMSContentlet;
+
+                spectator.inject(DotContentChangeService).notify({
+                    kind: DotContentChangeKind.LOCKED,
+                    contentlet,
+                    depth: 0
+                });
+
+                expect(store.updateItemLock).toHaveBeenCalledWith(contentlet);
+                expect(store.reloadContentDrive).toHaveBeenCalledWith({ quiet: true });
             });
 
             it('clears the request, then refreshes the list quietly, when the panel closes itself', () => {

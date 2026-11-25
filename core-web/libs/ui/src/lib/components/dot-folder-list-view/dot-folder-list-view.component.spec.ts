@@ -128,7 +128,9 @@ describe('DotFolderListViewComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent();
+        // Mounted on a page of items: an empty first page shows the empty state, not the table
+        // (#38379), and most of what follows is about the table. The empty cases set their own.
+        spectator = createComponent({ props: { items: mockItems } as never });
     });
 
     describe('Input Properties', () => {
@@ -260,14 +262,87 @@ describe('DotFolderListViewComponent', () => {
     });
 
     describe('Styles and Pagination', () => {
-        it('should render table when items list is empty', () => {
+        // An empty first page draws no table: with many extra columns its header alone was wider
+        // than the screen, so the listing scrolled sideways and the message went with it (#38379).
+        // The grid view already shows its empty state on its own; the table does the same.
+        it('should show only the empty state, with no table, when the first page has no items', () => {
+            spectator.setInput('loading', false);
+            spectator.setInput('items', []);
+            spectator.setInput('totalItems', 0);
+            spectator.setInput('offset', 0);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('table'))).toBeNull();
+            expect(spectator.query(byTestId('empty-state'))?.textContent).toContain(
+                'content.drive.empty.state.title'
+            );
+        });
+
+        it('should keep the table, with its loading rows, while an empty listing loads', () => {
+            spectator.setInput('items', []);
+            spectator.setInput('totalItems', 0);
+            spectator.setInput('loading', true);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('table'))).toBeTruthy();
+        });
+
+        it('should bring the table back when items arrive', () => {
+            spectator.setInput('loading', false);
+            spectator.setInput('items', []);
+            spectator.detectChanges();
+
+            spectator.setInput('items', mockItems);
+            spectator.setInput('totalItems', mockItems.length);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('table'))).toBeTruthy();
+        });
+
+        // Past the first page the paginator is the way back: a page emptied by a delete or a
+        // workflow action keeps the table and its paging.
+        it('should keep the table and its paginator on an empty page past the first', () => {
+            spectator.setInput('loading', false);
+            spectator.setInput('items', []);
+            spectator.setInput('totalItems', 40);
+            spectator.setInput('offset', 20);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('table'))).toBeTruthy();
+            expect(spectator.query('.p-paginator')).toBeTruthy();
+        });
+
+        // A search can stop at its scan budget with no rows yet and more beyond: the server still
+        // counts them, so the paginator is the way to reach them.
+        it('should keep the table and its paginator when an empty page still has results to page to', () => {
+            spectator.setInput('loading', false);
+            spectator.setInput('items', []);
+            spectator.setInput('totalItems', 25);
+            spectator.setInput('offset', 0);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('table'))).toBeTruthy();
+            expect(spectator.query('.p-paginator')).toBeTruthy();
+        });
+
+        // The table is rebuilt when results come back after an empty page; scrolling it must still
+        // be reported, which is what closes Content Drive's context menu.
+        it('should report scrolling of a table rebuilt after an empty page', () => {
+            spectator.setInput('loading', false);
             spectator.setInput('items', []);
             spectator.setInput('totalItems', 0);
             spectator.detectChanges();
+            spectator.setInput('items', mockItems);
+            spectator.setInput('totalItems', mockItems.length);
+            spectator.detectChanges();
+            const scrollSpy = vi.spyOn(spectator.component.scroll, 'emit');
 
-            // Verify the table is still rendered when empty
-            const tableElement = spectator.query(byTestId('table'));
-            expect(tableElement).toBeTruthy();
+            const scrollEvent = new Event('scroll');
+            (spectator.query('.p-datatable-table-container') as HTMLElement).dispatchEvent(
+                scrollEvent
+            );
+
+            expect(scrollSpy).toHaveBeenCalledWith(scrollEvent);
         });
 
         it('should always show pagination regardless of totalItems', () => {
