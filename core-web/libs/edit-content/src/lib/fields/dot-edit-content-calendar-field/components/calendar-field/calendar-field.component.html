@@ -3,8 +3,7 @@
 @let fieldTypeConfig = $fieldTypeConfig();
 
 <p-datepicker
-    [class.ng-invalid]="hasError"
-    [class.ng-dirty]="hasError"
+    [invalid]="hasError"
     [formControl]="internalFormControl"
     [defaultDate]="$defaultDate()"
     [timeOnly]="fieldTypeConfig.timeOnly"
