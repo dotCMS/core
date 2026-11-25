@@ -78,6 +78,15 @@ public class SchedulerJobResource {
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm")
             .withResolverStyle(ResolverStyle.STRICT);
 
+    /** Quartz's job and trigger name columns, in characters. */
+    private static final int NAME_LIMIT = 80;
+
+    /** Quartz's cron expression column, in characters. */
+    private static final int CRON_EXPRESSION_LIMIT = 80;
+
+    /** Quartz's job and trigger description columns, in characters. */
+    private static final int DESCRIPTION_LIMIT = 120;
+
     private final WebResource webResource = new WebResource();
 
     /**
@@ -106,7 +115,8 @@ public class SchedulerJobResource {
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ResponseEntitySchedulerJobView.class))),
                     @ApiResponse(responseCode = "400", description = "A required value is missing, "
-                            + "the job name is longer than 72 characters, "
+                            + "the job name is longer than 72 characters, the cron expression "
+                            + "longer than 80 or the description longer than 120, "
                             + "or the cron expression, dates or class are not valid",
                             content = @Content(mediaType = "application/json")),
                     @ApiResponse(responseCode = "401", description = "Not authenticated as a back-end "
@@ -128,7 +138,7 @@ public class SchedulerJobResource {
         final User user = init(request, response);
         final String jobName = form == null ? null : form.jobName();
         // Quartz names the trigger <name>_trigger, and both names must fit an 80-character column
-        if (!UtilMethods.isSet(jobName) || (jobName + "_trigger").length() > 80) {
+        if (!UtilMethods.isSet(jobName) || characters(jobName + "_trigger") > NAME_LIMIT) {
             throw refused(Response.Status.BAD_REQUEST, user, "message.Scheduler.invalidJobName");
         }
         if (exists(jobName)) {
@@ -163,7 +173,8 @@ public class SchedulerJobResource {
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ResponseEntitySchedulerJobView.class))),
                     @ApiResponse(responseCode = "400", description = "A required value is missing, "
-                            + "or the cron expression, dates or class are not valid",
+                            + "the cron expression is longer than 80 characters or the description "
+                            + "longer than 120, or the cron expression, dates or class are not valid",
                             content = @Content(mediaType = "application/json")),
                     @ApiResponse(responseCode = "401", description = "Not authenticated as a back-end "
                             + "user, or the user lacks the Scheduler portlet",
@@ -225,8 +236,13 @@ public class SchedulerJobResource {
         if (!openToSchedulerUsers && !APILocator.getUserAPI().isCMSAdmin(user)) {
             throw refused(Response.Status.FORBIDDEN, user, "message.Scheduler.javaClassNotAllowed");
         }
-        if (!UtilMethods.isSet(form.cronExpression())) {
+        // Longer values do not fit Quartz's columns, and the database would refuse them with a 500
+        if (!UtilMethods.isSet(form.cronExpression())
+                || characters(form.cronExpression()) > CRON_EXPRESSION_LIMIT) {
             throw refused(Response.Status.BAD_REQUEST, user, "message.Scheduler.invalidCronExpression");
+        }
+        if (form.jobDescription() != null && characters(form.jobDescription()) > DESCRIPTION_LIMIT) {
+            throw refused(Response.Status.BAD_REQUEST, user, "message.Scheduler.invalidJobDescription");
         }
         final Date startDate = parseDate(form.startDate(), user);
         final Date endDate = parseDate(form.endDate(), user);
@@ -286,6 +302,18 @@ public class SchedulerJobResource {
 
         return new ResponseEntitySchedulerJobView(SchedulerJobForm.copyOf(form)
                 .withJobName(jobName).withProperties(parameters));
+    }
+
+    /**
+     * Counts characters the way PostgreSQL counts them against a {@code varchar} limit. Java's
+     * {@link String#length()} counts a character outside the Basic Multilingual Plane, such as an
+     * emoji, as two.
+     *
+     * @param value the value to measure
+     * @return the number of Unicode code points in the value
+     */
+    private static int characters(final String value) {
+        return value.codePointCount(0, value.length());
     }
 
     /**

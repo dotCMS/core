@@ -17386,7 +17386,8 @@ paths:
           content:
             application/json: {}
           description: "A required value is missing, the job name is longer than 72\
-            \ characters, or the cron expression, dates or class are not valid"
+            \ characters, the cron expression longer than 80 or the description longer\
+            \ than 120, or the cron expression, dates or class are not valid"
         "401":
           content:
             application/json: {}
@@ -17435,8 +17436,9 @@ paths:
         "400":
           content:
             application/json: {}
-          description: "A required value is missing, or the cron expression, dates\
-            \ or class are not valid"
+          description: "A required value is missing, the cron expression is longer\
+            \ than 80 characters or the description longer than 120, or the cron expression,\
+            \ dates or class are not valid"
         "401":
           content:
             application/json: {}

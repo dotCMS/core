@@ -19,8 +19,8 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.business.web.UpdatePageTemplatePathJob;
+import com.dotmarketing.quartz.CronScheduledTask;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.quartz.job.ContentImportThread;
@@ -49,6 +49,9 @@ public class SchedulerJobResourceTest {
     /** A valid schedule that fires only in 2099, longer than the 80-character cron expression column. */
     private static final String TOO_LONG_CRON = java.util.stream.IntStream.range(0, 30)
             .mapToObj(String::valueOf).collect(java.util.stream.Collectors.joining(",")) + " 0 1 1 1 ? 2099";
+
+    /** One character outside the Basic Multilingual Plane (U+1F600), which Java counts as two. */
+    private static final String WIDE = new String(Character.toChars(0x1F600));
 
     /** A class on the Scheduler form's list that takes no file paths. */
     private static final String LISTED = "com.dotmarketing.quartz.job.BinaryCleanupJob";
@@ -459,20 +462,89 @@ public class SchedulerJobResourceTest {
     }
 
     /**
+     * Method to test: {@link SchedulerJobResource#createJob} and {@link SchedulerJobResource#updateJob}
+     * Given: a valid cron expression longer than the 80 characters the cron trigger table allows
+     * Expected: 400 instead of a database error, and neither a new job nor a change to an existing one
+     */
+    @Test
+    public void test_saveJob_cronExpressionTooLong_shouldBeRefused() throws Exception {
+        final String jobName = "scheduler-job-" + UUID.randomUUID();
+        final String existing = "scheduler-job-" + UUID.randomUUID();
+        try {
+            assertStatus(Response.Status.BAD_REQUEST, () -> resource.createJob(requestFor(admin),
+                    new MockHttpResponse().response(),
+                    SchedulerJobForm.copyOf(form(jobName, LISTED)).withCronExpression(TOO_LONG_CRON)));
+            assertFalse(exists(jobName));
+
+            resource.createJob(requestFor(admin), new MockHttpResponse().response(), form(existing, LISTED));
+            assertStatus(Response.Status.BAD_REQUEST, () -> resource.updateJob(requestFor(admin),
+                    new MockHttpResponse().response(), existing,
+                    SchedulerJobForm.copyOf(form(existing, LISTED)).withCronExpression(TOO_LONG_CRON)));
+            assertEquals(NEVER, ((CronScheduledTask) saved(existing)).getCronExpression());
+        } finally {
+            remove(jobName);
+            remove(existing);
+        }
+    }
+
+    /**
      * Method to test: {@link SchedulerJobResource#createJob}
-     * Given: a valid cron expression longer than the 80 characters the cron trigger table allows, so
-     * the job can be stored but its trigger cannot
+     * Given: a description of 121 characters, one more than the description column allows; and one of
+     * 120 characters outside the Basic Multilingual Plane, which Java counts as 240
+     * Expected: 400 for the longer description and no job is created; the shorter one is scheduled
+     */
+    @Test
+    public void test_createJob_descriptionLength_shouldBeCountedInCharacters() throws Exception {
+        final String refusedName = "scheduler-job-" + UUID.randomUUID();
+        final String savedName = "scheduler-job-" + UUID.randomUUID();
+        try {
+            assertStatus(Response.Status.BAD_REQUEST, () -> resource.createJob(requestFor(admin),
+                    new MockHttpResponse().response(),
+                    SchedulerJobForm.copyOf(form(refusedName, LISTED)).withJobDescription("d".repeat(121))));
+            assertFalse(exists(refusedName));
+
+            final String description = WIDE.repeat(120);
+            resource.createJob(requestFor(admin), new MockHttpResponse().response(),
+                    SchedulerJobForm.copyOf(form(savedName, LISTED)).withJobDescription(description));
+            assertEquals(description, saved(savedName).getJobDescription());
+        } finally {
+            remove(refusedName);
+            remove(savedName);
+        }
+    }
+
+    /**
+     * Method to test: {@link SchedulerJobResource#createJob}
+     * Given: a 72-character job name, half of whose characters are outside the Basic Multilingual
+     * Plane, so Java counts it as 108
+     * Expected: the job is scheduled, because the name and its trigger name fit the 80-character
+     * columns, which count characters rather than Java's units
+     */
+    @Test
+    public void test_createJob_nameOfWideCharacters_shouldBeScheduled() throws Exception {
+        final String jobName = WIDE.repeat(36) + UUID.randomUUID().toString().substring(0, 36);
+        try {
+            resource.createJob(requestFor(admin), new MockHttpResponse().response(), form(jobName, LISTED));
+            assertTrue(exists(jobName));
+        } finally {
+            remove(jobName);
+        }
+    }
+
+    /**
+     * Method to test: {@link QuartzUtils#scheduleTask}
+     * Given: a new job whose valid cron expression is longer than the 80 characters the cron trigger
+     * table allows, so the job can be stored but its trigger cannot
      * Expected: the save fails, and the job is not stored without its trigger, which would hide it
      * from the Scheduler portlet and block the name
      */
     @Test
-    public void test_createJob_triggerNotStored_shouldLeaveNoJob() throws Exception {
+    public void test_scheduleTask_newJobTriggerNotStored_shouldLeaveNoJob() throws Exception {
         final String jobName = "scheduler-job-" + UUID.randomUUID();
         try {
-            resource.createJob(requestFor(admin), new MockHttpResponse().response(),
-                    SchedulerJobForm.copyOf(form(jobName, LISTED)).withCronExpression(TOO_LONG_CRON));
+            QuartzUtils.scheduleTask(task(jobName, TOO_LONG_CRON, Map.of()));
             fail("the cron expression is longer than the cron trigger table allows");
-        } catch (final DotRuntimeException expected) {
+        } catch (final SchedulerException expected) {
             assertNull(QuartzUtils.getScheduler().getJobDetail(jobName, SchedulerJobResource.USER_JOB_GROUP));
         } finally {
             remove(jobName);
@@ -480,25 +552,24 @@ public class SchedulerJobResourceTest {
     }
 
     /**
-     * Method to test: {@link SchedulerJobResource#updateJob}
-     * Given: an existing job, saved again by another user with new parameters and a valid cron
+     * Method to test: {@link QuartzUtils#scheduleTask}
+     * Given: an existing job, saved again as another user with new parameters and a valid cron
      * expression longer than the 80 characters the cron trigger table allows
      * Expected: the save fails, and the job keeps its parameters, its schedule and the user it runs
      * as, instead of taking the new settings with its old schedule
      */
     @Test
-    public void test_updateJob_triggerNotStored_shouldLeaveJobUnchanged() throws Exception {
+    public void test_scheduleTask_existingJobTriggerNotStored_shouldLeaveJobUnchanged() throws Exception {
         final String jobName = "scheduler-job-" + UUID.randomUUID();
         final User otherUser = backendUser(PortletID.JOBS.toString());
         try {
             resource.createJob(requestFor(jobsPortletUser), new MockHttpResponse().response(),
                     SchedulerJobForm.copyOf(form(jobName, LISTED)).withProperties(Map.of("kept", "1")));
             try {
-                resource.updateJob(requestFor(otherUser), new MockHttpResponse().response(), jobName,
-                        SchedulerJobForm.copyOf(form(jobName, LISTED)).withCronExpression(TOO_LONG_CRON)
-                                .withProperties(Map.of("new", "2")));
+                QuartzUtils.scheduleTask(task(jobName, TOO_LONG_CRON, Map.of("new", "2",
+                        ScheduledTask.SCHEDULED_BY_USER_ID, otherUser.getUserId())));
                 fail("the cron expression is longer than the cron trigger table allows");
-            } catch (final DotRuntimeException expected) {
+            } catch (final SchedulerException expected) {
                 // the job must be left as it was
             }
 
@@ -541,6 +612,18 @@ public class SchedulerJobResourceTest {
                 .javaClass(javaClass)
                 .cronExpression(NEVER)
                 .build();
+    }
+
+    /** A job in the Scheduler portlet's group, as {@link SchedulerJobResource} would save it. */
+    private static CronScheduledTask task(final String jobName, final String cronExpression,
+            final Map<String, Object> properties) {
+        final CronScheduledTask task = new CronScheduledTask();
+        task.setJobName(jobName);
+        task.setJobGroup(SchedulerJobResource.USER_JOB_GROUP);
+        task.setJavaClassName(LISTED);
+        task.setProperties(new java.util.HashMap<>(properties));
+        task.setCronExpression(cronExpression);
+        return task;
     }
 
     private interface Call {
