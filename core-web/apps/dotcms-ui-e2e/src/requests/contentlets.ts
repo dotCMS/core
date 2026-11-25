@@ -113,6 +113,43 @@ export async function createDotAsset(
 }
 
 /**
+ * Saves and publishes a new version of an existing dotAsset with a replacement file.
+ *
+ * Same multipart shape as {@link createDotAsset}, fired as `PUBLISH` and addressed by `identifier`.
+ * The content type is repeated on purpose: the resource maps the `file` part onto the type's binary
+ * field only when it can resolve the type from the JSON part.
+ *
+ * @param request - Playwright APIRequestContext
+ * @param identifier - Identifier of the dotAsset to version
+ * @param file - The replacement file, as `{ name, mimeType, buffer }`
+ * @returns The new version of the contentlet (new `inode`, same `identifier`)
+ */
+export async function publishDotAssetVersion(
+    request: APIRequestContext,
+    identifier: string,
+    file: { name: string; mimeType: string; buffer: Buffer }
+): Promise<Contentlet> {
+    const endpoint = `/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR`;
+    const response = await request.put(endpoint, {
+        multipart: {
+            file: { name: file.name, mimeType: file.mimeType, buffer: file.buffer },
+            json: JSON.stringify({
+                contentlet: { identifier, contentType: 'dotAsset', file: file.name }
+            })
+        },
+        headers: {
+            Authorization: generateBase64Credentials(admin1.username, admin1.password)
+        }
+    });
+
+    expect(response.status()).toBe(200);
+
+    const responseData = await response.json();
+
+    return responseData.entity as Contentlet;
+}
+
+/**
  * Relates content via the relationship API.
  * Uses the PUBLISH workflow action to save content with relationship data.
  *
