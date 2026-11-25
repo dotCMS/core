@@ -401,6 +401,29 @@ public class SchedulerJobResourceTest {
     }
 
     /**
+     * Method to test: {@link SchedulerJobResource#updateJob}
+     * Given: a 73-character job record in the User Job group that has no trigger, so the trigger
+     * name made from it ({@code <name>_trigger}) does not fit the trigger table
+     * Expected: 400 instead of a database error, and the record is still without a trigger
+     */
+    @Test
+    public void test_updateJob_jobWithoutTriggerNameTooLongForTrigger_shouldBeRefused() throws Exception {
+        final String jobName = ("scheduler-job-" + UUID.randomUUID() + "-".repeat(80)).substring(0, 73);
+        try {
+            final JobDetail detail = new JobDetail(jobName, SchedulerJobResource.USER_JOB_GROUP,
+                    Class.forName(LISTED));
+            detail.setDurability(true);
+            QuartzUtils.getScheduler().addJob(detail, false);
+
+            assertStatus(Response.Status.BAD_REQUEST, () -> resource.updateJob(requestFor(admin),
+                    new MockHttpResponse().response(), jobName, form(jobName, LISTED)));
+            assertFalse(exists(jobName));
+        } finally {
+            remove(jobName);
+        }
+    }
+
+    /**
      * Method to test: {@link SchedulerJobResource#createJob}
      * Given: start dates that a lenient parser would accept: a day that does not exist, a valid
      * date followed by extra text, and signed years of more than four digits, the largest of which

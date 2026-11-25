@@ -181,8 +181,9 @@ public class SchedulerJobResource {
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ResponseEntitySchedulerJobView.class))),
                     @ApiResponse(responseCode = "400", description = "A required value is missing, "
-                            + "the cron expression is longer than 80 characters or the description "
-                            + "longer than 120, or the cron expression, dates or class are not valid",
+                            + "the job name is longer than 72 characters, the cron expression "
+                            + "longer than 80 or the description longer than 120, "
+                            + "or the cron expression, dates or class are not valid",
                             content = @Content(mediaType = "application/json")),
                     @ApiResponse(responseCode = "401", description = "Not authenticated as a back-end "
                             + "user, or the user lacks the Scheduler portlet",
@@ -205,6 +206,10 @@ public class SchedulerJobResource {
         final User user = init(request, response);
         if (!UtilMethods.isSet(jobName) || !exists(jobName)) {
             throw refused(Response.Status.NOT_FOUND, user, "message.Scheduler.jobNotFound");
+        }
+        // A job record without a trigger may have a name too long for the trigger Quartz creates
+        if (characters(jobName + "_trigger") > NAME_LIMIT) {
+            throw refused(Response.Status.BAD_REQUEST, user, "message.Scheduler.invalidJobName");
         }
         return save(jobName, form, user);
     }
