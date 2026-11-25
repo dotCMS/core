@@ -165,7 +165,7 @@ export function withLock() {
                                             locked: updated.locked,
                                             lockedBy: updated.lockedBy,
                                             lockedByName: updated.lockedByName,
-                                            lockedOn: updated.lockedOn
+                                            lockedOn: updated['lockedOn']
                                         };
 
                                         patchState(store, {
@@ -222,7 +222,7 @@ export function withLock() {
                                             locked: updated.locked,
                                             lockedBy: updated.lockedBy,
                                             lockedByName: updated.lockedByName,
-                                            lockedOn: updated.lockedOn
+                                            lockedOn: updated['lockedOn']
                                         };
 
                                         patchState(store, {
