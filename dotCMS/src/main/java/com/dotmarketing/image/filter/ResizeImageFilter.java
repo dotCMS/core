@@ -46,7 +46,6 @@ public class ResizeImageFilter extends ImageFilter {
 		if(!overwrite(resultFile,parameters)){
 			return resultFile;
 		}
-		resultFile.delete();
 		
 		
 		final Dimension originalSize = ImageFilterAPI.apiInstance.get().getWidthHeight(file);
@@ -68,16 +67,14 @@ public class ResizeImageFilter extends ImageFilter {
 		
 
         try {
-            File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() + ".tmp");
+            File tempResultFile = stagingFileFor(resultFile);
             // resample from stream
             BufferedImage srcImage = ImageFilterAPI.apiInstance.get().intelligentResize(file, newSize.width, newSize.height,resampleOpts);
             ImageIO.write(srcImage, "png", tempResultFile);
             srcImage.flush();
             srcImage = null;
-            if(tempResultFile.renameTo(resultFile)) {
-                return resultFile;
-            }
-			throw new DotRuntimeException("unable to create tmp file :" + resultFile);
+            publishRendition(tempResultFile, resultFile);
+            return resultFile;
         } catch (Exception e) {
             throw new DotRuntimeException("unable to convert file:" +file + " : " +  e.getMessage(),e);
         }
