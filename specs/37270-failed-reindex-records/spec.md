@@ -62,8 +62,9 @@ PostgreSQL; Elasticsearch (Phase 0) or OpenSearch (Phase 3). To make failures pa
 
 1. Cause a content item to fail indexing until it exhausts its retries. Any per-document failure
    works: an engine rejection, or a document over the parser limit (withheld by #37269).
-2. Confirm its journal row is parked: its priority is `ERROR (400) + original priority`, e.g. 705
-   for a reindex entry or 505 for a save.
+2. Confirm its journal row is parked: its priority is `ERROR (400)` plus the priority it had at its
+   last attempt (original priority + retries), e.g. 705 = 400 + 305 for a reindex entry, or 505 for a
+   save.
 3. Remove the cause (restart the engine with more heap, edit the content so it fits).
 4. Wait, restart dotCMS, wait again.
 
@@ -149,10 +150,19 @@ the listener a mixed bulk response directly.
 **In scope**:
 
 - **Retry failed records**: an explicit action (REST and Maintenance → Index) that sends the parked
-  rows back to the queue at a priority the reindex thread processes, with a fresh retry budget.
-- **Clear only what gave up, and say what was dropped**: clearing deletes parked rows only; rows
-  still being retried stay. Before deleting, the identifiers being dropped are written to the log,
-  and the response tells the caller how many were dropped.
+  rows back to the queue at their original priority, with a fresh retry budget. It is refused (HTTP
+  409) while a full reindex is running: requeued rows would land in the band a full reindex waits on
+  for its switchover and that "Stop Reindex" deletes. A parked row whose content no longer exists is
+  processed as a delete, so its stale document leaves the index too.
+- **Clear only what gave up, and say what was dropped**: the operator's clear (Maintenance → Index
+  and `DELETE /api/v1/esindex/failed`) deletes parked rows only; rows still being retried stay.
+  Before deleting, it logs who cleared, how many rows, and the identifiers being dropped in bounded
+  chunks, so a clear of tens of thousands of rows does not produce one unbounded line. Its response
+  `entity` becomes an object, `{"cleared": true, "count": N}`, instead of the bare `true`.
+  The two internal callers that clear before requeuing everything — the start of a full reindex
+  (`ESContentletAPIImpl.refreshAllContent`) and a boot with no indices
+  (`ContentletIndexAPIImpl.reindexIfNoIndicesFound`) — keep today's wide delete and do not log
+  identifiers: there the dropped rows are requeued at once, so nothing is lost and nothing is silent.
 - **No sibling erasure**: a journal entry is acknowledged (deleted) only when every one of its
   documents in the batch was indexed. If any document of the entry failed — per document or with
   its whole request — the entry is marked failed and is not deleted by its siblings' success.
@@ -189,45 +199,58 @@ the listener a mixed bulk response directly.
   fires when a row parks; a retried row that parks again must not spam administrators. The
   end-of-reindex message ("N contents failed to reindex and were skipped") reads the failed set: with
   the wider definition it must keep counting what was skipped (parked), not rows still retrying.
-- **Backward compatibility**: `DELETE /api/v1/esindex/failed` keeps its path and response shape but
-  stops deleting rows still being retried — a behaviour change, documented in its `@Operation`.
+- **Backward compatibility**: `DELETE /api/v1/esindex/failed` keeps its path but (a) stops deleting
+  rows still being retried and (b) changes its response `entity` from `true` to
+  `{"cleared": true, "count": N}` — a **REST contract change** (Rollback-Unsafe category: API
+  contract). In this repository its only caller is the Maintenance JSP, which does not read the
+  value; no Postman, Karate or frontend test references it. A client script that checks
+  `entity === true` would need updating. Both changes are documented in its `@Operation`.
   The new retry action is additive. `GET /api/v1/index/failed` gains a per-record parked/retrying
   field (additive) and starts listing save rows that are still retrying, which it omits today; the
   failed count shown in Maintenance → Index rises to match the listing. No DB schema change; no index
   mapping change.
 - **Data considerations**: installs that already hold parked rows (possibly years old, for content
   since deleted) gain a way to retry them. Retrying a row whose content no longer exists must not
-  fail the batch or loop; it should be acknowledged as a delete or dropped with a log line.
+  fail the batch or loop; it is processed as a delete, which also removes its stale document from
+  the index.
 
 ## Acceptance & Verification *(mandatory)*
 
 - **AC-001**: After a row parks and its cause is removed, the retry action requeues it and the next
-  reindex iteration indexes the content; the row leaves the journal. Parked rows of content that no
-  longer exists are handled without failing the batch.
+  reindex iteration indexes the content; the row leaves the journal. A parked row whose content no
+  longer exists is processed as a delete: its document leaves the index and the row leaves the
+  journal, without failing the batch.
 - **AC-002**: A retried row that fails again parks again after its retry budget, and does not loop.
-- **AC-003**: Clear deletes only parked rows; rows still being retried remain and are retried. The
-  dropped identifiers appear in the log, and the response states how many rows were dropped.
+- **AC-003**: The operator's clear deletes only parked rows; rows still being retried remain and are
+  retried. The log records who cleared, the row count and the dropped identifiers in bounded
+  chunks; the response is `{"cleared": true, "count": N}`. Starting a full reindex still empties
+  the failed rows and requeues all content, as today, without logging identifiers.
 - **AC-004**: When one document of a content item is rejected and another is accepted in the same
   bulk response, the item keeps a failed record and the accepted document is in the index. The same
   holds when the rejected document's whole request failed and the accepted one came in another
-  request of the batch.
+  request of the batch. Both hold **whichever reports first**: the failure before the success, and
+  the success before the failure (today the success deletes the row first and the failure's update
+  then matches nothing).
 - **AC-005**: When every document of a content item is indexed, its journal row is deleted exactly
   as today; a full reindex in Phase 0 and in Phase 3 drains the journal and switches over.
 - **AC-006**: The failed count and the failed listing return the same set: every row that has failed
   at least once, whether it was queued by a save or by a reindex, each marked parked or retrying. A
   save on its second attempt is listed and counted; the clear action removes only the parked ones.
-- **AC-007**: A row that parks again after a retry does not send a second parked-content
-  notification for the same save.
+- **AC-007**: A save row parks with a single parked-content notification, as #37269 delivers today.
+  After an operator retry, a row that parks again may notify again: that is the feedback the retry
+  asked for, and recording "already notified" would need a schema change this fix rules out.
+- **AC-008**: While a full reindex is running, the retry action is refused with HTTP 409 and no row
+  changes; once the reindex finishes, the same action succeeds.
 - **Verification method**:
   - Unit tests (`dotCMS/src/test`): `BulkProcessorListener` fed mixed bulk responses (one document
-    failed and its sibling succeeded; a whole-request failure followed by a sibling success) —
-    AC-004/AC-005; `ReindexQueueFactory` threshold queries — AC-003/AC-006.
+    failed and its sibling succeeded; a whole-request failure and a sibling success, in both
+    arrival orders) — AC-004/AC-005; `ReindexQueueFactory` threshold queries — AC-003/AC-006.
   - Integration test in `dotcms-integration` (named `*Test`, registered in the `MainSuite*` that
     `just suite-timings` names): park a row, requeue it through the retry action, assert it is
     indexed (AC-001/AC-002); clear with parked and in-retry rows (AC-003); run in Phase 0 and
     Phase 3. Each must fail (Red) on current `main` first.
-  - API test for the new retry endpoint and the changed clear (access control: CMS Administrator
-    only).
+  - API test for the new retry endpoint (including the 409 during a full reindex) and the changed
+    clear response (access control: CMS Administrator only).
   - Manual post-merge QA on a rig: full reindex in Phases 0 and 3 with forced per-document
     rejections, counter-proof on a build without the fix.
 
@@ -235,6 +258,10 @@ the listener a mixed bulk response directly.
 
 - A retried row starts with a fresh retry budget at its original priority (a save at NORMAL, a
   reindex entry at REINDEX), so it is processed in the same order it would have been originally.
+  The journal does not store the original priority: it is derived from the parked value (subtract
+  ERROR, round down to the hundred: 705 → 305 → 300). That derivation, and the parked/retrying split
+  (`ReindexEntry#errorCount` is `priority % 100`), hold only while `RETRY_FAILED_INDEX_TIMES` is
+  below 100; past that the bands overlap (a save retried 100 times reads as a structure entry).
 - Access to retry and clear stays CMS Administrator only, as the existing failed-records endpoints.
 - The journal row's identifier is enough to requeue: the reindex thread reloads the content's
   current versions when it processes the row, so a row parked against an old version indexes the
