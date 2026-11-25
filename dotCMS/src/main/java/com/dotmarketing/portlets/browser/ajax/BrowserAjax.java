@@ -152,7 +152,8 @@ public class BrowserAjax {
 	 *
 	 * @param siteId The ID of the Site whose folder tree will be loaded. If such an ID is invalid or doesn't exist,
 	 *               the currently selected Site in the UI will be used instead. And if that's not valid either, then
-	 *               all Sites are looked up and returned instead.
+	 *               all Sites are looked up and returned instead. Only Sites and folders the current User can read
+	 *               are returned.
 	 *
 	 * @return The entire Site's folder tree.
 	 *
@@ -176,6 +177,10 @@ public class BrowserAjax {
 			if (site.isSystemHost() || site.isArchived()) {
 				continue;
 			}
+			final List<Integer> permissions = DwrUtil.getPermissions(site, roles, user).orElse(List.of());
+			if (!permissions.contains(PERMISSION_READ)) {
+				continue;
+			}
             final Map<String,Object> siteDataMap = site.getMap();
 			siteDataMap.put("open", false);
             if (this.activeHostId.equalsIgnoreCase(site.getIdentifier()) || siteList.size() == 1) {
@@ -184,8 +189,7 @@ public class BrowserAjax {
                 siteDataMap.put("childrenFolders", children);
                 siteDataMap.put("childrenFoldersCount", children.size());
             }
-            final Optional<List<Integer>> permissionsOpt = DwrUtil.getPermissions(site, roles, user);
-            siteDataMap.put("permissions", permissionsOpt.isPresent() ? permissionsOpt.get() : List.of());
+            siteDataMap.put("permissions", permissions);
             folderTree.add(siteDataMap);
         }
         return folderTree;
@@ -811,12 +815,13 @@ public class BrowserAjax {
 	}
 
 	/**
-	 * Returns the list of all sub-folders under the specified Site.
+	 * Returns the root folders of the specified Site that the current User can read, as built by
+	 * {@link #getFoldersTree(String, List, Role[])}.
 	 *
 	 * @param site  The Site to get the sub-folders from.
 	 * @param roles The list of Roles to filter the sub-folders by.
 	 *
-	 * @return The list of all sub-folders under the specified Site.
+	 * @return The readable root folders of the specified Site.
 	 *
 	 * @throws DotStateException    The Site object is null.
 	 * @throws DotDataException     An error occurred when retrieving the sub-folders.
@@ -837,6 +842,18 @@ public class BrowserAjax {
 		return this.getFoldersTree(site.getIdentifier(), subFolders, roles);
     }
 
+	/**
+	 * Returns the sub-folders of the specified Folder that the current User can read, as built by
+	 * {@link #getFoldersTree(String, List, Role[])}.
+	 *
+	 * @param parent The Folder to get the sub-folders from.
+	 * @param roles  The list of Roles to filter the sub-folders by.
+	 *
+	 * @return The readable sub-folders of the specified Folder.
+	 *
+	 * @throws DotDataException     An error occurred when retrieving the sub-folders.
+	 * @throws DotSecurityException An internal User permission error has occurred.
+	 */
     @SuppressWarnings("unchecked")
 	private List<Map> getFoldersTree (Folder parent, Role[] roles) throws DotStateException, DotDataException, DotSecurityException {
         FolderAPI folderAPI = APILocator.getFolderAPI();
@@ -850,16 +867,17 @@ public class BrowserAjax {
     }
 
 	/**
-	 * Returns the list of all sub-folders under the specified parent permissionable, which can be either a Site or a
-	 * Folder. In case one or more of the sub-folders is marked as open from the UI, this method will be called
-	 * recursively in order to display them accordingly.
+	 * Returns the sub-folders under the specified parent permissionable, which can be either a Site or a Folder, that
+	 * the current User can read. In case one or more of those sub-folders is marked as open from the UI, this method
+	 * will be called recursively in order to display them accordingly. Sub-folders the User cannot read are left out,
+	 * together with everything under them.
 	 *
 	 * @param parentId The Identifier/Inode of the parent permissionable.
 	 * @param childFolders The list of sub-folders associated to the specified parent ID.
 	 * @param roles    The list of Roles associated to the User that is calling this method.
 	 *
-	 * @return The list of all sub-folders under the specified parent permissionable, with the appropriate open/closed
-	 * status.
+	 * @return The list of readable sub-folders under the specified parent permissionable, with the appropriate
+	 * open/closed status and the User's permissions on each one.
 	 *
 	 * @throws DotDataException     An error occurred when retrieving Folder data.
 	 * @throws DotSecurityException An internal User permission problem has occurred.
@@ -870,6 +888,10 @@ public class BrowserAjax {
         final List<Map> folders = new ArrayList<>();
 		final Set<String> openFolderIds = this.getOpenFolderIds();
         for (final Folder folder : childFolders) {
+			final List<Integer> permissions = DwrUtil.getPermissions(folder, roles, user).orElse(List.of());
+			if (!permissions.contains(PERMISSION_READ)) {
+				continue;
+			}
         	final Map<String, Object> folderDataMap = folder.getMap();
 			folderDataMap.put("open", false);
 			// For backwards compatibility, we need to check the folder-selected status using both folder Inode and
@@ -884,8 +906,7 @@ public class BrowserAjax {
 			folderDataMap.put("selected",
 					folder.getIdentifier().equalsIgnoreCase(this.getActiveFolderId()) || folder.getInode().equalsIgnoreCase(this.getActiveFolderId()));
         	folderDataMap.put("parent", parentId);
-			final Optional<List<Integer>> permissionsOpt = DwrUtil.getPermissions(folder, roles, user);
-			folderDataMap.put("permissions", permissionsOpt.isPresent() ? permissionsOpt.get() : List.of());
+			folderDataMap.put("permissions", permissions);
         	folders.add(folderDataMap);
         }
 		return folders.stream().sorted(nameComparator).collect(Collectors.toList());
@@ -1943,30 +1964,39 @@ public class BrowserAjax {
          return getTreeMinInfoByHostId("fullTree");
     }
 
-	private List<Map<String,Object>> getFolderMinInfoTree (Folder parent, Role[] roles, String currentFullPath, String currentAbsolutePath) {
+	/**
+	 * Returns the basic info of the sub-folders under the given Folder that the User can read, recursively. A
+	 * sub-folder the User cannot read is left out, together with everything under it.
+	 *
+	 * @param parent              The Folder whose sub-folders are returned.
+	 * @param user                The User the tree is built for.
+	 * @param currentFullPath     The full path of the parent, including the Site name.
+	 * @param currentAbsolutePath The path of the parent inside its Site.
+	 *
+	 * @return The readable sub-folder tree, one map per folder with its {@code children}.
+	 */
+	private List<Map<String,Object>> getFolderMinInfoTree (final Folder parent, final User user,
+			final String currentFullPath, final String currentAbsolutePath) {
 
-        FolderAPI folderAPI = APILocator.getFolderAPI();
-
-        List<Map<String, Object>> toReturn = new ArrayList<>();
+        final List<Map<String, Object>> toReturn = new ArrayList<>();
 
         List<Folder> children = new ArrayList<>();
 		try {
-			children = folderAPI.findSubFolders(parent,userAPI.getSystemUser(),false);
-		} catch (Exception e) {
+			children = this.folderAPI.findSubFolders(parent, user, false);
+		} catch (final Exception e) {
 			Logger.error(BrowserAjax.class,e.getMessage(),e);
 		}
 
         for (final Folder folder : children) {
-            Map<String, Object> folderMap = new HashMap<>();
+            final Map<String, Object> folderMap = new HashMap<>();
             folderMap.put("type", "folder");
             folderMap.put("name", folder.getName());
             folderMap.put("id", folder.getIdentifier());
-            String fullPath = currentFullPath + "/" + folder.getName();
-            String absolutePath = currentAbsolutePath + "/" + folder.getName();
+            final String fullPath = currentFullPath + "/" + folder.getName();
+            final String absolutePath = currentAbsolutePath + "/" + folder.getName();
             folderMap.put("fullPath", fullPath);
             folderMap.put("absolutePath", absolutePath);
-            List<Map<String, Object>> childrenMaps = getFolderMinInfoTree (folder, roles, fullPath, absolutePath);
-            folderMap.put("children", childrenMaps);
+            folderMap.put("children", getFolderMinInfoTree(folder, user, fullPath, absolutePath));
             toReturn.add(folderMap);
         }
 
@@ -1974,14 +2004,19 @@ public class BrowserAjax {
     }
 	//http://jira.dotmarketing.net/browse/DOTCMS-3232
 	/**
-	 * This method returns the basic info of the tree of host and folders for the given hostId
-	 * @return
-	 * @throws SystemException
-	 * @throws PortalException
-	 * @throws DotRuntimeException
-	 * @throws DotDataException
-	 * @throws DotSecurityException
+	 * Returns the basic info of the Site and folder tree for the given Site ID: only the folders the current User
+	 * can read, at every level.
 	 *
+	 * @param hostId The ID of the Site, {@code "fullTree"} for every Site the User can read, or empty for the
+	 *               current Site.
+	 *
+	 * @return One map per Site, each with its readable folder tree under {@code children}.
+	 *
+	 * @throws SystemException      An error occurred when retrieving the logged-in User.
+	 * @throws PortalException      An error occurred when retrieving the logged-in User.
+	 * @throws DotRuntimeException  An error occurred when loading the tree.
+	 * @throws DotDataException     An error occurred when interacting with the data source.
+	 * @throws DotSecurityException The User cannot read the requested Site.
 	 */
 	public List<Map<String,Object>> getTreeMinInfoByHostId (String hostId) throws DotRuntimeException, PortalException, SystemException, DotDataException, DotSecurityException {
 
@@ -2027,12 +2062,7 @@ public class BrowserAjax {
 				List<Folder> subFolders = folderAPI.findSubFolders(host,user,false);
 				for (final Folder folder : subFolders) {
 
-						List permissions = new ArrayList();
-						try {
-							permissions = permissionAPI.getPermissionIdsFromRoles(folder, roles, user);
-						} catch (DotDataException e) {
-							Logger.error(this, "Could not load permissions for folder with ID: " + folder.getIdentifier(),e);
-						}
+						final List<Integer> permissions = DwrUtil.getPermissions(folder, roles, user).orElse(List.of());
 						if(permissions.contains(PERMISSION_READ)){
 							Map<String, Object> folderMap = new HashMap<>();
 							folderMap.put("type", "folder");
@@ -2042,7 +2072,7 @@ public class BrowserAjax {
 							String absolutePath = "/" + folder.getName();
 							folderMap.put("fullPath", fullPath);
 							folderMap.put("absolutePath", absolutePath);
-							List<Map<String, Object>> childrenMaps = getFolderMinInfoTree(folder, roles, fullPath, absolutePath);
+							List<Map<String, Object>> childrenMaps = getFolderMinInfoTree(folder, user, fullPath, absolutePath);
 							folderMap.put("children", childrenMaps);
 							children.add(folderMap);
 						}
@@ -2448,7 +2478,19 @@ public class BrowserAjax {
 	}
 
 
-	public void refreshIndex(final Folder parent,
+	/**
+	 * Refreshes the index of the contents under the source Folder of a copied or moved asset, and under the
+	 * destination: the parent Folder, or the Site when the destination is the Site root. Callers check the User's
+	 * permissions first.
+	 *
+	 * @param parent The destination Folder, or {@code null} when the destination is the Site root.
+	 * @param host   The destination Site, used when {@code parent} is {@code null}.
+	 * @param folder The copied or moved Folder, or the source Folder of a copied or moved file or content; may be
+	 *               {@code null}.
+	 *
+	 * @throws Exception An error occurred when refreshing the index.
+	 */
+	private void refreshIndex(final Folder parent,
 							 final Host host,
 							 final Folder folder ) throws Exception {
 
