@@ -50,8 +50,9 @@ function submitfm(form) {
 	// name removes a parameter
 	const properties = Object.create(null);
 	// A text area shows CR and CRLF as LF and control characters as spaces, so a value left as it
-	// was is sent from its saved copy, which keeps those characters
-	const savedValue = (valueField) => new TextDecoder().decode(
+	// was is sent from its saved copy, which keeps those characters (and a leading U+FEFF, which the
+	// default decoder would drop)
+	const savedValue = (valueField) => new TextDecoder('utf-8', {ignoreBOM: true}).decode(
 		Uint8Array.from(atob(valueField.dataset.savedValue || ''), (ch) => ch.charCodeAt(0)));
 	for (const field of form.querySelectorAll('input[name^="propertyName"]')) {
 		const valueField = form[field.name.replace('propertyName', 'propertyValue')];
