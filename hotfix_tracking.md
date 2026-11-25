@@ -184,3 +184,4 @@ Release-25.07.10 LTS
 178. https://github.com/dotCMS/private-issues/issues/1109 : Integrity Checker _fixconflictsfromremote second-order SQL injection (push-publish receiver) — High / P2 — Thiago Escobar, VR‑046 #38522 #1109
 179. https://github.com/dotCMS/private-issues/issues/1068 : LoginFactory.doLogin trusts the LDAP pre-authenticator's fallback SUCCESS and never checks the local password of a user the directory does not know #38504 #1068
 180. https://github.com/dotCMS/private-issues/issues/737 : System-user lookups in ContainerResource: default-host container fallback + form render creates live content #38395 #737
+181. https://github.com/dotCMS/private-issues/issues/959 : 2026 Pentest (Federal Home Loan Bank of Dallas): M4 Back-end JWT lifetime of 1 day #38526 #959
