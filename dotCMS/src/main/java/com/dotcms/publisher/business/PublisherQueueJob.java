@@ -169,6 +169,17 @@ public class PublisherQueueJob implements StatefulJob {
 							PushPublishLogger.log(this.getClass(), "Pre-publish skipped: bundle already finalized.");
 							continue;
 						}
+						// The audit pass may also have learned that a receiver is still installing this
+						// bundle, for example once its key is back after a poll that could not ask it.
+						// Re-check the status the queue query filters on, so a bundle in progress is not
+						// sent again while the receiver is still reading the first copy.
+						final PublishAuditStatus currentAudit = pubAuditAPI.getPublishAuditStatus(tempBundleId);
+						if (null != currentAudit
+								&& PublisherAPIImpl.STATUSES_NOT_TO_PROCESS.contains(currentAudit.getStatus())) {
+							PushPublishLogger.log(this.getClass(), "Pre-publish skipped: bundle is "
+									+ currentAudit.getStatus() + " after the audit update.");
+							continue;
+						}
 
 						// Retrieving assets
 						final Map<String, String> assets = new HashMap<>();

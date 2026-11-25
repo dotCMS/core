@@ -721,6 +721,66 @@ public class PublisherQueueJobTest {
     }
 
     /**
+     * Method to test: {@link PublisherQueueJob#execute}, across two runs.
+     * <p>
+     * Given scenario: a bundle was sent to one endpoint. In the first run the endpoint's key cannot
+     * be loaded, so the poll records the endpoint as failed and the bundle as failed to all groups,
+     * which leaves it in the list of bundles to send. Then the key is restored, and in the next full
+     * run the receiver answers that it is still installing the bundle.
+     * <p>
+     * Expected result: the job reads its list of bundles before it polls, but checks the status
+     * again after the poll, so the bundle is not uploaded a second time while the receiver is still
+     * installing it. The bundle and the endpoint show {@link Status#PUBLISHING_BUNDLE}.
+     */
+    @Test
+    public void test_execute_keyRestoredWhileReceiverInstalls_bundleIsNotSentAgain() throws Exception {
+        final PublishAuditHistory remote = new PublishAuditHistory();
+        remote.addOrUpdateEndpoint("127.0.0.1", "127.0.0.1", endpointDetail(Status.PUBLISHING_BUNDLE, "installing"));
+
+        try (AuditStub receiver = new AuditStub(list(remote.getSerialized()))) {
+            final User user = TestUserUtils.getAdminUser();
+            final Contentlet contentlet = new ContentletDataGen(new ContentTypeDataGen().nextPersisted())
+                    .nextPersisted();
+            final Environment environment = PublisherTestUtil.createEnvironment(user, true);
+            final PublishingEndPoint endpoint = PublisherTestUtil.createEndpoint(environment);
+            final StringBuilder workingKey = endpoint.getAuthKey();
+            endpoint.setPort(String.valueOf(receiver.port()));
+            endpoint.setAuthKey(new StringBuilder(PublicEncryptionFactory.encryptString("   ")));
+            APILocator.getPublisherEndPointAPI().updateEndPoint(endpoint);
+            final Bundle bundle = PublisherTestUtil.createBundle("bundle-" + System.nanoTime(), user, environment);
+            try {
+                PublisherAPI.getInstance().addContentsToPublish(
+                        list(contentlet.getIdentifier()), bundle.getId(), new Date(), user);
+                seedAudit(bundle, environment, Map.of(endpoint.getId(), Status.BUNDLE_SENT_SUCCESSFULLY));
+
+                // Run N: the key cannot be loaded, so the endpoint is not asked and is failed
+                invokeUpdateAuditStatus();
+                assertEquals(Status.FAILED_TO_SEND_TO_ALL_GROUPS, statusOf(bundle.getId()));
+                assertTrue("The failed bundle must be in the list of bundles to send",
+                        isBundleQueued(bundle.getId()));
+
+                // The key is back, and the receiver is still installing the first copy
+                endpoint.setAuthKey(workingKey);
+                APILocator.getPublisherEndPointAPI().updateEndPoint(endpoint);
+
+                // Run N+1: the full job, which reads its bundle list before polling
+                runJobOnce();
+
+                assertEquals("The receiver must be asked for the bundle status", 1, receiver.requests());
+                assertEquals("A bundle the receiver is still installing must not be sent again",
+                        0, receiver.uploads());
+                assertEquals(Status.PUBLISHING_BUNDLE, statusOf(bundle.getId()));
+                assertEquals(Status.PUBLISHING_BUNDLE.getCode(),
+                        endpointsOf(bundle, environment).get(endpoint.getId()).getStatus());
+            } finally {
+                cleanUpAudit(bundle);
+                PublisherAPI.getInstance().deleteElementsFromPublishQueueTable(bundle.getId());
+                PublisherTestUtil.cleanBundleEndpointEnv(bundle, endpoint, environment);
+            }
+        }
+    }
+
+    /**
      * Method to test: {@code PublisherQueueJob#getPublishersForBundle}
      * Given scenario: an environment with an {@code awss3}, a {@code static} and an {@code http}
      * endpoint, created in that order (#34434, US4).
@@ -846,6 +906,8 @@ public class PublisherQueueJobTest {
         private final com.sun.net.httpserver.HttpServer server;
         private final java.util.concurrent.atomic.AtomicInteger requests =
                 new java.util.concurrent.atomic.AtomicInteger();
+        private final java.util.concurrent.atomic.AtomicInteger uploads =
+                new java.util.concurrent.atomic.AtomicInteger();
 
         AuditStub(final List<String> serializedHistories) throws Exception {
             this(200, "application/json", new com.fasterxml.jackson.databind.ObjectMapper()
@@ -867,6 +929,12 @@ public class PublisherQueueJobTest {
                     out.write(body);
                 }
             });
+            server.createContext("/api/bundlePublisher/publish", exchange -> {
+                uploads.incrementAndGet();
+                exchange.getRequestBody().readAllBytes();
+                exchange.sendResponseHeaders(200, -1);
+                exchange.close();
+            });
             server.start();
         }
 
@@ -876,6 +944,11 @@ public class PublisherQueueJobTest {
 
         int requests() {
             return requests.get();
+        }
+
+        /** Number of bundles sent to the stub's {@code /api/bundlePublisher/publish}. */
+        int uploads() {
+            return uploads.get();
         }
 
         @Override
