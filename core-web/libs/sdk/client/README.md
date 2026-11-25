@@ -133,7 +133,7 @@ The check never changes request or response behavior, and in several cases it lo
 >
 > - **A custom mapping for a REST resource** replaces the global defaults entirely rather than merging with them. Even if you only meant to change the allowed origin, add both headers to that mapping's `Access-Control-Expose-Headers` (or keep it at `*`).
 > - **A custom `graphql` mapping** is merged with the defaults, so only an explicit `Access-Control-Expose-Headers` override needs both headers. Note that GraphQL responses served from the GraphQL cache send their own fixed wildcard CORS headers, so `api.cors.graphql.*` overrides don't apply to those responses.
-> - **`credentials: 'include'`** in your request options: browsers don't honor `*` for credentialed requests, so the headers must be listed explicitly.
+> - **`credentials: 'include'`** in your `requestOptions`: browsers don't honor `*` for credentialed requests, so the headers must be listed explicitly. (`client.page.get()` forwards only the `headers` from `requestOptions`, so this setting doesn't affect page requests.)
 
 #### Environment Setup
 
