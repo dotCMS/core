@@ -18,6 +18,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import {
     DotActionUrlService,
     DotContentChange,
+    DotContentChangeKind,
     DotContentChangeService,
     DotContentletEditUrlService,
     DotContentletService,
@@ -789,7 +790,7 @@ describe('DotEditContentOpenerService', () => {
 
             config.outputs?.['saved'](contentlet as never);
 
-            expect(changes).toEqual([{ kind: 'saved', contentlet, depth: 0 }]);
+            expect(changes).toEqual([{ kind: DotContentChangeKind.SAVED, contentlet, depth: 0 }]);
             expect(order).toEqual(['handler', 'notification']);
         });
 
@@ -804,8 +805,8 @@ describe('DotEditContentOpenerService', () => {
             deeper.outputs?.['saved'](contentlet as never);
 
             expect(changes).toEqual([
-                { kind: 'saved', contentlet, depth: 1 },
-                { kind: 'saved', contentlet, depth: 2 }
+                { kind: DotContentChangeKind.SAVED, contentlet, depth: 1 },
+                { kind: DotContentChangeKind.SAVED, contentlet, depth: 2 }
             ]);
         });
 
@@ -818,7 +819,7 @@ describe('DotEditContentOpenerService', () => {
             config.outputs?.['saved'](contentlet as never);
 
             expect(component === loaded.legacy).toBe(true);
-            expect(changes).toEqual([{ kind: 'saved', contentlet, depth: 0 }]);
+            expect(changes).toEqual([{ kind: DotContentChangeKind.SAVED, contentlet, depth: 0 }]);
         });
 
         it('announces a delete with the content the panel had, after its own handler', async () => {
@@ -832,7 +833,7 @@ describe('DotEditContentOpenerService', () => {
             expect(deleted).toHaveBeenCalledTimes(1);
             expect(changes).toEqual([
                 {
-                    kind: 'deleted',
+                    kind: DotContentChangeKind.DELETED,
                     contentlet: expect.objectContaining({ inode: 'abc', identifier: 'id-1' }),
                     depth: 0
                 }
@@ -848,7 +849,26 @@ describe('DotEditContentOpenerService', () => {
             config.outputs?.['saved'](saved as never);
             config.outputs?.['deleted'](undefined as never);
 
-            expect(changes[1]).toEqual({ kind: 'deleted', contentlet: saved, depth: 0 });
+            expect(changes[1]).toEqual({
+                kind: DotContentChangeKind.DELETED,
+                contentlet: saved,
+                depth: 0
+            });
+        });
+
+        // A lock is not a save, but a listing shows the lock: it goes through the same one stream,
+        // as its own kind (#38379).
+        it('announces a lock change with the content as the panel reports it', async () => {
+            const changes = announced();
+            spectator.service.open(EDIT_REQUEST, { injector });
+            const { config } = await lastOpen();
+            const locked = createFakeContentlet({ inode: 'abc', identifier: 'id-1', locked: true });
+
+            config.outputs?.['lockChanged'](locked as never);
+
+            expect(changes).toEqual([
+                { kind: DotContentChangeKind.LOCKED, contentlet: locked, depth: 0 }
+            ]);
         });
 
         it('announces nothing for a panel that only closes', async () => {
@@ -1265,6 +1285,7 @@ class AskingPanelComponent {
     readonly createUrl = input<string | null>(null);
     readonly saved = output<DotCMSContentlet>();
     readonly deleted = output<void>();
+    readonly lockChanged = output<DotCMSContentlet>();
     readonly openContent = output<DotOpenContentEvent>();
     readonly #injector = inject(Injector);
 

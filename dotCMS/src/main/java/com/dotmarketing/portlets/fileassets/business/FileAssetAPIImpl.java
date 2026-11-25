@@ -799,45 +799,52 @@ public class FileAssetAPIImpl implements FileAssetAPI {
     }
 
     /**
-     * Cleans up thumbnails folder for an specific asset, it uses the identifier
-     * to remove the generated folder.
+     * Deletes the generated renditions (thumbnails, resized versions...) of one file asset version,
+     * so the next request regenerates them from the current binary.
      *
-     * <p>
-     * Note: the thumbnails are generated once, so when the image is updated
-     * then we need to clean the old thumbnails; that way it will generate a new
-     * one.
-     * </p>
+     * <p>Renditions are cleaned in the local rendition cache and, when finished renditions are
+     * published to the shared store ({@code SHARED_COMPLETED}, also the mode for the default
+     * {@code shared} value), in the shared store too: a binary can be replaced under the same inode
+     * (e.g. by Push Publishing), and the stale shared copy would otherwise be served on a local miss.</p>
      *
-     * @param fileAsset
+     * @param fileAsset the {@link IFileAsset} version whose renditions are removed
      */
     public void cleanThumbnailsFromFileAsset(IFileAsset fileAsset) {
         // Wiping out the thumbnails and resized versions
         // http://jira.dotmarketing.net/browse/DOTCMS-5911
         final String inode = fileAsset.getInode();
         if (UtilMethods.isSet(inode)) {
-            final String realAssetPath = getRealAssetsRootPath();
-            java.io.File tumbnailDir = new java.io.File(ConfigUtils.getDotGeneratedPath() + java.io.File.separator + inode.charAt(0)
-                    + java.io.File.separator + inode.charAt(1));
-            if (tumbnailDir != null) {
-                java.io.File[] files = tumbnailDir.listFiles();
-                if (files != null) {
-                    for (java.io.File iofile : files) {
-                        try {
-                            if (iofile.getName().startsWith("dotGenerated_")) {
-                                iofile.delete();
-                            }
-                        } catch (SecurityException e) {
-                            Logger.error(
-                                    this,
-                                    "EditFileAction._saveWorkingFileData(): "
-                                            + iofile.getName()
-                                            + " cannot be erased. Please check the file permissions.");
-                        } catch (Exception e) {
-                            Logger.error(this,
-                                    "EditFileAction._saveWorkingFileData(): " + e.getMessage());
-                        }
-                    }
+            deleteRenditionsOfInode(ConfigUtils.getDotGeneratedPath(), inode);
+            if (ConfigUtils.isDotGeneratedSharedCompleted()) {
+                deleteRenditionsOfInode(ConfigUtils.getDotGeneratedSharedPath(), inode);
+            }
+        }
+    }
+
+    /**
+     * Deletes the renditions of one inode under a rendition root. Renditions live in a two-character
+     * bucket folder shared by every inode starting with the same two characters, so only names
+     * starting with {@code dotGenerated_<inode>_} are removed.
+     *
+     * @param root  a rendition root (the local cache or the shared store)
+     * @param inode the version inode whose renditions are removed
+     */
+    private void deleteRenditionsOfInode(final String root, final String inode) {
+        final java.io.File[] files = new java.io.File(root + java.io.File.separator + inode.charAt(0)
+                + java.io.File.separator + inode.charAt(1)).listFiles();
+        if (files == null) {
+            return;
+        }
+        for (final java.io.File iofile : files) {
+            try {
+                if (iofile.getName().startsWith("dotGenerated_" + inode + "_")) {
+                    iofile.delete();
                 }
+            } catch (SecurityException e) {
+                Logger.error(this, "Unable to delete rendition " + iofile.getName()
+                        + ": check the file permissions.");
+            } catch (Exception e) {
+                Logger.error(this, "Unable to delete rendition " + iofile.getName() + ": " + e.getMessage());
             }
         }
     }

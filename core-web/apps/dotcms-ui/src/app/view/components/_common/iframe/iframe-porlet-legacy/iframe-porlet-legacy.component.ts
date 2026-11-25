@@ -154,7 +154,7 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
      * when the panel's close reloads it (`DotCustomEventHandlerService.openContent`).
      */
     #reloadOnContentChange(): void {
-        this.#contentChanges.changes$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+        this.#contentChanges.edits$.pipe(takeUntil(this.destroy$)).subscribe(() => {
             const portletId = this.dotRouterService.currentPortlet.id;
 
             if (portletId) {

@@ -8,20 +8,30 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.image.filter.ResizeImageFilter;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.portal.model.User;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class FileAssetAPIImplIntegrationTest  extends IntegrationTestBase {
@@ -116,5 +126,100 @@ public class FileAssetAPIImplIntegrationTest  extends IntegrationTestBase {
 
             APILocator.getPermissionAPI().save(readPermission, permissionable, systemUser, false);
         }
+    }
+
+    /**
+     * Method to test: {@link FileAssetAPIImpl#cleanThumbnailsFromFileAsset(IFileAsset)}
+     * When: two file asset versions whose inodes share the same first two characters (so their
+     * renditions live in the same dotGenerated bucket folder) both have chained renditions, generated
+     * from a request that names the content by identifier, and the thumbnails of one are cleaned
+     * Should: delete only that inode's renditions and leave the other asset's renditions alone
+     */
+    @Test
+    public void cleanThumbnailsFromFileAsset_deletesOnlyThatInodesRenditions() throws Exception {
+        final String inodeA = UUID.randomUUID().toString();
+        final String inodeB = inodeA.substring(0, 2) + UUID.randomUUID().toString().substring(2);
+        final List<File> renditionsA = generateRenditions(inodeA);
+        final List<File> renditionsB = generateRenditions(inodeB);
+        try {
+            final FileAsset fileAssetA = new FileAsset();
+            fileAssetA.setInode(inodeA);
+
+            fileAssetAPIImpl.cleanThumbnailsFromFileAsset(fileAssetA);
+
+            for (final File rendition : renditionsA) {
+                assertFalse("should be deleted: " + rendition, rendition.exists());
+            }
+            for (final File rendition : renditionsB) {
+                assertTrue("should be kept: " + rendition, rendition.exists());
+            }
+        } finally {
+            for (final File rendition : renditionsB) {
+                rendition.delete();
+            }
+            for (final File rendition : renditionsA) {
+                rendition.delete();
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link FileAssetAPIImpl#cleanThumbnailsFromFileAsset(IFileAsset)}
+     * When: finished renditions are published to the shared store (the default {@code shared} value,
+     * treated as SHARED_COMPLETED) and a file asset version, whose binary can be replaced under the
+     * same inode by Push Publishing, has its thumbnails cleaned
+     * Should: delete that inode's renditions in the shared store too, leaving other inodes' alone
+     */
+    @Test
+    public void cleanThumbnailsFromFileAsset_alsoDeletesThatInodesSharedRenditions() throws Exception {
+        final String previousMode = Config.getStringProperty("DOTGENERATED_DEFAULT_PATH", null);
+        final String inodeA = UUID.randomUUID().toString();
+        final String inodeB = inodeA.substring(0, 2) + UUID.randomUUID().toString().substring(2);
+        final File bucket = new File(ConfigUtils.getDotGeneratedSharedPath() + File.separator
+                + inodeA.charAt(0) + File.separator + inodeA.charAt(1));
+        final File sharedA = new File(bucket, "dotGenerated_" + inodeA + "_resize_0123456789abcdef.png");
+        final File sharedB = new File(bucket, "dotGenerated_" + inodeB + "_resize_0123456789abcdef.png");
+        try {
+            Config.setProperty("DOTGENERATED_DEFAULT_PATH", "shared");
+            assertTrue(bucket.isDirectory() || bucket.mkdirs());
+            Files.write(sharedA.toPath(), "rendition".getBytes());
+            Files.write(sharedB.toPath(), "rendition".getBytes());
+            final FileAsset fileAssetA = new FileAsset();
+            fileAssetA.setInode(inodeA);
+
+            fileAssetAPIImpl.cleanThumbnailsFromFileAsset(fileAssetA);
+
+            assertFalse("the shared rendition of the cleaned inode must be deleted: " + sharedA, sharedA.exists());
+            assertTrue("another inode's shared rendition must be kept: " + sharedB, sharedB.exists());
+        } finally {
+            Config.setProperty("DOTGENERATED_DEFAULT_PATH", previousMode);
+            sharedA.delete();
+            sharedB.delete();
+        }
+    }
+
+    /**
+     * Writes the renditions a two-stage resize chain would produce for the binary stored under the
+     * given version inode, requested by an unrelated identifier.
+     */
+    private static List<File> generateRenditions(final String inode) throws IOException {
+        final File binary = new File(File.separator + "assets" + File.separator + inode.charAt(0)
+                + File.separator + inode.charAt(1) + File.separator + inode + File.separator
+                + "fileAsset" + File.separator + "image.jpg");
+        final Map<String, String[]> parameters = new HashMap<>();
+        parameters.put("filter", new String[]{"Resize", "Resize"});
+        parameters.put("resize_w", new String[]{"100"});
+        parameters.put("fieldVarName", new String[]{"fileAsset"});
+        parameters.put("assetInodeOrIdentifier", new String[]{UUID.randomUUID().toString()});
+
+        final File firstStage = new ResizeImageFilter().getResultsFile(binary, parameters);
+        final File secondStage = new ResizeImageFilter().getResultsFile(firstStage, parameters);
+        final List<File> renditions = new ArrayList<>();
+        for (final File stage : new File[]{firstStage, secondStage}) {
+            assertTrue(stage.getName(), stage.getName().startsWith("dotGenerated_" + inode + "_"));
+            Files.write(stage.toPath(), "rendition".getBytes());
+            renditions.add(stage);
+        }
+        return renditions;
     }
 }

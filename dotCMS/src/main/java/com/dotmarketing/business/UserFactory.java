@@ -64,6 +64,34 @@ public interface UserFactory {
      */
     boolean clearIcqId(String userId, String expectedValue) throws DotDataException;
 
+    /**
+     * Adds one to the user's count of failed logins with a single-column update, so the other user fields keep
+     * whatever is stored when the update runs, and evicts the user from the cache.
+     *
+     * @param userId the id of the user to update; trimmed and lower-cased like stored ids
+     * @return the stored count after the update, or 0 if no user has that id
+     * @throws DotDataException if {@code userId} is blank or the update fails
+     */
+    int incrementFailedLoginAttempts(String userId) throws DotDataException;
+
+    /**
+     * Sets the user's count of failed logins to zero with a single-column update, leaving the other user fields
+     * untouched, and evicts the user from the cache.
+     *
+     * @param userId the id of the user to update; trimmed and lower-cased like stored ids
+     * @throws DotDataException if {@code userId} is blank or the update fails
+     */
+    void resetFailedLoginAttempts(String userId) throws DotDataException;
+
+    /**
+     * Flags that the user has to choose a new password at their next login, with a single-column update that
+     * leaves the other user fields untouched, and evicts the user from the cache.
+     *
+     * @param userId the id of the user to update; trimmed and lower-cased like stored ids
+     * @throws DotDataException if {@code userId} is blank or the update fails
+     */
+    void requirePasswordReset(String userId) throws DotDataException;
+
     List<User> findAllUsers(int begin, int end) throws DotDataException;
 
     long getCountUsersByName(String filter, List<Role> roles);

@@ -237,7 +237,7 @@ export class DotQueryToolPageComponent implements OnInit {
         // Every save and delete in a side panel, at any depth, reruns the search: content saved
         // from a relationship inside the panel a row opened is in the results too (T174).
         inject(DotContentChangeService)
-            .changes$.pipe(takeUntilDestroyed())
+            .edits$.pipe(takeUntilDestroyed())
             .subscribe(() => this.onContentChanged());
     }
 

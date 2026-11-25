@@ -146,12 +146,15 @@ describe('DotContentDriveActionPreviewComponent', () => {
             expect(spectator.queryAll(byTestId('sort-icon')).length).toBe(0);
         });
 
-        it('should render nothing but the header for an empty list', () => {
+        // An empty list shows the listing's empty state with no table, as every listing does on
+        // an empty first page (#38379).
+        it('should render the empty state, with no table, for an empty list', () => {
             spectator.setInput('items', []);
             spectator.detectChanges();
 
             expect(spectator.queryAll(byTestId('item-row')).length).toBe(0);
-            expect(spectator.query(byTestId('header-row'))).toBeTruthy();
+            expect(spectator.query(byTestId('header-row'))).toBeNull();
+            expect(spectator.query(byTestId('empty-state'))).toBeTruthy();
         });
     });
 

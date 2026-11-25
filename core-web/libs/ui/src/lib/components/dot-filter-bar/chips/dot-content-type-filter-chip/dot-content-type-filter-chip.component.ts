@@ -40,6 +40,15 @@ export class DotContentTypeFilterChipComponent {
         alias: 'allowedBaseTypes'
     });
 
+    /**
+     * The surface's own label for a base type, as a message key by base-type name. Passed through
+     * to the selector, which otherwise shows the server's label (#38379).
+     */
+    readonly $baseTypeLabels = input<Partial<Record<string, string>>>(
+        {},
+        { alias: 'baseTypeLabels' }
+    );
+
     protected readonly $baseTypes = computed(() =>
         toFilterValues(this.#filters.getFilterValue('baseType'))
     );

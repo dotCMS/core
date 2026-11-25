@@ -27,6 +27,7 @@ import {
 } from '@dotcms/data-access';
 import {
     DotBulkUploadActiveRun,
+    DotCMSContentlet,
     DotCMSContentTypeField,
     DotContentDriveItem,
     DotContentDriveSearchRequest,
@@ -470,6 +471,35 @@ export const DotContentDriveStore = signalStore(
             },
             setSelectedItems(items: DotContentDriveItem[]) {
                 patchState(store, { selectedItems: items });
+            },
+            /**
+             * Gives the row of that content its new lock, and the selection too, so actions read
+             * it. The edit side panel reports a lock change with the content; taking the lock from
+             * it costs no list request and leaves the rest of the page as it is (#38379).
+             *
+             * @param contentlet The content that was locked or unlocked, as the panel reports it.
+             */
+            updateItemLock(contentlet: DotCMSContentlet) {
+                const { inode, locked, lockedBy, lockedByName, lockedOn } = contentlet;
+                const withLock = (item: DotContentDriveItem): DotContentDriveItem =>
+                    item.inode === inode
+                        ? ({
+                              ...item,
+                              locked,
+                              lockedBy,
+                              lockedByName,
+                              lockedOn
+                          } as DotContentDriveItem)
+                        : item;
+
+                if (!store.items().some((item) => item.inode === inode)) {
+                    return;
+                }
+
+                patchState(store, {
+                    items: store.items().map(withLock),
+                    selectedItems: store.selectedItems().map(withLock)
+                });
             },
             /**
              * Resolves the logged-in user's CMS Administrator role, once per portlet load.

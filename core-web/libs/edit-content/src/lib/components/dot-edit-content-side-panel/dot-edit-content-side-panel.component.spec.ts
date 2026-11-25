@@ -74,6 +74,7 @@ describe('DotEditContentSidePanelComponent', () => {
     let saved$: Subject<DotCMSContentlet>;
     let left$: Subject<void>;
     let languageChanged$: Subject<number>;
+    let lockChanged$: Subject<DotCMSContentlet>;
     let openContent$: Subject<DotOpenContentEvent>;
     let panel: { close: Mock; closed: Subject<void> };
 
@@ -107,6 +108,7 @@ describe('DotEditContentSidePanelComponent', () => {
         saved$ = new Subject<DotCMSContentlet>();
         left$ = new Subject<void>();
         languageChanged$ = new Subject<number>();
+        lockChanged$ = new Subject<DotCMSContentlet>();
         openContent$ = new Subject<DotOpenContentEvent>();
         panel = panelRef();
 
@@ -118,6 +120,7 @@ describe('DotEditContentSidePanelComponent', () => {
                         saved$: saved$.asObservable(),
                         left$: left$.asObservable(),
                         languageChanged$: languageChanged$.asObservable(),
+                        lockChanged$: lockChanged$.asObservable(),
                         openContent$: openContent$.asObservable()
                     }
                 },
@@ -182,6 +185,19 @@ describe('DotEditContentSidePanelComponent', () => {
         languageChanged$.next(2);
 
         expect(languageSpy).toHaveBeenCalledWith(2);
+    });
+
+    // A lock is not a save, but a listing shows the lock: the panel passes it on so the opener can
+    // announce it (#38379).
+    it('should forward a lock change to the `lockChanged` output', async () => {
+        await openRequest();
+        const lockSpy = vi.fn();
+        spectator.output('lockChanged').subscribe(lockSpy);
+
+        const contentlet = { inode: 'inode-1', locked: true } as DotCMSContentlet;
+        lockChanged$.next(contentlet);
+
+        expect(lockSpy).toHaveBeenCalledWith(contentlet);
     });
 
     /**
