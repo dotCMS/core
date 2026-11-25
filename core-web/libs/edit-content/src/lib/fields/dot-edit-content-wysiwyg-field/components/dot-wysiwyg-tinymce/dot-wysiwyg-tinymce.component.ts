@@ -75,9 +75,21 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
     });
 
     /**
-     * Represents a signal that contains the wide configuration properties for the TinyMCE WYSIWYG editor.
+     * System-wide TinyMCE configuration served by `/api/vtl/tinymceprops` (`get.vtl`).
+     * `undefined` while the request is in flight; `null` when it failed (no `get.vtl`,
+     * no scripting permission, server error), which the service maps for us.
      */
-    $wideConfig = toSignal<RawEditorOptions>(this.#dotWysiwygTinymceService.getProps());
+    $wideConfig = toSignal<RawEditorOptions | null>(this.#dotWysiwygTinymceService.getProps());
+
+    /**
+     * Whether the system-wide configuration request has settled (answered or failed).
+     *
+     * `<editor>` reads `init` once, when it calls `tinymce.init()`, and never again, so it
+     * must not exist before the system-wide config is known: creating it earlier silently
+     * drops `get.vtl` whenever TinyMCE is already loaded (every in-app navigation and most
+     * full reloads). A failed request still settles, so the editor always opens.
+     */
+    $configReady = computed(() => this.$wideConfig() !== undefined);
 
     /**
      * A computed property that generates the configuration object for the TinyMCE editor.

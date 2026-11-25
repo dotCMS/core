@@ -1,6 +1,7 @@
 import { createHostFactory, mockProvider, SpectatorHost } from '@openng/spectator/vitest';
-import { BehaviorSubject, of } from 'rxjs';
-import { Editor } from 'tinymce';
+import { EditorComponent } from '@tinymce/tinymce-angular';
+import { of, Subject } from 'rxjs';
+import { Editor, RawEditorOptions } from 'tinymce';
 import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -8,6 +9,8 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+
+import { delay } from 'rxjs/operators';
 
 import { DotUploadFileService } from '@dotcms/data-access';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
@@ -38,9 +41,21 @@ const WYSIWYG_MOCK = createFakeWYSIWYGField({
     variable: 'variable'
 });
 
+const HOST_TEMPLATE = `<form [formGroup]="formGroup">
+    <dot-wysiwyg-tinymce [field]="field" [hasError]="hasError" />
+</form>`;
+
 describe('DotWysiwygTinymceComponent', () => {
     let spectator: SpectatorHost<DotWysiwygTinymceComponent, MockFormComponent>;
     let dotWysiwygPluginService: DotWysiwygPluginService;
+
+    /**
+     * `/api/vtl/tinymceprops` answers AFTER the first change detection, as it does in the
+     * browser (TinyMCE is usually already loaded when the request goes out). A synchronous
+     * `of(...)` would hand the component the config before the editor can initialise and hide
+     * the race this component guards against; `null` is what the service emits on an error.
+     */
+    let props$: Subject<RawEditorOptions | null>;
 
     const createHost = createHostFactory({
         component: DotWysiwygTinymceComponent,
@@ -55,9 +70,108 @@ describe('DotWysiwygTinymceComponent', () => {
         componentProviders: [
             mockProvider(DotWysiwygPluginService),
             mockProvider(DotWysiwygTinymceService, {
-                getProps: vi.fn().mockReturnValue(of(mockSystemWideConfig))
+                getProps: vi.fn().mockImplementation(() => props$)
             })
         ]
+    });
+
+    /** Renders the field; the system-wide config request is still pending afterwards. */
+    const render = (field: DotCMSContentTypeField = WYSIWYG_MOCK) => {
+        spectator = createHost(HOST_TEMPLATE, {
+            hostProps: {
+                formGroup: new FormGroup({ [field.variable]: new FormControl() }),
+                field,
+                hasError: false
+            }
+        });
+        spectator.detectChanges();
+    };
+
+    /** Lets `/api/vtl/tinymceprops` answer (an object, or `null` for a failed request). */
+    const respond = (config: RawEditorOptions | null) => {
+        props$.next(config);
+        spectator.detectChanges();
+    };
+
+    beforeEach(() => {
+        props$ = new Subject<RawEditorOptions | null>();
+    });
+
+    describe('system-wide config (/api/vtl/tinymceprops)', () => {
+        it('should not create the editor until the system-wide config has answered', fakeAsync(() => {
+            // The request answers 50ms after the editor would otherwise have initialised.
+            spectator = createHost(HOST_TEMPLATE, {
+                hostProps: {
+                    formGroup: new FormGroup({ [WYSIWYG_MOCK.variable]: new FormControl() }),
+                    field: WYSIWYG_MOCK,
+                    hasError: false
+                },
+                providers: [
+                    mockProvider(DotWysiwygTinymceService, {
+                        getProps: vi.fn(() => of(mockSystemWideConfig).pipe(delay(50)))
+                    })
+                ]
+            });
+            spectator.detectChanges();
+
+            // TinyMCE reads `init` once, so an editor created here would never see get.vtl.
+            expect(spectator.query(EditorComponent)).toBeNull();
+
+            tick(50);
+            spectator.detectChanges();
+
+            expect(spectator.query(EditorComponent)?.init).toEqual(
+                expect.objectContaining(mockSystemWideConfig)
+            );
+        }));
+
+        it('should create the editor with the system-wide options once they arrive', () => {
+            render();
+
+            expect(spectator.query(EditorComponent)).toBeNull();
+
+            respond(mockSystemWideConfig);
+
+            expect(spectator.query(EditorComponent)?.init).toEqual(
+                expect.objectContaining({ ...DEFAULT_TINYMCE_CONFIG, ...mockSystemWideConfig })
+            );
+        });
+
+        it('should still create the editor with the defaults when the request fails', () => {
+            render();
+
+            // The service maps a 404 (no get.vtl), 403 or 5xx to `null`.
+            respond(null);
+
+            const init = spectator.query(EditorComponent)?.init;
+
+            expect(init).toEqual(expect.objectContaining(DEFAULT_TINYMCE_CONFIG));
+            expect(init).not.toHaveProperty('systemWideOption');
+        });
+
+        it('should keep the tinymceprops field variable above the system-wide config', () => {
+            render({
+                ...WYSIWYG_MOCK,
+                fieldVariables: [
+                    {
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
+                        fieldId: '1',
+                        id: '1',
+                        key: 'tinymceprops',
+                        value: '{ "systemWideOption": "from-field", "toolbar1": "undo redo" }'
+                    }
+                ]
+            });
+
+            respond({ ...mockSystemWideConfig, toolbar1: 'bold italic' });
+
+            expect(spectator.query(EditorComponent)?.init).toEqual(
+                expect.objectContaining({
+                    systemWideOption: 'from-field',
+                    toolbar1: 'undo redo'
+                })
+            );
+        });
     });
 
     /**
@@ -67,19 +181,8 @@ describe('DotWysiwygTinymceComponent', () => {
      * name at all.
      */
     it('should name the editor iframe from the field so it is not announced unnamed', () => {
-        spectator = createHost(
-            `<form [formGroup]="formGroup">
-                <dot-wysiwyg-tinymce [field]="field" [hasError]="hasError" />
-            </form>`,
-            {
-                hostProps: {
-                    formGroup: new FormGroup({ [WYSIWYG_MOCK.variable]: new FormControl() }),
-                    field: WYSIWYG_MOCK,
-                    hasError: false
-                }
-            }
-        );
-        spectator.detectChanges();
+        render();
+        respond(mockSystemWideConfig);
 
         const config = spectator.component.$editorConfig();
 
@@ -90,20 +193,8 @@ describe('DotWysiwygTinymceComponent', () => {
     });
 
     it('should initialize editor with correct configuration', () => {
-        spectator = createHost(
-            `<form [formGroup]="formGroup">
-                <dot-wysiwyg-tinymce [field]="field" [hasError]="hasError" />
-            </form>`,
-            {
-                hostProps: {
-                    formGroup: new FormGroup({
-                        [WYSIWYG_MOCK.variable]: new FormControl()
-                    }),
-                    field: WYSIWYG_MOCK,
-                    hasError: false
-                }
-            }
-        );
+        render();
+        respond(mockSystemWideConfig);
 
         dotWysiwygPluginService = spectator.inject(DotWysiwygPluginService, true);
 
@@ -117,41 +208,16 @@ describe('DotWysiwygTinymceComponent', () => {
             setup: (editor: Editor) => dotWysiwygPluginService.initializePlugins(editor)
         };
 
-        spectator.detectChanges();
-
         expect(JSON.stringify(spectator.component.$editorConfig())).toEqual(
             JSON.stringify(expectedConfiguration)
         );
     });
 
-    it('should set the system wide props', fakeAsync(() => {
+    it('should follow a later emission of the system wide props', () => {
         const newSystemWideConfig = { systemWideOption: 'new_value' };
 
-        const propsSubject = new BehaviorSubject(mockSystemWideConfig);
-
-        spectator = createHost(
-            `<form [formGroup]="formGroup">
-                <dot-wysiwyg-tinymce [field]="field" [hasError]="hasError" />
-            </form>`,
-            {
-                hostProps: {
-                    formGroup: new FormGroup({
-                        [WYSIWYG_MOCK.variable]: new FormControl()
-                    }),
-                    field: WYSIWYG_MOCK,
-                    hasError: false
-                },
-                providers: [
-                    mockProvider(DotWysiwygTinymceService, {
-                        getProps: vi.fn().mockReturnValue(propsSubject)
-                    })
-                ]
-            }
-        );
-
-        spectator.detectChanges();
-
-        tick(100);
+        render();
+        respond(mockSystemWideConfig);
 
         expect(JSON.stringify(spectator.component.$editorConfig())).toEqual(
             JSON.stringify({
@@ -164,9 +230,7 @@ describe('DotWysiwygTinymceComponent', () => {
             })
         );
 
-        propsSubject.next(newSystemWideConfig);
-        tick(500);
-        spectator.detectChanges();
+        respond(newSystemWideConfig);
 
         expect(JSON.stringify(spectator.component.$editorConfig())).toEqual(
             JSON.stringify({
@@ -178,7 +242,7 @@ describe('DotWysiwygTinymceComponent', () => {
                 setup: (editor: Editor) => dotWysiwygPluginService.initializePlugins(editor)
             })
         );
-    }));
+    });
 
     it('should parse custom props from field variables', () => {
         const fieldVariables = [
@@ -191,27 +255,8 @@ describe('DotWysiwygTinymceComponent', () => {
             }
         ];
 
-        const fieldWithVariables = {
-            ...WYSIWYG_MOCK,
-            fieldVariables
-        };
-
-        spectator = createHost(
-            `<form [formGroup]="formGroup">
-                <dot-wysiwyg-tinymce [field]="field" [hasError]="hasError" />
-            </form>`,
-            {
-                hostProps: {
-                    formGroup: new FormGroup({
-                        [fieldWithVariables.variable]: new FormControl()
-                    }),
-                    field: fieldWithVariables,
-                    hasError: false
-                }
-            }
-        );
-
-        spectator.detectChanges();
+        render({ ...WYSIWYG_MOCK, fieldVariables });
+        respond(mockSystemWideConfig);
 
         expect(JSON.stringify(spectator.component.$editorConfig())).toEqual(
             JSON.stringify({
@@ -246,18 +291,13 @@ describe('DotWysiwygTinymceComponent', () => {
                   }
                 : WYSIWYG_MOCK;
 
-            spectator = createHost(
-                `<form [formGroup]="formGroup">
-                    <dot-wysiwyg-tinymce [field]="field" [hasError]="hasError" />
-                </form>`,
-                {
-                    hostProps: {
-                        formGroup: new FormGroup({ [field.variable]: new FormControl() }),
-                        field,
-                        hasError: false
-                    }
+            spectator = createHost(HOST_TEMPLATE, {
+                hostProps: {
+                    formGroup: new FormGroup({ [field.variable]: new FormControl() }),
+                    field,
+                    hasError: false
                 }
-            );
+            });
 
             // `$editorConfig` is computed on first read, so the stub only has to be in place
             // before change detection.
@@ -268,6 +308,7 @@ describe('DotWysiwygTinymceComponent', () => {
                 file_picker_callback: filePickerCallback
             });
             spectator.detectChanges();
+            respond(mockSystemWideConfig);
 
             return spectator.component.$editorConfig();
         };
