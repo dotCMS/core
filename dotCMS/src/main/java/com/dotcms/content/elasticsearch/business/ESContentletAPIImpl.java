@@ -7115,7 +7115,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * identifier exists but no version of it can be loaded, the save is refused. When nothing with that identifier is
      * stored yet, the save creates the favorite, so WRITE on its content type applies. A save
      * without a new version overwrites the version with the given inode, so it is judged on that
-     * version alone, and refused when that inode is not a version of the same favorite.
+     * version alone, and refused when that inode is not a version of the same favorite in the
+     * language and variant being saved.
      *
      * @param contentlet           the favorite page being checked in, with its identifier set
      * @param respectFrontendRoles whether front-end roles count towards the permission
@@ -7130,21 +7131,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final boolean respectFrontendRoles, final User user, final boolean createNewVersion)
             throws DotDataException, DotSecurityException {
 
+        // a checkin without a language saves the default-language version
+        final long languageId = contentlet.getLanguageId() == 0
+                ? languageAPI.getDefaultLanguage().getId()
+                : contentlet.getLanguageId();
+
         // an in-place save overwrites the version with this inode, so that version is the one
-        // whose owner decides
+        // whose owner decides. The save also rewrites that row's language and variant and makes it
+        // the working version for them, so they must stay the ones the stored version has
         if (!createNewVersion) {
             final Contentlet target = contentFactory.find(contentlet.getInode());
             return null != target && isFavoritePage(target)
                     && contentlet.getIdentifier().equals(target.getIdentifier())
+                    && languageId == target.getLanguageId()
+                    && contentlet.getVariantId().equals(target.getVariantId())
                     && permissionAPI.doesUserHavePermission(target,
                             PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles);
         }
 
-        // the version being edited first: each version carries its own owner. A checkin without a
-        // language saves the default-language version, so that is the one to authorize against
-        final long languageId = contentlet.getLanguageId() == 0
-                ? languageAPI.getDefaultLanguage().getId()
-                : contentlet.getLanguageId();
+        // the version being edited first: each version carries its own owner
         Contentlet stored = contentFactory.findContentletByIdentifier(contentlet.getIdentifier(),
                 false, languageId, contentlet.getVariantId());
         if (null == stored) {

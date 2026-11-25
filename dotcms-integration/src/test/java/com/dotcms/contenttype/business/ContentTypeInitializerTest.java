@@ -23,6 +23,7 @@ import com.dotcms.repackage.org.directwebremoting.guice.ApplicationScoped;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.workflow.WorkflowResource;
+import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.workflow.form.FireActionForm;
@@ -41,6 +42,7 @@ import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -1390,6 +1392,68 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
             Try.run(() -> ContentletDataGen.destroy(othersFavorite));
             UserDataGen.remove(owner);
             UserDataGen.remove(other);
+        }
+    }
+
+    /**
+     * Method to test: saving an existing favorite page in place, without a new version.
+     * Given Scenario: A favorite's DEFAULT version is owned by one user and its version in another
+     * variant by a second user. The second user saves their version in place while naming the
+     * DEFAULT variant.
+     * ExpectedResult: The save is refused, because an in-place save rewrites the row's variant and
+     * makes it the working version there, so it must keep the stored version's variant; the
+     * DEFAULT working version stays the first user's.
+     */
+    @Test
+    public void test_in_place_favorite_save_cannot_move_a_version_to_another_variant()
+            throws Exception {
+
+        final ContentType contentType = prepareFirstInit();
+        new ContentTypeInitializer().init();
+
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final User defaultOwner = new UserDataGen().active(true)
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        final User variantOwner = new UserDataGen().active(true)
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        final Contentlet favorite = new ContentletDataGen(contentType)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .setProperty("title", "favorite").setProperty("url", "/favorite-" + System.nanoTime())
+                .setProperty(Contentlet.OWNER_KEY, defaultOwner.getUserId())
+                .nextPersisted();
+        try {
+
+            final Contentlet variantVersion = ContentletDataGen.createNewVersion(favorite, variant,
+                    Map.of(Contentlet.OWNER_KEY, variantOwner.getUserId()));
+
+            final Contentlet edit = APILocator.getContentletAPI()
+                    .checkout(variantVersion.getInode(), APILocator.systemUser(), false);
+            edit.setInode(variantVersion.getInode());
+            edit.setVariantId(VariantAPI.DEFAULT_VARIANT.name());
+            edit.setProperty("title", "edited");
+            // the checkouts locked both versions for the system user; unlock them so only the
+            // permission check can refuse
+            APILocator.getContentletAPI().unlock(variantVersion, APILocator.systemUser(), false);
+            APILocator.getContentletAPI().unlock(favorite, APILocator.systemUser(), false);
+
+            Assert.assertThrows(DotSecurityException.class,
+                    () -> APILocator.getContentletAPI().checkinWithoutVersioning(
+                            edit, (ContentletRelationships) null, null, null, variantOwner, false));
+
+            final ContentletVersionInfo defaultInfo = APILocator.getVersionableAPI()
+                    .getContentletVersionInfo(favorite.getIdentifier(), favorite.getLanguageId(),
+                            VariantAPI.DEFAULT_VARIANT.name()).orElseThrow();
+            Assert.assertEquals("The DEFAULT working version must stay the first user's",
+                    favorite.getInode(), defaultInfo.getWorkingInode());
+            final Contentlet stored = APILocator.getContentletAPI()
+                    .find(variantVersion.getInode(), APILocator.systemUser(), false);
+            Assert.assertEquals("The variant version must keep its variant", variant.name(),
+                    stored.getVariantId());
+        } finally {
+
+            Try.run(() -> ContentletDataGen.destroy(favorite));
+            UserDataGen.remove(defaultOwner);
+            UserDataGen.remove(variantOwner);
         }
     }
 
