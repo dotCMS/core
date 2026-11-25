@@ -121,21 +121,22 @@ jobs:
     secrets:
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
-  # Team Scout alert — in ADDITION to the #log-core-cicd report above, ping #team-scout when
-  # the sweep fails so the owning team sees phase regressions directly. Failure-only.
-  # NOTE: the Slack bot must be a member of #team-scout (invite it once) or the step errors
-  # with not_in_channel.
-  notify-scout:
-    name: Notify Team Scout on failure
+  # Migration-channel alert — in ADDITION to the #log-core-cicd report above, ping
+  # #feat-opensearch-upgrade when the sweep fails, so the people working the ES->OS migration see
+  # phase regressions in the channel where that work is discussed. Failure-only.
+  # NOTE: the Slack bot must be a member of #feat-opensearch-upgrade (invite it once) or the step
+  # errors with not_in_channel.
+  notify-migration-channel:
+    name: Notify the OpenSearch upgrade channel on failure
     needs: [ initialize, build, test ]
     if: failure()
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Post failure to #team-scout
+      - name: Post failure to #feat-opensearch-upgrade
         uses: ./.github/actions/core-cicd/notification/notify-slack
         with:
-          channel-id: 'CQNF9PCFQ' # #team-scout
+          channel-id: 'C09UM82SXU4' # #feat-opensearch-upgrade
           slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
           payload: |
             ":x: *OpenSearch Phase Sweep failed* — phase(s) `${{ inputs.opensearch_phase || 'all' }}`

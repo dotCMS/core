@@ -14750,6 +14750,95 @@
 									}
 								}
 							]
+						},
+						{
+							"name": "Rendered Data Requires Back-end User",
+							"item": [
+								{
+									"name": "Get Rendered Custom Field Without User",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"// Anonymous content API reads are turned on for this request only, so the 401 below comes from",
+													"// the endpoint's own back-end user requirement. The previous value is restored in the test script.",
+													"const key = 'CONTENT_APIS_ALLOW_ANONYMOUS';",
+													"const systemTable = pm.environment.get('serverURL') + '/api/v1/system-table';",
+													"const headers = {Authorization: 'Bearer ' + pm.environment.get('jwt'), 'Content-Type': 'application/json'};",
+													"pm.sendRequest({url: systemTable + '/' + key, method: 'GET', header: headers}, function (error, response) {",
+													"    pm.expect(error).to.not.exist;",
+													"    pm.expect(response.code).to.be.oneOf([200, 404]);",
+													"    pm.collectionVariables.set('previousAnonymousAccessRender', JSON.stringify(response.code === 200 ? response.json().entity : null));",
+													"    pm.sendRequest({",
+													"        url: systemTable, method: 'POST', header: headers,",
+													"        body: {mode: 'raw', raw: JSON.stringify({key: key, value: 'READ'})}",
+													"    }, function (error, response) {",
+													"        pm.expect(error).to.not.exist;",
+													"        pm.expect(response.code).to.equal(200);",
+													"    });",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// Schedule the restore before the assertions so a failed assertion cannot skip it.",
+													"const key = 'CONTENT_APIS_ALLOW_ANONYMOUS';",
+													"const previous = JSON.parse(pm.collectionVariables.get('previousAnonymousAccessRender'));",
+													"pm.sendRequest({",
+													"    url: pm.environment.get('serverURL') + '/api/v1/system-table' + (previous === null ? '/' + key : ''),",
+													"    method: previous === null ? 'DELETE' : 'POST',",
+													"    header: {Authorization: 'Bearer ' + pm.environment.get('jwt'), 'Content-Type': 'application/json'},",
+													"    body: {mode: 'raw', raw: JSON.stringify({key: key, value: previous})}",
+													"}, function (error, response) {",
+													"    pm.test('Previous anonymous access configuration is restored', function () {",
+													"        pm.expect(error).to.not.exist;",
+													"        pm.expect(response.code).to.equal(200);",
+													"    });",
+													"    if (!error && response.code === 200) pm.collectionVariables.unset('previousAnonymousAccessRender');",
+													"});",
+													"",
+													"pm.test('Rendering Custom Fields without a back-end user returns 401', function () {",
+													"    pm.response.to.have.status(401);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "noauth"
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/render/id/{{contentTypeID}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"render",
+												"id",
+												"{{contentTypeID}}"
+											]
+										},
+										"description": "Rendering the Custom Fields of a Content Type requires a logged-in back-end user, even when anonymous reads of the content APIs are allowed."
+									},
+									"response": []
+								}
+							]
 						}
 					]
 				},

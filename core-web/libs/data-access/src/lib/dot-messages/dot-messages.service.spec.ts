@@ -1220,6 +1220,67 @@ describe('DotMessageService', () => {
         });
     });
 
+    /**
+     * #38303, T175: the messages arrive after the app's first screens are built, so text built
+     * before then reads as raw keys. `ready$` tells when they are there.
+     */
+    describe('ready$', () => {
+        it('emits once the messages arrive over HTTP, and replays it to later subscribers', () => {
+            const labels: string[] = [];
+            service.ready$.subscribe(() => labels.push(service.get('dot.common.cancel')));
+
+            service.init({ languageBundleVersion: VERSION });
+            expect(labels).toEqual([]);
+
+            http.expectOne(DEFAULT_URL).flush({ entity: messages, languageBundleVersion: VERSION });
+            expect(labels).toEqual(['Cancel']);
+
+            const late = vi.fn();
+            service.ready$.subscribe(late);
+            expect(late).toHaveBeenCalledTimes(1);
+        });
+
+        it('emits at once when the messages come from local storage', () => {
+            seedCache();
+            const ready = vi.fn();
+            service.ready$.subscribe(ready);
+
+            service.init({ languageBundleVersion: VERSION });
+
+            http.expectNone(DEFAULT_URL);
+            expect(ready).toHaveBeenCalledTimes(1);
+        });
+
+        it('emits when a failed request falls back to the cached bundle', () => {
+            seedCache();
+            const labels: string[] = [];
+            service.ready$.subscribe(() => labels.push(service.get('dot.common.cancel')));
+
+            service.init({ languageBundleVersion: NEXT_VERSION });
+            http.expectOne(DEFAULT_URL).flush(null, { status: 500, statusText: 'Server Error' });
+
+            expect(labels).toEqual(['Cancel']);
+        });
+
+        it('emits nothing when the request fails with no cached bundle', () => {
+            const ready = vi.fn();
+            service.ready$.subscribe(ready);
+
+            service.init({ languageBundleVersion: VERSION });
+            http.expectOne(DEFAULT_URL).flush(null, { status: 500, statusText: 'Server Error' });
+
+            expect(ready).not.toHaveBeenCalled();
+        });
+
+        it('emits nothing before the messages are asked for', () => {
+            const ready = vi.fn();
+
+            service.ready$.subscribe(ready);
+
+            expect(ready).not.toHaveBeenCalled();
+        });
+    });
+
     describe('get', () => {
         beforeEach(async () => {
             seedCache();

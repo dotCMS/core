@@ -404,6 +404,62 @@ public void complexOperation() throws DotDataException {
 }
 ```
 
+## Commit Listeners
+
+Work that must only happen if the transaction actually committed — updating a search index,
+invalidating a cache on other nodes, firing an event, calling an external service — belongs in a
+commit listener, not inline in the transaction. Inline, a rollback leaves the side effect behind:
+an index carrying the mapping of a field that never existed, a cache primed with a row that was
+never written.
+
+### Sync or async — the choice that bites
+
+```java
+import com.dotmarketing.db.HibernateUtil;
+
+// Async (default). Queued and run on another thread after the commit.
+HibernateUtil.addCommitListener(() -> localSystemEventsAPI.notify(new FieldSavedEvent(field)));
+
+// Sync. Runs at commit, on the committing thread, before the caller gets control back.
+HibernateUtil.addSyncCommitListener(() -> indexAPI.addCustomMappingForNewField(field));
+```
+
+`addCommitListener(Runnable)` is **asynchronous whenever `ASYNC_COMMIT_LISTENERS` is on, which is
+the default** (`HibernateUtil:1448`). The calling method therefore returns before the listener has
+run. That is fine for a notification nobody waits on, and wrong whenever a later request could
+observe the system in the half-finished state.
+
+Use `addSyncCommitListener` when something else could act on the committed row before the side
+effect lands. The field-mapping push is the worked example: with an async listener, `FieldAPI.save`
+returns as soon as the field is committed, and content of that type indexed from another request in
+that window gets **dynamically mapped first** — and a field that dynamic mapping already created
+cannot be re-typed, so the explicit mapping is lost for good. See
+`FieldAPIImpl.addSearchMappingForField` (issue #36577).
+
+### What sync does not buy you
+
+Three things to know before leaning on it:
+
+- **The window narrows, it does not close.** The row is committed and visible to other connections
+  before any listener runs, sync or not. Sync reduces the exposure to the duration of the side
+  effect itself, on the same thread. Work that must be atomic with the row cannot be a commit
+  listener at all.
+- **A sync listener runs inside a fresh `LocalTransaction`** (`DotRunnableThread.run`), so it holds
+  a pooled connection for as long as it runs. Do not put a slow or remote call in one without
+  thinking about the pool — batch the work into a single listener rather than registering one per
+  item.
+- **An exception escaping a sync listener fails the caller's save**, as `DotHibernateException`,
+  after the data is already committed: the caller sees a failure for a row that exists. A listener
+  whose failure must not surface that way has to catch its own exceptions, the way
+  `FieldAPIImpl.addSearchMappingForField` does.
+
+### Testing them
+
+`dotcms-integration/src/test/resources/dotmarketing-config.properties` sets
+`ASYNC_COMMIT_LISTENERS=false`, so **integration tests never exercise the async path**. A listener
+that only works because the test ran it synchronously will still pass CI and fail in production.
+Decide sync or async by the ordering guarantee you need, never by what the tests show.
+
 ## Testing Patterns
 
 ### Database Integration Tests

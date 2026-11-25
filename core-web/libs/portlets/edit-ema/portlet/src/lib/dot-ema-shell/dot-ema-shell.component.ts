@@ -9,6 +9,7 @@ import {
     DestroyRef,
     effect,
     inject,
+    Injector,
     OnDestroy,
     OnInit,
     signal,
@@ -27,14 +28,16 @@ import { ToastModule } from 'primeng/toast';
 
 import { filter } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotContentEditor, DotMessageService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_ID,
+    DotCMSContentlet,
     DotExperimentStatus,
     DotPageToolUrlParams,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
+import { DotEditContentOpenerService } from '@dotcms/edit-content';
 import {
     DotPageScannerReportComponent,
     DotPageToolsSeoComponent,
@@ -47,22 +50,23 @@ import { DotInfoPageComponent, DotMessagePipe, DotNotLicenseComponent, InfoPage 
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 
-import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { uveContentEditorEvents } from '../edit-ema-editor/components/dot-uve-content-editor/dot-uve-content-editor.events';
 import { DotPageAssetKeys } from '../services/dot-page-api/dot-page-api.service';
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
-import { NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
-import { DialogAction, DotPageAssetParams, NavigationBarItem } from '../shared/models';
+import { UVE_STATUS } from '../shared/enums';
+import { DotPageAssetParams, NavigationBarItem } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
+import { WithPageApiMethods } from '../store/features/page-api/withPageApi';
 import { DotUveViewParams } from '../store/models';
 import {
     checkClientHostAccess,
     getErrorPayload,
     getRequestHostName,
-    getTargetUrl,
     normalizeQueryParams,
     sanitizeURL,
-    shouldNavigate
+    shouldNavigate,
+    pageRequestContext,
+    withPageContext
 } from '../utils';
 import { readExperimentsPortletSwitch } from '../utils/experiments-portlet-switch.util';
 import { leaveTheVariant } from '../utils/leave-the-variant.util';
@@ -106,7 +110,6 @@ function crumbQueryParams(cleanedParams: Params, pageParams: Params | null): Par
         RouterModule,
         DotPageToolsSeoComponent,
         DotPageScannerReportComponent,
-        DotEmaDialogComponent,
         DotInfoPageComponent,
         DotNotLicenseComponent,
         MessageModule,
@@ -129,17 +132,23 @@ function crumbQueryParams(cleanedParams: Params, pageParams: Params | null): Par
     providers: [ConfirmationService]
 })
 export class DotEmaShellComponent implements OnInit, OnDestroy {
-    @ViewChild('dialog') dialog!: DotEmaDialogComponent;
     @ViewChild('pageTools') pageTools!: DotPageToolsSeoComponent;
     @ViewChild('pageScanner') pageScanner!: DotPageScannerReportComponent;
 
     readonly uveStore = inject(UVEStore);
+    /**
+     * The store's page API, typed: `withPageApi`'s methods reach the UVEStore type through an index
+     * signature, which strict mode will not let new code call by name.
+     */
+    readonly #pageApi = this.uveStore as unknown as WithPageApiMethods;
     readonly destroyRef = inject(DestroyRef);
     readonly #activatedRoute = inject(ActivatedRoute);
     readonly #router = inject(Router);
     readonly #siteService = inject(SiteService);
     readonly #location = inject(Location);
     readonly #globalStore = inject(GlobalStore);
+    readonly #opener = inject(DotEditContentOpenerService);
+    readonly #injector = inject(Injector);
     readonly #contentEditor = injectDispatch(uveContentEditorEvents);
     protected readonly experimentsPanel = inject(DotExperimentsPanelStore);
 
@@ -526,57 +535,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         this.uveStore.resetPageParams();
     }
 
-    handleNgEvent({ event }: DialogAction) {
-        switch (event.detail.name) {
-            case NG_CUSTOM_EVENTS.UPDATE_WORKFLOW_ACTION: {
-                this.uveStore.workflowFetch(this.uveStore.pageAsset()?.page?.inode);
-                break;
-            }
-
-            case NG_CUSTOM_EVENTS.SAVE_PAGE: {
-                this.handleSavePageEvent(event);
-                break;
-            }
-
-            case NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED: {
-                // Fired by the edit content portlet when a page is saved in a new language
-                // (workingContentletInode is empty for a new version, so SAVE_PAGE is not
-                // emitted). Reload to refresh pageLanguages so the UVE toolbar language
-                // dropdown reflects the newly created version.
-                this.uveStore.pageReload();
-                break;
-            }
-        }
-    }
-
-    /**
-     * Handles the save page event triggered from the dialog.
-     *
-     * @param {CustomEvent} event - The event object containing details about the save action.
-     * @return {void}
-     */
-    private handleSavePageEvent(event: CustomEvent): void {
-        const htmlPageReferer = event.detail.payload?.htmlPageReferer;
-
-        if (!htmlPageReferer) {
-            this.uveStore.pageReload();
-
-            return;
-        }
-
-        const url = new URL(htmlPageReferer, window.location.origin); // Add base for relative URLs
-        const targetUrl = getTargetUrl(url.pathname, this.uveStore.pageAsset()?.urlContentMap);
-
-        if (shouldNavigate(targetUrl, this.uveStore.pageParams().url)) {
-            // Navigate to the new URL if it's different from the current one
-            this.uveStore.pageLoad({ url: targetUrl });
-
-            return;
-        }
-
-        this.uveStore.pageReload();
-    }
-
     /**
      * Handle actions from nav bar
      *
@@ -596,25 +554,17 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 return;
             }
 
-            // Editing the page's own properties is editing its contentlet — route it through the
-            // same feature-flag-aware entry point as every other edit flow (new editor/side panel
-            // when enabled for the page's content type, legacy dialog otherwise). Only a placed
-            // content editor answers, and it is placed only on the content screen with a page the
-            // user can read; everywhere else, fall back to this shell's own legacy dialog
-            // (previous, route-independent behavior). Properties itself has no permission check,
-            // as it never had one.
+            // Editing the page's own properties is editing its contentlet. Where the content editor
+            // is placed (the content screen, with a page the user can read) it opens it, as every
+            // other edit; everywhere else ('layout'/'rules'/'experiments') the shell opens it in
+            // the side panel itself (#38303). Properties itself has no permission check, as it
+            // never had one.
             if (this.uveStore.editorContentEditorPlaced()) {
                 this.#contentEditor.uveEditContentRequested({ contentlet: page });
                 return;
             }
 
-            this.dialog.editContentlet({
-                inode: page.inode,
-                title: page.title,
-                identifier: page.identifier,
-                contentType: page.contentType,
-                angularCurrentPortlet: 'edit-page'
-            });
+            this.#openPageProperties(page);
         }
     }
 
@@ -703,10 +653,56 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Reloads the component from the dialog.
+     * Opens the page's properties in the side panel, in whichever editor its content type uses,
+     * when no editor route is mounted to do it (#38303). Each save reloads the page; a close
+     * reloads it only after the legacy editor, whose workflow actions report nothing.
+     *
+     * @param page The page being edited.
      */
-    reloadFromDialog() {
-        this.uveStore.pageReload();
+    #openPageProperties(page: DotCMSPage): void {
+        let editor: DotContentEditor | null = null;
+
+        this.#opener.open(
+            withPageContext(
+                {
+                    mode: 'edit',
+                    inode: page.inode,
+                    identifier: page.identifier,
+                    contentType: page.contentType,
+                    title: page.title
+                },
+                pageRequestContext(this.uveStore)
+            ),
+            {
+                injector: this.#injector,
+                editorResolved: (resolved) => (editor = resolved),
+                saved: (contentlet) => this.#onPagePropertiesSaved(contentlet),
+                closed: () => {
+                    if (editor !== 'new') {
+                        this.#pageApi.pageReload();
+                    }
+                }
+            }
+        );
+    }
+
+    /**
+     * The page's properties were saved. A save can change the page's URL: load the page at its new
+     * URL (its URL map when it has one), else reload it. The workflow actions follow on their own:
+     * the store fetches them when the reloaded page brings its new inode.
+     *
+     * @param contentlet The saved page.
+     */
+    #onPagePropertiesSaved(contentlet: DotCMSContentlet): void {
+        const url = contentlet?.['URL_MAP_FOR_CONTENT'] || contentlet?.url;
+
+        if (shouldNavigate(url, this.uveStore.pageParams()?.url ?? '')) {
+            this.#pageApi.pageLoad({ url });
+
+            return;
+        }
+
+        this.#pageApi.pageReload();
     }
 
     /**

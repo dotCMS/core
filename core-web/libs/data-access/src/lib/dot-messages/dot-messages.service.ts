@@ -56,6 +56,17 @@ export class DotMessageService {
     /** Changes whenever available messages change, including same-version installs and user resets. */
     readonly loadedBundleRevision = this.#installationRevision.asReadonly();
 
+    readonly #ready = new ReplaySubject<void>(1);
+
+    /**
+     * Emits each time a bundle is installed, from the server or from local storage (a stale cached
+     * bundle kept after a failed request included), and replays the last one to every later
+     * subscriber. Until then {@link get} answers with the keys, so text built before it (an error
+     * dialog raised while the app starts, #38303 T175) waits on this. Never emits if {@link init} is
+     * never called, or if no bundle can be installed.
+     */
+    readonly ready$: Observable<void> = this.#ready.asObservable();
+
     /**
      * Initializes the DotMessageService.
      * @param {DotMessageServiceParams} params - The parameters for initialization.
@@ -196,6 +207,7 @@ export class DotMessageService {
             this.installedVersion.set(expectedVersion);
             this.#installationRevision.update((revision) => revision + 1);
             this.versionMismatch.set(null);
+            this.#ready.next();
 
             return of(void 0);
         }
@@ -229,6 +241,7 @@ export class DotMessageService {
                     this.installedVersion.set(response.languageBundleVersion);
                     this.#installationRevision.update((revision) => revision + 1);
                     this.versionMismatch.set(null);
+                    this.#ready.next();
                 }),
                 map(() => void 0),
                 catchError((error) => {
@@ -247,6 +260,7 @@ export class DotMessageService {
                             this.isVersion(cachedVersion) ? cachedVersion : null
                         );
                         this.#installationRevision.update((revision) => revision + 1);
+                        this.#ready.next();
                     }
 
                     return throwError(() => error);
