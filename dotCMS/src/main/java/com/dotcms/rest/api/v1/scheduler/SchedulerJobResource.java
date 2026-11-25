@@ -289,11 +289,14 @@ public class SchedulerJobResource {
 
         // Quartz refuses a trigger that never fires; checking first answers 400 instead of 500
         try {
-            // The Scheduler form's list includes the abstract DotJob, which Quartz cannot run
+            // Quartz creates the job through a public no-argument constructor, so an abstract class
+            // (the Scheduler form's list includes DotJob) or one without that constructor cannot run
             final Class<?> jobClass = Class.forName(form.javaClass());
-            if (!Job.class.isAssignableFrom(jobClass) || Modifier.isAbstract(jobClass.getModifiers())) {
+            if (!Job.class.isAssignableFrom(jobClass) || Modifier.isAbstract(jobClass.getModifiers())
+                    || !Modifier.isPublic(jobClass.getModifiers())) {
                 throw refused(Response.Status.BAD_REQUEST, user, "message.Scheduler.javaClassNotFound");
             }
+            jobClass.getConstructor();
             if (new CronTrigger(jobName, USER_JOB_GROUP, jobName, USER_JOB_GROUP, startDate, endDate,
                     form.cronExpression()).computeFirstFireTime(null) == null) {
                 throw refused(Response.Status.BAD_REQUEST, user, "message.Scheduler.invalidJobSettings");
@@ -304,8 +307,8 @@ public class SchedulerJobResource {
         } catch (final ObjectAlreadyExistsException e) {
             // Another save created the job after this request checked for it
             throw refused(Response.Status.CONFLICT, user, "message.Scheduler.jobAlreadyExists");
-        } catch (final ClassNotFoundException | IllegalArgumentException e) {
-            // Not on the classpath, or not a Quartz job
+        } catch (final ClassNotFoundException | NoSuchMethodException | IllegalArgumentException e) {
+            // Not on the classpath, no public no-argument constructor, or not a Quartz job
             throw refused(Response.Status.BAD_REQUEST, user, "message.Scheduler.javaClassNotFound");
         } catch (final SchedulerException e) {
             Logger.error(SchedulerJobResource.class, "Unable to schedule the job " + jobName, e);

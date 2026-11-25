@@ -470,6 +470,25 @@ public class SchedulerJobResourceTest {
 
     /**
      * Method to test: {@link SchedulerJobResource#createJob}
+     * Given: an administrator submits {@link com.dotmarketing.fixtask.FixTasksExecutor}, a Quartz job
+     * whose only constructor is private, so Quartz cannot create it when the job fires
+     * Expected: 400, and no job is created
+     */
+    @Test
+    public void test_createJob_classWithoutPublicConstructor_shouldBeRefused() {
+        final String jobName = "scheduler-job-" + UUID.randomUUID();
+        try {
+            assertStatus(Response.Status.BAD_REQUEST, () -> resource.createJob(requestFor(admin),
+                    new MockHttpResponse().response(),
+                    form(jobName, "com.dotmarketing.fixtask.FixTasksExecutor")));
+            assertFalse(exists(jobName));
+        } finally {
+            remove(jobName);
+        }
+    }
+
+    /**
+     * Method to test: {@link SchedulerJobResource#createJob}
      * Given: a 73-character job name, which fits the job table, while the trigger name made from it
      * ({@code <name>_trigger}) does not fit the trigger table; and a 72-character name, which fits both
      * Expected: 400 for the longer name and no job is created; the shorter name is scheduled
