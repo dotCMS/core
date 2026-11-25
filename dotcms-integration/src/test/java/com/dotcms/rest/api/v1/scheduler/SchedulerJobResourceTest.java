@@ -427,13 +427,13 @@ public class SchedulerJobResourceTest {
      * Method to test: {@link SchedulerJobResource#createJob}
      * Given: start dates that a lenient parser would accept: a day that does not exist, a valid
      * date followed by extra text, and signed years of more than four digits, the largest of which
-     * does not fit a {@link java.util.Date}
+     * does not fit a {@link java.util.Date}; and the text "null", which is not the same as no date
      * Expected: 400 for each, and no job is created
      */
     @Test
     public void test_createJob_invalidDate_shouldBeRefused() {
         for (final String startDate : List.of("2099-02-30 10:00", "2099-01-01 10:00 tomorrow",
-                "+10000-01-01 10:00", "+999999999-12-31 23:59")) {
+                "+10000-01-01 10:00", "+999999999-12-31 23:59", "null")) {
             final String jobName = "scheduler-job-" + UUID.randomUUID();
             try {
                 assertStatus(Response.Status.BAD_REQUEST, () -> resource.createJob(requestFor(admin),

@@ -337,16 +337,16 @@ public class SchedulerJobResource {
     }
 
     /**
-     * Reads a date in the {@code yyyy-MM-dd HH:mm} format, in the server's time zone.
-     *
-     * @return the date, or null when none was given
+     * Reads a date in the {@code yyyy-MM-dd HH:mm} format, in the server's time zone. A missing or
+     * blank value means no date; any other value, including the text {@code "null"}, must parse.
      * A time that occurs twice when the clocks go back is read as the second occurrence.
      *
+     * @return the date, or null when none was given
      * @throws WebApplicationException 400 when the value is not a whole, existing date in that format,
      *                                  or names a time the clocks skip when daylight saving starts
      */
     private static Date parseDate(final String value, final User user) {
-        if (!UtilMethods.isSet(value)) {
+        if (value == null || value.isBlank()) {
             return null;
         }
         final LocalDateTime local;
