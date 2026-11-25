@@ -106,7 +106,7 @@ export class UveEditorPage {
             .getByRole('button', { name: 'Full Editor' });
 
         await expect(async () => {
-            await this.contentletHeading(contentletTitle).hover();
+            await this.contentletHeading(contentletTitle).hover({ timeout: ONE_GESTURE_MS });
             await fullEditor.click({ timeout: ONE_GESTURE_MS });
         }).toPass({ timeout: GESTURE_RETRY_MS });
     }
@@ -120,11 +120,16 @@ export class UveEditorPage {
      * zone, away from the canvas's scroll zones, and drops. Chromium turns these mouse events into
      * the HTML5 drag events the editor listens to.
      *
-     * The move into the canvas is repeated until the zones appear (#38717). One move and a fixed
-     * wait leaves nothing to recover from: if that move does not reach the editor as a drag — it
-     * can arrive before the editor has wired its handlers — the zones are never drawn and the
-     * wait expires against a state that was never coming. Each retry shifts the pointer by a
-     * pixel because a move to the coordinates it already holds produces no event at all.
+     * The whole gesture is retried, press included (#38717). Repeating only the move cannot
+     * recover from the two ways this fails in CI: the palette search is debounced and swaps the
+     * list for skeletons while it reloads, so the node that was matched is detached before or
+     * during the press, and a press that never reached a live node starts no drag at all, after
+     * which no number of moves will draw a zone. Each attempt is bounded so a detached node costs
+     * seconds rather than the test's whole budget, and shifts the pointer by a pixel because a
+     * move to the coordinates it already holds produces no event.
+     *
+     * A failed attempt releases the button over the palette, never over the canvas: the specs
+     * count how many contentlets were added, and a release on a zone drawn late would add one.
      */
     async dragContentTypeToEmptyContainer(contentTypeName: string) {
         const palette = this.page.getByTestId('palette');
@@ -133,8 +138,6 @@ export class UveEditorPage {
         const item = palette.getByTestId('content-type-name').filter({ hasText: contentTypeName });
         await expect(item).toBeVisible({ timeout: 15000 });
 
-        await item.hover();
-        await this.page.mouse.down();
         const canvas = await centerOf(this.canvas);
 
         // The zones are absolutely positioned boxes with no role or test id of their own; their
@@ -144,8 +147,18 @@ export class UveEditorPage {
 
         await expect(async () => {
             nudge = nudge === 0 ? 1 : 0;
-            await this.page.mouse.move(canvas.x + nudge, canvas.y, { steps: 10 });
-            await expect(zone).toBeVisible({ timeout: ONE_GESTURE_MS });
+
+            try {
+                await item.hover({ timeout: ONE_GESTURE_MS });
+                await this.page.mouse.down();
+                await this.page.mouse.move(canvas.x + nudge, canvas.y, { steps: 10 });
+                await expect(zone).toBeVisible({ timeout: ONE_GESTURE_MS });
+            } catch (error) {
+                // Back onto the palette before letting go, so the release cannot land on a zone.
+                await item.hover({ timeout: ONE_GESTURE_MS }).catch(() => undefined);
+                await this.page.mouse.up();
+                throw error;
+            }
         }).toPass({ timeout: GESTURE_RETRY_MS });
 
         const target = await dropPointIn(zone, this.canvas);
