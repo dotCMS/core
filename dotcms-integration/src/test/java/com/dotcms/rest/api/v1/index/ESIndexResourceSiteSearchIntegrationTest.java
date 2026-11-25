@@ -4,19 +4,26 @@ import static com.dotmarketing.sitesearch.business.SiteSearchAPI.ES_SITE_SEARCH_
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.datagen.LayoutDataGen;
+import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
+import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.test.util.ApiTokenTestUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.ejb.UserTestUtil;
+import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.List;
@@ -106,18 +113,47 @@ public class ESIndexResourceSiteSearchIntegrationTest {
     }
 
     /**
-     * Builds a request authenticated as the administrator with an API token.
+     * Builds an unauthenticated request with a session.
      *
      * @return the request
      */
-    private static HttpServletRequest adminRequest() {
-        final MockHeaderRequest request = new MockHeaderRequest(
+    private static MockHeaderRequest baseRequest() {
+        return new MockHeaderRequest(
                 new MockSessionRequest(
                         new MockAttributeRequest(
                                 new MockHttpRequestIntegrationTest("localhost", "/").request())
                                 .request())
                         .request());
+    }
+
+    /**
+     * Builds a request authenticated as the administrator with an API token.
+     *
+     * @return the request
+     */
+    private static HttpServletRequest adminRequest() {
+        final MockHeaderRequest request = baseRequest();
         request.setHeader("Authorization", TOKEN_UTILS.adminBearerHeader());
+        return request;
+    }
+
+    /**
+     * Builds a request whose session belongs to a back-end user who is not an administrator and
+     * whose role has a layout with the given portlets.
+     *
+     * @param portletIds the portlets in the user's layout
+     * @return the request
+     */
+    private static HttpServletRequest backEndUserRequest(final String... portletIds) throws Exception {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final User user = UserTestUtil.getUser("ss" + System.nanoTime(), false, true);
+        roleAPI.addRoleToUser(roleAPI.loadBackEndUserRole(), user);
+        roleAPI.addRoleToUser(new RoleDataGen()
+                .layout(new LayoutDataGen().portletIds(portletIds).nextPersisted()).nextPersisted(), user);
+
+        final HttpServletRequest request = baseRequest();
+        request.getSession().setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
+        request.getSession().setAttribute(com.liferay.portal.util.WebKeys.USER, user);
         return request;
     }
 
@@ -155,6 +191,26 @@ public class ESIndexResourceSiteSearchIntegrationTest {
             }
             throw e;
         }
+    }
+
+    /**
+     * Given : a back-end user who is not an administrator, with the Maintenance and Site Search
+     *         portlets, and a site-search index that is not the default
+     * When  : the index is activated
+     * Then  : the request is refused with 401 and the index does not become the default
+     */
+    @Test
+    public void nonAdmin_cannotChangeSiteSearchIndex() throws Exception {
+        final String index = newSiteSearchIndex();
+        final HttpServletRequest request = backEndUserRequest("maintenance", "site-search");
+
+        try {
+            resource.modIndex(request, new MockHttpResponse().response(), index, "activate");
+            fail("a user who is not an administrator must be refused");
+        } catch (final SecurityException e) {
+            assertEquals(401, e.getResponse().getStatus());
+        }
+        assertFalse(siteSearchAPI.isDefaultIndex(index));
     }
 
     /**
