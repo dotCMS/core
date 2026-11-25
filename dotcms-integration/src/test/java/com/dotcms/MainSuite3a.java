@@ -147,7 +147,6 @@ import org.junit.runners.Suite;
         SecretsStoreConcurrentWriteRaceTest.class,
     com.dotcms.rest.api.v1.system.role.RoleResourceCheckRolesIntegrationTest.class,
         RoleResourceIntegrationTest.class,
-    com.dotcms.rest.api.v1.index.ESIndexResourceSiteSearchIntegrationTest.class,
     com.dotmarketing.portlets.workflows.action.EditWorkflowTaskActionTest.class,
         FileAssetContainerPermissionInheritanceTest.class,
 
@@ -162,6 +161,7 @@ import org.junit.runners.Suite;
         com.dotcms.rest.api.v1.portlet.PortletResourceIntegrationTest.class,
         LayoutResourceIntegrationTest.class,
         com.dotmarketing.webdav.DotWebdavTempPathContainmentTest.class,
+        com.dotcms.rest.api.v1.index.ESIndexResourceSiteSearchIntegrationTest.class,
 })
 
 public class MainSuite3a {
