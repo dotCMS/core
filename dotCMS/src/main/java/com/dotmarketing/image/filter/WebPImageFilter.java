@@ -1,5 +1,6 @@
 package com.dotmarketing.image.filter;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.Map;
 import javax.imageio.IIOImage;
@@ -29,7 +30,6 @@ public class WebPImageFilter extends ImageFilter {
 	        return resultFile;
 	    }
 
-	    resultFile.delete();
 
 	    try {
 	        final ImageWriter writer = ImageIO.getImageWritersByMIMEType("image/webp").next();
@@ -44,14 +44,17 @@ public class WebPImageFilter extends ImageFilter {
 	            writeParam.setCompressionQuality(quality);
 	        }
 
-            final File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() +".tmp");
+            final File tempResultFile = stagingFileFor(resultFile);
 
 
 
-	        writer.setOutput(new FileImageOutputStream(tempResultFile));
-	        writer.write(null, new IIOImage(ImageIO.read(file), null, null), writeParam);
-	        writer.dispose();
-            tempResultFile.renameTo(resultFile);
+	        final BufferedImage src = StrictImageReader.read(file);
+	        try (FileImageOutputStream output = new FileImageOutputStream(tempResultFile)) {
+	            writer.setOutput(output);
+	            writer.write(null, new IIOImage(src, null, null), writeParam);
+	            writer.dispose();
+	        }
+            publishRendition(tempResultFile, resultFile);
         } catch (Exception e) {
             throw new DotRuntimeException("unable to convert file:" +file + " : " +  e.getMessage(),e);
         }
