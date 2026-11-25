@@ -150,6 +150,7 @@ import org.junit.runners.Suite;
     com.dotcms.rest.api.v1.system.role.RoleResourceCheckRolesIntegrationTest.class,
         RoleResourceIntegrationTest.class,
     com.dotmarketing.portlets.workflows.action.EditWorkflowTaskActionTest.class,
+    com.dotcms.auth.FailedLoginRecordingTest.class,
         FileAssetContainerPermissionInheritanceTest.class,
 
         // System event delivery in a cluster (issue #36827). The migration runs first so the
