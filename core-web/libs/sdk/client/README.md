@@ -129,11 +129,13 @@ The check never changes request or response behavior, and in several cases it lo
 `@dotcms/react` and `@dotcms/angular` make their requests through `@dotcms/client`, so they get this check automatically as long as you keep its default `FetchHttpClient`. If you supply your own transport — for example, an Angular `HttpClient`-based adapter passed to the provider's `httpClient` option — the check doesn't run.
 
 > [!NOTE]
-> If you're self-hosting and have customized [CORS headers](https://dev.dotcms.com/docs/cors-header-configuration), make sure browser-side SDK requests can still see `X-DotCMS-Version` and `X-DotCMS-Min-SDK` — otherwise the version check silently stops seeing them. The global default (`Access-Control-Expose-Headers: *`) exposes both, so most instances need no changes. Watch for these cases:
+> If you're self-hosting and have customized [CORS headers](https://dev.dotcms.com/docs/cors-header-configuration), make sure browser-side SDK requests can still see `X-DotCMS-Version` and `X-DotCMS-Min-SDK` — otherwise the version check silently stops seeing them. The global default (`Access-Control-Expose-Headers: *`) exposes both, so most instances need no changes.
+>
+> These cases assume your cross-origin requests already succeed. If they're blocked outright — for example, because the `Authorization` header isn't allowed, or because a credentialed request gets `Access-Control-Allow-Origin: *` — fix that first; see [CORS header configuration](https://dev.dotcms.com/docs/cors-header-configuration). Then watch for these cases:
 >
 > - **A custom mapping for a REST resource** replaces the global defaults entirely rather than merging with them. Even if you only meant to change the allowed origin, add both headers to that mapping's `Access-Control-Expose-Headers` (or keep it at `*`).
 > - **A custom `graphql` mapping** is merged with the defaults, so only an explicit `Access-Control-Expose-Headers` override needs both headers. Note that GraphQL responses served from the GraphQL cache send their own fixed wildcard CORS headers, so `api.cors.graphql.*` overrides don't apply to those responses.
-> - **`credentials: 'include'`** in your `requestOptions`: browsers don't honor `*` for credentialed requests, so the headers must be listed explicitly. (`client.page.get()` forwards only the `headers` from `requestOptions`, so this setting doesn't affect page requests.)
+> - **`credentials: 'include'`** in your `requestOptions`: browsers don't honor `Access-Control-Expose-Headers: *` for credentialed requests, so list both headers explicitly. (`client.page.get()` forwards only the `headers` from `requestOptions`, so this setting doesn't affect page requests.)
 
 #### Environment Setup
 
