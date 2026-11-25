@@ -14,6 +14,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { DialogService } from 'primeng/dynamicdialog';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
@@ -25,7 +26,7 @@ import { DotWysiwygPluginService } from '../../dot-wysiwyg-plugin/dot-wysiwyg-pl
 
 @Component({
     selector: 'dot-wysiwyg-tinymce',
-    imports: [EditorComponent, ReactiveFormsModule],
+    imports: [EditorComponent, ProgressSpinnerModule, ReactiveFormsModule],
     templateUrl: './dot-wysiwyg-tinymce.component.html',
     styleUrl: './dot-wysiwyg-tinymce.component.scss',
     viewProviders: [
@@ -61,6 +62,13 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
      * does not propagate from iframes in Chrome.
      */
     $isFocused = signal(false);
+
+    /**
+     * Whether TinyMCE has finished initialising (`onInit`). Until then — while the
+     * system-wide config loads and while TinyMCE builds its iframe — the field shows a
+     * loading overlay in the editor's place, so the form neither jumps nor looks broken.
+     */
+    $isEditorReady = signal(false);
 
     /**
      * A computed property that retrieves and parses custom TinyMCE properties that comes from
@@ -115,6 +123,10 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
             // editor unnamed.
             iframe_aria_text: this.$field()?.name,
             iframe_attrs: { title: this.$field()?.name },
+            // TinyMCE 6 shows an "Upgrade" promotion in the toolbar by default. Not in
+            // dotCMS: forced off after the spreads so no system-wide or field config can
+            // turn it back on.
+            promotion: false,
             setup: (editor) => {
                 this.#dotWysiwygPluginService.initializePlugins(editor);
             }
@@ -144,6 +156,7 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
      */
     handleEditorInit(event: { editor: Editor }): void {
         this.#editor = event.editor;
+        this.$isEditorReady.set(true);
         this.#editor.on('focus', () => this.$isFocused.set(true));
         this.#editor.on('blur', () => this.$isFocused.set(false));
     }

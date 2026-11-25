@@ -1,4 +1,4 @@
-import { createHostFactory, mockProvider, SpectatorHost } from '@openng/spectator/vitest';
+import { byTestId, createHostFactory, mockProvider, SpectatorHost } from '@openng/spectator/vitest';
 import { EditorComponent } from '@tinymce/tinymce-angular';
 import { of, Subject } from 'rxjs';
 import { Editor, RawEditorOptions } from 'tinymce';
@@ -149,6 +149,45 @@ describe('DotWysiwygTinymceComponent', () => {
             expect(init).not.toHaveProperty('systemWideOption');
         });
 
+        it('should cover the field with a loading overlay until TinyMCE has initialised', () => {
+            render();
+
+            // Config still pending: no editor yet, the overlay holds the field's place.
+            expect(spectator.query(byTestId('wysiwyg-tinymce-loading'))).toBeTruthy();
+            expect(spectator.query(EditorComponent)).toBeNull();
+
+            respond(mockSystemWideConfig);
+
+            // Editor created but TinyMCE has not initialised yet: the overlay stays.
+            expect(spectator.query(EditorComponent)).toBeTruthy();
+            expect(spectator.query(byTestId('wysiwyg-tinymce-loading'))).toBeTruthy();
+
+            spectator.component.handleEditorInit({ editor: { on: vi.fn() } as unknown as Editor });
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('wysiwyg-tinymce-loading'))).toBeNull();
+        });
+
+        it('should keep the TinyMCE upgrade promotion off whatever the configs say', () => {
+            // A dotCMS decision: neither get.vtl nor a tinymceprops field variable may show it.
+            render({
+                ...WYSIWYG_MOCK,
+                fieldVariables: [
+                    {
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
+                        fieldId: '1',
+                        id: '1',
+                        key: 'tinymceprops',
+                        value: '{ "promotion": true }'
+                    }
+                ]
+            });
+
+            respond({ ...mockSystemWideConfig, promotion: true });
+
+            expect(spectator.query(EditorComponent)?.init?.promotion).toBe(false);
+        });
+
         it('should keep the tinymceprops field variable above the system-wide config', () => {
             render({
                 ...WYSIWYG_MOCK,
@@ -205,6 +244,7 @@ describe('DotWysiwygTinymceComponent', () => {
             ...mockSystemWideConfig,
             iframe_aria_text: WYSIWYG_MOCK.name,
             iframe_attrs: { title: WYSIWYG_MOCK.name },
+            promotion: false,
             setup: (editor: Editor) => dotWysiwygPluginService.initializePlugins(editor)
         };
 
@@ -226,6 +266,7 @@ describe('DotWysiwygTinymceComponent', () => {
                 // TinyMCE renders into an iframe; this is its own option for that iframe's name.
                 iframe_aria_text: WYSIWYG_MOCK.name,
                 iframe_attrs: { title: WYSIWYG_MOCK.name },
+                promotion: false,
                 setup: (editor: Editor) => dotWysiwygPluginService.initializePlugins(editor)
             })
         );
@@ -239,6 +280,7 @@ describe('DotWysiwygTinymceComponent', () => {
                 // TinyMCE renders into an iframe; this is its own option for that iframe's name.
                 iframe_aria_text: WYSIWYG_MOCK.name,
                 iframe_attrs: { title: WYSIWYG_MOCK.name },
+                promotion: false,
                 setup: (editor: Editor) => dotWysiwygPluginService.initializePlugins(editor)
             })
         );
@@ -266,6 +308,7 @@ describe('DotWysiwygTinymceComponent', () => {
                 // TinyMCE renders into an iframe; this is its own option for that iframe's name.
                 iframe_aria_text: WYSIWYG_MOCK.name,
                 iframe_attrs: { title: WYSIWYG_MOCK.name },
+                promotion: false,
                 setup: (editor: Editor) => dotWysiwygPluginService.initializePlugins(editor)
             })
         );
