@@ -1,9 +1,3 @@
-// The form host is the overflow-auto scroll container, so the tab list (which
-// carries the command bar) is pinned to the top while the fields scroll under it.
-// An opaque background keeps the scrolling fields from showing through.
-:host ::ng-deep .p-tablist {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    background-color: var(--p-tabs-tablist-background, var(--p-content-background, #ffffff));
-}
+// The tab panels (`[data-testid="edit-content-form-scroll"]`) are the scroll container and the
+// tab list sits above them, outside the scroll, so the scrollbar runs alongside the fields
+// only. Nothing to pin here anymore; the tab list keeps the theme's own background.

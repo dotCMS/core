@@ -126,7 +126,9 @@ const LOCK_ONLY_FIELDS = new Set(['locked', 'lockedBy', 'lockedByName', 'lockedO
         ])
     ],
     host: {
-        class: 'min-w-0 max-w-full overflow-auto overflow-x-hidden'
+        // The host never scrolls: the tab panels inside the form are the scroll container,
+        // so the scrollbar does not run alongside the tab bar (#38724).
+        class: 'min-w-0 max-w-full overflow-hidden'
     }
 })
 export class DotEditContentFormComponent implements OnInit {
@@ -995,10 +997,11 @@ export class DotEditContentFormComponent implements OnInit {
             return;
         }
 
-        // Try multiple container selectors for better compatibility
-        const scrollContainer = this.#document.querySelector<HTMLElement>(
-            '.edit-content-layout__body'
-        );
+        // The tab panels are the scroll container (see the template); the body cell is kept
+        // as a fallback for a host that renders the form without them.
+        const scrollContainer =
+            this.#document.querySelector<HTMLElement>('[data-testid="edit-content-form-scroll"]') ??
+            this.#document.querySelector<HTMLElement>('.edit-content-layout__body');
         if (!scrollContainer) {
             return;
         }

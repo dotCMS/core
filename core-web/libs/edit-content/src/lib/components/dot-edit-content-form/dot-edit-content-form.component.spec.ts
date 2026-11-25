@@ -1322,6 +1322,53 @@ describe('DotFormComponent', () => {
         });
     });
 
+    describe('Scroll container (#38724)', () => {
+        beforeEach(() => {
+            dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                of(MOCK_CONTENTTYPE_2_TABS)
+            );
+            workflowActionsService.getByInode.mockReturnValue(
+                of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
+            );
+            dotEditContentService.getContentById.mockReturnValue(of(MOCK_CONTENTLET_1_OR_2_TABS));
+            workflowActionsService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+            dotContentletService.canLock.mockReturnValue(
+                of({ canLock: true } as DotContentletCanLock)
+            );
+
+            store.initializeExistingContent({
+                inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                depth: DotContentletDepths.ONE
+            });
+            spectator.detectChanges();
+        });
+
+        it('should scroll the tab panels only, below a fixed tab bar', () => {
+            // The scrollbar must not run alongside the Content / SEO tab bar: the panels are
+            // the scroll container and the host itself never scrolls.
+            expect(spectator.query(byTestId('edit-content-form-scroll'))).toHaveClass(
+                'overflow-y-auto'
+            );
+            expect(spectator.element).not.toHaveClass('overflow-auto');
+        });
+
+        it('should scroll the tab panels to the first invalid field', () => {
+            const panels = spectator.query(byTestId('edit-content-form-scroll')) as HTMLElement;
+            const scrollTo = vi.fn();
+            panels.scrollTo = scrollTo;
+            const marker = document.createElement('div');
+            marker.className = 'field-error-marker';
+            panels.appendChild(marker);
+
+            component.scrollToFirstError();
+
+            expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ behavior: 'smooth' }));
+        });
+    });
+
     describe('Lock functionality', () => {
         beforeEach(() => {
             dotContentTypeService.getContentTypeWithRender.mockReturnValue(
