@@ -9,14 +9,16 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
+    DestroyRef,
     inject,
     input,
     NgZone,
     OnDestroy,
+    OnInit,
     signal,
     viewChild
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ControlContainer, FormControl, ReactiveFormsModule, Validator } from '@angular/forms';
 
 import { PaginatorModule } from 'primeng/paginator';
@@ -55,10 +57,18 @@ import { getFieldVariablesParsed, stringToJson } from '../../utils/functions.uti
         }
     ]
 })
-export class DotEditContentMonacoEditorControlComponent implements OnDestroy {
+export class DotEditContentMonacoEditorControlComponent implements OnInit, OnDestroy {
     #monacoLoaderService: MonacoEditorLoaderService = inject(MonacoEditorLoaderService);
     #ngZone: NgZone = inject(NgZone);
     #controlContainer: ControlContainer = inject(ControlContainer);
+    #destroyRef = inject(DestroyRef);
+
+    /**
+     * Whether the backing form control is disabled. `@materia-ui/ngx-monaco-editor` implements
+     * no `setDisabledState`, so a disabled control alone leaves Monaco editable; this mirrors
+     * the control's status into the editor's `readOnly` option (#38724 R4).
+     */
+    $isDisabled = signal(false);
 
     /**
      * Holds a reference to the MonacoEditorComponent.
@@ -128,9 +138,26 @@ export class DotEditContentMonacoEditorControlComponent implements OnDestroy {
             ariaLabel: this.$field()?.name,
             // A language configured in monacoOptions pins the editor, so content whose words look
             // like another language (issue #37996) is not re-detected and checked as that language.
-            language: this.$forcedLanguage() || customProps?.language || this.$language()
+            language: this.$forcedLanguage() || customProps?.language || this.$language(),
+            // A disabled control (read-only form) always wins over a custom monacoOptions.
+            readOnly: this.$isDisabled() || !!customProps?.readOnly
         };
     });
+
+    ngOnInit(): void {
+        const control = this.formControl;
+
+        if (!control) {
+            return;
+        }
+
+        // Initial state, then every status change; `ngx-monaco-editor` applies the updated
+        // `options` through `editor.updateOptions`.
+        this.$isDisabled.set(control.disabled);
+        control.statusChanges
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe(() => this.$isDisabled.set(control.disabled));
+    }
 
     /**
      * A signal that holds the current language of the Monaco editor.

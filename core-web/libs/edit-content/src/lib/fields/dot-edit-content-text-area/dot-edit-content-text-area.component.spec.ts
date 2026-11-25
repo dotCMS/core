@@ -6,6 +6,8 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
+import { Select } from 'primeng/select';
+
 import { DotLanguagesService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotLanguageVariableSelectorComponent } from '@dotcms/ui';
@@ -69,6 +71,37 @@ describe('DotEditContentTextAreaComponent', () => {
                 useValue: new MockDotMessageService({})
             }
         ]
+    });
+
+    describe('disabled control (read-only form, R4 #38724)', () => {
+        beforeEach(() => {
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [TEXT_AREA_FIELD_MOCK.variable]: new FormControl({
+                                value: '',
+                                disabled: true
+                            })
+                        }),
+                        field: TEXT_AREA_FIELD_MOCK,
+                        contentlet: createFakeContentlet({ [TEXT_AREA_FIELD_MOCK.variable]: '' })
+                    }
+                }
+            );
+            spectator.detectChanges();
+        });
+
+        it('should disable the editor-mode dropdown so the user cannot switch to an editable editor', () => {
+            expect(spectator.query(Select)?.disabled()).toBe(true);
+        });
+
+        it('should hide the language-variable selector, which only inserts text', () => {
+            expect(spectator.query(DotLanguageVariableSelectorComponent)).toBeNull();
+        });
     });
 
     describe('should have the variable as id', () => {

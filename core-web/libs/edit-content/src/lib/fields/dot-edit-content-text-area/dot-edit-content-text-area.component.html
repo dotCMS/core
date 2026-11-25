@@ -11,6 +11,10 @@
     <dot-card-field-content>
         <div class="flex flex-col gap-2">
             <div class="flex flex-wrap justify-between gap-2">
+                <!-- Both controls sit outside the FormGroup (standalone ngModel / plain
+                     output), so a disabled form does not reach them: the dropdown is disabled
+                     and the variable selector hidden while the control is disabled, or a
+                     read-only user could switch to Code and type into Monaco (#38724 R4). -->
                 <p-select
                     class="min-w-40"
                     [class.ng-invalid]="fieldHasError"
@@ -18,10 +22,14 @@
                     [options]="textAreaEditorOptions"
                     [(ngModel)]="$selectedEditorDropdown"
                     [ngModelOptions]="{ standalone: true }"
+                    [disabled]="isDisabled"
                     (onChange)="onEditorChange($event.value)"
                     data-testId="editor-selector" />
-                <dot-language-variable-selector
-                    (onSelectLanguageVariable)="onSelectLanguageVariable($event)" />
+                @if (!isDisabled) {
+                    <dot-language-variable-selector
+                        data-testid="language-variable-selector"
+                        (onSelectLanguageVariable)="onSelectLanguageVariable($event)" />
+                }
             </div>
 
             <div class="flex min-h-0 flex-col">

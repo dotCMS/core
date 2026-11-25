@@ -189,6 +189,40 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
         });
     });
 
+    describe('disabled control (read-only form, R4 #38724)', () => {
+        beforeEach(() => {
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-wysiwyg-field [field]="field" [contentlet]="contentlet" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [WYSIWYG_MOCK.variable]: new FormControl({
+                                value: null,
+                                disabled: true
+                            }),
+                            disabledWYSIWYG: new FormControl([])
+                        }),
+                        field: WYSIWYG_MOCK,
+                        contentlet: WYSIWYG_FIELD_CONTENTLET_MOCK_NO_CONTENT
+                    }
+                }
+            );
+            spectator.detectChanges();
+        });
+
+        it('should disable the editor-mode dropdown so the user cannot switch to an editable editor', () => {
+            // The dropdown is a standalone ngModel, outside the FormGroup that form.disable()
+            // reaches; switching to Code would open a Monaco the user could type into.
+            expect(spectator.query(Select)?.disabled()).toBe(true);
+        });
+
+        it('should hide the language-variable selector, which only inserts text', () => {
+            expect(spectator.query(DotLanguageVariableSelectorComponent)).toBeNull();
+        });
+    });
+
     describe('disabledWYSIWYGChange', () => {
         it('should emit disabledWYSIWYGChange when switching from TinyMCE to Monaco editor', () => {
             // Arrange: Create a contentlet with empty content and no disabled settings
