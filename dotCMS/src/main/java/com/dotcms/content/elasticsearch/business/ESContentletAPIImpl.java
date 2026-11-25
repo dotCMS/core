@@ -7104,7 +7104,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * it lives, and the copy may name another site or folder and owner; until
      * {@link #populateHost(Contentlet)} puts it back at the System Host root, a permission lookup
      * on the copy would resolve them from the place it names. The stored favorite is the stored
-     * version in the language and variant being edited, since each version carries its own owner;
+     * version in the language and variant being edited (the default language when none is set,
+     * as checkin saves it there), since each version carries its own owner;
      * when that version does not exist yet, it is looked up in the DEFAULT variant in any language
      * and then in any variant, since a favorite may exist only in a variant other than DEFAULT. When the
      * identifier exists but no version of it can be loaded, the save is refused. When nothing with that identifier is
@@ -7121,9 +7122,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final boolean respectFrontendRoles, final User user)
             throws DotDataException, DotSecurityException {
 
-        // the version being edited first: each version carries its own owner
+        // the version being edited first: each version carries its own owner. A checkin without a
+        // language saves the default-language version, so that is the one to authorize against
+        final long languageId = contentlet.getLanguageId() == 0
+                ? languageAPI.getDefaultLanguage().getId()
+                : contentlet.getLanguageId();
         Contentlet stored = contentFactory.findContentletByIdentifier(contentlet.getIdentifier(),
-                false, contentlet.getLanguageId(), contentlet.getVariantId());
+                false, languageId, contentlet.getVariantId());
         if (null == stored) {
             stored = findContentletByIdentifierAnyLanguage(contentlet.getIdentifier(), true);
         }

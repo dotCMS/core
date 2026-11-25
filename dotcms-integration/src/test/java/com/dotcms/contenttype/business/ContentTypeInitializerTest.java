@@ -10,6 +10,7 @@ import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.UserDataGen;
@@ -42,6 +43,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
@@ -1191,6 +1193,68 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
             Try.run(() -> ContentletDataGen.destroy(favorite));
             UserDataGen.remove(defaultOwner);
             UserDataGen.remove(variantOwner);
+        }
+    }
+
+    /**
+     * Method to test: saving an existing favorite page through the contentlet API.
+     * Given Scenario: A favorite's only DEFAULT-variant version is in a second language and owned
+     * by one user; its default-language version exists only in another variant and is owned by a
+     * second user. The second user saves an edit to their version with no language set, which
+     * checkin stores as the default-language version.
+     * ExpectedResult: The save succeeds, because it is authorized against the default-language
+     * version it will update, not against a version in another language found as a fallback.
+     */
+    @Test
+    public void test_default_language_owner_can_edit_a_favorite_saved_without_a_language()
+            throws Exception {
+
+        final ContentType contentType = prepareFirstInit();
+        new ContentTypeInitializer().init();
+
+        final Language secondLanguage = new LanguageDataGen().nextPersisted();
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final User secondLanguageOwner = new UserDataGen().active(true)
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        final User defaultLanguageOwner = new UserDataGen().active(true)
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        final Contentlet favorite = new ContentletDataGen(contentType)
+                .languageId(secondLanguage.getId())
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .setProperty("title", "favorite").setProperty("url", "/favorite-" + System.nanoTime())
+                .setProperty(Contentlet.OWNER_KEY, secondLanguageOwner.getUserId())
+                .nextPersisted();
+        try {
+
+            final Contentlet defaultLanguageVersion = ContentletDataGen.createNewVersion(favorite,
+                    variant, APILocator.getLanguageAPI().getDefaultLanguage(),
+                    Map.of(Contentlet.OWNER_KEY, defaultLanguageOwner.getUserId()));
+            Assert.assertEquals("The default-language version must be owned by the second user",
+                    defaultLanguageOwner.getUserId(), defaultLanguageVersion.getOwner());
+
+            final Contentlet edit = APILocator.getContentletAPI()
+                    .checkout(defaultLanguageVersion.getInode(), APILocator.systemUser(), false);
+            edit.setVariantId(variant.name());
+            edit.setLanguageId(0);
+            edit.setProperty("title", "edited");
+            // the checkouts locked both versions for the system user; unlock them so only the
+            // permission check can refuse
+            APILocator.getContentletAPI().unlock(defaultLanguageVersion, APILocator.systemUser(), false);
+            APILocator.getContentletAPI().unlock(favorite, APILocator.systemUser(), false);
+
+            final Contentlet saved = APILocator.getContentletAPI()
+                    .checkin(edit, defaultLanguageOwner, false);
+
+            Assert.assertEquals("The edit must be saved to the default language",
+                    APILocator.getLanguageAPI().getDefaultLanguage().getId(), saved.getLanguageId());
+            Assert.assertEquals("The default-language owner's edit must be saved", "edited",
+                    saved.getStringProperty("title"));
+        } finally {
+
+            Try.run(() -> ContentletDataGen.destroy(favorite));
+            UserDataGen.remove(secondLanguageOwner);
+            UserDataGen.remove(defaultLanguageOwner);
+            Try.run(() -> LanguageDataGen.remove(secondLanguage));
         }
     }
 
