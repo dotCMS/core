@@ -13,6 +13,7 @@ import com.dotcms.datagen.EnvironmentDataGen;
 import com.dotcms.datagen.PushPublishingEndPointDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.endpoint.bean.impl.PushPublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.pusher.AuthCredentialPushPublishUtil.PushPublishAuthenticationToken;
 import com.dotcms.util.IntegrationTestInitService;
@@ -309,6 +310,24 @@ public class AuthCredentialPushPublishUtilTest extends IntegrationTestBase {
                     AuthCredentialPushPublishUtil.INSTANCE.getRequestToken(endpoint).isEmpty());
         } finally {
             APILocator.getPublisherEndPointAPI().deleteEndPointById(endpoint.getId());
+        }
+    }
+
+    /**
+     * Method to test: {@link AuthCredentialPushPublishUtil#getRequestToken(PublishingEndPoint)}
+     * Given Scenario: The sender's record of a receiver holds the unencrypted expired or invalid
+     *                 marker that push publishing stores after the receiver refused its key.
+     * ExpectedResult: No token is produced and no exception escapes, so audit polling of the
+     *                 other endpoints carries on.
+     */
+    @Test
+    public void test_getRequestToken_tokenMarkerKey_isEmpty() {
+        for (final String marker : new String[]{AuthCredentialPushPublishUtil.EXPIRED_TOKEN_ERROR_KEY,
+                AuthCredentialPushPublishUtil.INVALID_TOKEN_ERROR_KEY}) {
+            final PublishingEndPoint endpoint = new PushPublishingEndPoint();
+            endpoint.setAuthKey(new StringBuilder(marker));
+            assertTrue("An endpoint holding " + marker + " must not produce a token",
+                    AuthCredentialPushPublishUtil.INSTANCE.getRequestToken(endpoint).isEmpty());
         }
     }
 }

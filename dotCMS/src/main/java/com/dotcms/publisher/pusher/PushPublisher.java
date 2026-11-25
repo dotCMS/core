@@ -509,7 +509,8 @@ public class PushPublisher extends Publisher {
 	 * file it names when it is a path. An endpoint whose key (or key file) is empty or made only of
 	 * spaces has no key, and neither has one whose key file is larger than
 	 * {@link #MAX_KEY_FILE_BYTES}, nor one whose key contains a path separator but is not a valid
-	 * path, so push publishing neither sends a token for it nor accepts one from it.
+	 * path, nor one whose key was replaced by the expired or invalid marker after the receiver
+	 * refused it, so push publishing neither sends a token for it nor accepts one from it.
 	 *
 	 * @param endpoint the endpoint, may be {@code null}
 	 * @return the key, or empty when the endpoint has none
@@ -519,6 +520,10 @@ public class PushPublisher extends Publisher {
 
 		if(endpoint==null || endpoint.getAuthKey() ==null) {
 			Logger.warn(PushPublisher.class,"Endpoint or endpoint key is null:" + endpoint);
+			return Optional.empty();
+		}
+		if (!endpoint.hasAuthKey()) {
+			// empty, or the unencrypted expired/invalid marker stored after the receiver refused the key
 			return Optional.empty();
 		}
 
