@@ -44,6 +44,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
@@ -1318,6 +1319,77 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
             APILocator.getHostAPI().delete(site, APILocator.systemUser(), false);
             UserDataGen.remove(owner);
             UserDataGen.remove(editor);
+        }
+    }
+
+    /**
+     * Method to test: saving an existing favorite page in place, without a new version.
+     * Given Scenario: Two back-end users each own a favorite. The second user saves their own
+     * favorite in place, then saves it in place again carrying the inode of the first user's
+     * favorite.
+     * ExpectedResult: The first save succeeds; the second is refused, because an in-place save
+     * overwrites the version with the given inode and is authorized against that version, and the
+     * first user's favorite is left as it was.
+     */
+    @Test
+    public void test_in_place_favorite_save_is_authorized_against_the_inode_it_updates()
+            throws Exception {
+
+        final ContentType contentType = prepareFirstInit();
+        new ContentTypeInitializer().init();
+
+        final User owner = new UserDataGen().active(true)
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        final User other = new UserDataGen().active(true)
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        final Contentlet ownersFavorite = new ContentletDataGen(contentType)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .setProperty("title", "favorite").setProperty("url", "/favorite-" + System.nanoTime())
+                .setProperty(Contentlet.OWNER_KEY, owner.getUserId())
+                .nextPersisted();
+        final Contentlet othersFavorite = new ContentletDataGen(contentType)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .setProperty("title", "other").setProperty("url", "/favorite-" + System.nanoTime())
+                .setProperty(Contentlet.OWNER_KEY, other.getUserId())
+                .nextPersisted();
+        try {
+
+            final Contentlet ownEdit = APILocator.getContentletAPI()
+                    .checkout(othersFavorite.getInode(), APILocator.systemUser(), false);
+            ownEdit.setInode(othersFavorite.getInode());
+            ownEdit.setProperty("title", "own edit");
+            // checkout locked it for the system user; unlock so only the permission check can refuse
+            APILocator.getContentletAPI().unlock(othersFavorite, APILocator.systemUser(), false);
+            final Contentlet saved = APILocator.getContentletAPI().checkinWithoutVersioning(
+                    ownEdit, (ContentletRelationships) null, null, null, other, false);
+            Assert.assertEquals("The owner's in-place save must be applied", "own edit",
+                    saved.getStringProperty("title"));
+
+            final Contentlet edit = APILocator.getContentletAPI()
+                    .checkout(othersFavorite.getInode(), APILocator.systemUser(), false);
+            edit.setInode(ownersFavorite.getInode());
+            edit.setProperty("title", "edited");
+            APILocator.getContentletAPI().unlock(othersFavorite, APILocator.systemUser(), false);
+
+            final DotSecurityException refused = Assert.assertThrows(DotSecurityException.class,
+                    () -> APILocator.getContentletAPI().checkinWithoutVersioning(
+                            edit, (ContentletRelationships) null, null, null, other, false));
+            Assert.assertTrue("The save must be refused for lack of WRITE on the favorite: "
+                            + refused.getMessage(),
+                    refused.getMessage().contains("doesn't have write permissions"));
+
+            final Contentlet stored = APILocator.getContentletAPI()
+                    .find(ownersFavorite.getInode(), APILocator.systemUser(), false);
+            Assert.assertEquals("The first user's favorite must keep its title", "favorite",
+                    stored.getStringProperty("title"));
+            Assert.assertEquals("The first user's favorite must keep its identifier",
+                    ownersFavorite.getIdentifier(), stored.getIdentifier());
+        } finally {
+
+            Try.run(() -> ContentletDataGen.destroy(ownersFavorite));
+            Try.run(() -> ContentletDataGen.destroy(othersFavorite));
+            UserDataGen.remove(owner);
+            UserDataGen.remove(other);
         }
     }
 

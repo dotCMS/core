@@ -6034,7 +6034,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         "Unable to checkin an archived piece of content, please un-archive first");
             }
 
-            checkPermission(contentlet, respectFrontendRoles, user);
+            checkPermission(contentlet, respectFrontendRoles, user, createNewVersion);
 
             if (createNewVersion && categories == null) {
                 throw new IllegalArgumentException(
@@ -7053,7 +7053,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     /**
      * Verifies the user may save the given contentlet. An existing contentlet needs WRITE on
      * itself, judged on its stored version for a favorite page (see
-     * {@link #canWriteStoredFavorite(Contentlet, boolean, User)}); a new contentlet needs WRITE on
+     * {@link #canWriteStoredFavorite(Contentlet, boolean, User, boolean)}); a new contentlet needs WRITE on
      * its content type. On top of that, unless
      * {@link FeatureFlagName#FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK} is off, a new
      * contentlet placed somewhere other than its type's default placement, and an existing
@@ -7063,13 +7063,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param contentlet           the {@link Contentlet} about to be checked in
      * @param respectFrontendRoles whether front-end roles (anonymous, logged-in site user) count
      * @param user                 the {@link User} performing the checkin
+     * @param createNewVersion     {@code false} when the save updates the version with the
+     *                             contentlet's inode in place rather than adding a new one
      * @throws DotSecurityException when the user lacks any of the required permissions
      * @throws DotDataException     when a permission or asset lookup fails
      */
     private void checkPermission(
             final Contentlet contentlet,
             final boolean respectFrontendRoles,
-            final User user) throws DotDataException, DotSecurityException {
+            final User user,
+            final boolean createNewVersion) throws DotDataException, DotSecurityException {
 
         DotPreconditions.checkNotNull(contentlet);
 
@@ -7081,7 +7084,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             canWrite = permissionAPI.doesUserHavePermission(contentlet.getContentType(),
                     PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles);
         } else if (isFavoritePage(contentlet)) {
-            canWrite = canWriteStoredFavorite(contentlet, respectFrontendRoles, user);
+            canWrite = canWriteStoredFavorite(contentlet, respectFrontendRoles, user,
+                    createNewVersion);
         } else {
             canWrite = permissionAPI.doesUserHavePermission(contentlet,
                     PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles);
@@ -7109,18 +7113,32 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * when that version does not exist yet, it is looked up in the DEFAULT variant in any language
      * and then in any variant, since a favorite may exist only in a variant other than DEFAULT. When the
      * identifier exists but no version of it can be loaded, the save is refused. When nothing with that identifier is
-     * stored yet, the save creates the favorite, so WRITE on its content type applies.
+     * stored yet, the save creates the favorite, so WRITE on its content type applies. A save
+     * without a new version overwrites the version with the given inode, so it is judged on that
+     * version alone, and refused when that inode is not a version of the same favorite.
      *
      * @param contentlet           the favorite page being checked in, with its identifier set
      * @param respectFrontendRoles whether front-end roles count towards the permission
      * @param user                 the {@link User} performing the checkin
+     * @param createNewVersion     {@code false} when the save updates the version with the
+     *                             contentlet's inode in place
      * @return {@code true} when the user has WRITE on the stored favorite
      * @throws DotDataException     when the stored favorite or its identifier cannot be read
      * @throws DotSecurityException when the stored favorite cannot be read
      */
     private boolean canWriteStoredFavorite(final Contentlet contentlet,
-            final boolean respectFrontendRoles, final User user)
+            final boolean respectFrontendRoles, final User user, final boolean createNewVersion)
             throws DotDataException, DotSecurityException {
+
+        // an in-place save overwrites the version with this inode, so that version is the one
+        // whose owner decides
+        if (!createNewVersion) {
+            final Contentlet target = contentFactory.find(contentlet.getInode());
+            return null != target && isFavoritePage(target)
+                    && contentlet.getIdentifier().equals(target.getIdentifier())
+                    && permissionAPI.doesUserHavePermission(target,
+                            PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles);
+        }
 
         // the version being edited first: each version carries its own owner. A checkin without a
         // language saves the default-language version, so that is the one to authorize against
