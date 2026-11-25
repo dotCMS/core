@@ -11,13 +11,8 @@
         border-color var(--p-inputtext-transition-duration),
         box-shadow var(--p-inputtext-transition-duration);
 
-    .p-datepicker-input {
-        border-right: 0;
-    }
-
-    .p-datepicker-dropdown {
-        border-left: 0;
-    }
+    // The divider between the input and the calendar button is PrimeNG's own, kept on purpose:
+    // it matches every other field with a trailing button (e.g. Site or Folder's copy addon).
 
     // Suppress PrimeNG's default hover/focus styles on the inner input so the
     // ring only appears on the wrapper and encloses both input and button.
