@@ -19940,7 +19940,8 @@ paths:
   /v1/users:
     post:
       description: "Creates a new user. Requires a CMS Administrator. FirstName, LastName,\
-        \ Email and Password are required"
+        \ Email and Password are required. The optional active flag sets the new user's\
+        \ status; omit it to create an active user."
       operationId: createUser
       requestBody:
         content:
@@ -19990,7 +19991,10 @@ paths:
         \ the user's individual role) are never modified, keys that resolve to no\
         \ role are ignored, and null or blank entries are rejected with 400. Note\
         \ that roles without a key cannot be expressed in this list — manage those\
-        \ through the role-centric /v1/roles/{roleId}/users endpoints instead."
+        \ through the role-centric /v1/roles/{roleId}/users endpoints instead. The\
+        \ optional active flag activates or deactivates the user; omit it to leave\
+        \ the status untouched. Deactivating a user invalidates their login tokens\
+        \ and ends their sessions."
       operationId: updateUser
       requestBody:
         content:
@@ -42784,6 +42788,12 @@ components:
       properties:
         active:
           type: boolean
+          description: "Whether the user account is active. Absent = the status is\
+            \ left as it is on update, and a new user is created active. An explicit\
+            \ value activates or deactivates the user; deactivating invalidates their\
+            \ login tokens and ends their sessions."
+          example: true
+          nullable: true
         additionalInfo:
           type: object
           additionalProperties:

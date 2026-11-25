@@ -17,7 +17,13 @@ import java.util.Map;
 public final class UserForm extends Validated implements LanguageSupport  {
 
     private String userId;
-    private final boolean active;
+
+    @Schema(description = "Whether the user account is active. Absent = the status is left as it "
+            + "is on update, and a new user is created active. An explicit value activates or "
+            + "deactivates the user; deactivating invalidates their login tokens and ends their "
+            + "sessions.",
+            nullable = true, example = "true")
+    private final Boolean active;
     @NotNull
     @NotBlank
     private final String firstName;
@@ -71,7 +77,16 @@ public final class UserForm extends Validated implements LanguageSupport  {
         return userId;
     }
 
-    public boolean isActive() {
+    /**
+     * The account status sent in the payload. {@code null} means the field was not sent at all,
+     * which leaves the user's status untouched — the same "absent means do not touch" rule
+     * {@link #getRoles()} follows. This is why the field is a {@link Boolean} and not a primitive:
+     * every client written before the status was honoured omits it, and a primitive would read
+     * that omission as {@code false} and lock those users out.
+     *
+     * @return {@code true} or {@code false} as sent, or {@code null} when the field was absent.
+     */
+    public Boolean getActive() {
         return active;
     }
 
@@ -129,7 +144,7 @@ public final class UserForm extends Validated implements LanguageSupport  {
 
     public static final class Builder {
         @JsonProperty private String userId;
-        @JsonProperty private boolean active;
+        @JsonProperty private Boolean active;
         @JsonProperty private String firstName;
         @JsonProperty private String middleName;
         @JsonProperty private String lastName;
@@ -155,7 +170,7 @@ public final class UserForm extends Validated implements LanguageSupport  {
             return this;
         }
 
-        public Builder active(boolean active) {
+        public Builder active(final Boolean active) {
             this.active = active;
             return this;
         }

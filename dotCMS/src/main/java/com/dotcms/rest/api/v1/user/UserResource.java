@@ -1133,7 +1133,8 @@ public class UserResource implements Serializable {
 	@Operation(
 	    operationId = "createUser",
 	    summary = "Create user",
-	    description = "Creates a new user. Requires a CMS Administrator. FirstName, LastName, Email and Password are required"
+	    description = "Creates a new user. Requires a CMS Administrator. FirstName, LastName, Email and Password are required. "
+	            + "The optional active flag sets the new user's status; omit it to create an active user."
 	)
 	@ApiResponses(value = {
 	    @ApiResponse(responseCode = "200",
@@ -1261,6 +1262,11 @@ public class UserResource implements Serializable {
 		user.setMale(createUserForm.isMale());
 		user.setCreateDate(new Date());
 
+		// absent = the status UserAPI#createUser gives a new user; an explicit value wins over it
+		if (null != createUserForm.getActive()) {
+			user.setActive(createUserForm.getActive());
+		}
+
 		if (UtilMethods.isSet(createUserForm.getAdditionalInfo())) {
 			user.setAdditionalInfo(createUserForm.getAdditionalInfo());
 		}
@@ -1315,7 +1321,9 @@ public class UserResource implements Serializable {
 					"individual role) are never modified, keys that resolve to no role are ignored, and null " +
 					"or blank entries are rejected with 400. Note that roles without a key cannot be " +
 					"expressed in this list — manage those through the role-centric /v1/roles/{roleId}/users " +
-					"endpoints instead.",
+					"endpoints instead. The optional active flag activates or deactivates the user; omit it to " +
+					"leave the status untouched. Deactivating a user invalidates their login tokens and ends " +
+					"their sessions.",
 			responses = {
 					@ApiResponse(
 							responseCode = "200",
@@ -1547,6 +1555,10 @@ public class UserResource implements Serializable {
 	 * hashed, and the login tokens issued to the user before the change are invalidated (both done by
 	 * {@link UserAPI#save(User, User, boolean, boolean)}). Without a password, the stored one is left
 	 * as it is.
+	 * <p>
+	 * When the payload has an {@code active} flag, the user's status is set from it, and making a
+	 * user inactive invalidates their login tokens and ends their sessions (again through
+	 * {@link UserAPI#save(User, User, boolean, boolean)}). Without the flag, the status is left as it is.
 	 *
 	 * @param modUser        The user performing the request.
 	 * @param request        The current request.
@@ -1615,6 +1627,15 @@ public class UserResource implements Serializable {
 		}
 
 		userToSave.setMale(updateUserForm.isMale());
+
+		// An absent flag (null) leaves the status as it is; an explicit value activates or
+		// deactivates the user. No extra privilege check is needed here: this endpoint already
+		// requires a Role administrator, the very caller the activate/deactivate endpoints require.
+		// The deactivation itself takes effect in UserAPI#save, which is what invalidates the
+		// user's login tokens and ends their tracked sessions.
+		if (null != updateUserForm.getActive()) {
+			userToSave.setActive(updateUserForm.getActive());
+		}
 
 		if (UtilMethods.isSet(updateUserForm.getAdditionalInfo())) {
 			userToSave.setAdditionalInfo(updateUserForm.getAdditionalInfo());
