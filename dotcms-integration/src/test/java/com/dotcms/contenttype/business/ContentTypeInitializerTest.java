@@ -1145,6 +1145,57 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
 
     /**
      * Method to test: saving an existing favorite page through the contentlet API.
+     * Given Scenario: A favorite's DEFAULT version is owned by one user and its version in another
+     * variant by a second user, and the second user saves an edit to the version they own.
+     * ExpectedResult: The save succeeds, because the edited version is authorized against its own
+     * stored version and owner, not against the DEFAULT version's owner.
+     */
+    @Test
+    public void test_variant_owner_can_edit_their_version_of_a_favorite() throws Exception {
+
+        final ContentType contentType = prepareFirstInit();
+        new ContentTypeInitializer().init();
+
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final User defaultOwner = new UserDataGen().active(true)
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        final User variantOwner = new UserDataGen().active(true)
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        final Contentlet favorite = new ContentletDataGen(contentType)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .setProperty("title", "favorite").setProperty("url", "/favorite-" + System.nanoTime())
+                .setProperty(Contentlet.OWNER_KEY, defaultOwner.getUserId())
+                .nextPersisted();
+        try {
+
+            final Contentlet variantVersion = ContentletDataGen.createNewVersion(favorite, variant,
+                    Map.of(Contentlet.OWNER_KEY, variantOwner.getUserId()));
+            Assert.assertEquals("The variant version must be owned by the second user",
+                    variantOwner.getUserId(), variantVersion.getOwner());
+
+            final Contentlet edit = APILocator.getContentletAPI()
+                    .checkout(variantVersion.getInode(), APILocator.systemUser(), false);
+            edit.setVariantId(variant.name());
+            edit.setProperty("title", "edited");
+            // the checkouts locked it for the system user, and checkin reads the lock from the
+            // DEFAULT version; unlock both so only the permission check can refuse
+            APILocator.getContentletAPI().unlock(variantVersion, APILocator.systemUser(), false);
+            APILocator.getContentletAPI().unlock(favorite, APILocator.systemUser(), false);
+
+            final Contentlet saved = APILocator.getContentletAPI().checkin(edit, variantOwner, false);
+
+            Assert.assertEquals("The variant owner's edit must be saved", "edited",
+                    saved.getStringProperty("title"));
+        } finally {
+
+            Try.run(() -> ContentletDataGen.destroy(favorite));
+            UserDataGen.remove(defaultOwner);
+            UserDataGen.remove(variantOwner);
+        }
+    }
+
+    /**
+     * Method to test: saving an existing favorite page through the contentlet API.
      * Given Scenario: Another back-end user may edit all content of a site but has no permission on
      * a favorite at the System Host root. With no cached permissions and no permission reference
      * for the favorite, that user saves it naming the site.

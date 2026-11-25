@@ -7103,9 +7103,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * stored rather than on the copy being saved. A favorite inherits its permissions from where
      * it lives, and the copy may name another site or folder and owner; until
      * {@link #populateHost(Contentlet)} puts it back at the System Host root, a permission lookup
-     * on the copy would resolve them from the place it names. The stored favorite is looked up in
-     * the DEFAULT variant first and then in any variant, since a favorite may exist only in a
-     * variant other than DEFAULT and its permissions do not depend on the variant. When the
+     * on the copy would resolve them from the place it names. The stored favorite is the stored
+     * version in the language and variant being edited, since each version carries its own owner;
+     * when that version does not exist yet, it is looked up in the DEFAULT variant in any language
+     * and then in any variant, since a favorite may exist only in a variant other than DEFAULT. When the
      * identifier exists but no version of it can be loaded, the save is refused. When nothing with that identifier is
      * stored yet, the save creates the favorite, so WRITE on its content type applies.
      *
@@ -7120,8 +7121,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final boolean respectFrontendRoles, final User user)
             throws DotDataException, DotSecurityException {
 
-        Contentlet stored = findContentletByIdentifierAnyLanguage(
-                contentlet.getIdentifier(), true);
+        // the version being edited first: each version carries its own owner
+        Contentlet stored = contentFactory.findContentletByIdentifier(contentlet.getIdentifier(),
+                false, contentlet.getLanguageId(), contentlet.getVariantId());
+        if (null == stored) {
+            stored = findContentletByIdentifierAnyLanguage(contentlet.getIdentifier(), true);
+        }
         if (null == stored) {
             // the lookup above sees only the DEFAULT variant; a favorite may exist only in another
             final Optional<ContentletVersionInfo> version = FactoryLocator.getVersionableFactory()
