@@ -1,40 +1,27 @@
 import { Routes } from '@angular/router';
 
 import { DotPagesComponent } from './dot-pages.component';
-import {
-    newEditContentForContentTypeGuard,
-    newEditContentForContentletGuard
-} from './guards/dot-pages.guard';
 
-import { DotCreateContentletComponent } from '../../view/components/dot-contentlet-editor/components/dot-create-contentlet/dot-create-contentlet.component';
-import { DotCreateContentletResolver } from '../../view/components/dot-contentlet-editor/components/dot-create-contentlet/dot-create-contentlet.resolver.service';
-import { DotContentletEditorService } from '../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+/**
+ * The Pages portlet. A page opens in the side panel over the listing and the portlet's URL names
+ * it (`editContent`, `editContentLang`); the listing reads its URL on load (#38303, FR-049).
+ *
+ * `/pages/<inode>` and `/pages/new/<type>` are links main already had, and FR-026 keeps every
+ * `/<portlet>/<inode>` link working: they redirect to `/pages` with the panel params, replacing the
+ * path form in history, so they need no `reuseRoute` flag.
+ */
+const loadDeepLink = () =>
+    import('../dot-porlet-detail/dot-edit-content-deep-link/dot-edit-content-deep-link.component').then(
+        (m) => m.DotEditContentDeepLinkComponent
+    );
 
 export const dotPagesRoutes: Routes = [
     {
         component: DotPagesComponent,
         path: '',
-        providers: [DotCreateContentletResolver, DotContentletEditorService],
         children: [
-            {
-                loadComponent: () =>
-                    import('../dot-porlet-detail/dot-portlet-detail.component').then(
-                        (m) => m.DotPortletDetailComponent
-                    ),
-                path: ':asset',
-                canActivate: [newEditContentForContentletGuard],
-                data: {
-                    reuseRoute: false
-                }
-            },
-            {
-                path: 'new/:contentType',
-                canActivate: [newEditContentForContentTypeGuard],
-                component: DotCreateContentletComponent,
-                resolve: {
-                    url: DotCreateContentletResolver
-                }
-            }
+            { path: 'new/:contentType', loadComponent: loadDeepLink },
+            { path: ':asset', loadComponent: loadDeepLink }
         ]
     }
 ];

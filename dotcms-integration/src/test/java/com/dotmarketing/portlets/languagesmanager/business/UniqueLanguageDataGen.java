@@ -13,7 +13,10 @@ import org.apache.commons.lang.RandomStringUtils;
 public class UniqueLanguageDataGen extends AbstractDataGen<Language> {
 
   //These are the languages that we have identified as restricted cause they are used in the tests
-  private static final Set<String> restrictedLanguageCodes = Set.of("de", "en", "es", "fr", "fi", "nl", "ru", "zh", "ep", "sg");
+  private static final Set<String> restrictedLanguageCodes = Set.of("de", "en", "es", "fr", "fi", "nl", "ru", "zh", "ep", "sg",
+          // Legacy ISO codes that java.util.Locale rewrites (ji->yi, iw->he, in->id), so a language
+          // saved with one of them cannot be resolved back from its own Locale
+          "ji", "iw", "in");
 
   @Override
   public Language next() {

@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
+import com.dotcms.auth.SystemUserScope;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.request.MockAttributeRequest;
@@ -131,7 +132,10 @@ public class VelocityScriptActionlet extends WorkFlowActionlet {
                 contextParams.put("host", contentletHost);
             }
 
-            final Object result = engine.eval(request, response, reader, contextParams);
+            final Object result;
+            try (SystemUserScope ignored = SystemUserScope.openIfSystemUser(currentUser)) {
+                result = engine.eval(request, response, reader, contextParams);
+            }
 
             this.stop = processor.abort();
             if (null != result && null != resultKey) {

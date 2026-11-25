@@ -224,6 +224,41 @@ public class LoginLockoutTest {
         }
     }
 
+    /**
+     * Same as {@link #inParallel}, but returns how long each thread's task took in milliseconds instead of its
+     * result. Used to show that concurrent failed logins do not all take the same (minimum) delay.
+     */
+    private static List<Long> timedInParallel(final int threads, final String address, final Callable<?> task)
+            throws Exception {
+        final ExecutorService pool = Executors.newFixedThreadPool(threads);
+        final CountDownLatch start = new CountDownLatch(1);
+        try {
+            final List<Future<Long>> futures = new ArrayList<>();
+            for (int i = 0; i < threads; i++) {
+                futures.add(pool.submit(() -> {
+                    from(address);
+                    start.await();
+                    final long began = System.currentTimeMillis();
+                    try {
+                        task.call();
+                        return System.currentTimeMillis() - began;
+                    } finally {
+                        DbConnectionFactory.closeSilently();
+                        HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+                    }
+                }));
+            }
+            start.countDown();
+            final List<Long> elapsed = new ArrayList<>();
+            for (final Future<Long> future : futures) {
+                elapsed.add(future.get(2, TimeUnit.MINUTES));
+            }
+            return elapsed;
+        } finally {
+            pool.shutdownNow();
+        }
+    }
+
     private static int failedLoginAttempts(final User user) throws Exception {
         return APILocator.getUserAPI().loadUserById(user.getUserId()).getFailedLoginAttempts();
     }
@@ -354,8 +389,8 @@ public class LoginLockoutTest {
     /**
      * Given: the default configuration, where the account-wide limit is off
      * When: two addresses each use up their attempts
-     * Then: only those addresses are locked out; nothing is counted account-wide, and an address that never
-     *       failed still gets in
+     * Then: only those addresses are locked out; nothing is counted toward the account-wide lock, the
+     *       account's pacing count is still kept, and an address that never failed still gets in
      */
     @Test
     public void test_account_wide_limit_is_off_by_default() throws Exception {
@@ -368,6 +403,11 @@ public class LoginLockoutTest {
             assertTrue(lockedFrom(user, ADDRESS));
             assertTrue(lockedFrom(user, OTHER_ADDRESS));
             assertFalse(lockoutRows(user).containsKey(LoginLockout.ACCOUNT_WIDE));
+            // The pacing count is kept whatever the limit is, in a row of its own that locks nothing
+            final Map<String, Object> pacingRow = lockoutRows(user).get(LoginLockout.ACCOUNT_PACING);
+            assertNotNull("the pacing count must be kept with the account-wide limit off", pacingRow);
+            assertEquals(2 * LIMIT, ((Number) pacingRow.get("failures")).intValue());
+            assertEquals(0L, ((Number) pacingRow.get("locked_until")).longValue());
 
             from(THIRD_ADDRESS);
             assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
@@ -1048,6 +1088,454 @@ public class LoginLockoutTest {
             assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
         } finally {
             Config.setProperty(LoginLockout.LOCKOUT_ENABLED, enabledBefore);
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: two different accounts, each failing logins from the same address
+     * When: the source's aggregate failure count is read
+     * Then: it reflects the combined total across both accounts, not just one
+     *
+     * Covers failures spread across many different accounts from one address building a rising total here,
+     * even though each account's own count starts over at 1.
+     */
+    @Test
+    public void test_source_failures_aggregates_across_accounts() throws Exception {
+        final User first = newUser();
+        final User second = newUser();
+        try {
+            failLogins(first, 2);
+            failLogins(second, 3);
+            assertEquals(5, LoginLockout.getInstance().sourceFailures(ADDRESS));
+        } finally {
+            cleanUp(first);
+            cleanUp(second);
+        }
+    }
+
+    /**
+     * Given: one account that has already failed several times from an address
+     * When: a second, fresh account fails once from the same address
+     * Then: its pacing seed reflects the source's accumulated history, not just its own fresh count of 1
+     *
+     * Without this, failures spread across many different accounts from one address never see the delay
+     * escalate, because each account's own attempt count resets to 1.
+     */
+    @Test
+    public void test_pacing_seed_escalates_across_different_accounts_from_one_source() throws Exception {
+        final User first = newUser();
+        final User second = newUser();
+        try {
+            failLogins(first, 3);
+            final LoginLockout.Attempt secondAttempt = LoginLockout.getInstance().begin(second.getUserId(), ADDRESS);
+            final int seed = LoginLockout.getInstance().pacingSeed(secondAttempt);
+            assertTrue("pacing seed " + seed + " should exceed the fresh account's own count of "
+                    + secondAttempt.number(), seed > secondAttempt.number());
+        } finally {
+            cleanUp(first);
+            cleanUp(second);
+        }
+    }
+
+    /**
+     * Given: an account with no attempts yet
+     * When: {@code LIMIT} wrong passwords are counted from one address at the same moment, before any of their
+     *       passwords are checked
+     * Then: every one of them — not only whichever happened to be counted last — is paced by the full count
+     *       the burst reached, not by its own position alone
+     *
+     * Unlike a timed, end-to-end check through the real login path, this reads {@link #pacingSeed} only after
+     * every concurrent {@link #begin} call has already returned, so there is no race between one attempt
+     * reading the source's total and another attempt's count still being written: whichever one of them is
+     * read first, all {@code LIMIT} counts are already in place.
+     */
+    @Test
+    public void test_pacing_seed_reflects_the_full_burst_for_every_concurrent_attempt() throws Exception {
+        final User user = newUser();
+        try {
+            final List<LoginLockout.Attempt> attempts = inParallel(LIMIT, ADDRESS,
+                    () -> LoginLockout.getInstance().begin(user.getUserId(), ADDRESS));
+            for (final LoginLockout.Attempt attempt : attempts) {
+                final int seed = LoginLockout.getInstance().pacingSeed(attempt);
+                assertEquals("attempt #" + attempt.number() + " should be paced by the full burst of " + LIMIT
+                        + ", not just its own position", LIMIT, seed);
+            }
+        } finally {
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: an account, with the default ("pow") delay strategy enabled
+     * When: 3 wrong passwords arrive from one address at the same moment
+     * Then: every one of them is paced by a real escalated count, not only whichever happens to be slowest —
+     *       each is paced by at least its own atomically-counted attempt number, which {@link #begin} already
+     *       assigns before any password is checked, rather than by a per-node field a race can leave
+     *       identical, or unset, for all of them
+     */
+    @Test
+    public void test_concurrent_wrong_logins_get_escalating_delays() throws Exception {
+        final Object strategyBefore = Config.getStringProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, "pow");
+        Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, true);
+        Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, "pow");
+        final User user = newUser();
+        try {
+            final List<Long> elapsed = timedInParallel(3, ADDRESS, () -> login(user, "wrong-in-parallel"));
+            final long min = elapsed.stream().mapToLong(Long::longValue).min().orElseThrow();
+            // Today, every concurrent attempt reads the same fresh (unset) count and sleeps for POW(0) = 0s, so
+            // every one of the three finishes in well under a second. Once paced, every one of the three
+            // actually converges on the same POW(3) = 9s: the source's recorded total catches up to 3 almost as
+            // soon as the attempts are counted, so the seed ends up identical for all three regardless of which
+            // one checks it first. The fastest is checked here, not just the slowest, since a regression that
+            // paced some concurrent attempts correctly and others not at all would still clear a bound on the
+            // slowest alone.
+            assertTrue("fastest of " + elapsed + "ms should also reflect a real escalating sleep, not jitter alone",
+                    min >= 3_000L);
+        } finally {
+            Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, false);
+            Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, strategyBefore);
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: lockout switched off with {@code AUTH_LOCKOUT_ENABLED=false}
+     * When: an attempt is started
+     * Then: it is reported as untracked — the same sentinel a database error in {@link LoginLockout#begin}
+     *       also returns, which lets a caller fall back to a different count rather than treat it as a real,
+     *       freshly-counted attempt of 0
+     */
+    @Test
+    public void test_untrackedAttempt_whenLockoutDisabled_isReportedUntracked() throws Exception {
+        final boolean enabledBefore = Config.getBooleanProperty(LoginLockout.LOCKOUT_ENABLED, true);
+        Config.setProperty(LoginLockout.LOCKOUT_ENABLED, false);
+        final User user = newUser();
+        try {
+            final LoginLockout.Attempt attempt = LoginLockout.getInstance().begin(user.getUserId(), ADDRESS);
+            assertTrue(attempt.isUntracked());
+        } finally {
+            Config.setProperty(LoginLockout.LOCKOUT_ENABLED, enabledBefore);
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: lockout switched on
+     * When: a normal attempt is started
+     * Then: it is reported as tracked, not the sentinel returned when nothing could be recorded
+     */
+    @Test
+    public void test_trackedAttempt_whenLockoutEnabled_isNotReportedUntracked() throws Exception {
+        final User user = newUser();
+        try {
+            final LoginLockout.Attempt attempt = LoginLockout.getInstance().begin(user.getUserId(), ADDRESS);
+            assertFalse(attempt.isUntracked());
+        } finally {
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: two different accounts, each failing logins with no resolvable address ({@link
+     *        LoginLockout#UNKNOWN_SOURCE})
+     * When: a third, fresh account fails once, also with no resolvable address
+     * Then: its pacing seed reflects only its own count, not the other two accounts' failures
+     *
+     * {@code UNKNOWN_SOURCE} is a shared fallback bucket for callers without a real client address, not a real
+     * network origin, so failures recorded under it must not escalate each other's delay the way failures from
+     * one real address do.
+     */
+    @Test
+    public void test_pacing_seed_ignores_other_accounts_under_unknown_source() throws Exception {
+        final User first = newUser();
+        final User second = newUser();
+        final User third = newUser();
+        try {
+            LoginLockout.getInstance().begin(first.getUserId(), LoginLockout.UNKNOWN_SOURCE);
+            LoginLockout.getInstance().begin(second.getUserId(), LoginLockout.UNKNOWN_SOURCE);
+            final LoginLockout.Attempt thirdAttempt =
+                    LoginLockout.getInstance().begin(third.getUserId(), LoginLockout.UNKNOWN_SOURCE);
+            assertEquals(thirdAttempt.number(), LoginLockout.getInstance().pacingSeed(thirdAttempt));
+        } finally {
+            cleanUp(first);
+            cleanUp(second);
+            cleanUp(third);
+        }
+    }
+
+    /**
+     * Given: an account, with the delay strategy configured as a literal per-unit value ({@code
+     *        TIME_MILLS:500})
+     * When: 3 wrong passwords arrive from one address at the same moment
+     * Then: every one of them is scaled past the configured flat value, not only whichever happens to be
+     *       slowest — the literal unit scales by each attempt's own atomically-counted position, the same
+     *       way the default ("pow") strategy already does
+     */
+    @Test
+    public void test_concurrent_wrong_logins_get_escalating_delays_with_literal_strategy() throws Exception {
+        final Object strategyBefore = Config.getStringProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, "pow");
+        Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, true);
+        Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, "TIME_MILLS:500");
+        final User user = newUser();
+        try {
+            final List<Long> elapsed = timedInParallel(3, ADDRESS, () -> login(user, "wrong-in-parallel"));
+            final long min = elapsed.stream().mapToLong(Long::longValue).min().orElseThrow();
+            // Today, the configured "500" always replaces the computed seed outright, so every concurrent
+            // attempt sleeps the same flat 500ms. Once the literal value scales by the computed seed instead
+            // of replacing it, every one of the three actually converges on the same 3 * 500 = 1500ms: the
+            // source's recorded total catches up to 3 almost as soon as the attempts are counted, the same way
+            // the "pow" version of this test converges. The fastest is checked here, not just the slowest, for
+            // the same reason as that test: a regression that scaled some concurrent attempts correctly and
+            // left others flat would still clear a bound on the slowest alone.
+            assertTrue("fastest of " + elapsed + "ms should also reflect a scaled delay, not a flat one",
+                    min >= 1_200L);
+        } finally {
+            Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, false);
+            Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, strategyBefore);
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: an address already locked out of an account, and a literal delay strategy ({@code
+     *        TIME_MILLS:500})
+     * When: one more wrong password is tried from that same, now-locked address
+     * Then: it still sleeps close to the configured delay, not next to nothing — a locked-out attempt is
+     *       never counted, and the lock itself resets the address's own failure count to 0, so pacing by
+     *       the raw count alone would scale the literal value down to zero instead of up
+     */
+    @Test
+    public void test_delay_does_not_collapse_when_an_attempt_is_refused_by_a_lock() throws Exception {
+        final Object strategyBefore = Config.getStringProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, "pow");
+        Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, "TIME_MILLS:500");
+        final User user = newUser();
+        try {
+            lockByFailedLogins(user);
+
+            Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, true);
+            final long start = System.currentTimeMillis();
+            assertEquals(Authenticator.FAILURE, login(user, "wrong-while-locked"));
+            final long elapsed = System.currentTimeMillis() - start;
+            assertTrue("failed login while locked took only " + elapsed + "ms, should reflect the configured delay",
+                    elapsed >= 400L);
+        } finally {
+            Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, false);
+            Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, strategyBefore);
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: lockout switched off, an account whose stored failed-login count is far above the limit, and a
+     *        delay strategy with a literal per-unit rate
+     * When: one more wrong password is tried
+     * Then: the delay is capped the same way the tracked path already is, not scaled by the uncapped stored
+     *       count — a strategy that scales by the seed must not be able to sleep arbitrarily long off a count
+     *       that, with lockout off, nothing ever resets
+     */
+    @Test
+    public void test_delaySeed_caps_the_untracked_fallback_count() throws Exception {
+        final boolean enabledBefore = Config.getBooleanProperty(LoginLockout.LOCKOUT_ENABLED, true);
+        final Object strategyBefore = Config.getStringProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, "pow");
+        Config.setProperty(LoginLockout.LOCKOUT_ENABLED, false);
+        Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, true);
+        Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, "TIME_MILLS:50");
+        final User user = newUser();
+        try {
+            final User counted = APILocator.getUserAPI().loadUserById(user.getUserId());
+            counted.setFailedLoginAttempts(20);
+            APILocator.getUserAPI().save(counted, APILocator.systemUser(), false);
+
+            // Uncapped, this failure would sleep 20 * 50 = 1000ms; capped at LIMIT - 1 it sleeps at most 200ms
+            final long start = System.currentTimeMillis();
+            assertEquals(Authenticator.FAILURE, login(user, "wrong-uncapped"));
+            final long elapsed = System.currentTimeMillis() - start;
+            assertTrue("failed login took " + elapsed + "ms, should be capped well under the uncapped 1000ms",
+                    elapsed < 600L);
+        } finally {
+            Config.setProperty(LoginLockout.LOCKOUT_ENABLED, enabledBefore);
+            Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, false);
+            Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, strategyBefore);
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: an account that has failed once from each of several different addresses
+     * When: one more attempt arrives from an address that has never been seen before
+     * Then: it is paced by the account's own run of failures and not by the single failure its address
+     *       carries, so changing address on every attempt cannot hold them all at the first-failure pace
+     */
+    @Test
+    public void test_pacing_escalates_although_the_address_changes_every_attempt() throws Exception {
+        final User user = newUser();
+        try {
+            final String[] addresses = {"198.51.100.41", "198.51.100.42", "198.51.100.43"};
+            for (final String address : addresses) {
+                from(address);
+                failLogins(user, 1);
+            }
+
+            from("198.51.100.44");
+            final LoginLockout.Attempt attempt = LoginLockout.getInstance()
+                    .begin(user.getUserId(), LoginLockout.clientAddress());
+            // Same order the login flow uses: the failure is recorded before the delay is worked out
+            LoginLockout.getInstance().failed(attempt);
+            assertEquals("the address itself has only ever failed once", 1, attempt.number());
+            assertEquals("a never-seen address must still be paced by the account's own failures",
+                    addresses.length + 1, LoginLockout.getInstance().pacingSeed(attempt));
+        } finally {
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: the account-wide limit left off, which is the default
+     * When: the account fails logins from two different addresses
+     * Then: the account's own failures are still counted, so the pacing has a number that no change of
+     *       address can reset, even though nothing locks the account
+     */
+    @Test
+    public void test_account_failures_are_counted_even_with_the_account_limit_off() throws Exception {
+        assertEquals(0, LoginLockout.accountMaxFailures());
+        final User user = newUser();
+        try {
+            failLogins(user, 2);
+            from(OTHER_ADDRESS);
+            failLogins(user, 1);
+
+            final Map<String, Object> pacingRow = lockoutRows(user).get(LoginLockout.ACCOUNT_PACING);
+            assertNotNull("the account's own failures must be counted with the limit off", pacingRow);
+            assertEquals(3, ((Number) pacingRow.get("failures")).intValue());
+            assertEquals("counting the account's failures must not lock it",
+                    0L, ((Number) pacingRow.get("locked_until")).longValue());
+            assertFalse("the pacing count must not touch the account-wide lock row",
+                    lockoutRows(user).containsKey(LoginLockout.ACCOUNT_WIDE));
+            from(THIRD_ADDRESS);
+            assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
+        } finally {
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: an account whose owner mistyped the password a few times and then got it right
+     * When: they mistype once more later
+     * Then: that attempt is paced as a first failure again, so proving the password clears the account's
+     *       own run of failures and the owner does not keep paying for the typing that came before it
+     */
+    @Test
+    public void test_a_right_password_clears_the_account_failures_that_pace_the_delay() throws Exception {
+        final User user = newUser();
+        try {
+            failLogins(user, 3);
+            assertEquals(3, LoginLockout.getInstance()
+                    .accountFailures(user.getUserId(), LoginLockout.clientAddress()));
+
+            assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
+            assertEquals(0, LoginLockout.getInstance()
+                    .accountFailures(user.getUserId(), LoginLockout.clientAddress()));
+
+            from(OTHER_ADDRESS);
+            final LoginLockout.Attempt attempt = LoginLockout.getInstance()
+                    .begin(user.getUserId(), LoginLockout.clientAddress());
+            LoginLockout.getInstance().failed(attempt);
+            assertEquals("a typo after a successful login must be paced as a first failure",
+                    1, LoginLockout.getInstance().pacingSeed(attempt));
+        } finally {
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: an account-wide limit of 8, and failures spread over several addresses
+     * When: the owner logs in successfully in the middle of the run
+     * Then: the account is still locked once the limit is reached, because the pacing count a successful
+     *       login clears is a different count from the one the account-wide lock is decided on
+     */
+    @Test
+    public void test_a_successful_login_does_not_hold_off_the_account_wide_lock() throws Exception {
+        final int accountLimitBefore = LoginLockout.accountMaxFailures();
+        Config.setProperty(LoginLockout.LOCKOUT_ACCOUNT_MAX_FAILURES, 8);
+        final User user = newUser();
+        try {
+            failLogins(user, 4);
+            assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
+            assertFalse("a successful login must not lock the account", lockedFrom(user, THIRD_ADDRESS));
+
+            from(OTHER_ADDRESS);
+            failLogins(user, 4);
+            assertTrue("the account-wide count must survive the successful login",
+                    LoginLockout.getInstance().isLocked(user.getUserId()));
+        } finally {
+            Config.setProperty(LoginLockout.LOCKOUT_ACCOUNT_MAX_FAILURES, accountLimitBefore);
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: a mounted drive retrying a stale password over WebDAV, which the class counts apart from
+     *        other logins
+     * When: the owner mistypes once in the browser
+     * Then: that attempt is paced as a first failure, so a drive nobody noticed cannot slow its owner down
+     *       everywhere else
+     */
+    @Test
+    public void test_webdav_failures_do_not_pace_a_browser_login() throws Exception {
+        final User user = newUser();
+        try {
+            for (int i = 0; i < 4; i++) {
+                assertFalse(webdavLogin(user, "wrong-webdav-" + i));
+            }
+            assertEquals(4, LoginLockout.getInstance()
+                    .accountFailures(user.getUserId(), webdav(ADDRESS)));
+
+            from(OTHER_ADDRESS);
+            final LoginLockout.Attempt attempt = LoginLockout.getInstance()
+                    .begin(user.getUserId(), LoginLockout.clientAddress());
+            LoginLockout.getInstance().failed(attempt);
+            assertEquals("a stale WebDAV mount must not pace the owner's browser login",
+                    1, LoginLockout.getInstance().pacingSeed(attempt));
+        } finally {
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: a half-second delay per paced attempt, and failures arriving from a different address every time
+     * When: six wrong passwords are tried against one account, one per address
+     * Then: the wait a failed login actually serves keeps growing even though no address ever fails twice,
+     *       and stops growing at the cap of {@code (auth.max.failures.limit - 1)} half-seconds. This is the
+     *       whole point of counting the account's own failures, measured on the real login flow rather than
+     *       on the seed, so a cap or a wiring mistake between the two cannot hide
+     */
+    @Test
+    public void test_the_served_delay_grows_across_addresses_and_stops_at_the_cap() throws Exception {
+        final Object strategyBefore = Config.getStringProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, "pow");
+        Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, true);
+        Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, "TIME_MILLS:500");
+        final User user = newUser();
+        try {
+            final List<Long> elapsed = new ArrayList<>();
+            for (int i = 0; i < 6; i++) {
+                from("198.51.100." + (60 + i));
+                final long began = System.currentTimeMillis();
+                assertEquals(Authenticator.FAILURE, login(user, "wrong-from-a-new-address-" + i));
+                elapsed.add(System.currentTimeMillis() - began);
+            }
+
+            // Each address fails once, so without the account's own count every one of these would serve the
+            // same single half-second. Capped at LIMIT - 1 = 4, the longest any of them may serve is 2s.
+            assertTrue("first attempt of " + elapsed + "ms should serve about one half-second",
+                    elapsed.get(0) < 1_000L);
+            assertTrue("fourth attempt of " + elapsed + "ms should serve the capped 2s, not a flat 0.5s",
+                    elapsed.get(3) >= 1_500L);
+            assertTrue("sixth attempt of " + elapsed + "ms should still be capped, not growing with the count",
+                    elapsed.get(5) < 3_500L);
+        } finally {
+            Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, false);
+            Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, strategyBefore);
             cleanUp(user);
         }
     }

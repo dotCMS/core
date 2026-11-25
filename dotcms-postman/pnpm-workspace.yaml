@@ -7,7 +7,8 @@
 #
 # Nothing here mirrors core-web's `overrides`, `peerDependencyRules` or `allowBuilds`:
 # this is a three-dependency Newman runner (newman, xml2js, yargs) with no peer
-# conflicts and no dependency that builds.
+# conflicts and no dependency that builds. The overrides at the bottom are this
+# module's own, for exact pins inside newman, not a copy of core-web's.
 
 # The important one. pnpm 11 changed the default to `install`, and pom.xml runs
 # `pnpm run start` in the integration-test phase behind a separate, skippable
@@ -21,3 +22,25 @@ verifyDepsBeforeRun: warn
 trustPolicy: no-downgrade
 blockExoticSubdeps: true
 strictDepBuilds: true
+
+# newman 6.2.x pins postman-runtime 7.39.1, which pins handlebars exactly to 4.7.8 (the
+# latest postman-runtime, 7.56.3, still pins 4.7.9), so no lockfile refresh can reach a
+# fixed release. 4.7.10 fixes the critical advisories GHSA-8r5x-fm3f-whwj and
+# GHSA-p8wg-vrv2-v86f. Drop this once newman ships a postman-runtime that allows it.
+#
+# The rest are the same situation: newman 6.2.3 (the latest) pins postman-runtime 7.39.1
+# and postman-collection 4.4.0 exactly, and those pin the vulnerable versions below, so
+# no lockfile refresh reaches a fixed release. Each stays within its current major.
+#   node-forge  1.3.1  pinned by postman-runtime (latest runtime still pins 1.4.0, also affected)
+#   lodash      4.17.21 pinned by newman, postman-runtime and postman-collection
+#   flatted     3.2.6  pinned by uvm 2.1.1, which postman-sandbox 4.7.1 pins
+#   underscore  ~1.12.1 from httpntlm 1.8.13, which postman-runtime pins
+#   qs          ~6.5.3 / ~6.14.1 from the postman-request builds newman and postman-runtime pin
+# Drop each once newman ships a postman-runtime / postman-collection that allows the fix.
+overrides:
+    handlebars: 4.7.10
+    node-forge: 1.4.2
+    lodash: 4.18.1
+    flatted: 3.4.4
+    underscore: 1.13.8
+    qs: 6.16.2

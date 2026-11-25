@@ -544,6 +544,7 @@ import org.junit.runners.Suite.SuiteClasses;
         FileAssetAPIImplIntegrationTest.class,
         FileAssetFactoryIntegrationTest.class,
         UserResourceIntegrationTest.class,
+        com.dotcms.auth.LoginAsInteractiveUserIT.class,
         IntegrationResourceLinkTest.class,
         HashBuilderTest.class,
         LanguageUtilTest.class,
@@ -586,13 +587,14 @@ import org.junit.runners.Suite.SuiteClasses;
         EmbeddingsResourceAuthTest.class,
         com.dotmarketing.portlets.cmsmaintenance.ajax.CMSMaintenanceAjaxIntegrationTest.class,
         com.dotmarketing.portlets.structure.ajax.StructureAjaxIntegrationTest.class,
-        com.dotmarketing.portlets.structure.action.EditFieldActionReorderTest.class,
         com.dotmarketing.portlets.contentlet.ajax.ImportContentletAjaxIntegrationTest.class,
         com.dotmarketing.portlets.languagesmanager.ajax.LanguageAjaxIntegrationTest.class,
         com.dotmarketing.business.ajax.RoleAjaxLayoutsIntegrationTest.class,
         com.dotmarketing.portlets.languagesmanager.action.EditLanguageKeysActionTest.class,
         UserServiceFactoryTest.class,
         com.dotmarketing.portlets.contentlet.action.EditContentletActionRetrieveTest.class,
+        com.dotmarketing.quartz.job.ContentImportThreadTest.class,
+        com.dotmarketing.portlets.scheduler.action.EditSchedulerActionTest.class,
 })
 
 public class MainSuite2b {

@@ -89,8 +89,8 @@ public class UserPaginator implements PaginatorOrdered<Map<String, Object>> {
     /**
      * Tells whether the calling user receives the full data map of every listed user, or only the
      * {@link #DIRECTORY_KEYS}. The full profile goes to CMS Administrators and to users with access to the Users
-     * portlet, the portlet that displays the account-state fields; both the legacy {@link PortletID#USERS} id and
-     * the Angular {@link PortletID#USERS_BETA} id count, so a user-manager on either portlet sees the full list.
+     * portlet, the portlet that displays the account-state fields; both the Angular {@link PortletID#USERS} id and
+     * the old screen's {@link PortletID#USERS_LEGACY} id count, so a user-manager on either screen sees the full list.
      * <p>This matches the legacy Users-portlet DWR calls, which gate on the Users portlet alone. It is, by design, a
      * lower bar than the one the single-user endpoints in {@code UserResource} ({@code findUserById}, the
      * {@code includeRoles} option) apply -- those also require the Roles portlet -- so a caller holding the Users

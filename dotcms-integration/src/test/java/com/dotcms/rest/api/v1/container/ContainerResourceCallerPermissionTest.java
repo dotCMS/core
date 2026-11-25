@@ -29,6 +29,7 @@ import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.test.util.ApiTokenTestUtils;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.util.PaginationUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -62,6 +63,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
@@ -652,6 +654,152 @@ public class ContainerResourceCallerPermissionTest {
                 resource.createContainerFormByQueryParam(request(user), response, containerId,
                         form.id())));
         assertEquals("no second widget should be created", 1, widgetsFor(form.id()).size());
+    }
+
+    /**
+     * Method to test: {@link ContainerResource#getContainers}
+     * Given: a content type used by two containers, one of them archived, and a back-end user
+     *        who can read the content type and both containers
+     * When: the user lists the containers that use the content type, archived ones included
+     * Should: get both containers, and a total that counts both
+     */
+    @Test
+    public void test_getContainers_byContentType_userReadsAllContainers_getsAll() throws Exception {
+        final ContainerUsage usage = new ContainerUsage();
+        try {
+            usage.create();
+            final User user = user(TestUserUtils.getBackendRole());
+            grantRead(user, usage.contentType);
+            grantRead(user, usage.active);
+            grantRead(user, usage.archived);
+
+            final Response result = usage.list(user);
+
+            assertEquals(Set.of(usage.active.getIdentifier(), usage.archived.getIdentifier()),
+                    identifiersIn(result));
+            assertEquals("2", result.getHeaderString(PaginationUtil.PAGINATION_TOTAL_ENTRIES_HEADER_NAME));
+        } finally {
+            usage.cleanUp();
+        }
+    }
+
+    /**
+     * Method to test: {@link ContainerResource#getContainers}
+     * Given: a content type used by two containers, one of them archived, and a back-end user
+     *        who can read the content type but neither container
+     * When: the user lists the containers that use the content type, archived ones included
+     * Should: get an empty list and a total of zero, so no container is disclosed
+     */
+    @Test
+    public void test_getContainers_byContentType_userReadsNoContainer_getsNone() throws Exception {
+        final ContainerUsage usage = new ContainerUsage();
+        try {
+            usage.create();
+            final User user = user(TestUserUtils.getBackendRole());
+            grantRead(user, usage.contentType);
+
+            final Response result = usage.list(user);
+
+            assertEquals(Set.of(), identifiersIn(result));
+            assertEquals("0", result.getHeaderString(PaginationUtil.PAGINATION_TOTAL_ENTRIES_HEADER_NAME));
+        } finally {
+            usage.cleanUp();
+        }
+    }
+
+    /**
+     * Method to test: {@link ContainerResource#getContainers}
+     * Given: a content type used by an active and an archived container, and a back-end user who
+     *        can read the content type and only one of the containers
+     * When: the user lists the containers that use the content type, archived ones included, once
+     *       with each container as the readable one
+     * Should: get only the readable container, and a total that counts only that one, whether it
+     *         is the active or the archived one
+     */
+    @Test
+    public void test_getContainers_byContentType_userReadsSomeContainers_getsOnlyThose()
+            throws Exception {
+        final ContainerUsage usage = new ContainerUsage();
+        try {
+            usage.create();
+            final User readsActive = user(TestUserUtils.getBackendRole());
+            grantRead(readsActive, usage.contentType);
+            grantRead(readsActive, usage.active);
+            final User readsArchived = user(TestUserUtils.getBackendRole());
+            grantRead(readsArchived, usage.contentType);
+            grantRead(readsArchived, usage.archived);
+
+            final Response activeOnly = usage.list(readsActive);
+            final Response archivedOnly = usage.list(readsArchived);
+
+            assertEquals(Set.of(usage.active.getIdentifier()), identifiersIn(activeOnly));
+            assertEquals("1", activeOnly.getHeaderString(PaginationUtil.PAGINATION_TOTAL_ENTRIES_HEADER_NAME));
+            assertEquals(Set.of(usage.archived.getIdentifier()), identifiersIn(archivedOnly));
+            assertEquals("1", archivedOnly.getHeaderString(PaginationUtil.PAGINATION_TOTAL_ENTRIES_HEADER_NAME));
+        } finally {
+            usage.cleanUp();
+        }
+    }
+
+    /**
+     * Reads the identifiers of the containers a listing returned.
+     *
+     * @param result the response of {@link ContainerResource#getContainers}
+     * @return the containers' identifiers
+     */
+    private static Set<String> identifiersIn(final Response result) {
+        return ((List<?>) ((ResponseEntityView<?>) result.getEntity()).getEntity()).stream()
+                .map(view -> ((ContainerView) view).getContainer().getIdentifier())
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * A content type used by an active and an archived container, owned by no one in particular.
+     * It removes itself, containers first, so a failed test leaves nothing behind that the class
+     * cleanup would remove in the wrong order.
+     */
+    private static class ContainerUsage {
+
+        private ContentType contentType;
+        private Container active;
+        private Container archived;
+
+        void create() throws Exception {
+            contentType = new ContentTypeDataGen().host(defaultSite()).nextPersisted();
+            active = newContainer();
+            archived = newContainer();
+            APILocator.getContainerAPI().archive(archived, APILocator.systemUser(), false);
+        }
+
+        private Container newContainer() {
+            return new ContainerDataGen().withContentType(contentType, "$!{body}").nextPersisted();
+        }
+
+        /**
+         * Lists the containers that use the content type, archived ones included, as the user.
+         *
+         * @param user the user who lists them
+         * @return the response
+         */
+        Response list(final User user) {
+            return resource.getContainers(request(user), response, null, 1, 40, "title", "ASC",
+                    null, false, true, contentType.id());
+        }
+
+        void cleanUp() {
+            for (final Container container : new Container[] {archived, active}) {
+                if (null != container) {
+                    Try.run(() -> ContainerDataGen.remove(container))
+                            .onFailure(e -> Logger.warn(ContainerResourceCallerPermissionTest.class,
+                                    "Could not remove container " + container.getIdentifier(), e));
+                }
+            }
+            if (null != contentType) {
+                Try.run(() -> ContentTypeDataGen.remove(contentType))
+                        .onFailure(e -> Logger.warn(ContainerResourceCallerPermissionTest.class,
+                                "Could not remove content type " + contentType.variable(), e));
+            }
+        }
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.dotcms.rest;
 
 import com.dotcms.content.filter.ContentFieldFilter;
+import com.dotcms.content.filter.PropertyTreeFilter;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -15,6 +16,7 @@ import com.dotcms.rest.api.v1.content.LockStatusFields;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.rest.filter.UserPropertiesResponseFilter;
 import com.dotcms.variant.business.web.VariantWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotcms.util.xstream.XStreamHandler;
@@ -270,7 +272,13 @@ public class ContentResource {
         final SearchView searchView = this.contentHelper.pullContent(request, response, realQuery,
                 userForPull, pageMode, offset, limit, sort, tmDate, render, user, depth,
                 language, allCategoriesInfo);
-        return Response.ok(new ResponseEntityView<>(searchView)).build();
+        // Filtered here, while still a JSONObject, so the response filter does not parse and rebuild it
+        final SearchView callerView = new SearchView(searchView.getResultsSize(), searchView.getQueryTook(),
+                searchView.getContentTook(), new JsonObjectView(
+                        ContentHelper.filterForCaller(searchView.getJsonObjectView().getJsonObject(), user)),
+                searchView.getWarnings());
+        return Response.ok(UserPropertiesResponseFilter.markFiltered(request,
+                new ResponseEntityView<>(callerView))).build();
     }
 
     /**
@@ -891,9 +899,12 @@ public class ContentResource {
                     contentlets.add(contentlet);
                 }
             } else if (inodePassed) {
+                // An inode names one exact version, so there is no variant to resolve: a caller
+                // that cannot name its own variant is answered as if the version did not exist.
                 final Contentlet contentlet = APILocator.getContentletAPI()
                         .find(inode, user, respectFrontendRoles);
-                if (contentlet != null){
+                if (contentlet != null && WebAPILocator.getVariantWebAPI()
+                        .canReadVariant(contentlet.getVariantId(), user)){
                     contentlets.add(contentlet);
                 }
             } else if (UtilMethods.isSet(related)){
@@ -1128,8 +1139,10 @@ public class ContentResource {
         m.put("__icon__", UtilHTML.getIconClass(contentlet));
         m.put("contentTypeIcon", type.icon());
 
-        // Filter last, once every property has been added, so none of them can bypass the masking
-        return ContentFieldFilter.forUser(user).apply(m);
+        // Filter last, once every property has been added, so none of them can bypass the masking, and with the
+        // content type, so the contentlets embedded in a Story Block are filtered as in the JSON response
+        return PropertyTreeFilter.filterContentletProperties(type.id(), m, ContentFieldFilter.forUser(user),
+                PropertyTreeFilter.storedContentTypes());
     }
 
     /**
@@ -1334,20 +1347,21 @@ public class ContentResource {
     }
 
     /**
-     * Creates a json object (as string) of a list of contentlets
-     * @param cons
-     * @param request
-     * @param response
-     * @param render
-     * @param user
-     * @param depth
-     * @param respectFrontendRoles
-     * @param language
-     * @param live
-     * @param allCategoriesInfo
-     * @return
-     * @throws IOException
-     * @throws DotDataException
+     * Creates the JSON response (as text) for a list of contentlets, with their related content up to the
+     * given depth, prepared for the user it is sent to by {@link ContentHelper#filterForCaller(JSONObject, User)}
+     * and marked as filtered, so {@link UserPropertiesResponseFilter} does not process it again.
+     *
+     * @param cons                 the contentlets to return
+     * @param request              the current request
+     * @param response             the current response
+     * @param render               {@code "true"} to include the rendered code of a widget
+     * @param user                 the {@link User} the response is sent to
+     * @param depth                how many levels of related content to include
+     * @param respectFrontendRoles whether front-end roles are respected when loading related content
+     * @param language             the language of the related content
+     * @param live                 whether the live versions of related content are returned
+     * @param allCategoriesInfo    {@code true} to include the key, name and description of every category
+     * @return the JSON response as text
      */
     private String getJSON(final List<Contentlet> cons, final HttpServletRequest request,
             final HttpServletResponse response, final String render, final User user,
@@ -1355,7 +1369,7 @@ public class ContentResource {
             final boolean live, final boolean allCategoriesInfo){
         final JSONObject json = this.contentHelper.getJSONObject(cons, request, response, render, user,
                 depth, respectFrontendRoles, language, live, allCategoriesInfo);
-        return json.toString();
+        return UserPropertiesResponseFilter.markFiltered(request, ContentHelper.filterForCaller(json, user).toString());
     }
 
     public class MapEntryConverter implements Converter {

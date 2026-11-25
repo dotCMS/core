@@ -21,11 +21,13 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.publishing.PublishDateUpdater.WorkflowResolutionConfig;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
@@ -366,6 +368,130 @@ public class PublishDateUpdaterTest {
 
         verify(processor).process(second, systemUser);
         verify(processor).process(third, systemUser);
+    }
+
+    /**
+     * Customer scenario from #37157: content unpublished long after its publish date passed, seen
+     * on a run that cannot tell when the job last ran. With protection on it must stay unpublished.
+     */
+    @Test
+    public void protectedSkipsContentModifiedAfterPublishDateWhenPreviousRunUnknown() {
+        givenPublishAndModDates(minutesBefore(FIRE_TIME, 60), minutesBefore(FIRE_TIME, 5));
+
+        assertFalse(shouldPublishWithUnknownPreviousRun(minutesBefore(FIRE_TIME, 5)));
+    }
+
+    /**
+     * A genuine scheduled publish (saved before its publish date) is still published when the
+     * previous run time is unknown, e.g. its date passed while the server was down.
+     */
+    @Test
+    public void protectedPublishesPendingScheduledContentWhenPreviousRunUnknown() {
+        givenPublishAndModDates(minutesBefore(FIRE_TIME, 5), minutesBefore(FIRE_TIME, 60));
+
+        assertTrue(shouldPublishWithUnknownPreviousRun(minutesBefore(FIRE_TIME, 60)));
+    }
+
+    /**
+     * Without a mod date or version timestamp there is nothing to compare, so protection falls
+     * back to publishing.
+     */
+    @Test
+    public void protectedPublishesWhenPreviousRunUnknownAndModDateMissing() {
+        givenPublishAndModDates(minutesBefore(FIRE_TIME, 60), null);
+
+        assertTrue(shouldPublishWithUnknownPreviousRun(null));
+    }
+
+    /**
+     * Live and working are different inodes and the unpublish targeted the live one: the working
+     * draft's mod date still predates the publish date, but the identifier's version timestamp
+     * records the unpublish, so the draft must not be auto-published.
+     */
+    @Test
+    public void protectedSkipsDistinctWorkingDraftWhenVersionTsIsAfterPublishDate() {
+        givenPublishAndModDates(minutesBefore(FIRE_TIME, 30), minutesBefore(FIRE_TIME, 60));
+
+        assertFalse(shouldPublishWithUnknownPreviousRun(minutesBefore(FIRE_TIME, 5)));
+    }
+
+    /**
+     * A failed version-info lookup must not abort the decision (the catch-all would publish);
+     * the mod date alone still protects manually unpublished content.
+     */
+    @Test
+    public void protectedFallsBackToModDateWhenVersionLookupFails() {
+        givenPublishAndModDates(minutesBefore(FIRE_TIME, 60), minutesBefore(FIRE_TIME, 5));
+        final VersionableAPI versionableAPI = mock(VersionableAPI.class);
+        when(versionableAPI.getContentletVersionInfo(CONTENTLET_IDENTIFIER, 1L, "DEFAULT"))
+                .thenThrow(new IllegalStateException("version info unavailable"));
+
+        try (MockedStatic<APILocator> apiLocatorMock = mockStatic(APILocator.class)) {
+            apiLocatorMock.when(APILocator::getVersionableAPI).thenReturn(versionableAPI);
+
+            assertFalse(PublishDateUpdater.shouldPublishContent(contentlet, null, true));
+        }
+    }
+
+    /**
+     * With the flag off (the default) the unknown-previous-run fallback still publishes, exactly
+     * as before the fix.
+     */
+    @Test
+    public void unprotectedKeepsPublishingWhenPreviousRunUnknown() {
+        givenPublishAndModDates(minutesBefore(FIRE_TIME, 60), minutesBefore(FIRE_TIME, 5));
+
+        assertTrue(PublishDateUpdater.shouldPublishContent(contentlet, null, false));
+    }
+
+    /**
+     * When the previous run time is known, the mod date plays no part: content whose publish date
+     * falls after the previous run is published even if it was modified after that date.
+     */
+    @Test
+    public void protectedIgnoresModDateWhenPreviousRunKnown() {
+        givenPublishAndModDates(minutesBefore(FIRE_TIME, 1), FIRE_TIME);
+
+        assertTrue(PublishDateUpdater.shouldPublishContent(contentlet,
+                minutesBefore(FIRE_TIME, 2), true));
+    }
+
+    /**
+     * Stubs the mocked contentlet with a content type whose publish date field holds
+     * {@code publishDate}, and with the given mod date.
+     */
+    private void givenPublishAndModDates(final Date publishDate, final Date modDate) {
+        final ContentType contentType = mock(ContentType.class);
+        when(contentType.publishDateVar()).thenReturn("publishDate");
+        when(contentlet.getContentType()).thenReturn(contentType);
+        when(contentlet.get("publishDate")).thenReturn(publishDate);
+        when(contentlet.getModDate()).thenReturn(modDate);
+        when(contentlet.getLanguageId()).thenReturn(1L);
+        when(contentlet.getVariantId()).thenReturn("DEFAULT");
+    }
+
+    /**
+     * Runs the protected decision with no previous run time, with the identifier's version info
+     * carrying {@code versionTs} ({@code null} for no version info at all).
+     */
+    private boolean shouldPublishWithUnknownPreviousRun(final Date versionTs) {
+        final VersionableAPI versionableAPI = mock(VersionableAPI.class);
+        final ContentletVersionInfo versionInfo = new ContentletVersionInfo();
+        versionInfo.setVersionTs(versionTs);
+        when(versionableAPI.getContentletVersionInfo(CONTENTLET_IDENTIFIER, 1L, "DEFAULT"))
+                .thenReturn(versionTs == null ? Optional.empty() : Optional.of(versionInfo));
+
+        try (MockedStatic<APILocator> apiLocatorMock = mockStatic(APILocator.class)) {
+            apiLocatorMock.when(APILocator::getVersionableAPI).thenReturn(versionableAPI);
+            return PublishDateUpdater.shouldPublishContent(contentlet, null, true);
+        }
+    }
+
+    /**
+     * Returns the instant {@code minutes} minutes before {@code date}.
+     */
+    private static Date minutesBefore(final Date date, final int minutes) {
+        return new Date(date.getTime() - minutes * 60_000L);
     }
 
     private PublishDateUpdater.Publisher publisher(final WorkflowResolutionConfig config) {

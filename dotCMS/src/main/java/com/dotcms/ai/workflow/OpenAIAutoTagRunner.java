@@ -1,5 +1,7 @@
 package com.dotcms.ai.workflow;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.auth.SystemUserScope;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.util.ContentToStringUtil;
@@ -31,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * The OpenAIAutoTagRunner class is responsible for running workflows that automatically tag content using OpenAI.
@@ -129,21 +132,33 @@ public class OpenAIAutoTagRunner implements Runnable {
         throw new DotRuntimeException(e);
     }
 
+    /**
+     * Builds the tagging prompt for the contentlet and sends it to the AI service, acting inside a system
+     * user scope when the runner's user is the built-in account.
+     */
     private String openAIRequest(final Contentlet workingContentlet, final String contentToTag) throws Exception {
-        final Context ctx = VelocityContextFactory.getMockContext(workingContentlet, user);
-        final String systemPrompt = this.limitTags ? SYSTEM_PROMPT_TAGGING_CONSTRAIN : SYSTEM_PROMPT_TAGGING_FREEFORM;
-        final Set<String> constrainTags = this.limitTags ? APILocator.getTagAPI().findTopTags(workingContentlet.getHost()) : Set.of();
-        ctx.put("constrainTags", String.join("\n", constrainTags));
+        final HttpServletRequest previousRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        try (SystemUserScope ignored = SystemUserScope.openIfSystemUser(user)) {
+            final Context ctx = VelocityContextFactory.getMockContext(workingContentlet, user);
+            // Building the context may render an HTML page, which leaves its own server-built request bound to
+            // the thread; put back what was there so that request is not taken for the caller's.
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(previousRequest);
+            final String systemPrompt = this.limitTags ? SYSTEM_PROMPT_TAGGING_CONSTRAIN : SYSTEM_PROMPT_TAGGING_FREEFORM;
+            final Set<String> constrainTags = this.limitTags ? APILocator.getTagAPI().findTopTags(workingContentlet.getHost()) : Set.of();
+            ctx.put("constrainTags", String.join("\n", constrainTags));
 
-        final String parsedSystemPrompt = VelocityUtil.eval(systemPrompt, ctx);
-        final String parsedContentPrompt = VelocityUtil.eval(contentToTag, ctx);
+            final String parsedSystemPrompt = VelocityUtil.eval(systemPrompt, ctx);
+            final String parsedContentPrompt = VelocityUtil.eval(contentToTag, ctx);
 
-        final Host host = Try.of(() -> APILocator.getHostAPI().find(workingContentlet.getHost(), user, false)).getOrNull();
-        final AppConfig appConfig = ConfigService.INSTANCE.config(host);
-        final JSONObject openAIResponse = APILocator.getDotAIAPI().getCompletionsAPI(appConfig)
-                .prompt(parsedSystemPrompt, parsedContentPrompt, null, 0f, 2000, user.getUserId());
+            final Host host = Try.of(() -> APILocator.getHostAPI().find(workingContentlet.getHost(), user, false)).getOrNull();
+            final AppConfig appConfig = ConfigService.INSTANCE.config(host);
+            final JSONObject openAIResponse = APILocator.getDotAIAPI().getCompletionsAPI(appConfig)
+                    .prompt(parsedSystemPrompt, parsedContentPrompt, null, 0f, 2000, user.getUserId());
 
-        return openAIResponse.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");
+            return openAIResponse.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(previousRequest);
+        }
     }
 
     private JSONArray parseJsonResponse(final String responseIn) {

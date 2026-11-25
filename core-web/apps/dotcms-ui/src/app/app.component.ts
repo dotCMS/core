@@ -1,19 +1,17 @@
-import { of } from 'rxjs';
-
-import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { RouterOutlet } from '@angular/router';
 
-import { catchError, map, take } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import {
     DEFAULT_COLORS,
     DotLicenseService,
-    DotMessageService,
     DotNavLogoService,
     DotUiColorsService
 } from '@dotcms/data-access';
-import { ConfigParams, DotcmsConfigService, DotUiColors } from '@dotcms/dotcms-js';
 import { DotLicense } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 
 import { DotAlertConfirmComponent } from './view/components/_common/dot-alert-confirm/dot-alert-confirm';
 
@@ -25,70 +23,36 @@ import { DotAlertConfirmComponent } from './view/components/_common/dot-alert-co
     imports: [RouterOutlet, DotAlertConfirmComponent]
 })
 export class AppComponent implements OnInit {
-    private dotCmsConfigService = inject(DotcmsConfigService);
+    readonly #systemConfig$ = toObservable(inject(GlobalStore).systemConfig);
     private dotUiColors = inject(DotUiColorsService);
-    private dotMessageService = inject(DotMessageService);
     private dotNavLogoService = inject(DotNavLogoService);
     private dotLicense = inject(DotLicenseService);
+    private destroyRef = inject(DestroyRef);
 
     ngOnInit() {
-        this.dotCmsConfigService
-            .getConfig()
+        this.#systemConfig$
             .pipe(
-                take(1),
-                map((config: ConfigParams) => {
-                    return {
-                        buildDate: config.releaseInfo?.buildDate,
-                        colors: config.colors,
-                        navBar: config.logos?.navBar,
-                        license: config.license
-                    };
-                }),
-                // Handle errors gracefully - use default colors if config fails to load
-                // This ensures the app works even if user is not authenticated or endpoint fails
-                catchError((error) => {
-                    console.warn('Failed to load configuration, using defaults:', error);
-                    // Return default values that allow the app to continue functioning
-                    return of({
-                        buildDate: null,
-                        colors: DEFAULT_COLORS,
-                        navBar: null,
-                        license: null
-                    });
-                })
+                map((config) => ({
+                    colors: config?.colors ?? DEFAULT_COLORS,
+                    navBar: config?.logos?.navBar,
+                    license: config?.license
+                })),
+                takeUntilDestroyed(this.destroyRef)
             )
-            .subscribe(
-                ({
-                    buildDate,
-                    colors,
-                    navBar,
-                    license
-                }: {
-                    buildDate: string | null;
-                    colors: DotUiColors;
-                    navBar: string | null;
-                    license: DotLicense | null;
-                }) => {
-                    // Initialize services with loaded or default values
-                    if (buildDate) {
-                        this.dotMessageService.init({ buildDate });
-                    }
-
-                    if (navBar) {
-                        this.dotNavLogoService.setLogo(navBar);
-                    }
-
-                    // Always set colors (will use defaults if config failed)
-                    // This ensures PrimeNG theme is always initialized
-                    const htmlElement = document.querySelector('html') as HTMLElement;
-                    if (htmlElement) {
-                        this.dotUiColors.setColors(htmlElement, colors);
-                    }
-
-                    if (license) {
-                        this.dotLicense.setLicense(license);
-                    }
+            .subscribe(({ colors, navBar, license }) => {
+                // GlobalStore owns post-login configuration and translation loading.
+                if (navBar) {
+                    this.dotNavLogoService.setLogo(navBar);
                 }
-            );
+
+                const htmlElement = document.querySelector('html') as HTMLElement;
+                if (htmlElement) {
+                    this.dotUiColors.setColors(htmlElement, colors);
+                }
+
+                if (license) {
+                    this.dotLicense.setLicense(license as DotLicense);
+                }
+            });
     }
 }

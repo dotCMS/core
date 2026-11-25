@@ -1,7 +1,7 @@
 package com.dotmarketing.business.cache.provider.h22;
 
 import java.io.Serializable;
-import java.io.StringWriter;
+import java.util.concurrent.atomic.LongAdder;
 
 public class H22GroupStats implements Serializable{
 
@@ -10,37 +10,40 @@ public class H22GroupStats implements Serializable{
 	 */
 	private static final long serialVersionUID = 1L;
 	final long startTime = System.currentTimeMillis();
-	long hits = 0;
-	long misses = 0;
-	long writes = 0;
-	long totalTimeReading = 0;
-	long totalTimeWriting = 0;
-	long totalSize=0;
+	final LongAdder hits = new LongAdder();
+	final LongAdder misses = new LongAdder();
+	final LongAdder writes = new LongAdder();
+	final LongAdder totalTimeReading = new LongAdder();
+	final LongAdder totalTimeWriting = new LongAdder();
+	final LongAdder totalSize = new LongAdder();
 
 	final String group;
 	public H22GroupStats(String group){
 		this.group=group + "H22";
 	}
+	/** Records whether a lookup returned a cached value. */
 	void hitOrMiss(final Object obj) {
 		if (obj == null) {
-			misses++;
+			misses.increment();
 		} else {
-			hits++;
+			hits.increment();
 		}
 	}
 
-	void writeSize(long len) {
-		totalSize += len;
+	/** Adds serialized bytes written, including replacements of existing keys. */
+	void writeSize(final long len) {
+		totalSize.add(len);
 	}
 
-	void readTime(long len) {
-
-		totalTimeReading += len;
+	/** Adds the elapsed read time in nanoseconds. */
+	void readTime(final long len) {
+		totalTimeReading.add(len);
 	}
 	
-	void writeTime(long len) {
-		writes++;
-		totalTimeWriting += len;
+	/** Counts one successful write and adds its elapsed time in nanoseconds. */
+	void writeTime(final long len) {
+		writes.increment();
+		totalTimeWriting.add(len);
 	}
 	
 	

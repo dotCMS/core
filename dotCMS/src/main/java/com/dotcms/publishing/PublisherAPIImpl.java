@@ -38,6 +38,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
@@ -82,6 +83,16 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
         return publish( config, new PublishStatus() );
     }
 
+    /**
+     * Builds the bundle for each publisher of the given {@link PublisherConfig} and runs the
+     * publisher over it. A publisher reuses a bundle that already exists only when this is a real
+     * retry, meaning the bundle was attempted before this call started.
+     *
+     * @param config the bundle's configuration, including the publishers to run in order
+     * @param status the status that collects the outputs and bundler results
+     * @return the given {@link PublishStatus}, filled in
+     * @throws DotPublishingException if a bundler or a publisher fails
+     */
     @CloseDBIfOpened
     @Override
     public PublishStatus publish ( PublisherConfig config, PublishStatus status) throws DotPublishingException {
@@ -96,10 +107,23 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
 
             List<IBundler> confBundlers = new ArrayList<>();
 
+            // Read once, before any publisher runs. Every publisher raises numTries in process(), so
+            // reading it per publisher would make the second one look like a retry of the first
+            // (issue #34434).
+            final boolean isRealRetry = publishAuditAPI.isPublishRetry(config.getId());
+
+            // Bundle locations built by an earlier publisher of this run. S3 and static share one
+            // directory, so on a retry the second must still run its own bundlers there: the
+            // directory has content only because the first one just built it (issue #34434)
+            final Set<String> outputsBuiltInThisRun = new HashSet<>();
+
             // init publishers
-            for ( Class<Publisher> c : config.getPublishers() ) {
+            for ( Class<? extends IPublisher> c : config.getPublishers() ) {
                 // Process config
-                Publisher publisher = c.getDeclaredConstructor().newInstance();
+                // Cast kept explicit: the loop needs Publisher's bundle-output hook, which is
+                // not part of the IPublisher contract. Before the list was parameterized the
+                // same assumption was made silently through a raw Class.
+                Publisher publisher = (Publisher) c.getDeclaredConstructor().newInstance();
                 config = publisher.init(config);
 
                 if (config.isIncremental() && config.getEndDate() == null
@@ -131,7 +155,10 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
                                 config.getOperation().name());
                     }
 
-                    if (!output.bundleFileExists() || !publishAuditAPI.isPublishRetry(config.getId())) {
+                    final String outputLocation = bundleLocation(output.getFile());
+                    if (!output.bundleFileExists() || !isRealRetry
+                            || outputsBuiltInThisRun.contains(outputLocation)) {
+                        outputsBuiltInThisRun.add(outputLocation);
                         output.create();
                         config.setManifestBuilder(manifestBuilder);
                         status.addOutput(output);
@@ -181,6 +208,12 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
 
                 publisher.process(status);
 
+                // Static and S3 can compress their bundle into <bundleId>.tar.gz, the same file push
+                // sends to its receivers. Counting it as built in this run makes push build its own
+                // archive on a retry instead of sending the static one (issue #34434)
+                publisher.getCompressedBundle().ifPresent(
+                        archive -> outputsBuiltInThisRun.add(bundleLocation(archive)));
+
                 config.setBundlers(confBundlers);
 
                 //Triggering event listener when the publishing process ends
@@ -197,6 +230,17 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
         }
 
         return status;
+    }
+
+    /**
+     * Returns the absolute, normalized path of a bundle location, so two paths that name the same
+     * file compare equal (the static archive is written through {@code <bundleId>-static/..}).
+     *
+     * @param location the bundle file or directory, may be null
+     * @return the normalized path, or an empty string when there is no location
+     */
+    private static String bundleLocation(final File location) {
+        return location == null ? "" : location.toPath().toAbsolutePath().normalize().toString();
     }
 
     private void addBundleXMLIntoBundle(final PublisherConfig config, final BundleOutput output) {
@@ -419,6 +463,17 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
                 this.filterList.stream().filter(filter -> filterKey.equalsIgnoreCase(filter.getKey())).findFirst().orElse(defaultFilter);
     }
 
+    /**
+     * Builds the runtime filter for a bundle from the Push Publishing filter YAML the bundle was
+     * created with. The relationship depth comes from {@code relationshipsDepth} when the filter
+     * sets it, and otherwise from {@code relationshipsSecondLevel} (2 when true, 1 when false),
+     * so filters written before {@code relationshipsDepth} existed behave exactly as before.
+     *
+     * @param bundleId The ID of the bundle being generated.
+     * @return The {@link PublisherFilter} to apply while collecting the bundle's dependencies.
+     * @throws DotDataException     If the bundle cannot be read.
+     * @throws DotSecurityException If an exclude query cannot be run.
+     */
     @SuppressWarnings("unchecked")
     @CloseDBIfOpened
     @Override
@@ -426,9 +481,17 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
 
         final String filterKey = APILocator.getBundleAPI().getBundleById(bundleId).getFilterKey();
         final FilterDescriptor filterDescriptor = this.getFilterDescriptorByKey(filterKey);
-        final PublisherFilterImpl publisherFilter = new PublisherFilterImpl(filterKey, (Boolean)filterDescriptor.getFilters().getOrDefault(FilterDescriptor.DEPENDENCIES_KEY,true),
-                (Boolean)filterDescriptor.getFilters().getOrDefault(FilterDescriptor.RELATIONSHIPS_KEY,true),
-                (Boolean)filterDescriptor.getFilters().getOrDefault(FilterDescriptor.RELATIONSHIPS_SECOND_LEVEL_KEY,false));
+        final Map<String, Object> filters = filterDescriptor.getFilters();
+        final boolean relationshipsSecondLevel =
+                (Boolean) filters.getOrDefault(FilterDescriptor.RELATIONSHIPS_SECOND_LEVEL_KEY, false);
+        // An explicit relationshipsDepth wins; otherwise keep the depth implied by relationshipsSecondLevel
+        final int relationshipsDepth = filters.containsKey(FilterDescriptor.RELATIONSHIPS_DEPTH_KEY)
+                ? ((Number) filters.get(FilterDescriptor.RELATIONSHIPS_DEPTH_KEY)).intValue()
+                : (relationshipsSecondLevel ? 2 : 1);
+        final PublisherFilterImpl publisherFilter = new PublisherFilterImpl(filterKey,
+                (Boolean) filters.getOrDefault(FilterDescriptor.DEPENDENCIES_KEY, true),
+                (Boolean) filters.getOrDefault(FilterDescriptor.RELATIONSHIPS_KEY, true),
+                relationshipsSecondLevel, relationshipsDepth);
 
         if(filterDescriptor.getFilters().containsKey(FilterDescriptor.EXCLUDE_CLASSES_KEY)){
             List.class.cast(filterDescriptor.getFilters().get(FilterDescriptor.EXCLUDE_CLASSES_KEY)).forEach(type -> publisherFilter.addTypeToExcludeClassesSet(type.toString()));

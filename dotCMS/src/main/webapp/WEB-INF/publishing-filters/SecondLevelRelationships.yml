@@ -20,3 +20,9 @@ filters:
    ## if true, also follows relationships one extra level beyond the direct relationships above
    ## (e.g. pushing A, related to B, related to C, also includes C) — does not recurse any further
    relationshipsSecondLevel: true
+   ## optional: number of relationship levels to follow (1 = direct only, 2 = same as relationshipsSecondLevel,
+   ## N = N levels, 0 = unlimited / the whole reachable graph). When set it takes precedence over
+   ## relationshipsSecondLevel. Every value, including 0, is limited by the server property
+   ## push.publishing.relationships.max.depth (default 10). Copy this filter under a new file name and
+   ## uncomment to use, e.g.:
+   # relationshipsDepth: 0

@@ -32,7 +32,18 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
+import com.liferay.portal.auth.PrincipalThreadLocal;
+import org.junit.After;
 import org.junit.Assert;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.LoginAsSession;
+import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.business.NoSuchUserException;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.util.WebKeys;
+import org.mockito.MockedStatic;
+import java.util.HashMap;
+import java.util.stream.Collectors;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
@@ -60,6 +71,22 @@ import static org.mockito.Mockito.when;
  * @author jsanca
  */
 public class UserResourceTest extends UnitTestBase {
+
+    private static final String CALLER_ID = "dotcms.org.caller";
+    private static final String PRINCIPAL_ID = "dotcms.org.principal";
+    private static final String LOGGED_IN_AS_ID = "dotcms.org.logged-in-as";
+    private static final String TARGET_ID = "dotcms.org.target";
+    private static final String SITE_ID = "site-identifier";
+    private static final String COMPLETED_LINE = "has successfully logged in as";
+    /** The message keys of the Login As refusals that answer 200 with {@code loginAs:false}. */
+    private static final List<String> REFUSAL_MESSAGE_KEYS = List.of("loginas.error.requireduserid",
+            "loginas.error.selfloginas", "loginas.error.missingloginaspwd", "loginas.error.invalidloginascredentials");
+
+    /** {@link UserResource#loginAs} sets the request's principal name; don't leave it on the test thread. */
+    @After
+    public void clearPrincipalName() {
+        PrincipalThreadLocal.setName(null);
+    }
 
     @Test
     public void testUpdateUserNullValues() throws JSONException, DotSecurityException, DotDataException {
@@ -880,5 +907,326 @@ public class UserResourceTest extends UnitTestBase {
         Assert.assertFalse(extraParamsCaptor.getValue().containsKey(UserPaginator.ROLES_PARAM));
         verify(roleAPI, Mockito.never()).loadRoleByKey(Mockito.anyString());
         verify(roleAPI, Mockito.never()).loadRoleById(Mockito.anyString());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UserResource#loginAs(HttpServletRequest, HttpServletResponse, LoginAsForm)}</li>
+     *     <li><b>Given Scenario:</b> The helper accepts the Login As and returns the target id as stored, which
+     *     differs from the posted one (posted with surrounding spaces).</li>
+     *     <li><b>Expected Result:</b> 200 with {@code loginAs:true}, and exactly one "logged in as" security-log
+     *     line, naming the stored id.</li>
+     * </ul>
+     */
+    @Test
+    public void loginAs_completed_logsTheStoredUserIdOnce() throws Exception {
+        final LoginAsCall call = new LoginAsCall(CALLER_ID);
+        call.session.put(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, SITE_ID);
+        call.acceptsAs(TARGET_ID);
+
+        final Response response = call.run(" " + TARGET_ID + " ");
+
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        assertEquals(Map.of("loginAs", true), ((ResponseEntityView<?>) response.getEntity()).getEntity());
+        final List<String> completed = call.completedLines();
+        assertEquals(completed.toString(), 1, completed.size());
+        assertTrue(completed.get(0), completed.get(0).contains("'" + TARGET_ID + "'"));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UserResource#loginAs(HttpServletRequest, HttpServletResponse, LoginAsForm)}</li>
+     *     <li><b>Given Scenario:</b> The helper refuses with a {@link DotDataException} that carries a message key,
+     *     once for each key the Login As refusals use.</li>
+     *     <li><b>Expected Result:</b> 200 with {@code loginAs:false} and that key, the refusal is logged, and no
+     *     "logged in as" line is.</li>
+     * </ul>
+     */
+    @Test
+    public void loginAs_refusedWithMessageKey_logsNoCompletedLine() throws Exception {
+        for (final String messageKey : REFUSAL_MESSAGE_KEYS) {
+            final LoginAsCall call = new LoginAsCall(CALLER_ID);
+            call.refusesWith(new DotDataException("refused", messageKey));
+
+            final Response response = call.run(TARGET_ID);
+
+            assertEquals(messageKey, Response.Status.OK.getStatusCode(), response.getStatus());
+            final ResponseEntityView<?> entity = (ResponseEntityView<?>) response.getEntity();
+            assertEquals(messageKey, Map.of("loginAs", false), entity.getEntity());
+            assertEquals(messageKey, entity.getErrors().get(0).getErrorCode());
+            assertTrue(messageKey + ": " + call.securityLog,
+                    call.securityLog.stream().anyMatch(line -> line.startsWith("ERROR:")));
+            assertEquals(messageKey, List.of(), call.completedLines());
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UserResource#loginAs(HttpServletRequest, HttpServletResponse, LoginAsForm)}</li>
+     *     <li><b>Given Scenario:</b> A session with no user in it, as with a token-only request; the helper accepts,
+     *     but the session has no selected site, so setting the target's site fails after the session was
+     *     updated.</li>
+     *     <li><b>Expected Result:</b> 500, no "logged in as" line, and the session is left as empty as it was.</li>
+     * </ul>
+     */
+    @Test
+    public void loginAs_failingAfterSessionUpdate_logsNoCompletedLine() throws Exception {
+        final LoginAsCall call = new LoginAsCall(CALLER_ID);
+        call.acceptsAs(TARGET_ID);
+
+        final Response response = call.run(TARGET_ID);
+
+        assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
+        assertEquals(List.of(), call.completedLines());
+        assertEquals(Map.of(), call.session);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UserResource#loginAs(HttpServletRequest, HttpServletResponse, LoginAsForm)}</li>
+     *     <li><b>Given Scenario:</b> The session is user A logged in as user B; B asks for another Login As and the
+     *     helper refuses with a message key, once for each key the Login As refusals use.</li>
+     *     <li><b>Expected Result:</b> The session still holds the A to B Login As.</li>
+     * </ul>
+     */
+    @Test
+    public void loginAs_refusedWithMessageKey_keepsTheActiveLoginAs() throws Exception {
+        for (final String messageKey : REFUSAL_MESSAGE_KEYS) {
+            final LoginAsCall call = new LoginAsCall(LOGGED_IN_AS_ID).withActiveLoginAs(PRINCIPAL_ID, LOGGED_IN_AS_ID);
+            call.refusesWith(new DotDataException("refused", messageKey));
+
+            call.run(LOGGED_IN_AS_ID);
+
+            call.assertActiveLoginAs(PRINCIPAL_ID, LOGGED_IN_AS_ID);
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UserResource#loginAs(HttpServletRequest, HttpServletResponse, LoginAsForm)}</li>
+     *     <li><b>Given Scenario:</b> The session is user A logged in as user B, on a selected site; the helper
+     *     accepts user C and C's site is selected, but writing the "logged in as" line, the last step, fails.</li>
+     *     <li><b>Expected Result:</b> 500; the session is back to the A to B Login As on the site it had selected.</li>
+     * </ul>
+     */
+    @Test
+    public void loginAs_failingAfterSiteSelection_restoresTheSelectedSite() throws Exception {
+        final LoginAsCall call = new LoginAsCall(LOGGED_IN_AS_ID).withActiveLoginAs(PRINCIPAL_ID, LOGGED_IN_AS_ID);
+        call.session.put(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, "selected-before");
+        call.acceptsAs(TARGET_ID);
+        call.failsOnCompletedLine = true;
+
+        final Response response = call.run(TARGET_ID);
+
+        assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
+        assertEquals("selected-before", call.session.get(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID));
+        call.assertActiveLoginAs(PRINCIPAL_ID, LOGGED_IN_AS_ID);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UserResource#loginAs(HttpServletRequest, HttpServletResponse, LoginAsForm)}</li>
+     *     <li><b>Given Scenario:</b> The session is user A logged in as user B; the helper throws
+     *     {@link DotSecurityException}.</li>
+     *     <li><b>Expected Result:</b> 403, and the session still holds the A to B Login As.</li>
+     * </ul>
+     */
+    @Test
+    public void loginAs_notAllowed_keepsTheActiveLoginAs() throws Exception {
+        final LoginAsCall call = new LoginAsCall(LOGGED_IN_AS_ID).withActiveLoginAs(PRINCIPAL_ID, LOGGED_IN_AS_ID);
+        call.refusesWith(new DotSecurityException("not allowed"));
+
+        final Response response = call.run(TARGET_ID);
+
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
+        call.assertActiveLoginAs(PRINCIPAL_ID, LOGGED_IN_AS_ID);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UserResource#loginAs(HttpServletRequest, HttpServletResponse, LoginAsForm)}</li>
+     *     <li><b>Given Scenario:</b> The session is user A logged in as user B; the helper throws
+     *     {@link NoSuchUserException}.</li>
+     *     <li><b>Expected Result:</b> 401, and the session still holds the A to B Login As.</li>
+     * </ul>
+     */
+    @Test
+    public void loginAs_unknownUser_keepsTheActiveLoginAs() throws Exception {
+        final LoginAsCall call = new LoginAsCall(LOGGED_IN_AS_ID).withActiveLoginAs(PRINCIPAL_ID, LOGGED_IN_AS_ID);
+        call.refusesWith(new NoSuchUserException("no such user"));
+
+        final Response response = call.run(TARGET_ID);
+
+        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
+        call.assertActiveLoginAs(PRINCIPAL_ID, LOGGED_IN_AS_ID);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UserResource#loginAs(HttpServletRequest, HttpServletResponse, LoginAsForm)}</li>
+     *     <li><b>Given Scenario:</b> The session is user A logged in as user B; the helper fails with an error caused
+     *     by a {@link DotSecurityException}.</li>
+     *     <li><b>Expected Result:</b> 401, and the session still holds the A to B Login As.</li>
+     * </ul>
+     */
+    @Test
+    public void loginAs_deniedByNestedCause_keepsTheActiveLoginAs() throws Exception {
+        final LoginAsCall call = new LoginAsCall(LOGGED_IN_AS_ID).withActiveLoginAs(PRINCIPAL_ID, LOGGED_IN_AS_ID);
+        call.refusesWith(new RuntimeException(new DotSecurityException("not allowed")));
+
+        final Response response = call.run(TARGET_ID);
+
+        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
+        call.assertActiveLoginAs(PRINCIPAL_ID, LOGGED_IN_AS_ID);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UserResource#loginAs(HttpServletRequest, HttpServletResponse, LoginAsForm)}</li>
+     *     <li><b>Given Scenario:</b> The session is user A logged in as user B; the helper accepts user C, but
+     *     setting C's site fails after the session was updated.</li>
+     *     <li><b>Expected Result:</b> 500, and the session is back to the A to B Login As.</li>
+     * </ul>
+     */
+    @Test
+    public void loginAs_failingAfterSessionUpdate_restoresTheActiveLoginAs() throws Exception {
+        final LoginAsCall call = new LoginAsCall(LOGGED_IN_AS_ID).withActiveLoginAs(PRINCIPAL_ID, LOGGED_IN_AS_ID);
+        call.acceptsAs(TARGET_ID);
+
+        final Response response = call.run(TARGET_ID);
+
+        assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
+        call.assertActiveLoginAs(PRINCIPAL_ID, LOGGED_IN_AS_ID);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UserResource#loginAs(HttpServletRequest, HttpServletResponse, LoginAsForm)}</li>
+     *     <li><b>Given Scenario:</b> A plain session for the caller; the helper accepts user C, but setting C's site
+     *     fails after the session was updated.</li>
+     *     <li><b>Expected Result:</b> 500; the session is the caller's again, with no Login As in it.</li>
+     * </ul>
+     */
+    @Test
+    public void loginAs_failingAfterSessionUpdate_restoresTheCaller() throws Exception {
+        final LoginAsCall call = new LoginAsCall(CALLER_ID);
+        call.session.put(WebKeys.USER_ID, CALLER_ID);
+        call.acceptsAs(TARGET_ID);
+
+        final Response response = call.run(TARGET_ID);
+
+        assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
+        assertEquals(CALLER_ID, call.session.get(WebKeys.USER_ID));
+        Assert.assertNull(call.session.get(LoginAsSession.SESSION_KEY));
+        Assert.assertNull(call.session.get(WebKeys.PRINCIPAL_USER_ID));
+        Assert.assertNull(call.session.get(com.dotmarketing.util.WebKeys.CURRENT_HOST));
+        assertEquals(CALLER_ID, PrincipalThreadLocal.getName());
+    }
+
+    /**
+     * One call to {@link UserResource#loginAs}: a caller holding the Login As role, a mocked helper, a session backed
+     * by {@link #session}, and every {@link SecurityLogger#logInfo} message collected in {@link #securityLog}.
+     */
+    private static final class LoginAsCall {
+
+        final Map<String, Object> session = new HashMap<>();
+        final List<String> securityLog = new ArrayList<>();
+        /** When set, writing the "logged in as" line fails, as the last step of a Login As that got that far. */
+        boolean failsOnCompletedLine;
+        final UserResourceHelper helper = mock(UserResourceHelper.class);
+        final HostAPI siteAPI = mock(HostAPI.class);
+        final User caller = new User();
+
+        LoginAsCall(final String callerId) {
+            caller.setUserId(callerId);
+        }
+
+        final User sessionUser = new User();
+        final Host sessionSite = mock(Host.class);
+
+        LoginAsCall withActiveLoginAs(final String principalId, final String loggedInAsId) {
+            session.put(LoginAsSession.SESSION_KEY, new LoginAsSession(principalId, loggedInAsId));
+            session.put(WebKeys.PRINCIPAL_USER_ID, principalId);
+            session.put(WebKeys.USER_ID, loggedInAsId);
+            sessionUser.setUserId(loggedInAsId);
+            session.put(WebKeys.USER, sessionUser);
+            session.put(com.dotmarketing.util.WebKeys.CURRENT_HOST, sessionSite);
+            return this;
+        }
+
+        void acceptsAs(final String storedUserId) throws Exception {
+            final Host site = mock(Host.class);
+            when(site.getIdentifier()).thenReturn(SITE_ID);
+            when(siteAPI.find(Mockito.anyString(), Mockito.any(), Mockito.anyBoolean())).thenReturn(site);
+            when(helper.doLoginAs(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(Map.of(
+                    WebKeys.USER_ID, storedUserId, com.dotmarketing.util.WebKeys.CURRENT_HOST, site));
+        }
+
+        void refusesWith(final Exception refusal) throws Exception {
+            when(helper.doLoginAs(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any())).thenThrow(refusal);
+        }
+
+        Response run(final String postedUserId) throws Exception {
+            final WebResource webResource = mock(WebResource.class);
+            final InitDataObject initData = mock(InitDataObject.class);
+            when(initData.getUser()).thenReturn(caller);
+            when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initData);
+            final RoleAPI roleAPI = mock(RoleAPI.class);
+            final Role loginAsRole = new Role();
+            when(roleAPI.loadRoleByKey(Role.LOGIN_AS)).thenReturn(loginAsRole);
+            when(roleAPI.doesUserHaveRole(caller, loginAsRole)).thenReturn(true);
+            final DotRestInstanceProvider instanceProvider = new DotRestInstanceProvider()
+                    .setUserAPI(mock(UserAPI.class))
+                    .setHostAPI(siteAPI)
+                    .setRoleAPI(roleAPI)
+                    .setErrorHelper(mock(ErrorResponseHelper.class));
+            final UserResource resource = new UserResource(webResource, helper, mock(PaginationUtil.class),
+                    instanceProvider);
+
+            final HttpSession httpSession = mock(HttpSession.class);
+            when(httpSession.getAttribute(Mockito.anyString())).thenAnswer(i -> session.get(i.<String>getArgument(0)));
+            Mockito.doAnswer(i -> session.put(i.getArgument(0), i.getArgument(1))).when(httpSession)
+                    .setAttribute(Mockito.anyString(), Mockito.any());
+            Mockito.doAnswer(i -> session.remove(i.<String>getArgument(0))).when(httpSession)
+                    .removeAttribute(Mockito.anyString());
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getSession()).thenReturn(httpSession);
+            when(request.getSession(Mockito.anyBoolean())).thenReturn(httpSession);
+            when(request.getServerName()).thenReturn("localhost");
+            when(request.getRemoteAddr()).thenReturn("127.0.0.1");
+
+            final LoginAsForm form = new LoginAsForm.Builder().userId(postedUserId).build();
+            // the request authentication names the caller as the request's principal
+            PrincipalThreadLocal.setName(caller.getUserId());
+            // LanguageUtil is mocked only to keep the error messages away from the real language files
+            try (MockedStatic<SecurityLogger> logger = Mockito.mockStatic(SecurityLogger.class);
+                 MockedStatic<LanguageUtil> ignored = Mockito.mockStatic(LanguageUtil.class)) {
+                logger.when(() -> SecurityLogger.logInfo(Mockito.any(Class.class), Mockito.anyString()))
+                        .thenAnswer(i -> {
+                            final String line = i.getArgument(1);
+                            if (failsOnCompletedLine && line.contains(COMPLETED_LINE)) {
+                                throw new IllegalStateException("log unavailable");
+                            }
+                            return securityLog.add(line);
+                        });
+                return resource.loginAs(request, mock(HttpServletResponse.class), form);
+            }
+        }
+
+        List<String> completedLines() {
+            return securityLog.stream().filter(line -> line.contains(COMPLETED_LINE)).collect(Collectors.toList());
+        }
+
+        void assertActiveLoginAs(final String principalId, final String loggedInAsId) {
+            final LoginAsSession loginAs = (LoginAsSession) session.get(LoginAsSession.SESSION_KEY);
+            Assert.assertNotNull("the Login As record is gone", loginAs);
+            assertEquals(principalId, loginAs.getPrincipalUserId());
+            assertEquals(loggedInAsId, loginAs.getLoginAsUserId());
+            assertEquals(principalId, session.get(WebKeys.PRINCIPAL_USER_ID));
+            assertEquals(loggedInAsId, session.get(WebKeys.USER_ID));
+            Assert.assertSame(sessionUser, session.get(WebKeys.USER));
+            Assert.assertSame(sessionSite, session.get(com.dotmarketing.util.WebKeys.CURRENT_HOST));
+            assertEquals(loggedInAsId, PrincipalThreadLocal.getName());
+        }
     }
 }

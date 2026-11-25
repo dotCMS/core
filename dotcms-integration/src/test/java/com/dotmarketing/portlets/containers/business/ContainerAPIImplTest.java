@@ -967,4 +967,30 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
         publishPermission.setPermission(permissionPublish);
         return publishPermission;
     }
+
+    /**
+     * Method to test: {@link ContainerAPIImpl#copy(Container, Host, User, boolean)}
+     * Given: a container owned by a user
+     * Expected: the copy has the same owner, so permissions given to the CMS Owner role, which are
+     * copied with it, still apply to that user
+     */
+    @Test
+    public void copy_keepsTheOwner() throws Exception {
+        final User systemUser = APILocator.systemUser();
+        final Host host = new SiteDataGen().nextPersisted();
+        final User owner = new UserDataGen().nextPersisted();
+        // the data generator saves as the owner, who may not create containers; save as system
+        final Container container = APILocator.getContainerAPI().save(
+                new ContainerDataGen().site(host).owner(owner).next(), Collections.emptyList(),
+                host, systemUser, false);
+        final Container stored = APILocator.getContainerAPI()
+                .find(container.getInode(), systemUser, false);
+        assertEquals(owner.getUserId(), stored.getOwner());
+
+        final Container copy = APILocator.getContainerAPI().copy(stored, host, systemUser, false);
+        CacheLocator.getContainerCache().remove(copy);
+
+        assertEquals(owner.getUserId(), APILocator.getContainerAPI()
+                .find(copy.getInode(), systemUser, false).getOwner());
+    }
 }

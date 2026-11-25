@@ -34,13 +34,13 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
+import com.dotcms.util.CdnTagHeader;
 import com.dotcms.util.CloseUtils;
 import com.dotcms.util.DownloadUtil;
 import com.dotcms.util.SecurityUtils;
@@ -245,39 +245,27 @@ public class BinaryExporterServlet extends HttpServlet {
 
 			BinaryContentExporter.BinaryContentExporterData data = null;
 			File inputFile = null;
-			HttpSession session = req.getSession(false);
-			List<String> tempBinaryImageInodes = null;
-			if ( session != null && session.getAttribute( Contentlet.TEMP_BINARY_IMAGE_INODES_LIST ) != null ) {
-				tempBinaryImageInodes = (List<String>) session.getAttribute( Contentlet.TEMP_BINARY_IMAGE_INODES_LIST );
-			} else {
-				tempBinaryImageInodes = new ArrayList<>();
-			}
-			boolean isTempBinaryImage = tempBinaryImageInodes.contains(assetInode);
 
 			user = ServletUtils.getUserAndAuthenticateIfRequired(
 						this.webResource, req, resp);
 			final PageMode mode = PageMode.get(req);
 
 			String downloadName = "file_asset";
+			String servedIdentifier = null;
 			final long lang = WebAPILocator.getLanguageWebAPI().getLanguage(req).getId();
 
 			if (isContent){
 				Contentlet content = null;
 				if(byInode) {
-
-					if (isTempBinaryImage)
-						content = contentAPI.find(assetInode, APILocator.getUserAPI().getSystemUser(), mode.respectAnonPerms);
-					else {
-						try {
-							content = contentAPI.find(
-									assetInode, user, ALWAYS_RESPECT_ANONYMOUS_PERMISSIONS
-							);
-						} catch(DotSecurityException e) {
-							if (!mode.respectAnonPerms) {
-								content = getContentletLiveVersion(assetInode, user, lang);
-							} else {
-								throw e;
-							}
+					try {
+						content = contentAPI.find(
+								assetInode, user, ALWAYS_RESPECT_ANONYMOUS_PERMISSIONS
+						);
+					} catch(DotSecurityException e) {
+						if (!mode.respectAnonPerms) {
+							content = getContentletLiveVersion(assetInode, user, lang);
+						} else {
+							throw e;
 						}
 					}
 				} else {
@@ -339,9 +327,26 @@ public class BinaryExporterServlet extends HttpServlet {
 					assetInode = content.getInode();
 				}
 
+				// A missing inode resolves to no version at all, and every gate below reads one.
+				if (content == null) {
+					Logger.debug(this, "Content '" + fieldVarName + "' with inode: " + assetInode
+							+ " was not found");
+					resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+					return;
+				}
+
+				// A lookup by inode resolves no variant of its own, so the version the caller named
+				// may live in one it cannot be served.
+				if (!WebAPILocator.getVariantWebAPI()
+						.canReadVariant(content.getVariantId(), user)) {
+					Logger.debug(this, "Content '" + fieldVarName + "' with inode: " + content.getInode()
+							+ " belongs to a variant that cannot be served to this user");
+					resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+					return;
+				}
+
                 // If the user is NOT logged in the backend then we cannot show content that is NOT live.
-                // Temporal files should be allowed any time
-                if(!isTempBinaryImage && !WebAPILocator.getUserWebAPI().isLoggedToBackend(req)) {
+                if(!WebAPILocator.getUserWebAPI().isLoggedToBackend(req)) {
                     if (!APILocator.getVersionableAPI().hasLiveVersion(content) && mode.respectAnonPerms) {
 						Logger.debug(this, "Content '" + fieldVarName + "' with inode: " + content.getInode() + " is not published");
 						resp.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -362,10 +367,7 @@ public class BinaryExporterServlet extends HttpServlet {
 					return;
 				}
 
-				if(isTempBinaryImage)
-					inputFile = contentAPI.getBinaryFile(content.getInode(), field.variable(), APILocator.getUserAPI().getSystemUser());
-				else
-					inputFile = contentAPI.getBinaryFile(content.getInode(), field.variable(), user);
+				inputFile = contentAPI.getBinaryFile(content.getInode(), field.variable(), user);
 				if(inputFile == null){
 					Logger.debug(this,"Binary file '" + fieldVarName + "' does not exist for inode " + content.getInode());
 					resp.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -380,6 +382,7 @@ public class BinaryExporterServlet extends HttpServlet {
 					return;
 				}
 
+				servedIdentifier = content.getIdentifier();
 			}
 
 			// if this is file uploaded by the tempResource
@@ -479,6 +482,7 @@ public class BinaryExporterServlet extends HttpServlet {
 				mimeType = "application/octet-stream";
 			}
 
+			CdnTagHeader.set(resp, servedIdentifier);
 			resp.setHeader("Content-Disposition", "inline; filename=\"" + UtilMethods.encodeURL(downloadName) + "\"" );
 			resp.setHeader("Content-Length", String.valueOf(_fileLength));
 

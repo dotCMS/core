@@ -78,8 +78,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # The base commit is needed to compute the changed-file list.
-          fetch-depth: 0
+          # pull_request checks out the merge commit, whose first parent is the
+          # base tip; depth 2 is enough to diff HEAD^1..HEAD (the PR's changes).
+          fetch-depth: 2
 
       # Scoped to the changed files on purpose. Repo-wide actionlint is far from
       # clean today, so a whole-tree run would be red for reasons unrelated to
@@ -90,12 +91,16 @@ jobs:
       # the image owner, the same supply-chain reason the actions in this repo
       # are pinned to SHAs.
       - name: Lint changed workflow files
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           set -uo pipefail
+          # Fail closed: without a merge commit HEAD^1 is the previous commit
+          # and only that commit would be linted.
+          if ! git rev-parse --verify --quiet HEAD^2 >/dev/null; then
+            echo "::error::expected a pull request merge commit as HEAD, cannot determine the PR diff"
+            exit 1
+          fi
           mapfile -t changed < <(
-            git diff --name-only --diff-filter=d "$BASE_SHA"...HEAD -- \
+            git diff --name-only --diff-filter=d HEAD^1 HEAD -- \
               '.github/workflows/*.yml' '.github/workflows/*.yaml'
           )
           if (( ${#changed[@]} == 0 )); then

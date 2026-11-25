@@ -4,6 +4,6 @@
     "sourceRoot": "libs/portlets/dot-tools/src",
     "prefix": "dot",
     "projectType": "library",
-    "tags": ["type:feature", "scope:dotcms-ui", "portlet:tools-beta"],
+    "tags": ["type:feature", "scope:dotcms-ui", "portlet:tools"],
     "targets": {}
 }

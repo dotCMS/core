@@ -1,5 +1,5 @@
 import { Observable, Subscription, defer, shareReplay } from 'rxjs';
-import { Editor } from 'tinymce';
+import { Editor, RawEditorOptions } from 'tinymce';
 
 import { DestroyRef, Injectable, NgZone, OnDestroy, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -21,9 +21,22 @@ import {
     DotAssetSearchDialogComponent
 } from '@dotcms/ui';
 
-import { DEFAULT_IMAGE_URL_PATTERN, formatDotImageNode } from './utils/editor.utils';
+import {
+    DEFAULT_IMAGE_URL_PATTERN,
+    formatDotImageNode,
+    replaceURLPattern
+} from './utils/editor.utils';
 
 import { DotEditContentStore } from '../../../store/edit-content.store';
+
+/** TinyMCE's `file_picker_callback`: hands a URL (and field values) back to the open dialog. */
+type FilePickerCallback = Parameters<NonNullable<RawEditorOptions['file_picker_callback']>>[0];
+
+/** z-index of TinyMCE's dialog layer (`.tox-tinymce-aux`), which a picker must open above. */
+const TINYMCE_DIALOG_Z_INDEX = 1300;
+
+/** How the legacy editor's link picker addressed a dotAsset; file assets use their path. */
+const DOT_ASSET_FILE_URL_PATTERN = '/dA/{shortyId}/{name}';
 
 /**
  * Service to initialize the plugins for the WYSIWYG editor
@@ -107,6 +120,117 @@ export class DotWysiwygPluginService implements OnDestroy {
      */
     initializePlugins(editor: Editor): void {
         this.dotImagePlugin(editor);
+    }
+
+    /**
+     * TinyMCE options that put a browse button at the end of the Source field of Insert › Image
+     * and the URL field of Insert › Link, the way the legacy editor had one.
+     *
+     * The button opens the same AssetPicker as the File and Image fields — `image` mode from the
+     * image dialog, `file` mode from the link dialog — and hands the chosen asset's URL back to
+     * that dialog instead of inserting anything, so the editor still decides what to do with it.
+     *
+     * Empty without {@link assetPickerLauncher}: no other host has a picker to offer, and TinyMCE
+     * only renders the button when a callback is set. `file_picker_types` comes back with it so a
+     * system-wide or per-field config can still narrow it (e.g. to `"image"`).
+     */
+    filePickerOptions(): Pick<RawEditorOptions, 'file_picker_types' | 'file_picker_callback'> {
+        if (!this.assetPickerLauncher) {
+            return {};
+        }
+
+        return {
+            file_picker_types: 'file image',
+            file_picker_callback: (callback, _value, meta) =>
+                this.openFilePicker(callback, meta?.['filetype'] === 'image' ? 'image' : 'file')
+        };
+    }
+
+    /**
+     * Opens the AssetPicker for one of TinyMCE's dialogs and passes the selection to `callback`.
+     *
+     * Shares {@link imagePickerBusy} and the tracked ref with the toolbar button: the field shows
+     * one picker at a time, and teardown closes whichever is open.
+     */
+    private openFilePicker(callback: FilePickerCallback, mode: 'image' | 'file'): void {
+        const launcher = this.assetPickerLauncher;
+
+        if (!launcher || this.imagePickerBusy) {
+            return;
+        }
+
+        this.imagePickerBusy = true;
+
+        this.currentSite$.pipe(takeUntilDestroyed(this.destroyRef$)).subscribe({
+            next: (site) => {
+                if (!site) {
+                    this.imagePickerBusy = false;
+
+                    return;
+                }
+
+                this.ngZone.run(() =>
+                    this.releaseBusyIfOpenThrows(() =>
+                        this.trackPicker(
+                            launcher.open(
+                                this.dialogService,
+                                {
+                                    mode,
+                                    site,
+                                    title: this.dotMessageService.get(
+                                        ASSET_PICKER_TITLE_KEYS[mode]
+                                    ),
+                                    languageId: this.pickerLanguageId()
+                                },
+                                // TinyMCE's dialog layer sits at z-index 1300 and PrimeNG stacks
+                                // from 1100, so without this the picker opens behind the dialog
+                                // that asked for it.
+                                { baseZIndex: TINYMCE_DIALOG_Z_INDEX }
+                            ),
+                            (asset) => {
+                                if (!asset) {
+                                    return;
+                                }
+
+                                // TinyMCE writes these into its own fields (attributes, not
+                                // markup), so the title needs no escaping here.
+                                callback(
+                                    this.assetUrl(asset, mode, site),
+                                    mode === 'image' ? { alt: asset.title } : { text: asset.title }
+                                );
+                            }
+                        )
+                    )
+                );
+            },
+            error: () => (this.imagePickerBusy = false)
+        });
+    }
+
+    /**
+     * URL a dialog gets for a picked asset.
+     *
+     * Images use the same `WYSIWYG_IMAGE_URL_PATTERN` as the toolbar button, so both entry points
+     * produce the same `src`. Files follow the legacy editor's link picker — a file asset links to its
+     * path, a dotAsset to its `/dA/` URL — with one exception: a file asset from another site also
+     * gets the `/dA/` URL. A path only resolves on the site that owns the file, and the picker lets
+     * the editor browse any site, so a bare path would 404 wherever this content is published.
+     *
+     * "This site" is the edited contentlet's site; for content not saved yet, it is the site the
+     * picker opened on.
+     */
+    private assetUrl(asset: DotCMSContentlet, mode: 'image' | 'file', site: DotSite): string {
+        if (mode === 'image') {
+            return replaceURLPattern(this.IMAGE_URL_PATTERN, asset);
+        }
+
+        const path: unknown = asset['path'];
+        const contentSiteId = this.editContentStore?.contentlet()?.host || site.identifier;
+        const sameSite = !!asset.host && asset.host === contentSiteId;
+
+        return asset.baseType === 'FILEASSET' && sameSite && typeof path === 'string' && path
+            ? path
+            : replaceURLPattern(DOT_ASSET_FILE_URL_PATTERN, asset);
     }
 
     /**
@@ -244,12 +368,7 @@ export class DotWysiwygPluginService implements OnDestroy {
      * differ in what the user browses, not in what a selection means.
      */
     private trackImagePicker(editor: Editor, ref: DynamicDialogRef): void {
-        this.pickerRef = ref;
-
-        this.pickerCloseSub = ref.onClose.subscribe((asset: DotCMSContentlet) => {
-            this.imagePickerBusy = false;
-            this.pickerRef = null;
-
+        this.trackPicker(ref, (asset) => {
             if (asset) {
                 editor.insertContent(formatDotImageNode(this.IMAGE_URL_PATTERN, asset));
             }
@@ -257,6 +376,23 @@ export class DotWysiwygPluginService implements OnDestroy {
             // Return focus to the editor on every close (insert or dismiss via
             // X, Esc or overlay mask) so the user is never left without focus.
             editor.focus();
+        });
+    }
+
+    /**
+     * Holds the live ref so teardown can close it, frees the busy flag on close, then hands the
+     * selection (or `undefined` on dismiss) to `onClose`. Shared by every picker this field opens.
+     */
+    private trackPicker(
+        ref: DynamicDialogRef,
+        onClose: (asset: DotCMSContentlet | undefined) => void
+    ): void {
+        this.pickerRef = ref;
+
+        this.pickerCloseSub = ref.onClose.subscribe((asset: DotCMSContentlet) => {
+            this.imagePickerBusy = false;
+            this.pickerRef = null;
+            onClose(asset);
         });
     }
 

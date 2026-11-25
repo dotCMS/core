@@ -14,7 +14,7 @@
         <!-- Preload the byte-buddy agent for this module's tests so CacheSizingUtil can use
              Instrumentation.getObjectSize(). The path is populated by the dependency-plugin
              'properties' goal (see build/plugins). Consumed by the shared surefire/failsafe argLine. -->
-        <bytebuddy.agent.argline>-javaagent:${net.bytebuddy:byte-buddy-agent:jar}</bytebuddy.agent.argline>
+        <bytebuddy.agent.argline>-javaagent:"${net.bytebuddy:byte-buddy-agent:jar}"</bytebuddy.agent.argline>
         <servlet.port>8080</servlet.port>
         <palantirJavaFormat.version>2.29.0</palantirJavaFormat.version>
         <src.dir>${project.basedir}/src/main/java</src.dir>
@@ -268,10 +268,6 @@
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.ldap</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.lesscss</artifactId>
         </dependency>
         <dependency>
@@ -457,6 +453,7 @@
               WebDav Support
            *****************************
         -->
+        <!-- dotCMS replaces com.ettrema.http.report.ReportHandler (src/main/java); keep its constructor in step with milton (see WebdavReportHandlerTest). -->
         <dependency>
             <groupId>com.ettrema</groupId>
             <artifactId>milton-api</artifactId>
@@ -879,11 +876,6 @@
             <artifactId>jaxen</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>werken-xpath</groupId>
-            <artifactId>werken-xpath</artifactId>
-        </dependency>
-
         <!--
           *****************************
              JSON
@@ -1155,11 +1147,6 @@
         <dependency>
             <groupId>org.dom4j</groupId>
             <artifactId>dom4j</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.jdom</groupId>
-            <artifactId>jdom</artifactId>
         </dependency>
 
         <dependency>

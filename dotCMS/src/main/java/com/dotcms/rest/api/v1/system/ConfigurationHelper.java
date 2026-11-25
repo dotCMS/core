@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.system;
 
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.company.CompanyLogoPath;
 import com.dotcms.rest.api.v1.asset.bulkdelete.FolderBulkDeleteHelper;
 import com.dotcms.rest.api.v1.asset.bulkduplicate.FolderBulkDuplicateHelper;
 import com.dotcms.rest.api.v1.asset.bulkupload.BulkUploadHelper;
@@ -10,6 +11,7 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.license.LicenseManager;
+import com.dotcms.util.LanguageBundleVersion;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Constants;
@@ -79,6 +81,7 @@ public class ConfigurationHelper implements Serializable {
 	public static final String RELEASE_INFO = "releaseInfo";
 	public static final String VERSION = "version";
 	public static final String BUILD_DATE = "buildDate";
+	public static final String LANGUAGE_BUNDLE_VERSION = "languageBundleVersion";
 	public static final String EMAIL_REGEX = "emailRegex";
 	public static final String BACKGROUND_COLOR = "background";
 	public static final String PRIMARY_COLOR = "primary";
@@ -121,10 +124,10 @@ public class ConfigurationHelper implements Serializable {
 		String primaryColor = "NA";
 		String secondaryColor = "NA";
 		String loginScreenLogo = Try.of(() -> APILocator.getCompanyAPI().getDefaultCompany().getCity()).getOrElse("NA");
-		loginScreenLogo = UtilMethods.isSet(loginScreenLogo) && loginScreenLogo.startsWith("/dA") ? loginScreenLogo : "NA";
+		loginScreenLogo = CompanyLogoPath.forwardPath(loginScreenLogo).orElse("NA");
 		String navBarLogo = Try.of(() -> APILocator.getCompanyAPI().getDefaultCompany().getState()).getOrElse("NA");
-		navBarLogo = LicenseUtil.getLevel() > LicenseLevel.COMMUNITY.level &&
-				UtilMethods.isSet(navBarLogo) && navBarLogo.startsWith("/dA") ? navBarLogo : "NA";
+		navBarLogo = LicenseUtil.getLevel() > LicenseLevel.COMMUNITY.level
+				? CompanyLogoPath.forwardPath(navBarLogo).orElse("NA") : "NA";
 
 	    try {
 			backgroundColor = APILocator.getCompanyAPI().getDefaultCompany().getSize();
@@ -178,6 +181,8 @@ public class ConfigurationHelper implements Serializable {
 						NAV_BAR_LOGO,navBarLogo
 				)
 		));
+
+		map.put(LANGUAGE_BUNDLE_VERSION, LanguageBundleVersion.get());
 
 		// The bulk upload ceilings, so the client can name the limit instead of saying
 		// "fewer". Two things follow from a number the author can read: a refusal becomes one

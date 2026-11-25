@@ -16,7 +16,8 @@
 	Set anchor to false if you do not want the page to refresh and anchor to the
 	current portlet.
 
-	Set encrypt to true if you want to encrypt all the parameter values.
+	The encrypt attribute is accepted for compatibility and has no effect: parameter
+	values are always written as they were set.
 	-->
 
 	<tag>
@@ -416,7 +417,8 @@
 	Set anchor to false if you do not want the page to refresh and anchor to the
 	current portlet.
 
-	Set encrypt to true if you want to encrypt all the parameter values.
+	The encrypt attribute is accepted for compatibility and has no effect: parameter
+	values are always written as they were set.
 	-->
 
 	<tag>

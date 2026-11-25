@@ -152,6 +152,20 @@ describe('UveIframeMessengerService', () => {
         });
     });
 
+    // #38575: during a drag the page scrolls itself at the velocity the editor sends.
+    describe('scrollAtVelocity', () => {
+        it.each([12, -40, 0])('should ask the page to scroll at %d px per frame', (velocity) => {
+            service.setIframeWindow(mockIframeWindow);
+
+            service.scrollAtVelocity(velocity);
+
+            expect(mockIframeWindow.postMessage).toHaveBeenCalledWith(
+                { name: 'uve-scroll-velocity', velocity },
+                '*'
+            );
+        });
+    });
+
     describe('scrollToSection', () => {
         it('should ask the page to scroll to the section with that index', () => {
             service.setIframeWindow(mockIframeWindow);

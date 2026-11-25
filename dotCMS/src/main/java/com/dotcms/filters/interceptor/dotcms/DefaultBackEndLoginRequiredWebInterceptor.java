@@ -2,6 +2,7 @@ package com.dotcms.filters.interceptor.dotcms;
 
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
+import com.dotcms.security.ContentSecurityPolicyUtil;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.SecurityUtils;
@@ -127,6 +128,8 @@ public class DefaultBackEndLoginRequiredWebInterceptor implements WebInterceptor
                     session.setAttribute(WebKeys.REDIRECT_AFTER_LOGIN, SecurityUtils
                             .stripReferer(request, completeRequestedURL));
                 }
+                // every path guarded here is back-end and the body is dotCMS's own page
+                ContentSecurityPolicyUtil.addBackendHeader(response);
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 response.setContentType("text/html");
                 response.getWriter().print(unauthorizedHtmlResponse());

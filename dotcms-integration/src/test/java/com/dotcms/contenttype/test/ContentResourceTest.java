@@ -2355,6 +2355,50 @@ public class ContentResourceTest extends IntegrationTestBase {
     }
 
     /**
+     * Method to test: {@link ContentResource#getContent(HttpServletRequest, HttpServletResponse, String)}
+     * Given scenario: the same items, asked for by inode rather than by query. An inode names one exact
+     * version, so this lookup resolves no variant of its own: the caller already named the version it wants.
+     * Expected result: an anonymous caller is answered as if the version on the named variant did not exist,
+     * while the version on the default variant is still returned. The controls run first: a back-end caller
+     * reaches the named variant by inode, and the anonymous caller reaches the default one.
+     */
+    @Test
+    public void test_getContentByInode_anonymousUser_isScopedToTheDefaultVariant() throws Exception {
+        final VariantContentFixture fixture = createVariantContentFixture();
+        try {
+            final User anonymous = userAPI.getAnonymousUser();
+            final String namedVariantInode = fixture.onBothVariantsNamedVersion.getInode();
+
+            assertEquals("fixture problem: a back-end caller does not reach the version on the named "
+                            + "variant by inode, so there is nothing here for an anonymous caller to reach",
+                    1, countByInode(TestUserUtils.getAdminUser(), namedVariantInode));
+            assertEquals("the version on the default variant must still be returned by inode", 1,
+                    countByInode(anonymous, fixture.onBothVariants.getInode()));
+
+            assertEquals("a caller without back-end access must not reach a version on another variant "
+                    + "by naming its inode", 0, countByInode(anonymous, namedVariantInode));
+        } finally {
+            deleteContentTypes(List.of(fixture.contentType));
+        }
+    }
+
+    /**
+     * Counts what GET /api/content/inode/&lt;inode&gt; returns for the given user.
+     *
+     * @param caller the user asking for the version
+     * @param inode the version's inode
+     * @return the number of contentlets returned
+     * @throws Exception if the call fails
+     */
+    private int countByInode(final User caller, final String inode) throws Exception {
+        final Response endpointResponse = new ContentResource().getContent(createHttpRequest(null, caller),
+                mock(HttpServletResponse.class), "/inode/" + inode);
+        assertEquals(String.valueOf(endpointResponse.getEntity()), Status.OK.getStatusCode(),
+                endpointResponse.getStatus());
+        return new JSONObject(endpointResponse.getEntity().toString()).getJSONArray("contentlets").length();
+    }
+
+    /**
      * One content type holding three live items — one on the default variant, one on a named variant, and one
      * that is live on both at once — all readable by the anonymous role, so the only thing separating them in
      * a query is the variant.

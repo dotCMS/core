@@ -360,7 +360,6 @@ public class ShortyServlet extends HttpServlet {
     final boolean  isImage = webp || jpeg || avif || width+height+maxWidth+maxHeight +minHeight+minWidth> 0 || quality>0 || cropHeight>0 || cropWidth>0;
     final ShortyId shorty  = shortOpt.get();
     final String   path    = isImage? "/contentAsset/image" : "/contentAsset/raw-data";
-    final User systemUser  = APILocator.systemUser();
     final Language language =WebAPILocator.getLanguageWebAPI().getLanguage(request);
     try {
 
@@ -369,7 +368,7 @@ public class ShortyServlet extends HttpServlet {
         if(shorty.type!= ShortType.TEMP_FILE) {
           final Optional<Contentlet> conOpt = (shorty.type == ShortType.IDENTIFIER)
                       ? getContentletByIdentifier(live, shorty.longId, language, caller)
-                      : Optional.ofNullable(APILocator.getContentletAPI().find(shorty.longId, systemUser, false));
+                      : getContentletByInode(shorty.longId, caller);
                       
           if(conOpt.isEmpty()) {
               response.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -412,6 +411,29 @@ public class ShortyServlet extends HttpServlet {
       response.sendError(404);
     }
   }
+
+    /**
+     * Finds the version a short-URL request names by inode.
+     *
+     * <p>An inode names one exact version, so there is no variant left to resolve here. The
+     * version is handed back only when the caller may read the variant it lives in, and is
+     * reported as missing otherwise.
+     *
+     * @param inode the version's inode
+     * @param caller the {@link User} the request is served for, or null when there is none
+     * @return the matching {@link Contentlet}, empty when there is none or the caller may not be
+     * served its variant
+     * @throws DotDataException if the lookup fails
+     * @throws DotSecurityException if the content item cannot be read
+     */
+    private static Optional<Contentlet> getContentletByInode(final String inode, final User caller)
+            throws DotDataException, DotSecurityException {
+
+        return Optional.ofNullable(
+                        APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false))
+                .filter(contentlet -> WebAPILocator.getVariantWebAPI()
+                        .canReadVariant(contentlet.getVariantId(), caller));
+    }
 
     /**
      * Finds the version of a content item a short-URL request should be served from.

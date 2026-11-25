@@ -924,9 +924,13 @@ public class ContentHandler implements IHandler {
 			// and new content is only related to content that exists there
 			this.collectPushedTrees(wrapper, identifier, content, false);
 		}
-        // Categories
+        // Categories. The check-in above copies the categories the content already has in the
+        // receiver, and the trees are only cleaned with the relationships filter on (#30998), so
+        // they're always removed here for the content to get exactly the ones in the bundle,
+        // including none (#38429). Categories are linked by inode, so relationships aren't touched
+        this.categoryAPI.removeParents(content, this.userAPI.getSystemUser(), !RESPECT_FRONTEND_ROLES);
         if (UtilMethods.isSet(wrapper.getCategories())) {
-            handleContentCategories(content.getInode(), wrapper.getCategories());
+            handleContentCategories(content, wrapper.getCategories());
         }
         CacheLocator.getCategoryCache().removeParents(content);
 
@@ -1217,8 +1221,16 @@ public class ContentHandler implements IHandler {
 
 	/**
 	 * Checks whether saving the specified {@code tree} row would give its parent or its child more
-	 * related items than the relationship allows: one child per parent for {@code MANY_TO_ONE} and
-	 * {@code ONE_TO_ONE}, and one parent per child for {@code ONE_TO_MANY} and {@code ONE_TO_ONE}.
+	 * related items than the relationship allows: one child per parent and one parent per child for
+	 * {@code ONE_TO_ONE}, one parent per child for {@code ONE_TO_MANY}, and, for
+	 * {@code MANY_TO_ONE}, one related item per content of the type that holds the field the
+	 * relationship was created from.
+	 * <p>
+	 * A {@code MANY_TO_ONE} relationship can be stored with the field on either side. A field created
+	 * as many-to-one is stored with the related ("one") type as the parent and the field's type as
+	 * the child, so the child can have one parent only. A field on the parent whose cardinality is
+	 * changed to many-to-one keeps its sides, so the parent can have one child only
+	 * (<a href="https://github.com/dotCMS/core/issues/38538">#38538</a>).
 	 *
 	 * @param tree The {@code tree} row to check.
 	 *
@@ -1233,14 +1245,58 @@ public class ContentHandler implements IHandler {
 			return false;
 		}
 		final RELATIONSHIP_CARDINALITY cardinality = RELATIONSHIP_CARDINALITY.fromOrdinal(relationship.getCardinality());
-		final boolean oneChildPerParent = cardinality == RELATIONSHIP_CARDINALITY.MANY_TO_ONE
-				|| cardinality == RELATIONSHIP_CARDINALITY.ONE_TO_ONE;
-		final boolean oneParentPerChild = cardinality == RELATIONSHIP_CARDINALITY.ONE_TO_MANY
-				|| cardinality == RELATIONSHIP_CARDINALITY.ONE_TO_ONE;
+		final boolean manyToOneFromParent = cardinality == RELATIONSHIP_CARDINALITY.MANY_TO_ONE
+				&& isOriginatingFieldOnParent(relationship);
+		final boolean oneChildPerParent = cardinality == RELATIONSHIP_CARDINALITY.ONE_TO_ONE || manyToOneFromParent;
+		final boolean oneParentPerChild = cardinality == RELATIONSHIP_CARDINALITY.ONE_TO_ONE
+				|| cardinality == RELATIONSHIP_CARDINALITY.ONE_TO_MANY
+				|| (cardinality == RELATIONSHIP_CARDINALITY.MANY_TO_ONE && !manyToOneFromParent);
 		return (oneChildPerParent && this.hasOtherRelated(OTHER_CHILDREN_SQL, tree.getParent(), tree.getChild(),
 						tree.getRelationType()))
 				|| (oneParentPerChild && this.hasOtherRelated(OTHER_PARENTS_SQL, tree.getChild(), tree.getParent(),
 						tree.getRelationType()));
+	}
+
+	/**
+	 * Checks whether the field the relationship was created from, named in its
+	 * {@code <Content Type>.<field>} relation type, is on the parent type. When the parent and child
+	 * types differ, the Content Type in the relation type tells the side. A type related to itself
+	 * is told apart by the relation names: a field on the parent is stored as the child relation
+	 * name, and a field on the child as the parent relation name. A relationship that wasn't created
+	 * from a field, or whose side can't be told, is treated as having it on the child, which is how
+	 * dotCMS stores a relationship created as many-to-one.
+	 *
+	 * @param relationship The relationship to check.
+	 *
+	 * @return If the originating field is on the parent type, returns {@code true}.
+	 *
+	 * @throws DotDataException The parent Content Type couldn't be read. The bundle fails instead
+	 *                          of applying the relationship with the wrong side limited.
+	 */
+	private static boolean isOriginatingFieldOnParent(final Relationship relationship) throws DotDataException {
+		final String relationType = relationship.getRelationTypeValue();
+		final int separator = null == relationType ? -1 : relationType.indexOf('.');
+		if (separator < 0) {
+			return false;
+		}
+		final String typeVariable = relationType.substring(0, separator);
+		final String fieldVariable = relationType.substring(separator + 1);
+		if (!relationship.getParentStructureInode().equals(relationship.getChildStructureInode())) {
+			final String parentVariable;
+			try {
+				parentVariable = APILocator.getContentTypeAPI(APILocator.systemUser())
+						.find(relationship.getParentStructureInode()).variable();
+			} catch (final DotSecurityException e) {
+				throw new DotDataException(e);
+			}
+			return typeVariable.equalsIgnoreCase(parentVariable);
+		}
+		// For a type related to itself, deleting the originating field clears its relation name
+		// but keeps the relationship, so a cleared child relation name next to a different parent
+		// one still means the originating field was on the parent
+		return !fieldVariable.equals(relationship.getParentRelationName())
+				&& (fieldVariable.equals(relationship.getChildRelationName())
+						|| null == relationship.getChildRelationName());
 	}
 
 	private static final String OTHER_CHILDREN_SQL =
@@ -1454,19 +1510,30 @@ public class ContentHandler implements IHandler {
 	}
 
     /**
-     * Handles categories included in the bundle by creating/ensuring a tree for each category is associated to the content inode
+     * Links the pushed content to each category in the bundle, in the bundle's order. Categories
+     * are matched by their key path, and are never created here: one that doesn't exist in the
+     * receiver is skipped with a warning, since the content is still saved without it. They only
+     * reach the receiver when pushed themselves, either as dependencies or with a category sync.
      *
-     * @param inode corresponding to the content
-     * @param categories list of category-qualified-names included in the bundle
-     * @throws DotSecurityException
-     * @throws DotDataException
+     * @param content    The pushed content, already checked in on the receiver.
+     * @param categories The category-qualified-names included in the bundle.
+     * @throws DotSecurityException The category lookup was not allowed.
+     * @throws DotDataException     An error occurred when reading categories or saving the links.
      */
 	@WrapInTransaction
-	private void handleContentCategories(String inode, List<String> categories) throws DotSecurityException, DotDataException {
+	private void handleContentCategories(final Contentlet content, final List<String> categories)
+			throws DotSecurityException, DotDataException {
+		final String inode = content.getInode();
 		for(int i = 0; i < categories.size(); i++) {
 			Category category = findCategory(categories.get(i));
 
-			if (category != null) {
+			if (category == null) {
+				Logger.warn(this, String.format("Category '%s' of the pushed content with Identifier '%s' "
+						+ "doesn't exist in the receiver, so the content was saved without it. Push the "
+						+ "categories, or use a filter that includes dependencies, and push the content again",
+						categories.get(i).replace(ContentBundler.CATEGORY_SEPARATOR, " > "),
+						content.getIdentifier()));
+			} else {
 		        Tree tree = new Tree();
 		        tree.setChild(inode);
 		        tree.setParent(category.getInode());

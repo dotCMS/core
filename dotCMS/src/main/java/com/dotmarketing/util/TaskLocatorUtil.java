@@ -275,6 +275,9 @@ import com.dotmarketing.startup.runonce.Task260826CreateSystemEventCursorTable;
 import com.dotmarketing.startup.runonce.Task261028RemoveSearchLegacyPortletsFromLayouts;
 import com.dotmarketing.startup.runonce.Task261103RemoveContainersLegacyPortletFromLayouts;
 import com.dotmarketing.startup.runonce.Task261104CreateLoginLockoutTable;
+import com.dotmarketing.startup.runonce.Task261109AddMultiTreeParentIndexes;
+import com.dotmarketing.startup.runonce.Task261110PromoteUsersRolesToolsPortlets;
+import com.dotmarketing.startup.runonce.Task261112WidenSiteSearchAuditTextColumns;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
@@ -623,6 +626,8 @@ public class TaskLocatorUtil {
         .add(Task261028RemoveSearchLegacyPortletsFromLayouts.class)
         .add(Task261103RemoveContainersLegacyPortletFromLayouts.class)
         .add(Task261104CreateLoginLockoutTable.class)
+        .add(Task261109AddMultiTreeParentIndexes.class)
+        .add(Task261112WidenSiteSearchAuditTextColumns.class)
         .build();
 
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
@@ -652,6 +657,9 @@ public class TaskLocatorUtil {
 		// run-always reconcile, not version-gated: the bundled starter can record a db_version
 		// past this task's number while its layouts predate the dotAuth portlet (fresh-install gap)
 		ret.add(Task260420AddDotAuthPortletToMenu.class);
+		// run-always for the same fresh-install reason: the starter's layouts have Roles but no
+		// Tools row, and installs that opted into a beta portlet still carry its -beta row
+		ret.add(Task261110PromoteUsersRolesToolsPortlets.class);
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 
@@ -692,6 +700,7 @@ public class TaskLocatorUtil {
 	public static List<Class<?>> getTaskClassesNoTransaction() {
 		final List<Class<?>> ret = new ArrayList<>();
 		ret.add(Task241014AddTemplateValueOnContentletIndex.class);
+        ret.add(Task261109AddMultiTreeParentIndexes.class);
 		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 

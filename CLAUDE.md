@@ -123,8 +123,9 @@ table is a gate.
 | A unit test in `dotCMS/src/test/**` | [Backend Unit Tests](docs/testing/BACKEND_UNIT_TESTS.md) |
 | A feature flag (`FeatureFlagName`, `Config.get*Property`, `dotmarketing-config.properties`) | [Configuration Patterns → Feature Flags](docs/backend/CONFIGURATION_PATTERNS.md#feature-flags) — constant in `FeatureFlagName`, `FEATURE_FLAG_` prefix, default stated in the Javadoc |
 | A JAX-RS resource, `@Schema`, `@Operation` or `openapi.yaml` | [REST API Patterns](docs/backend/REST_API_PATTERNS.md) and [REST API Guide](dotCMS/src/main/java/com/dotcms/rest/CLAUDE.md) — regenerate and commit `openapi.yaml` |
-| `DotConnect`, `@WrapInTransaction`, `@CloseDBIfOpened`, SQL strings | [Database Patterns](docs/backend/DATABASE_PATTERNS.md) |
+| `DotConnect`, `@WrapInTransaction`, `@CloseDBIfOpened`, SQL strings, a commit listener | [Database Patterns](docs/backend/DATABASE_PATTERNS.md) — and [→ Commit Listeners](docs/backend/DATABASE_PATTERNS.md#commit-listeners) when deferring work past the commit: `addCommitListener` is **async by default** and the integration tests never run that path |
 | Input handling, auth checks, logging of user data, secrets | [Security Patterns](docs/backend/SECURITY_BACKEND.md) |
+| `DotHttpHeaderSecurityFilter`, `ContentSecurityPolicyUtil`, or any response header (HSTS, X-Frame-Options, Content-Security-Policy) | [Security Patterns → Response security headers](docs/backend/SECURITY_BACKEND.md#response-security-headers) — headers go through the one filter, not per servlet; back-end and site-page policies are separate properties |
 | `ESContentFactoryImpl`, `IndexAPI`, anything under `content/elasticsearch` or `opensearch` | [Search API Migration](docs/backend/SEARCH_API_MIGRATION.md) and [OpenSearch Migration](docs/backend/OPENSEARCH_MIGRATION.md) |
 | A `pom.xml` dependency or version | [Maven Build System](docs/backend/MAVEN_BUILD_SYSTEM.md) |
 | Anything under `core-web/` | [core-web/CLAUDE.md](core-web/CLAUDE.md) and [docs/frontend/README.md](docs/frontend/README.md) |

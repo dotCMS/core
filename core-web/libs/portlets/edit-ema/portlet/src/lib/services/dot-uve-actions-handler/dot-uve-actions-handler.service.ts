@@ -11,6 +11,7 @@ import { switchMap, take, tap } from 'rxjs/operators';
 import { DotMessageService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotTreeNode } from '@dotcms/dotcms-models';
 import {
+    DotCMSIframeScrollPayload,
     DotCMSInlineEditingPayload,
     DotCMSInlineEditingType,
     DotCMSUVEAction
@@ -47,6 +48,21 @@ export interface ActionsHandlerDependencies {
     contentWindow: Window | null;
     host: string;
     onCopyContent: (currentTreeNode: DotTreeNode) => Observable<DotCMSContentlet>;
+}
+
+/**
+ * The page's `scrollY` from a `scroll` report, which comes from the page and is read as untrusted.
+ * Older SDKs send no payload.
+ *
+ * @param payload what the page sent with the report
+ * @returns the scroll offset, or undefined when the page sent none
+ */
+function scrollYOf(payload: unknown): DotCMSIframeScrollPayload['scrollY'] {
+    if (typeof payload !== 'object' || payload === null || !('scrollY' in payload)) {
+        return undefined;
+    }
+
+    return typeof payload.scrollY === 'number' ? payload.scrollY : undefined;
 }
 
 @Injectable()
@@ -125,8 +141,9 @@ export class DotUveActionsHandlerService {
                     payload: actionPayload
                 });
             },
-            [DotCMSUVEAction.IFRAME_SCROLL]: () => {
-                uveStore.updateEditorScrollState();
+            [DotCMSUVEAction.IFRAME_SCROLL]: (payload: unknown) => {
+                // A newer SDK says where the page is, so a drag can keep its drop targets.
+                uveStore.updateEditorScrollState(scrollYOf(payload));
             },
             [DotCMSUVEAction.IFRAME_SCROLL_END]: () => {
                 // No-op on purpose. We used to flip IDLE here, but that
@@ -321,24 +338,26 @@ export class DotUveActionsHandlerService {
             },
             /**
              * Handles the `EDIT_CONTENTLET` postMessage action sent by the SDK's `editContentlet()`,
-             * as every other edit: the content type decides between the new editor and the legacy
-             * dialog. Ignored outside edit mode or without edit permission on the page, as before
-             * the split, because the SDK sends it without checking.
+             * as every other edit: the content editor opens it in the side panel, in whichever
+             * editor its content type uses (#38303). `fromSdk`: a save also asks the client to
+             * reload, since a headless page renders its own content. Ignored outside edit mode or
+             * without edit permission on the page, as before the split, because the SDK sends it
+             * without checking.
              */
             [DotCMSUVEAction.EDIT_CONTENTLET]: (contentlet: DotCMSContentlet) => {
                 if (!uveStore.editorCanEditContent()) {
                     return;
                 }
 
-                this.contentEditor.uveEditContentRequested({ contentlet });
+                this.contentEditor.uveEditContentRequested({ contentlet, fromSdk: true });
             },
             /**
              * Handles the `CREATE_CONTENTLET` postMessage action sent by `window.dotUVE.createContentlet()`
              * (or `createContentlet()` from `@dotcms/uve` in headless setups).
              *
              * Asks the content editor to create a contentlet of the given content type variable,
-             * as every other create: the content type decides between the new editor and the
-             * legacy dialog. The request carries no container position, so the newly created
+             * as every other create: it opens in the side panel, in whichever editor the content
+             * type uses (#38303). The request carries no container position, so the newly created
              * contentlet is saved to the system but is NOT inserted into the page layout — the
              * page simply reloads after save. This supports use cases like widgets that pull
              * content automatically (e.g. an events widget). Ignored outside edit mode or without

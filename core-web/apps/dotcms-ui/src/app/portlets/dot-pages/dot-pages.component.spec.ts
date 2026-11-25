@@ -1,14 +1,16 @@
 import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { MockComponent, MockInstance, MockProvider } from 'ng-mocks';
-import { of, Subject } from 'rxjs';
+import { BehaviorSubject, of, Subject } from 'rxjs';
 import { Mock, Mocked, vi } from 'vitest';
 
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { ActivatedRoute, Navigation, Params, Router } from '@angular/router';
 
-import { LazyLoadEvent, MenuItem } from 'primeng/api';
+import { LazyLoadEvent, MenuItem, MessageService } from 'primeng/api';
+import { Toast } from 'primeng/toast';
 
 import { DotEventsService, DotMessageDisplayService, DotRouterService } from '@dotcms/data-access';
 import {
@@ -17,6 +19,9 @@ import {
     DotMessageSeverity,
     DotMessageType
 } from '@dotcms/dotcms-models';
+// The service that owns the panel params; the app also lazy-loads the library's routes (#38303).
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { DotPanelUrlStateService } from '@dotcms/edit-content';
 import { GlobalStore } from '@dotcms/store';
 import { DotAddToBundleComponent } from '@dotcms/ui';
 
@@ -86,6 +91,7 @@ describe('DotPagesComponent', () => {
         hideBundleDialog: Mock;
         updateFavoritePageNode: Mock;
         updatePageNode: Mock;
+        getPages: Mock;
     };
     let events$: Subject<DotEvent<SavePageEventData>>;
     let mockDotRouterService: Mocked<Pick<DotRouterService, 'goToEditPage'>>;
@@ -99,6 +105,8 @@ describe('DotPagesComponent', () => {
     const createComponent = createComponentFactory({
         component: DotPagesComponent,
         imports: [DotPagesComponent],
+        // Stands in for a MessageService an ancestor would provide.
+        providers: [MessageService],
         detectChanges: false
     });
 
@@ -116,6 +124,7 @@ describe('DotPagesComponent', () => {
             set: {
                 imports: [
                     CommonModule,
+                    Toast,
                     TieredMenuStubComponent,
                     MockComponent(DotPageFavoritesPanelComponent),
                     MockComponent(DotPagesTableComponent),
@@ -141,7 +150,8 @@ describe('DotPagesComponent', () => {
             onLazyLoad: vi.fn(),
             hideBundleDialog: vi.fn(),
             updateFavoritePageNode: vi.fn(),
-            updatePageNode: vi.fn()
+            updatePageNode: vi.fn(),
+            getPages: vi.fn()
         };
 
         events$ = new Subject<DotEvent<SavePageEventData>>();
@@ -159,7 +169,12 @@ describe('DotPagesComponent', () => {
                 MockProvider(DotMessageDisplayService, mockDotMessageDisplayService),
                 MockProvider(DotEventsService, mockDotEventsService),
                 MockProvider(DotPageActionsService, mockDotPageActionsService),
-                { provide: GlobalStore, useValue: mockGlobalStore }
+                { provide: GlobalStore, useValue: mockGlobalStore },
+                // A URL that names no panel (#38303); the load-time cases have their own describe.
+                {
+                    provide: ActivatedRoute,
+                    useValue: { snapshot: { queryParams: {} }, queryParams: of({}) }
+                }
             ]
         });
 
@@ -270,6 +285,20 @@ describe('DotPagesComponent', () => {
             expect(showSpy).toHaveBeenCalled();
             expect(spectator.component.menuItems()).toEqual(items);
         });
+
+        // #38303, T173 — the actions refresh the listing themselves, so the menu hands them only
+        // the page, as the right-click menu does.
+        it('should ask for the actions with the page alone', () => {
+            spectator.triggerEventHandler('dot-page-favorites-panel', 'openMenu', {
+                originalEvent: {
+                    stopPropagation: vi.fn(),
+                    currentTarget: document.createElement('button')
+                } as unknown as MouseEvent,
+                data: mockContentlet({ identifier: 'p1' })
+            } satisfies DotActionsMenuEventParams);
+
+            expect(mockDotPageActionsService.getItems.mock.calls[0]).toHaveLength(1);
+        });
     });
 
     describe('template wiring', () => {
@@ -317,6 +346,24 @@ describe('DotPagesComponent', () => {
         });
     });
 
+    /**
+     * The page actions' Edit opens the side panel with this component's injector (the actions
+     * service is provided here). The admin root provides no MessageService (it would shadow the page
+     * editor's), so the panel's editor finds this one and toasts in this component's toast (#38303).
+     */
+    describe('side panel toasts', () => {
+        it('should provide a MessageService of its own', () => {
+            // Compared by identity: printing a MessageService on failure floods the output.
+            expect(
+                spectator.inject(MessageService, true) === spectator.inject(MessageService)
+            ).toBe(false);
+        });
+
+        it("should render a toast for the panel's messages", () => {
+            expect(spectator.query(Toast)).not.toBeNull();
+        });
+    });
+
     describe('save-page event integration', () => {
         it('should call updateFavoritePageNode when saved item is a dotFavoritePage and show success message', () => {
             events$.next({
@@ -355,5 +402,179 @@ describe('DotPagesComponent', () => {
                 })
             );
         });
+    });
+});
+
+/**
+ * #38303 (FR-026, FR-049) — the Pages portlet opens what its URL names through the same path as the
+ * Edit action, so a shared link or a refresh reopens the panel that was open: on load, and when a
+ * `/pages/<inode>` or `/pages/new/<type>` link redirects here after the portlet was built, the way
+ * the legacy portlets follow theirs. Own describe: the route has to name the panel before the
+ * component is built.
+ */
+describe('DotPagesComponent — the panel named in the URL', () => {
+    const IDENTIFIER = '3f0c8e5a-7b2d-4c1e-9a6f-0d4b8e2c1a57';
+
+    let spectator: Spectator<DotPagesComponent>;
+    let queryParams$: BehaviorSubject<Params>;
+    let openContent: Mock;
+    let clear: Mock;
+    let refuse: Mock;
+    let getPages: Mock;
+
+    const createComponent = createComponentFactory({
+        component: DotPagesComponent,
+        imports: [DotPagesComponent],
+        providers: [MessageService],
+        detectChanges: false
+    });
+
+    MockInstance.scope();
+
+    /** Builds the portlet on a URL with these query params. */
+    const mount = async (queryParams: Params): Promise<void> => {
+        MockInstance(DotPagesTableComponent, () => ({ contextMenu: signal(undefined) }));
+        TestBed.overrideComponent(DotPagesComponent, {
+            set: {
+                imports: [
+                    CommonModule,
+                    Toast,
+                    TieredMenuStubComponent,
+                    MockComponent(DotPageFavoritesPanelComponent),
+                    MockComponent(DotPagesTableComponent),
+                    MockComponent(DotCreatePageDialogComponent),
+                    MockComponent(DotAddToBundleComponent)
+                ]
+            }
+        });
+
+        openContent = vi.fn();
+        clear = vi.fn();
+        refuse = vi.fn();
+        getPages = vi.fn();
+        queryParams$ = new BehaviorSubject<Params>(queryParams);
+
+        spectator = createComponent({
+            providers: [
+                {
+                    provide: DotCMSPagesStore,
+                    useValue: {
+                        favoritePages: signal([]),
+                        $isFavoritePagesLoading: signal(false),
+                        pages: signal([]),
+                        $isPagesLoading: signal(false),
+                        $totalRecords: signal(0),
+                        $showBundleDialog: signal(false),
+                        $assetIdentifier: signal(''),
+                        getPages
+                    }
+                },
+                MockProvider(DotRouterService, { goToEditPage: vi.fn() }),
+                MockProvider(DotMessageDisplayService, { push: vi.fn() }),
+                MockProvider(DotEventsService, { listen: vi.fn().mockReturnValue(of()) }),
+                MockProvider(DotPageActionsService, {
+                    getItems: vi.fn().mockReturnValue(of([])),
+                    openContent
+                } as Partial<DotPageActionsService>),
+                { provide: GlobalStore, useValue: { systemConfig: signal({ languages: [] }) } },
+                {
+                    provide: ActivatedRoute,
+                    useValue: { snapshot: { queryParams }, queryParams: queryParams$ }
+                },
+                {
+                    provide: DotPanelUrlStateService,
+                    useValue: { clear, refuse, register: vi.fn() }
+                }
+            ]
+        });
+        spectator.detectChanges();
+
+        // The panel URL service is reached on demand, as the admin app loads the library.
+        await vi.dynamicImportSettled();
+    };
+
+    // The actions service refreshes the listing itself, for a link as for Edit (T173).
+    it('opens the version the URL names, by identifier and language', async () => {
+        await mount({ editContent: IDENTIFIER, editContentLang: '2' });
+
+        expect(openContent).toHaveBeenCalledTimes(1);
+        expect(openContent.mock.calls[0]).toEqual([
+            { mode: 'edit', identifier: IDENTIFIER, languageId: 2 }
+        ]);
+    });
+
+    it('opens a create of the content type the URL names', async () => {
+        await mount({ createContent: 'htmlpageasset' });
+
+        expect(openContent).toHaveBeenCalledTimes(1);
+        expect(openContent.mock.calls[0][0]).toEqual({
+            mode: 'new',
+            contentType: 'htmlpageasset'
+        });
+    });
+
+    it('opens nothing for a URL that names no panel', async () => {
+        await mount({});
+
+        expect(openContent).not.toHaveBeenCalled();
+        expect(clear).not.toHaveBeenCalled();
+        expect(refuse).not.toHaveBeenCalled();
+    });
+
+    // A link the author cannot have meant opens nothing, tells them, and loses its params (T172).
+    it.each([
+        ['names two panels', { editContent: IDENTIFIER, createContent: 'htmlpageasset' }],
+        ['names content by a malformed identifier', { editContent: 'wrong-identifier' }]
+    ])('refuses a URL that %s', async (_label, queryParams) => {
+        await mount(queryParams);
+
+        expect(openContent).not.toHaveBeenCalled();
+        expect(refuse).toHaveBeenCalledTimes(1);
+        expect(refuse).toHaveBeenCalledWith([]);
+    });
+
+    /**
+     * `/pages/<inode>` builds the portlet first, then its deep-link child redirects to
+     * `/pages?editContent=…`; the route is reused, so the params arrive after the portlet was built.
+     */
+    it('opens what a deep link redirects here with, after the portlet was built, once', async () => {
+        await mount({});
+
+        queryParams$.next({ editContent: IDENTIFIER, editContentLang: '2' });
+        queryParams$.next({ editContent: IDENTIFIER, editContentLang: '2', mId: 'a1b2' });
+
+        expect(openContent).toHaveBeenCalledTimes(1);
+        expect(openContent.mock.calls[0][0]).toEqual({
+            mode: 'edit',
+            identifier: IDENTIFIER,
+            languageId: 2
+        });
+    });
+
+    /**
+     * Back and Forward are the panel URL service's (FR-048): the router replays a history entry
+     * that may name a panel still open, which opening again would duplicate. A later navigation of
+     * the app's own still opens what it names.
+     */
+    it("opens nothing for a navigation the browser's Back or Forward started", async () => {
+        await mount({});
+        const currentNavigation = vi.spyOn(spectator.inject(Router), 'currentNavigation');
+
+        currentNavigation.mockReturnValue({ trigger: 'popstate' } as Navigation);
+        queryParams$.next({ editContent: IDENTIFIER, editContentLang: '2' });
+
+        expect(openContent).not.toHaveBeenCalled();
+
+        currentNavigation.mockReturnValue({ trigger: 'imperative' } as Navigation);
+        queryParams$.next({ editContent: IDENTIFIER, editContentLang: '2', mId: 'a1b2' });
+
+        expect(openContent).toHaveBeenCalledTimes(1);
+    });
+
+    // The deep-link children render in the portlet, then redirect.
+    it('renders an outlet for its deep-link children', async () => {
+        await mount({});
+
+        expect(spectator.query('router-outlet')).not.toBeNull();
     });
 });

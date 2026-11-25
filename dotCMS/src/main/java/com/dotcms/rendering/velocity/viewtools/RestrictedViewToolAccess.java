@@ -1,17 +1,34 @@
 package com.dotcms.rendering.velocity.viewtools;
 
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.featureflag.FeatureFlagName;
+import com.dotcms.rendering.velocity.services.VTLLoader;
+import com.dotcms.rendering.velocity.services.VelocityResourceKey;
+import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
+import javax.servlet.http.HttpServletRequest;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
+import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -34,7 +51,79 @@ public final class RestrictedViewToolAccess {
      */
     public static final String RESTRICTED_TOOLS_PROPERTY = "VELOCITY_FIELD_RENDER_RESTRICTED_VIEWTOOLS";
 
-    private static final String[] DEFAULT_RESTRICTED_TOOLS = {"filetool", "macro", "mailer"};
+    /**
+     * Request attribute carrying the user that last modified the content whose code is being
+     * rendered.
+     *
+     * <p>It is set by whoever renders that code, which is the only party that knows what content
+     * it is. A view tool must take the author from here and never from the Velocity resource
+     * name: {@code #parse} pushes the template author's own literal argument as the current
+     * template name, so a tool that reads that name is asking the caller to vouch for itself.
+     *
+     * <p>Templates do reach {@code $request} and can call {@code setAttribute} on it, so the
+     * value stored here is a private wrapper type only this class creates: anything else found
+     * under this attribute is not an announcement and never counts. Compare
+     * {@link ScriptingFileAttribute}, which guards the file-based scripting endpoints the same
+     * way.
+     */
+    public static final String RENDERING_AUTHOR_ID = "DOT_RENDERING_AUTHOR_ID";
+
+    /**
+     * The announcement itself. Private so that only this class can make one; a {@code String} a
+     * template pushes under {@link #RENDERING_AUTHOR_ID} is ignored.
+     *
+     * <p>The author is held unresolved. Most renders never call a restricted tool, and working
+     * out who wrote a container or a template costs a lookup, so the question is only answered
+     * if something actually asks it; the answer is then kept for the rest of that render.
+     *
+     * @param userId ID of the user that last modified the content being rendered, resolving to
+     *               {@code null} when the renderer knows the content but not its author
+     */
+    private record RenderingAuthor(Lazy<String> userId, Kind kind) {
+
+        /**
+         * Resolves the author, so that anything printing the announcement -- a debug dump of
+         * the request, a test reading the attribute back -- shows who it names instead of
+         * showing that nobody has asked yet. No render prints it, so the laziness above
+         * survives.
+         *
+         * @return the announcement, naming its author
+         */
+        @Override
+        public String toString() {
+            return "RenderingAuthor[userId=" + userId.get() + ", kind=" + kind + "]";
+        }
+    }
+
+    /**
+     * What kind of render made an announcement. A refused tool is only worth a log line if the
+     * line says why, and the two kinds are refused for different reasons: code held by a
+     * container, template, file or field answers for whoever saved it, while a Custom Field
+     * preview answers for the user it is being rendered for.
+     */
+    private enum Kind {
+
+        /** Code a Velocity resource holds, answering for whoever last saved it. */
+        SAVED_CODE,
+
+        /** A Custom Field preview, answering for the user the Content Editor is serving. */
+        FIELD_PREVIEW
+    }
+
+    /**
+     * Kept in alphabetical order. Besides the tools that work outside of the viewer's
+     * permissions, this covers every tool that used to decide for itself whether its caller may
+     * run by reading the Velocity resource name, which the template author chooses.
+     */
+    /**
+     * The refusals already reported once. A refused page refuses on every hit and the visitor
+     * decides how often it is hit, so each distinct reason is worth saying out loud once and
+     * then only at debug. Keyed by reason, so the set is bounded by the number of users.
+     */
+    private static final Set<String> REFUSALS_REPORTED = ConcurrentHashMap.newKeySet();
+
+    private static final String[] DEFAULT_RESTRICTED_TOOLS =
+            {"dotsecrets", "filetool", "macro", "mailer", "sql", "xslttool"};
 
     private RestrictedViewToolAccess() {
     }
@@ -51,6 +140,589 @@ public final class RestrictedViewToolAccess {
         }
         return Arrays.stream(keys).filter(UtilMethods::isSet).map(String::trim)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    /**
+     * Resolves who wrote the code held by a Velocity resource that is about to be rendered.
+     *
+     * <p>Containers and templates carry Velocity of their own, written by whoever last saved
+     * them, and that is what this answers. It reads the identifier out of the resource path and
+     * loads the object, so the answer describes the code that will actually run; a path naming
+     * something else resolves to that something else, or to nothing, and an author that cannot
+     * be resolved denies access rather than granting it.
+     *
+     * @param velocityResourcePath the resource path the renderer resolved, for example
+     *                             {@code /LIVE/{containerId}/1.container}
+     *
+     * @return the ID of the user that last saved that container or template, or {@code null}
+     * when the resource is of another kind or cannot be loaded
+     */
+    public static String authorOfRenderedResource(final String velocityResourcePath) {
+        if (!UtilMethods.isSet(velocityResourcePath)) {
+            return null;
+        }
+        try {
+            final VelocityResourceKey key = new VelocityResourceKey(velocityResourcePath);
+            final User system = APILocator.systemUser();
+            if (VelocityType.CONTAINER == key.type) {
+                final Container container = key.mode.showLive
+                        ? APILocator.getContainerAPI().getLiveContainerById(key.id1, system, false)
+                        : APILocator.getContainerAPI().getWorkingContainerById(key.id1, system, false);
+                return null != container ? container.getModUser() : null;
+            }
+            if (VelocityType.TEMPLATE == key.type) {
+                final Template template = key.mode.showLive
+                        ? APILocator.getTemplateAPI().findLiveTemplate(key.id1, system, false)
+                        : APILocator.getTemplateAPI().findWorkingTemplate(key.id1, system, false);
+                return null != template ? template.getModUser() : null;
+            }
+        } catch (final Exception e) {
+            Logger.debug(RestrictedViewToolAccess.class.getName(),
+                    () -> "Unable to resolve the author of '" + velocityResourcePath + "': "
+                            + ExceptionUtil.getErrorMessage(e));
+        }
+        return authorOfFileAsset(velocityResourcePath);
+    }
+
+    /**
+     * Resolves who last saved the file asset a resource path points at.
+     *
+     * <p>{@code #dotParse} hands the renderer the asset's own location on disk, such as
+     * {@code /data/shared/assets/c/e/ce83.../fileAsset/header.vtl}, which carries the file's
+     * inode but is not one of the mode-prefixed resource names. The VTL inside that file is
+     * code its editor wrote, so without this every {@code #dotParse}d file -- themes, headers,
+     * footers, anything under {@code /application/vtl} -- would run with no author at all.
+     *
+     * <p>The inode is read from the path the loader resolves on disk and not from the path as
+     * it was written. The two differ: the text is the caller's to compose, and
+     * {@link VTLLoader} opens it by canonical path, so {@code ..} segments can leave the first
+     * inode in the text naming one file while another one is the file that runs. Asking the
+     * loader which file it would open is what ties the author to the code that will execute.
+     *
+     * @param velocityResourcePath the resource path the renderer resolved
+     *
+     * @return the ID of the user that last saved that file, or {@code null} when the path holds
+     * no inode, resolves to nothing readable, or nothing is stored under the inode it resolves to
+     */
+    private static String authorOfFileAsset(final String velocityResourcePath) {
+        try {
+            // cheap negative first: most resource names carry no inode at all, and this spares
+            // them the disk lookup below on the page-render path
+            if (UUIDUtil.findInode(velocityResourcePath).isEmpty()) {
+                return null;
+            }
+            final Optional<File> resolved =
+                    VTLLoader.instance().resolveServableFile(velocityResourcePath);
+            if (resolved.isEmpty()) {
+                return null;
+            }
+            final Optional<String> inode =
+                    UUIDUtil.findInode(resolved.get().getPath().replace('\\', '/'));
+            if (inode.isEmpty()) {
+                return null;
+            }
+            final Contentlet file = APILocator.getContentletAPI()
+                    .find(inode.get(), APILocator.systemUser(), false);
+            return null != file ? file.getModUser() : null;
+        } catch (final Exception e) {
+            Logger.debug(RestrictedViewToolAccess.class.getName(),
+                    () -> "Unable to resolve the file asset author of '" + velocityResourcePath
+                            + "': " + ExceptionUtil.getErrorMessage(e));
+            return null;
+        }
+    }
+
+    /**
+     * Records on the request who wrote the code that is about to be rendered.
+     *
+     * <p>Only the render knows what content it is rendering, so only the render can answer this;
+     * a view tool asking the Velocity resource name is asking the caller to vouch for itself.
+     * Renders nest — a page renders a container which renders a field — so the previous value is
+     * handed back and must be put back with {@link #restoreRenderingAuthor} once the inner render
+     * is done.
+     *
+     * @param request  the request the render is running under; {@code null} is ignored
+     * @param authorId ID of the user that last modified the content being rendered
+     *
+     * @return whatever was recorded before, to restore afterwards
+     */
+    public static Object announceRenderingAuthor(final HttpServletRequest request,
+            final String authorId) {
+        return announce(request, Lazy.of(() -> authorId));
+    }
+
+    /**
+     * Records on the request that the code about to be rendered is the code a Velocity resource
+     * holds, without working out yet who wrote it.
+     *
+     * <p>This is the form the directives use. A page renders dozens of containers and parsed
+     * files and almost none of them call a restricted tool, so resolving every author up front
+     * would put a container, template or file lookup on the render path for an answer nobody
+     * reads. The resource is named here and {@link #authorOfRenderedResource(String)} is only
+     * run if a tool asks, once per render.
+     *
+     * @param request              the request the render is running under; {@code null} is ignored
+     * @param velocityResourcePath the resource path the renderer resolved
+     *
+     * @return whatever was recorded before, to restore afterwards
+     */
+    public static Object announceRenderingAuthorOf(final HttpServletRequest request,
+            final String velocityResourcePath) {
+        return announce(request, Lazy.of(() -> authorOfRenderedResource(velocityResourcePath)));
+    }
+
+    /**
+     * Records on the request that the Content Editor is about to render a Custom Field as a
+     * preview for the given user, so that the view tools reserved for the Scripting Developer
+     * role answer to that user's own role.
+     *
+     * <p>A preview is not a page. Its output goes to the one user the editor is serving and to
+     * nobody else, and the code it runs is the Content Type's, which records no author of its
+     * own. So the preview names the user it is being rendered for, and does it only when that
+     * user is allowed to change the Content Type the field belongs to: what runs is then code
+     * that user could have written themselves, which is the same answer the tools would give
+     * if they had.
+     *
+     * <p>The tools render nothing when the user may not change the Content Type, when they are
+     * not named at all, or when
+     * {@link FeatureFlagName#FEATURE_FLAG_CUSTOM_FIELD_VIEW_TOOL_PREVIEW_ENABLED} is turned
+     * off. In the first two cases the preview still announces itself, naming nobody, so that a
+     * tool refused further down says that this is why instead of reading as a render path that
+     * forgot to announce; with the flag off nothing is written at all. The value handed back
+     * restores correctly in every one of those cases.
+     *
+     * <p>Whether the user may change the Content Type is worked out only if a tool asks, like
+     * every other announcement here: most Custom Fields never call one, and the permission
+     * lookup is not worth putting on the preview path for an answer nobody reads.
+     *
+     * <p>Nothing that renders for a visitor may use this. On a page the viewer and the author
+     * are different people, and letting the viewer answer for the code would hand a restricted
+     * tool to whoever merely opens the page.
+     *
+     * @param request        the request the preview is running under; {@code null} is ignored
+     * @param contentType    the Content Type the field belongs to, as a {@link Permissionable}:
+     *                       either a {@link com.dotcms.contenttype.model.type.ContentType} or
+     *                       the {@link com.dotmarketing.portlets.structure.model.Structure} of
+     *                       the same row, which answer the permission check alike
+     * @param previewingUser the user the Content Editor is rendering the preview for
+     *
+     * @return whatever was recorded before, to restore afterwards
+     */
+    public static Object announceFieldPreviewAuthor(final HttpServletRequest request,
+            final Permissionable contentType, final User previewingUser) {
+        if (null == request) {
+            return null;
+        }
+        if (!Config.getBooleanProperty(
+                FeatureFlagName.FEATURE_FLAG_CUSTOM_FIELD_VIEW_TOOL_PREVIEW_ENABLED, true)) {
+            // leave the request as it is: restoring this value puts back what is already there
+            return request.getAttribute(RENDERING_AUTHOR_ID);
+        }
+        // announced even when it names nobody, so that a tool refused further down the preview
+        // can say that this is why rather than reading as a render path that forgot to announce
+        final Lazy<String> author = Lazy.of(() -> null != previewingUser && null != contentType
+                && mayChangeTheCodeOf(contentType, previewingUser)
+                ? previewingUser.getUserId()
+                : null);
+        return announce(request, author, Kind.FIELD_PREVIEW);
+    }
+
+    /**
+     * Answers whether the user is allowed to change the Content Type a previewed field belongs
+     * to, and therefore to write the code the preview is about to run.
+     *
+     * <p>This is the permission the Content Type and Field APIs require to save one
+     * ({@code ContentTypeAPIImpl.save}, {@code FieldAPIImpl.save}), not the one that lets a
+     * user edit the content of that type. Front-end roles do not count towards it.
+     *
+     * @param contentType    the Content Type the field belongs to
+     * @param previewingUser the user the preview is being rendered for
+     *
+     * @return {@code true} when that user could have written the field's code
+     */
+    private static boolean mayChangeTheCodeOf(final Permissionable contentType,
+            final User previewingUser) {
+        try {
+            return APILocator.getPermissionAPI().doesUserHavePermission(contentType,
+                    PermissionAPI.PERMISSION_EDIT_PERMISSIONS, previewingUser, false);
+        } catch (final DotDataException e) {
+            Logger.warn(RestrictedViewToolAccess.class,
+                    "A Custom Field preview named nobody: the permissions of user '"
+                            + previewingUser.getUserId() + "' on Content Type '"
+                            + contentType.getPermissionId() + "' could not be read: "
+                            + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Writes the announcement and hands back the one it replaced.
+     *
+     * @param request the request the render is running under; {@code null} is ignored
+     * @param author  the author of the code about to run, resolved on demand
+     *
+     * @return whatever was recorded before, to restore afterwards
+     */
+    private static Object announce(final HttpServletRequest request, final Lazy<String> author) {
+        return announce(request, author, Kind.SAVED_CODE);
+    }
+
+    /**
+     * Writes the announcement and hands back the one it replaced.
+     *
+     * @param request the render is running under; {@code null} is ignored
+     * @param author  the author of the code about to run, resolved on demand
+     * @param kind    what kind of render is announcing, so a refusal can say why
+     *
+     * @return whatever was recorded before, to restore afterwards
+     */
+    private static Object announce(final HttpServletRequest request, final Lazy<String> author,
+            final Kind kind) {
+        if (null == request) {
+            return null;
+        }
+        final Object previous = request.getAttribute(RENDERING_AUTHOR_ID);
+        request.setAttribute(RENDERING_AUTHOR_ID, new RenderingAuthor(author, kind));
+        return previous;
+    }
+
+    /**
+     * Puts back the author that {@link #announceRenderingAuthor} replaced.
+     *
+     * @param request  the request the render is running under; {@code null} is ignored
+     * @param previous the value that call handed back
+     */
+    public static void restoreRenderingAuthor(final HttpServletRequest request,
+            final Object previous) {
+        if (null == request) {
+            return;
+        }
+        if (null == previous) {
+            request.removeAttribute(RENDERING_AUTHOR_ID);
+        } else {
+            request.setAttribute(RENDERING_AUTHOR_ID, previous);
+        }
+    }
+
+    /**
+     * The body of a render that produces a value, for the bracket methods below.
+     *
+     * @param <T> what the render produces
+     * @param <E> the checked exception the render is allowed to throw, inferred from the body,
+     *            so that the bracket does not force a caller to catch what it never throws
+     */
+    @FunctionalInterface
+    public interface Render<T, E extends Exception> {
+
+        T render() throws E;
+    }
+
+    /**
+     * The body of a render that produces nothing, for the bracket methods below.
+     *
+     * @param <E> the checked exception the render is allowed to throw, inferred from the body
+     */
+    @FunctionalInterface
+    public interface VoidRender<E extends Exception> {
+
+        void render() throws E;
+    }
+
+    /**
+     * Runs the body with the given user announced as the author of the code it renders, and puts
+     * back the previous announcement afterwards.
+     *
+     * <p>This is {@link #announceRenderingAuthor} and {@link #restoreRenderingAuthor} as a single
+     * call. Renders nest, so the restore has to happen on every way out of the body, including a
+     * thrown exception; a caller that writes the pair by hand and forgets the {@code finally}
+     * leaves the inner author standing for whatever the surrounding render does next, which no
+     * test of the inner render would catch. Prefer this form; the two halves stay public for the
+     * paths whose cleanup is already bundled with other work.
+     *
+     * @param request  the request the render is running under; {@code null} is ignored
+     * @param authorId ID of the user that last modified the content being rendered
+     * @param body     the render
+     * @param <E>      whatever the body throws
+     *
+     * @throws E whatever the body throws, unchanged
+     */
+    public static <E extends Exception> void withRenderingAuthor(final HttpServletRequest request,
+            final String authorId, final VoidRender<E> body) throws E {
+        withRenderingAuthorReturn(request, authorId, () -> {
+            body.render();
+            return null;
+        });
+    }
+
+    /**
+     * Runs the body with the given user announced as the author of the code it renders, and puts
+     * back the previous announcement afterwards. The value the body produces is handed back.
+     *
+     * @param request  the request the render is running under; {@code null} is ignored
+     * @param authorId ID of the user that last modified the content being rendered
+     * @param body     the render
+     * @param <T>      what the render produces
+     * @param <E>      whatever the body throws
+     *
+     * @return what the body returned
+     *
+     * @throws E whatever the body throws, unchanged
+     *
+     * @see #withRenderingAuthor(HttpServletRequest, String, VoidRender)
+     */
+    public static <T, E extends Exception> T withRenderingAuthorReturn(
+            final HttpServletRequest request, final String authorId, final Render<T, E> body)
+            throws E {
+        final Object previous = announceRenderingAuthor(request, authorId);
+        try {
+            return body.render();
+        } finally {
+            restoreRenderingAuthor(request, previous);
+        }
+    }
+
+    /**
+     * Runs the body with the code of the given Velocity resource announced as what it renders,
+     * and puts back the previous announcement afterwards.
+     *
+     * @param request              the request the render is running under; {@code null} is ignored
+     * @param velocityResourcePath the resource path the renderer resolved
+     * @param body                 the render
+     * @param <E>                  whatever the body throws
+     *
+     * @throws E whatever the body throws, unchanged
+     *
+     * @see #withRenderingAuthor(HttpServletRequest, String, VoidRender)
+     * @see #announceRenderingAuthorOf(HttpServletRequest, String)
+     */
+    public static <E extends Exception> void withRenderingAuthorOf(
+            final HttpServletRequest request, final String velocityResourcePath,
+            final VoidRender<E> body) throws E {
+        withRenderingAuthorOfReturn(request, velocityResourcePath, () -> {
+            body.render();
+            return null;
+        });
+    }
+
+    /**
+     * Runs the body with the code of the given Velocity resource announced as what it renders,
+     * and puts back the previous announcement afterwards. The value the body produces is handed
+     * back.
+     *
+     * @param request              the request the render is running under; {@code null} is ignored
+     * @param velocityResourcePath the resource path the renderer resolved
+     * @param body                 the render
+     * @param <T>                  what the render produces
+     * @param <E>                  whatever the body throws
+     *
+     * @return what the body returned
+     *
+     * @throws E whatever the body throws, unchanged
+     *
+     * @see #withRenderingAuthor(HttpServletRequest, String, VoidRender)
+     * @see #announceRenderingAuthorOf(HttpServletRequest, String)
+     */
+    public static <T, E extends Exception> T withRenderingAuthorOfReturn(
+            final HttpServletRequest request, final String velocityResourcePath,
+            final Render<T, E> body) throws E {
+        final Object previous = announceRenderingAuthorOf(request, velocityResourcePath);
+        try {
+            return body.render();
+        } finally {
+            restoreRenderingAuthor(request, previous);
+        }
+    }
+
+    /**
+     * Runs the body as a Custom Field preview rendered for the given user, and puts back the
+     * previous announcement afterwards.
+     *
+     * @param request        the request the preview is running under; {@code null} is ignored
+     * @param contentType    the Content Type the field belongs to
+     * @param previewingUser the user the Content Editor is rendering the preview for
+     * @param body           the render
+     * @param <E>            whatever the body throws
+     *
+     * @throws E whatever the body throws, unchanged
+     *
+     * @see #withRenderingAuthor(HttpServletRequest, String, VoidRender)
+     * @see #announceFieldPreviewAuthor(HttpServletRequest, Permissionable, User)
+     */
+    public static <E extends Exception> void withFieldPreviewAuthor(
+            final HttpServletRequest request, final Permissionable contentType,
+            final User previewingUser, final VoidRender<E> body) throws E {
+        withFieldPreviewAuthorReturn(request, contentType, previewingUser, () -> {
+            body.render();
+            return null;
+        });
+    }
+
+    /**
+     * Runs the body as a Custom Field preview rendered for the given user, and puts back the
+     * previous announcement afterwards. The value the body produces is handed back.
+     *
+     * @param request        the request the preview is running under; {@code null} is ignored
+     * @param contentType    the Content Type the field belongs to
+     * @param previewingUser the user the Content Editor is rendering the preview for
+     * @param body           the render
+     * @param <T>            what the render produces
+     * @param <E>            whatever the body throws
+     *
+     * @return what the body returned
+     *
+     * @throws E whatever the body throws, unchanged
+     *
+     * @see #withRenderingAuthor(HttpServletRequest, String, VoidRender)
+     * @see #announceFieldPreviewAuthor(HttpServletRequest, Permissionable, User)
+     */
+    public static <T, E extends Exception> T withFieldPreviewAuthorReturn(
+            final HttpServletRequest request, final Permissionable contentType,
+            final User previewingUser, final Render<T, E> body) throws E {
+        final Object previous =
+                announceFieldPreviewAuthor(request, contentType, previewingUser);
+        try {
+            return body.render();
+        } finally {
+            restoreRenderingAuthor(request, previous);
+        }
+    }
+
+    /**
+     * Reads the author of the content being rendered from the request and checks their access.
+     *
+     * <p>The value is put there by whoever renders that content, under
+     * {@link #RENDERING_AUTHOR_ID}. A view tool must use this and never the Velocity resource
+     * name: {@code #parse} pushes the template author's own argument as the current template
+     * name, so a tool that reads that name lets the caller name the user it will be checked
+     * against. A request whose author is missing is denied, because an unknown author is not
+     * evidence of anything.
+     *
+     * <p>When no renderer announced anything, the file-based scripting endpoints
+     * ({@code /api/vtl}, {@code /api/js}) are asked instead: they bind the script file's editor
+     * through {@link ScriptingFileAttribute}, which answers the same question for code that is
+     * run straight from a file rather than rendered from a content item. An explicit
+     * announcement always wins over that, so a container parsed from inside such a file is
+     * judged by the container's own author.
+     *
+     * <p>An expected denial is reported once as a warning and at debug from then on, per
+     * distinct reason: the refusal repeats on every hit of the same page and a visitor decides
+     * how often that page is hit, but an install that upgrades into a refusal should not have
+     * to turn debug on to find out. An announcement that something other than a renderer wrote
+     * over is always a warning, since that one is not routine.
+     *
+     * @param request the request the tool was initialised with
+     *
+     * @return {@code true} when the render named an author who has access
+     */
+    public static boolean renderingAuthorHasAccess(final HttpServletRequest request) {
+        if (null == request) {
+            return false;
+        }
+        final Object announced = request.getAttribute(RENDERING_AUTHOR_ID);
+        if (null != announced && !(announced instanceof RenderingAuthor)) {
+            // only this class makes announcements, so somebody else wrote here: the code being
+            // rendered can, and overwriting must not send the decision anywhere else
+            Logger.warn(RestrictedViewToolAccess.class,
+                    "A view tool was refused: the announcement of the author was overwritten by "
+                            + "something that is not a renderer, so nothing on this request says "
+                            + "who wrote the code being run.");
+            return false;
+        }
+        final String authorId = null != announced
+                ? ((RenderingAuthor) announced).userId().get()
+                : ScriptingFileAttribute.get(request);
+        final Kind kind = null != announced ? ((RenderingAuthor) announced).kind() : null;
+        if (!UtilMethods.isSet(authorId)) {
+            if (Kind.FIELD_PREVIEW == kind) {
+                reportRefusal("preview-names-nobody", () ->
+                        "A view tool was refused in a Custom Field preview: the preview names "
+                                + "nobody, because the user it is being rendered for is not "
+                                + "allowed to change the Content Type the field belongs to, or "
+                                + "is not logged in. The rest of the field renders.");
+            } else if (null != announced) {
+                reportRefusal("announced-without-author", () ->
+                        "A view tool was refused: the code being rendered was announced as having "
+                                + "no author of its own, which is what text built at render time "
+                                + "looks like. #evaluate and $render.eval announce it, so the "
+                                + "view tools that decide by who wrote the code refuse inside "
+                                + "them whoever wrote the code around them; move that code into "
+                                + "a template, container or file of its own to keep it running.");
+            } else {
+                reportRefusal("not-announced", () ->
+                        "A view tool was called while no author was announced for the code being "
+                                + "rendered, so it is refused. This is what a render path that "
+                                + "does not announce its author looks like.");
+            }
+            return false;
+        }
+        final boolean allowed = isScriptingDeveloper(authorId);
+        if (!allowed) {
+            if (Kind.FIELD_PREVIEW == kind) {
+                reportRefusal("preview-author:" + authorId, () -> String.format(
+                        "A view tool was refused in a Custom Field preview: the preview is being "
+                                + "rendered for user '%s', who does not have the %s role. The "
+                                + "rest of the field renders.",
+                        authorId, Role.SCRIPTING_DEVELOPER));
+            } else {
+                reportRefusal("author:" + authorId, () -> String.format(
+                        "A view tool was refused: the code being rendered was last saved by user "
+                                + "'%s', who does not have the %s role",
+                        authorId, Role.SCRIPTING_DEVELOPER));
+            }
+        }
+        return allowed;
+    }
+
+    /**
+     * Reports an expected refusal: the first one of its kind as a warning, every later one at
+     * debug.
+     *
+     * <p>Both halves matter. A refusal that is only ever written at debug leaves an install
+     * that upgraded into it with nothing in the log to go on; a refusal written as a warning
+     * every time fills the log, because the page refuses on every hit and the visitor decides
+     * how often it is hit.
+     *
+     * @param reason  what distinguishes this refusal from another, so each is said once
+     * @param message the line to write, built only if it is going to be written
+     */
+    private static void reportRefusal(final String reason, final Supplier<String> message) {
+        if (REFUSALS_REPORTED.add(reason)) {
+            Logger.warn(RestrictedViewToolAccess.class, message.get());
+        } else {
+            Logger.debug(RestrictedViewToolAccess.class, message);
+        }
+    }
+
+    /**
+     * Whether a user was given the {@link Role#SCRIPTING_DEVELOPER} role.
+     *
+     * <p>This is deliberately narrower than {@link #hasAccess(User)}: that one decides whether a
+     * tool is worth putting in the toolbox at all, while this one decides whether the tool runs,
+     * and the tools have always asked for this one role. Being a CMS Administrator does not
+     * stand in for it, because the code these tools run is served to whoever visits the page —
+     * admitting any administrator would let an anonymous visitor read a secret through a page an
+     * administrator merely happened to edit last.
+     *
+     * @param userId ID of the user to check, as the renderer announced it
+     *
+     * @return {@code true} when that user holds the role
+     */
+    private static boolean isScriptingDeveloper(final String userId) {
+        try {
+            final User author = APILocator.getUserAPI()
+                    .loadUserById(userId, APILocator.systemUser(), true);
+            if (null == author || author.isAnonymousUser()
+                    || UserAPI.SYSTEM_USER_ID.equals(author.getUserId())) {
+                return false;
+            }
+            final Role scripting = APILocator.getRoleAPI().loadRoleByKey(Role.SCRIPTING_DEVELOPER);
+            return null != scripting && APILocator.getRoleAPI().doesUserHaveRole(author, scripting);
+        } catch (final Exception e) {
+            Logger.debug(RestrictedViewToolAccess.class.getName(),
+                    () -> "Unable to check the " + Role.SCRIPTING_DEVELOPER + " role of user '"
+                            + userId + "': " + ExceptionUtil.getErrorMessage(e));
+            return false;
+        }
     }
 
     /**
