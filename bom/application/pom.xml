@@ -966,14 +966,14 @@
                 <version>1.2</version>
             </dependency>
             <dependency>
-                <groupId>javax.validation</groupId>
-                <artifactId>validation-api</artifactId>
-                <version>1.1.0.Final</version>
+                <groupId>jakarta.validation</groupId>
+                <artifactId>jakarta.validation-api</artifactId>
+                <version>2.0.2</version>
             </dependency>
             <dependency>
-                <groupId>org.hibernate</groupId>
+                <groupId>org.hibernate.validator</groupId>
                 <artifactId>hibernate-validator</artifactId>
-                <version>5.4.3.Final</version>
+                <version>6.2.6.Final</version>
             </dependency>
 
             <dependency>
@@ -1269,12 +1269,6 @@
                 <version>${jersey.version}</version>
             </dependency>
 
-
-            <dependency>
-                <groupId>org.glassfish.hk2.external</groupId>
-                <artifactId>bean-validator</artifactId>
-                <version>2.5.0-b06</version>
-            </dependency>
 
             <dependency>
                 <groupId>org.glassfish.hk2</groupId>
