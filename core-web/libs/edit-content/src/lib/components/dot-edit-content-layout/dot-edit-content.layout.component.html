@@ -1,4 +1,10 @@
-@if ($store.isLoaded() || $store.isSaving() || $store.isReloading()) {
+@let permissionsSettled = $store.isPermissionsSettled();
+
+<!-- An existing content renders only once its edit permission is known (`permissionsSettled`),
+     so the form never shows enabled and then flips to read-only when `_canlock` answers. A
+     reload keeps the previous form under the overlay, which `isFullyLoaded` holds for the
+     same reason. -->
+@if (($store.isLoaded() && permissionsSettled) || $store.isSaving() || $store.isReloading()) {
     @let showSidebar = $store.isSidebarOpen();
     @let showSelectWorkflowWarning = $store.showSelectWorkflowWarning();
     @let lockWarningMessage = $store.lockWarningMessage();
@@ -200,7 +206,7 @@
         (workflowActionFired)="onWorkflowActionFired($event)"
         data-testId="edit-content-layout__sidebar"
         class="edit-content-layout__sidebar min-w-0 overflow-x-hidden [grid-area:sidebar]" />
-} @else if ($store.isLoading()) {
+} @else if ($store.isLoading() || !permissionsSettled) {
     <!-- The first load, before there is any content to show. The same spinner, in the same
          place, as the side-panel drawer shows while this component's chunk loads, so opening
          the panel reads as one continuous loading rather than two. -->

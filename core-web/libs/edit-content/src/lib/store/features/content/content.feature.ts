@@ -150,6 +150,13 @@ export function withContent() {
                     return false;
                 }
 
+                // An existing content is not fully loaded until the backend has said whether
+                // the user may edit it: showing the form earlier renders it enabled and flips
+                // it to read-only when `_canlock` answers (#38724 R4). New content has no lock.
+                if (store.contentlet()?.identifier && store.canLock() === null) {
+                    return false;
+                }
+
                 if (!store.uiState().isSidebarOpen || !store.contentlet()?.identifier) {
                     return true;
                 }
@@ -279,6 +286,11 @@ export function withContent() {
                             patchState(store, {
                                 state: ComponentStatus.LOADING,
                                 hiddenFields: {},
+                                // Unknown until this content's own `_canlock` answers (the lock
+                                // feature re-checks when the contentlet swaps). Keeping the
+                                // previous answer would render the new item with the previous
+                                // item's permission for a moment (#38724 R4).
+                                canLock: null,
                                 // The full-screen editor now reuses its component across
                                 // content navigations, so the store persists. Clear the
                                 // previous content's volatile, content-scoped slices to

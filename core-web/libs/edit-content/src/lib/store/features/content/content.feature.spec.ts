@@ -318,6 +318,23 @@ describe('ContentFeature', () => {
         }));
     });
 
+    describe('isFullyLoaded', () => {
+        it('should stay false while the lock permission of an existing content is unknown', () => {
+            patchState(store, {
+                state: ComponentStatus.LOADED,
+                contentlet: { inode: 'inode-1', identifier: 'id-1' } as DotCMSContentlet,
+                uiState: { ...store.uiState(), isSidebarOpen: false },
+                canLock: null
+            });
+
+            expect(store.isFullyLoaded()).toBe(false);
+
+            patchState(store, { canLock: true });
+
+            expect(store.isFullyLoaded()).toBe(true);
+        });
+    });
+
     describe('initializeNewContent', () => {
         beforeEach(() => {
             contentTypeService.getContentTypeWithRender.mockReturnValue(of(CONTENT_TYPE_MOCK));
@@ -417,6 +434,18 @@ describe('ContentFeature', () => {
             expect(store.contentType()).toEqual(CONTENT_TYPE_MOCK);
             expect(store.currentContentActions()).toEqual(parseCurrentActions(mockActions));
             expect(store.state()).toBe(ComponentStatus.LOADED);
+        }));
+
+        it('should forget the previous lock permission while an existing content loads', fakeAsync(() => {
+            // Otherwise a reload renders the new item with the previous item's permission
+            // until its own _canlock answers.
+            dotEditContentService.getContentById.mockReturnValue(NEVER);
+            patchState(store, { canLock: true });
+
+            store.initializeExistingContent({ inode: '123' });
+
+            expect(store.canLock()).toBeNull();
+            tick();
         }));
 
         it('should reset hiddenFields immediately when initializing existing content', fakeAsync(() => {

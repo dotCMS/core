@@ -86,6 +86,19 @@ export function withLock() {
             }),
 
             /**
+             * Whether the user's edit permission on the current content is known, i.e. the
+             * backend has answered `_canlock` (`canLock` is `null` until then). New content has
+             * no lock to check, so it counts as settled. The layout keeps its loading screen
+             * until this is true, so the form is never rendered enabled and then flipped to
+             * read-only on a slow network (#38724 R4).
+             *
+             * @returns boolean - True when the form can be rendered in its final state.
+             */
+            isPermissionsSettled: computed(
+                () => !store.contentlet()?.identifier || store.canLock() !== null
+            ),
+
+            /**
              * Determines if a lock/unlock request is currently in flight
              *
              * @returns boolean - True while the lock or unlock API call is pending

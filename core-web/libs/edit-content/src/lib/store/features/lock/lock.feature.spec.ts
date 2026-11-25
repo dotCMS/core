@@ -345,6 +345,30 @@ describe('LockFeature', () => {
             });
         });
 
+        describe('isPermissionsSettled (no enabled-then-disabled flash, #38724 R4)', () => {
+            it('should be false for an existing content until the backend answered _canlock', () => {
+                dotContentletService.canLock.mockReturnValue(
+                    of({ canLock: false, locked: false } as DotContentletCanLock)
+                );
+                patchState(store, {
+                    contentlet: { inode: 'inode-1', identifier: 'id-1' } as DotCMSContentlet,
+                    canLock: null
+                });
+
+                expect(store.isPermissionsSettled()).toBe(false);
+
+                patchState(store, { canLock: false });
+
+                expect(store.isPermissionsSettled()).toBe(true);
+            });
+
+            it('should be true for new content, which has no lock to check', () => {
+                patchState(store, { contentlet: null, canLock: null });
+
+                expect(store.isPermissionsSettled()).toBe(true);
+            });
+        });
+
         describe('lockedByName', () => {
             it('should return the locker name when locked by another user', () => {
                 store.updateCurrentUser({ userId: '456' });

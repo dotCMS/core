@@ -1362,6 +1362,29 @@ describe.each([
             expect(loading()).toBeNull();
         });
 
+        it('should keep the loading screen until the lock permission is known (#38724 R4)', () => {
+            // On a slow network the form used to render enabled and flip to disabled when
+            // _canlock answered; the spinner now holds until the answer is in.
+            const canLock$ = new Subject<DotContentletCanLock>();
+            spectator.inject(DotContentletService, true).canLock.mockReturnValue(canLock$);
+            patchState(unprotected(store), {
+                contentlet: MOCK_CONTENTLET_1_TAB,
+                contentType: CONTENT_TYPE_MOCK,
+                state: ComponentStatus.LOADED,
+                canLock: null
+            });
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('edit-content-layout__loading'))).not.toBeNull();
+            expect(spectator.query(byTestId('edit-content-layout__body'))).toBeNull();
+
+            canLock$.next({ canLock: false, locked: false } as DotContentletCanLock);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('edit-content-layout__loading'))).toBeNull();
+            expect(spectator.query(byTestId('edit-content-layout__body'))).not.toBeNull();
+        });
+
         it('should refresh after the sidebar component is destroyed and recreated', fakeAsync(() => {
             loadContentlet();
             tick();
