@@ -144,6 +144,7 @@ const createMockStore = () => {
         /** Failures the store records for this component to toast — see the `requestError` effect. */
         requestError: signal<{ messageKey: string } | null>(null),
         pagination: signal({ limit: 20, page: 1 }),
+        sort: signal<{ field: string; order: 'asc' | 'desc' }>({ field: 'modDate', order: 'desc' }),
         totalItems: signal(0),
         /** What the paginator actually reads — see `withAssetBrowse`'s cursor-based row count. */
         $totalRecords: signal(0),
@@ -522,6 +523,37 @@ describe('DotAssetPickerComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.component['$offset']()).toBe(40);
+        });
+
+        /**
+         * An empty result renders no table, so the list's rows-per-page picker is rebuilt when
+         * results come back. Bound from the store, it comes back at the size the store fetches
+         * instead of the list's default 20.
+         */
+        it('should give the list the page size the store fetches', () => {
+            store.pagination.set({ limit: 40, page: 1 });
+            spectator.detectChanges();
+
+            // The list is not rendered for real here (CUSTOM_ELEMENTS_SCHEMA), so the binding
+            // lands as a property on its element.
+            const list = spectator.query(byTestId('asset-picker-list')) as { rows?: number } | null;
+
+            expect(list).toBeTruthy();
+            expect(list?.rows).toBe(40);
+        });
+
+        it('should give the list the sort the store fetches', () => {
+            store.sort.set({ field: 'title', order: 'asc' });
+            spectator.detectChanges();
+
+            const list = spectator.query(byTestId('asset-picker-list')) as {
+                sortField?: string;
+                sortOrder?: number;
+            } | null;
+
+            expect(list).toBeTruthy();
+            expect(list?.sortField).toBe('title');
+            expect(list?.sortOrder).toBe(1);
         });
 
         it('should translate the sort event', () => {

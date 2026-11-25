@@ -182,6 +182,18 @@ export class DotContentTypeFilterComponent implements OnInit {
     });
 
     /**
+     * The host's own label for a base type, as a message key by base-type name, in place of the
+     * label the server gives. Content Drive calls the dotAsset base type "Asset" where the server
+     * and the AssetPicker say "DotAsset" (#38379). Base types not named keep the server label.
+     * @type {Partial<Record<string, string>>}
+     * @alias baseTypeLabels
+     */
+    readonly $baseTypeLabels = input<Partial<Record<string, string>>>(
+        {},
+        { alias: 'baseTypeLabels' }
+    );
+
+    /**
      * i18n key for the chip title.
      * @type {string}
      * @alias title
@@ -259,13 +271,24 @@ export class DotContentTypeFilterComponent implements OnInit {
         this.#hostContentTypes()
     );
 
+    /** The base types as the server lists them, under the host's labels where it gives one. */
+    readonly #baseTypeOptions = computed<BaseTypeOption[]>(() => {
+        const labels = this.$baseTypeLabels() ?? {};
+
+        return this.$state.baseTypes().map(({ name, label }) => {
+            const key = labels[name];
+
+            return { name, label: key ? this.#dotMessageService.get(key) : label };
+        });
+    });
+
     /** Left column options: ALL_CONTENT prepended to base types. */
     protected readonly $leftOptions = computed<BaseTypeOption[]>(() => [
         {
             name: ALL_CONTENT,
             label: this.#dotMessageService.get('content-drive.type-filter.all-content-types')
         },
-        ...this.$state.baseTypes()
+        ...this.#baseTypeOptions()
     ]);
 
     /** Banner height matches a single listbox item slot for visual consistency. */
@@ -307,7 +330,7 @@ export class DotContentTypeFilterComponent implements OnInit {
     /** Lookup: base type name → human label, used for chip rendering. */
     readonly #baseTypeLabelByName = computed(() => {
         const map = new Map<string, string>();
-        for (const bt of this.$state.baseTypes()) map.set(bt.name, bt.label);
+        for (const bt of this.#baseTypeOptions()) map.set(bt.name, bt.label);
         return map;
     });
 
