@@ -1104,6 +1104,47 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
 
     /**
      * Method to test: saving an existing favorite page through the contentlet API.
+     * Given Scenario: A favorite has versions only in a variant other than DEFAULT, and its owner
+     * saves an edit to it in that variant.
+     * ExpectedResult: The save succeeds, because the stored favorite is found in that variant and
+     * its owner has WRITE on it.
+     */
+    @Test
+    public void test_owner_can_edit_a_favorite_only_in_another_variant() throws Exception {
+
+        final ContentType contentType = prepareFirstInit();
+        new ContentTypeInitializer().init();
+
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final User owner = new UserDataGen().active(true)
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        final Contentlet favorite = new ContentletDataGen(contentType).variant(variant)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .setProperty("title", "favorite").setProperty("url", "/favorite-" + System.nanoTime())
+                .setProperty(Contentlet.OWNER_KEY, owner.getUserId())
+                .nextPersisted();
+        try {
+
+            final Contentlet edit = APILocator.getContentletAPI()
+                    .checkout(favorite.getInode(), APILocator.systemUser(), false);
+            edit.setVariantId(variant.name());
+            edit.setProperty("title", "edited");
+            // checkout locked it for the system user; unlock so only the permission check can refuse
+            APILocator.getContentletAPI().unlock(favorite, APILocator.systemUser(), false);
+
+            final Contentlet saved = APILocator.getContentletAPI().checkin(edit, owner, false);
+
+            Assert.assertEquals("The owner's edit must be saved", "edited",
+                    saved.getStringProperty("title"));
+        } finally {
+
+            Try.run(() -> ContentletDataGen.destroy(favorite));
+            UserDataGen.remove(owner);
+        }
+    }
+
+    /**
+     * Method to test: saving an existing favorite page through the contentlet API.
      * Given Scenario: Another back-end user may edit all content of a site but has no permission on
      * a favorite at the System Host root. With no cached permissions and no permission reference
      * for the favorite, that user saves it naming the site.

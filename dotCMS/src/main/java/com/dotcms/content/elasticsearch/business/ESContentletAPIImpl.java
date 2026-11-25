@@ -7103,8 +7103,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * stored rather than on the copy being saved. A favorite inherits its permissions from where
      * it lives, and the copy may name another site or folder and owner; until
      * {@link #populateHost(Contentlet)} puts it back at the System Host root, a permission lookup
-     * on the copy would resolve them from the place it names. When the identifier exists but no
-     * version of it can be loaded, the save is refused. When nothing with that identifier is
+     * on the copy would resolve them from the place it names. The stored favorite is looked up in
+     * the DEFAULT variant first and then in any variant, since a favorite may exist only in a
+     * variant other than DEFAULT and its permissions do not depend on the variant. When the
+     * identifier exists but no version of it can be loaded, the save is refused. When nothing with that identifier is
      * stored yet, the save creates the favorite, so WRITE on its content type applies.
      *
      * @param contentlet           the favorite page being checked in, with its identifier set
@@ -7118,8 +7120,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final boolean respectFrontendRoles, final User user)
             throws DotDataException, DotSecurityException {
 
-        final Contentlet stored = findContentletByIdentifierAnyLanguage(
+        Contentlet stored = findContentletByIdentifierAnyLanguage(
                 contentlet.getIdentifier(), true);
+        if (null == stored) {
+            // the lookup above sees only the DEFAULT variant; a favorite may exist only in another
+            final Optional<ContentletVersionInfo> version = FactoryLocator.getVersionableFactory()
+                    .findAnyContentletVersionInfoAnyVariant(contentlet.getIdentifier(), true);
+            if (version.isPresent()) {
+                stored = contentFactory.find(version.get().getWorkingInode());
+            }
+        }
         if (null != stored && UtilMethods.isSet(stored.getIdentifier())) {
             return permissionAPI.doesUserHavePermission(stored,
                     PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles);
