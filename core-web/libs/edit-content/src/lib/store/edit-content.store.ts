@@ -92,7 +92,11 @@ export interface EditContentState {
     // Lock state
     lockError: string | null;
     lockStatus: ComponentStatus;
-    canLock: boolean;
+    /**
+     * The backend's answer to `_canlock` for the current contentlet: `null` until it has
+     * answered, so an unchecked lock is never mistaken for a denied one (see `isReadOnly`).
+     */
+    canLock: boolean | null;
     lockSwitchLabel: string;
 
     // Form state
@@ -249,7 +253,7 @@ export const initialRootState: EditContentState = {
     // Lock state
     lockError: null,
     lockStatus: ComponentStatus.IDLE,
-    canLock: false,
+    canLock: null,
     lockSwitchLabel: 'edit.content.unlocked',
 
     // Form state

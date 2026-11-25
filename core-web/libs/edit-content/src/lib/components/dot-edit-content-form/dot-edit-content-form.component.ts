@@ -395,6 +395,9 @@ export class DotEditContentFormComponent implements OnInit {
          */
         effect(() => {
             const isLoading = this.$store.isLoading();
+            // A user without EDIT (backend: canLock false + no actions) only reads the
+            // content: every field stays disabled (#38724 R4).
+            const isReadOnly = this.$store.isReadOnly();
             // const isViewingHistoricalVersion = this.$store.isViewingHistoricalVersion();
             const hasContentlet = untracked(() => !!this.$store.contentlet());
 
@@ -402,9 +405,11 @@ export class DotEditContentFormComponent implements OnInit {
             if (this.form && hasContentlet) {
                 // TODO: put back isViewingHistoricalVersion in the
                 // condition after all fields have disabled state
-                if (isLoading && this.form.enabled) {
+                const shouldDisable = isLoading || isReadOnly;
+
+                if (shouldDisable && this.form.enabled) {
                     this.form.disable({ emitEvent: false });
-                } else if (!isLoading && this.form.disabled) {
+                } else if (!shouldDisable && this.form.disabled) {
                     this.form.enable({ emitEvent: false });
                 }
             }
@@ -718,6 +723,12 @@ export class DotEditContentFormComponent implements OnInit {
         controls[DISABLED_WYSIWYG_FIELD] = this.#fb.control(disabledWYSIWYG);
 
         this.form = this.#fb.group(controls);
+
+        // A rebuilt form starts enabled; keep a read-only user's fields disabled without
+        // making the rebuild effects depend on the read-only signal.
+        if (untracked(() => this.$store.isReadOnly())) {
+            this.form.disable({ emitEvent: false });
+        }
     }
 
     /**

@@ -286,6 +286,65 @@ describe('LockFeature', () => {
             });
         });
 
+        describe('isReadOnly (R4, #38724)', () => {
+            const ACTION = { id: 'publish', name: 'Publish' };
+
+            /** A saved item the backend answered `canLock: false` and an empty action list for. */
+            const readOnlyState = () => {
+                // The onInit hook re-checks `_canlock` on every contentlet change.
+                dotContentletService.canLock.mockReturnValue(
+                    of({ canLock: false, locked: false } as DotContentletCanLock)
+                );
+                store.updateCurrentUser({ userId: '456' });
+                patchState(store, {
+                    contentlet: { inode: 'inode-1', locked: false } as DotCMSContentlet,
+                    initialContentletState: 'existing',
+                    canLock: false,
+                    currentContentActions: {}
+                });
+            };
+
+            it('should be true when the user cannot lock and has no workflow actions', () => {
+                readOnlyState();
+
+                expect(store.isReadOnly()).toBe(true);
+            });
+
+            it('should be false until the backend has answered the canLock check', () => {
+                readOnlyState();
+                patchState(store, { canLock: null });
+
+                expect(store.isReadOnly()).toBe(false);
+            });
+
+            it('should be false when the user has workflow actions to run', () => {
+                readOnlyState();
+                patchState(store, { currentContentActions: { scheme: [ACTION] } as any });
+
+                expect(store.isReadOnly()).toBe(false);
+            });
+
+            it('should be false when the content is locked by another user', () => {
+                // canLock is also false for an EDIT user blocked by someone else's lock;
+                // that case keeps its own "locked by" banner and the Release Lock flow.
+                readOnlyState();
+                store.updateContent({
+                    inode: 'inode-1',
+                    locked: true,
+                    lockedBy: { userId: '123', firstName: 'John', lastName: 'Doe' }
+                } as unknown as DotCMSContentlet);
+
+                expect(store.isReadOnly()).toBe(false);
+            });
+
+            it('should be false for new content', () => {
+                readOnlyState();
+                patchState(store, { initialContentletState: 'new' });
+
+                expect(store.isReadOnly()).toBe(false);
+            });
+        });
+
         describe('lockedByName', () => {
             it('should return the locker name when locked by another user', () => {
                 store.updateCurrentUser({ userId: '456' });

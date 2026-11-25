@@ -1275,6 +1275,53 @@ describe('DotFormComponent', () => {
         });
     });
 
+    describe('Read-only content (R4, #38724)', () => {
+        beforeEach(() => {
+            dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                of(MOCK_CONTENTTYPE_1_TAB)
+            );
+            dotEditContentService.getContentById.mockReturnValue(of(MOCK_CONTENTLET_1_OR_2_TABS));
+            workflowActionsService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+        });
+
+        it('should disable every field when the backend denies the lock and offers no actions', () => {
+            // READ without EDIT: `_canlock` answers false and the EDITING action list is empty.
+            workflowActionsService.getByInode.mockReturnValue(of([]));
+            dotContentletService.canLock.mockReturnValue(
+                of({ canLock: false } as DotContentletCanLock)
+            );
+
+            store.initializeExistingContent({
+                inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                depth: DotContentletDepths.ONE
+            });
+            spectator.detectChanges();
+
+            expect(component.form.disabled).toBe(true);
+            expect(component.form.get('text1')?.disabled).toBe(true);
+        });
+
+        it('should keep the form enabled when the user can lock and has actions', () => {
+            workflowActionsService.getByInode.mockReturnValue(
+                of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
+            );
+            dotContentletService.canLock.mockReturnValue(
+                of({ canLock: true } as DotContentletCanLock)
+            );
+
+            store.initializeExistingContent({
+                inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                depth: DotContentletDepths.ONE
+            });
+            spectator.detectChanges();
+
+            expect(component.form.enabled).toBe(true);
+        });
+    });
+
     describe('Lock functionality', () => {
         beforeEach(() => {
             dotContentTypeService.getContentTypeWithRender.mockReturnValue(

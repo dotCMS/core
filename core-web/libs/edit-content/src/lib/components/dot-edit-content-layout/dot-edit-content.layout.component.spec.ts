@@ -39,7 +39,12 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { ComponentStatus, DotCMSWorkflowAction, DotLanguage } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    DotCMSWorkflowAction,
+    DotContentletCanLock,
+    DotLanguage
+} from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 import {
@@ -748,6 +753,55 @@ describe('EditContentLayoutComponent', () => {
                 store.initializeNewContent('contentTypeName');
                 spectator.detectChanges();
                 tick();
+            }));
+
+            it('should show the no-edit-permission message when the content is read-only (R4, #38724)', fakeAsync(() => {
+                // READ without EDIT: `_canlock` answers false and the EDITING action list is
+                // empty. The store is patched (not spied) so the OnPush template re-renders.
+                spectator
+                    .inject(DotContentletService, true)
+                    .canLock.mockReturnValue(
+                        of({ canLock: false, locked: false } as DotContentletCanLock)
+                    );
+                workflowActionsService.getByInode.mockReturnValue(of([]));
+                // The information, activities and history hooks also react to the contentlet.
+                const emptyPage = {
+                    entity: [],
+                    pagination: null,
+                    errors: [],
+                    i18nMessagesMap: {},
+                    messages: [],
+                    permissions: []
+                };
+                dotEditContentService.getReferencePages.mockReturnValue(of(0));
+                dotEditContentService.getActivities.mockReturnValue(of([]));
+                dotEditContentService.getVersions.mockReturnValue(of(emptyPage));
+                dotEditContentService.getPushPublishHistory.mockReturnValue(of(emptyPage));
+                patchState(unprotected(store), {
+                    contentlet: MOCK_CONTENTLET_1_TAB,
+                    initialContentletState: 'existing',
+                    canLock: false,
+                    currentContentActions: {}
+                });
+                spectator.detectChanges();
+                tick();
+                spectator.detectChanges();
+
+                const message = spectator.query(byTestId('edit-content-layout__read-only-message'));
+
+                expect(message).toBeTruthy();
+                // DotMessageService is mocked to echo the key.
+                expect(message).toContainText('edit.content.no.edit.permission');
+            }));
+
+            it('should not show the no-edit-permission message when the content is editable', fakeAsync(() => {
+                // New content is never read-only.
+                spectator.detectChanges();
+                tick();
+
+                expect(
+                    spectator.query(byTestId('edit-content-layout__read-only-message'))
+                ).toBeNull();
             }));
 
             it('should show lock warning message when lockWarningMessage signal returns a message', fakeAsync(() => {
