@@ -77,10 +77,11 @@ Most releases don't change anything the SDKs rely on, so an older SDK usually ke
 fine against a newer dotCMS instance. Occasionally, though, a release does include a real
 breaking change — and if your SDK is older than that point, it will stop working correctly.
 
-You don't need to track this yourself: your dotCMS instance always knows the oldest SDK
-version it still supports, and the SDK checks itself against it automatically. If you're
-using an SDK that's too old, you'll see a clear warning in your console telling you to
-upgrade.
+To help with this, your dotCMS instance advertises the oldest SDK version it still supports,
+and the SDK checks itself against it automatically. Once dotCMS declares a minimum, an SDK
+that's too old logs a console error telling you to upgrade. The check doesn't run in every
+setup, though, so no message doesn't guarantee compatibility — see
+[How the Version Check Works](#how-the-version-check-works) for the details.
 
 **Recommendation:** pin your SDKs to the same version as your dotCMS instance, and only bump
 them when you upgrade dotCMS — or when the console tells you to.
@@ -94,7 +95,7 @@ them when you upgrade dotCMS — or when the console tells you to.
 
 ##### How the Version Check Works
 
-dotCMS adds two headers to REST and GraphQL responses for requests that carry valid credentials (a logged-in session or a valid auth token). Every request the SDK makes includes its auth token, so SDK requests receive them; anonymous requests get neither header by default.
+dotCMS adds two headers to REST and GraphQL responses for requests that carry valid credentials (a logged-in session or a valid auth token). The SDK sends its configured auth token on every request, so as long as that token is valid, SDK requests receive them. Requests without valid credentials — including ones with an expired or revoked token — get neither header by default.
 
 | Header             | Meaning                                                                 |
 | ------------------- | ------------------------------------------------------------------------ |
@@ -128,7 +129,11 @@ The check never changes request or response behavior, and in several cases it lo
 `@dotcms/react` and `@dotcms/angular` make their requests through `@dotcms/client`, so they get this check automatically as long as you keep its default `FetchHttpClient`. If you supply your own transport — for example, an Angular `HttpClient`-based adapter passed to the provider's `httpClient` option — the check doesn't run.
 
 > [!NOTE]
-> If you're self-hosting and have customized [CORS headers](https://dev.dotcms.com/docs/cors-header-configuration) by overriding `Access-Control-Expose-Headers` for a specific REST or GraphQL resource, make sure `X-DotCMS-Version` and `X-DotCMS-Min-SDK` stay in that list — otherwise the SDK's browser-side version check silently stops seeing them. The global default (`*`) exposes both headers, so most instances need no changes here. The one exception: if you pass `credentials: 'include'` in your request options, browsers don't honor `*`, so list both headers explicitly.
+> If you're self-hosting and have customized [CORS headers](https://dev.dotcms.com/docs/cors-header-configuration), make sure browser-side SDK requests can still see `X-DotCMS-Version` and `X-DotCMS-Min-SDK` — otherwise the version check silently stops seeing them. The global default (`Access-Control-Expose-Headers: *`) exposes both, so most instances need no changes. Watch for these cases:
+>
+> - **A custom mapping for a REST resource** replaces the global defaults entirely rather than merging with them. Even if you only meant to change the allowed origin, add both headers to that mapping's `Access-Control-Expose-Headers` (or keep it at `*`).
+> - **A custom `graphql` mapping** is merged with the defaults, so only an explicit `Access-Control-Expose-Headers` override needs both headers. Note that GraphQL responses served from the GraphQL cache send their own fixed wildcard CORS headers, so `api.cors.graphql.*` overrides don't apply to those responses.
+> - **`credentials: 'include'`** in your request options: browsers don't honor `*` for credentialed requests, so the headers must be listed explicitly.
 
 #### Environment Setup
 
