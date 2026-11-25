@@ -21,7 +21,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotUsersCreateComponent } from './dot-users-create.component';
 
-import { DotUsersService } from '../services/dot-users.service';
+import { DotUserFormPayload, DotUsersService } from '../services/dot-users.service';
 import { createFakeUser, createFakeUserDetail } from '../testing/dot-user.mock';
 
 const MOCK_USER = createFakeUser();
@@ -358,7 +358,7 @@ describe('DotUsersCreateComponent', () => {
             spectator.click(saveButton(spectator));
 
             const call = (dialogRef.close as Mock).mock.calls[0][0] as {
-                payload: Record<string, unknown>;
+                payload: DotUserFormPayload;
             };
             expect(call.payload).not.toHaveProperty('active');
             expect(call.payload.firstName).toBe('Renamed');
