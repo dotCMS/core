@@ -284,8 +284,9 @@ public class PublisherQueueJob implements StatefulJob {
 				// A queued bundle will be sent again, and each send counts an attempt. A bundle that is
 				// no longer queued because a receiver refused it (token or licence) is never sent again,
 				// so the failed poll is its only attempt left to count, or it stays pending forever. A
-				// bundle a receiver accepted is left alone: it may still be installed (#35764)
-				if (!isBundleInQueue(bundleAudit.getBundleId(), bundlesInQueue)
+				// bundle a receiver accepted is left alone: it may still be installed. "Queued" means any
+				// queue row, not only the ones due now, so a refused bundle scheduled again keeps its push (#35764)
+				if (!hasQueueRows(bundleAudit.getBundleId())
 						&& isRefusedByAReceiver(bundleAudit.getStatusPojo())) {
 					countFailedPoll(bundleAudit);
 				}
@@ -296,6 +297,25 @@ public class PublisherQueueJob implements StatefulJob {
 				ThreadContext.remove(BUNDLE_ID);
 				ThreadContext.remove(ENDPOINT_NAME);
 			}
+		}
+	}
+
+	/**
+	 * Tells whether the bundle still has rows in the publishing queue, whether they are due now or
+	 * scheduled for later. A bundle refused by a receiver can be given assets again and pushed for a
+	 * later date, and those rows are not in the list of bundles due now. If the queue cannot be read,
+	 * the bundle is treated as queued, so nothing is counted or finalized on a guess.
+	 *
+	 * @param bundleId the bundle to look for
+	 * @return {@code true} if at least one queue row exists for the bundle, or the queue could not be read
+	 */
+	private boolean hasQueueRows(final String bundleId) {
+		try {
+			return !pubAPI.getQueueElementsByBundleId(bundleId).isEmpty();
+		} catch (final Exception e) {
+			Logger.warn(this, "Unable to read the publishing queue for bundle '" + bundleId + "': "
+					+ ExceptionUtil.getErrorMessage(e));
+			return true;
 		}
 	}
 

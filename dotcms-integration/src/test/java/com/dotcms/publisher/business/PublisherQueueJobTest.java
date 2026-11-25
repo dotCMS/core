@@ -234,6 +234,56 @@ public class PublisherQueueJobTest {
     }
 
     /**
+     * Method to test: {@link PublisherQueueJob} audit-status pass for a refused bundle that was
+     * scheduled again for later (issue #35764).
+     * <p>
+     * Given scenario: a receiver refused the bundle's token, so its audit still says
+     * {@link Status#INVALID_TOKEN} after one attempt. The owner then added assets back and pushed it
+     * again for tomorrow: its queue rows exist but are not due yet, so they are not in the list of
+     * bundles to process. Every poll of the receiver fails.
+     * <p>
+     * Expected result: the bundle is not given up and its scheduled rows are kept. Before the fix
+     * the failed polls were counted because the bundle was missing from the due list, and
+     * finalizing it deleted the scheduled push.
+     */
+    @Test
+    public void test_refusedBundleScheduledAgain_keepsItsScheduledRows() throws Exception {
+        try (AuditStub stub = AuditStub.unauthorized()) {
+            final User user = TestUserUtils.getAdminUser();
+            final Contentlet contentlet = new ContentletDataGen(new ContentTypeDataGen().nextPersisted())
+                    .nextPersisted();
+            final Environment environment = PublisherTestUtil.createEnvironment(user, true);
+            final PublishingEndPoint http = PublisherTestUtil.createEndpoint(environment);
+            http.setPort(String.valueOf(stub.port()));
+            APILocator.getPublisherEndPointAPI().updateEndPoint(http);
+            final Bundle bundle = PublisherTestUtil.createBundle("bundle-" + System.nanoTime(), user, environment);
+            try {
+                seedAudit(bundle, environment, Map.of(http.getId(), Status.INVALID_TOKEN));
+                APILocator.getPublishAuditAPI().updatePublishAuditStatus(bundle.getId(),
+                        Status.FAILED_TO_SEND_TO_ALL_GROUPS,
+                        APILocator.getPublishAuditAPI().getPublishAuditStatus(bundle.getId()).getStatusPojo());
+                final Date tomorrow = new Date(System.currentTimeMillis() + 24L * 60 * 60 * 1000);
+                PublisherAPI.getInstance().addContentsToPublish(
+                        list(contentlet.getIdentifier()), bundle.getId(), tomorrow, user);
+                assertFalse("A push scheduled for tomorrow is not due yet", isBundleQueued(bundle.getId()));
+
+                for (int pass = 0; pass < PublisherQueueJob.MAX_NUM_TRIES; pass++) {
+                    invokeUpdateAuditStatus(PublisherAPI.getInstance().getQueueBundleIdsToProcess());
+                }
+
+                assertEquals("A refused bundle scheduled again must not be given up",
+                        Status.FAILED_TO_SEND_TO_ALL_GROUPS, statusOf(bundle.getId()));
+                assertFalse("The scheduled push must be kept",
+                        PublisherAPI.getInstance().getQueueElementsByBundleId(bundle.getId()).isEmpty());
+            } finally {
+                PublisherAPI.getInstance().deleteElementsFromPublishQueueTable(bundle.getId());
+                cleanUpAudit(bundle);
+                PublisherTestUtil.cleanBundleEndpointEnv(bundle, http, environment);
+            }
+        }
+    }
+
+    /**
      * Method to test: {@link PublisherQueueJob} audit-status pass for a bundle that is no longer in the
      * {@code publishing_queue} but whose receiver accepted it (issue #35764).
      * <p>
