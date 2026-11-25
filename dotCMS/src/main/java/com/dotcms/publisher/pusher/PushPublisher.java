@@ -66,7 +66,6 @@ import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
-import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.ThreadContext;
 import org.glassfish.jersey.client.ClientProperties;
 import org.quartz.JobDetail;
@@ -82,7 +81,9 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -122,6 +123,8 @@ public class PushPublisher extends Publisher {
 
 	private static final String BUNDLE_ID      = "BundleId";
 	private static final String ENDPOINT_NAME  = "EndpointName";
+	/** A key file larger than this is not a key, and is not read further. */
+	static final int MAX_KEY_FILE_BYTES = 64 * 1024;
 
 	@Override
 	public PublisherConfig init ( PublisherConfig config ) throws DotPublishingException {
@@ -503,7 +506,8 @@ public class PushPublisher extends Publisher {
 	/**
 	 * Returns the key configured for an endpoint: the stored value itself, or the content of the
 	 * file it names when it is a path. An endpoint whose key (or key file) is empty or made only of
-	 * spaces has no key, so push publishing neither sends a token for it nor accepts one from it.
+	 * spaces has no key, and neither has one whose key file is larger than
+	 * {@link #MAX_KEY_FILE_BYTES}, so push publishing neither sends a token for it nor accepts one from it.
 	 *
 	 * @param endpoint the endpoint, may be {@code null}
 	 * @return the key, or empty when the endpoint has none
@@ -519,9 +523,19 @@ public class PushPublisher extends Publisher {
 		String token = PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString());
 		String key = null;
 		if(token.contains(File.separator)) {
-			File tokenFile = new File(token);
-			if(tokenFile != null && tokenFile.exists())
-				key = FileUtils.readFileToString(tokenFile, "UTF-8").trim();
+			final Path keyPath = Path.of(token);
+			if (Files.isRegularFile(keyPath)) {
+				try (InputStream input = Files.newInputStream(keyPath)) {
+					final byte[] bytes = input.readNBytes(MAX_KEY_FILE_BYTES + 1);
+					if (bytes.length > MAX_KEY_FILE_BYTES) {
+						Logger.warn(PushPublisher.class, String.format(
+								"The key file of push publishing endpoint '%s' (id %s) is larger than %d bytes, so it is not used as a key.",
+								endpoint.getServerName(), endpoint.getId(), MAX_KEY_FILE_BYTES));
+						return Optional.empty();
+					}
+					key = new String(bytes, StandardCharsets.UTF_8).trim();
+				}
+			}
 		} else {
 			key = token;
 		}

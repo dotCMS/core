@@ -252,4 +252,45 @@ public class AuthCredentialPushPublishUtilTest extends IntegrationTestBase {
             APILocator.getPublisherEndPointAPI().deleteEndPointById(endpoint.getId());
         }
     }
+
+    /**
+     * Method to test: {@link AuthCredentialPushPublishUtil#getRequestToken(PublishingEndPoint)}
+     * Given Scenario: The sender's record of a receiver stores the path of a small key file.
+     * ExpectedResult: The token is built from the file's trimmed content.
+     */
+    @Test
+    public void test_getRequestToken_keyFile_isRead() throws Exception {
+        final java.nio.file.Path keyFile = java.nio.file.Files.createTempDirectory("pp-key").resolve("ok.key");
+        java.nio.file.Files.writeString(keyFile, "pp-file-key\n");
+        final PublishingEndPoint endpoint = sendingEndpoint("192.0.2.106", keyFile.toString());
+        try {
+            assertEquals(java.util.Optional.of("Bearer " + PublicEncryptionFactory.digestString("pp-file-key")),
+                    AuthCredentialPushPublishUtil.INSTANCE.getRequestToken(endpoint));
+        } finally {
+            APILocator.getPublisherEndPointAPI().deleteEndPointById(endpoint.getId());
+            java.nio.file.Files.delete(keyFile);
+            java.nio.file.Files.delete(keyFile.getParent());
+        }
+    }
+
+    /**
+     * Method to test: {@link AuthCredentialPushPublishUtil#getRequestToken(PublishingEndPoint)}
+     * Given Scenario: The sender's record of a receiver stores the path of a key file one byte
+     *                 larger than {@link PushPublisher#MAX_KEY_FILE_BYTES}.
+     * ExpectedResult: No token is produced. The file is not a key and is not read whole.
+     */
+    @Test
+    public void test_getRequestToken_oversizedKeyFile_isEmpty() throws Exception {
+        final java.nio.file.Path keyFile = java.nio.file.Files.createTempDirectory("pp-key").resolve("big.key");
+        java.nio.file.Files.writeString(keyFile, "k".repeat(PushPublisher.MAX_KEY_FILE_BYTES + 1));
+        final PublishingEndPoint endpoint = sendingEndpoint("192.0.2.107", keyFile.toString());
+        try {
+            assertTrue("A key file over the size limit must not produce a token",
+                    AuthCredentialPushPublishUtil.INSTANCE.getRequestToken(endpoint).isEmpty());
+        } finally {
+            APILocator.getPublisherEndPointAPI().deleteEndPointById(endpoint.getId());
+            java.nio.file.Files.delete(keyFile);
+            java.nio.file.Files.delete(keyFile.getParent());
+        }
+    }
 }
