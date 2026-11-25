@@ -557,7 +557,8 @@ export class DotUsersCreateComponent {
      * user never opened the Roles tab.
      *
      * Password and additionalInfo are omitted when empty so the
-     * backend keeps their existing values.
+     * backend keeps their existing values, and `active` is omitted on an
+     * edit the Active toggle was not part of, for the same reason.
      */
     private buildSavePayload(): {
         payload: DotUserFormPayload;
@@ -581,9 +582,18 @@ export class DotUsersCreateComponent {
         const payload: DotUserFormPayload = {
             firstName: account.firstName.trim(),
             lastName: account.lastName.trim(),
-            email: account.email.trim(),
-            active: account.active
+            email: account.email.trim()
         };
+
+        // The backend reads an absent `active` as "leave the status as
+        // it is" (#38730), so on an edit we send it only when the toggle
+        // was actually moved. Otherwise a dialog opened before another
+        // administrator deactivated this user would put them back on the
+        // next unrelated save. `patchValue` on load does not mark a
+        // control dirty, so `dirty` here means the user moved it.
+        if (!this.isEdit || this.form.controls.account.controls.active.dirty) {
+            payload.active = account.active;
+        }
 
         if (this.user?.userId) {
             payload.userId = this.user.userId;

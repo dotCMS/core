@@ -209,6 +209,32 @@ describe('DotUsersCreateComponent', () => {
             );
         });
 
+        it('should always send `active` on create', () => {
+            // On create there is no stored status to preserve, so the
+            // toggle's value is the only source and must travel even
+            // when the user never touched it.
+            spectator.component.form.patchValue({
+                account: {
+                    firstName: 'Ada',
+                    lastName: 'Lovelace',
+                    email: 'ada@dotcms.com',
+                    password: 'Xy7#abcdefghijklm',
+                    confirmPassword: 'Xy7#abcdefghijklm'
+                }
+            });
+            spectator.detectChanges();
+
+            spectator.click(saveButton(spectator));
+
+            expect(dialogRef.close).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    action: 'save',
+                    mode: 'create',
+                    payload: expect.objectContaining({ active: true })
+                })
+            );
+        });
+
         it('should send the password exactly as typed, spaces included', () => {
             const typed = ' Xy7#abcdefghijk ';
             spectator.component.form.patchValue({
@@ -319,6 +345,43 @@ describe('DotUsersCreateComponent', () => {
             expect(account.lastName).toBe('Doe');
             expect(account.email).toBe('jane@dotcms.com');
             expect(account.active).toBe(true);
+        });
+
+        it('should omit `active` when the Active toggle was never touched', () => {
+            // The backend reads an absent `active` as "leave the status
+            // as it is" (#38730). Resending the value the dialog loaded
+            // would undo a deactivation another administrator made while
+            // this dialog was open.
+            spectator.component.form.controls.account.patchValue({ firstName: 'Renamed' });
+            spectator.detectChanges();
+
+            spectator.click(saveButton(spectator));
+
+            const call = (dialogRef.close as Mock).mock.calls[0][0] as {
+                payload: Record<string, unknown>;
+            };
+            expect(call.payload).not.toHaveProperty('active');
+            expect(call.payload.firstName).toBe('Renamed');
+        });
+
+        it('should send `active` when the Active toggle was moved', () => {
+            // `patchValue` on load leaves the control pristine, so a dirty
+            // control is exactly what distinguishes a real toggle flip from
+            // the loaded value.
+            const active = spectator.component.form.controls.account.controls.active;
+            active.setValue(false);
+            active.markAsDirty();
+            spectator.detectChanges();
+
+            spectator.click(saveButton(spectator));
+
+            expect(dialogRef.close).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    action: 'save',
+                    mode: 'update',
+                    payload: expect.objectContaining({ active: false })
+                })
+            );
         });
 
         it('should NOT mark password as required in edit mode', () => {

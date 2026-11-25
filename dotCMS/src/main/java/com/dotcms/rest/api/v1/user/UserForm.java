@@ -35,7 +35,10 @@ public final class UserForm extends Validated implements LanguageSupport  {
     @NotNull
     @NotBlank
     private final String email;
-    private final boolean male;
+    @Schema(description = "Whether the user is male. Absent = the stored value is left as it is "
+            + "on update, and a new user is created with the default. An explicit value sets it.",
+            nullable = true, example = "false")
+    private final Boolean male;
     private final String  birthday;
     private final String    languageId;
     private final String  timeZoneId;
@@ -110,7 +113,17 @@ public final class UserForm extends Validated implements LanguageSupport  {
         return email;
     }
 
-    public boolean isMale() {
+    /**
+     * The gender flag sent in the payload. {@code null} means the field was not sent at all, which
+     * leaves the stored value untouched — the same "absent means do not touch" rule
+     * {@link #getActive()} and {@link #getRoles()} follow. This is why the field is a
+     * {@link Boolean} and not a primitive: the clients that never send it, the Users (Beta) portlet
+     * among them, would otherwise have every save read the omission as {@code false} and overwrite
+     * whatever was stored.
+     *
+     * @return {@code true} or {@code false} as sent, or {@code null} when the field was absent.
+     */
+    public Boolean getMale() {
         return male;
     }
 
@@ -150,7 +163,7 @@ public final class UserForm extends Validated implements LanguageSupport  {
         @JsonProperty private String lastName;
         @JsonProperty private String nickName;
         @JsonProperty private String email;
-        @JsonProperty private boolean male;
+        @JsonProperty private Boolean male;
         @JsonProperty private String  birthday;
         @JsonProperty private String    languageId ="en-US";
         @JsonProperty private String    timeZoneId;
@@ -170,6 +183,15 @@ public final class UserForm extends Validated implements LanguageSupport  {
             return this;
         }
 
+        /**
+         * Sets the account status. Leaving it {@code null}, which is the default, omits the field
+         * and so leaves the user's status untouched on update; on create the user gets the status
+         * {@code UserAPI#createUser} gives a new user.
+         *
+         * @param active The status to send, or {@code null} to omit it.
+         *
+         * @return This builder.
+         */
         public Builder active(final Boolean active) {
             this.active = active;
             return this;
@@ -200,7 +222,15 @@ public final class UserForm extends Validated implements LanguageSupport  {
             return this;
         }
 
-        public Builder male(boolean male) {
+        /**
+         * Sets the gender flag. Leaving it {@code null}, which is the default, omits the field and
+         * so leaves the stored value untouched.
+         *
+         * @param male The flag to send, or {@code null} to omit it.
+         *
+         * @return This builder.
+         */
+        public Builder male(final Boolean male) {
             this.male = male;
             return this;
         }

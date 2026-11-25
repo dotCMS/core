@@ -54,6 +54,8 @@ import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
@@ -1134,7 +1136,8 @@ public class UserResource implements Serializable {
 	    operationId = "createUser",
 	    summary = "Create user",
 	    description = "Creates a new user. Requires a CMS Administrator. FirstName, LastName, Email and Password are required. "
-	            + "The optional active flag sets the new user's status; omit it to create an active user."
+	            + "The optional active flag sets the new user's status; omit it to create an active user. "
+	            + "The optional male flag is applied the same way; omit it to take the default."
 	)
 	@ApiResponses(value = {
 	    @ApiResponse(responseCode = "200",
@@ -1259,7 +1262,10 @@ public class UserResource implements Serializable {
 		}
 
 		user.setPassword(new String(createUserForm.getPassword()));
-		user.setMale(createUserForm.isMale());
+		// absent = the default UserAPI#createUser gives a new user; an explicit value wins over it
+		if (null != createUserForm.getMale()) {
+			user.setMale(createUserForm.getMale());
+		}
 		user.setCreateDate(new Date());
 
 		// absent = the status UserAPI#createUser gives a new user; an explicit value wins over it
@@ -1323,7 +1329,8 @@ public class UserResource implements Serializable {
 					"expressed in this list — manage those through the role-centric /v1/roles/{roleId}/users " +
 					"endpoints instead. The optional active flag activates or deactivates the user; omit it to " +
 					"leave the status untouched. Deactivating a user invalidates their login tokens and ends " +
-					"their sessions.",
+					"their sessions, which is why deactivating your own account is refused with a 400. The " +
+					"optional male flag follows the same rule: omit it to leave the stored value untouched.",
 			responses = {
 					@ApiResponse(
 							responseCode = "200",
@@ -1349,7 +1356,7 @@ public class UserResource implements Serializable {
 							content = @Content(mediaType = "application/json",
 									schema = @Schema(implementation =
 											ResponseSiteVariablesEntityView.class)),
-							description = "If the user information is not valid"),
+							description = "If the user information is not valid, or the payload asks to deactivate the calling user's own account"),
 			})
 	@PUT
 	@JSONP
@@ -1455,8 +1462,14 @@ public class UserResource implements Serializable {
                 throw new NoSuchUserException("User with id " + userId + " does not exist");
             }
 
+            final boolean wasActive = userToUpdated.isActive();
             userToUpdated.setActive(true);
             this.userAPI.save(userToUpdated, modUser, false);
+
+            if (!wasActive) {
+
+                this.logStatusChange(modUser, userToUpdated);
+            }
 
             return new ResponseUserMapEntityView(Map.of(USER_ID, userToUpdated.getUserId(),
                     "user", userToUpdated.toMap())); // 200
@@ -1475,6 +1488,8 @@ public class UserResource implements Serializable {
      * @throws Exception
      */
     @Operation(operationId = "deactivateUser", summary = "Deactivate an existing user.",
+            description = "Deactivates a user, which invalidates their login tokens and ends their "
+                    + "sessions. Deactivating your own account is refused with a 400.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -1499,7 +1514,7 @@ public class UserResource implements Serializable {
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation =
                                             ResponseUserMapEntityView.class)),
-                            description = "If the user information is not valid"),
+                            description = "If the user id is the calling user's own, which cannot be deactivated"),
             })
     @PATCH
     @Path("/deactivate/{userId}")
@@ -1534,8 +1549,23 @@ public class UserResource implements Serializable {
                 throw new NoSuchUserException("User with id " + userId + " does not exist");
             }
 
+            // same refusal the legacy Users portlet gives, and the same one PUT /v1/users gives:
+            // deactivating yourself takes your own tokens and session away, and on an instance with
+            // a single administrator nobody is left who could undo it
+            if (userToUpdated.getUserId().equals(modUser.getUserId())) {
+
+                throw new BadRequestException(LanguageUtil.get(modUser.getLocale(),
+                        "deactivate-your-own-user-error"));
+            }
+
+            final boolean wasActive = userToUpdated.isActive();
             userToUpdated.setActive(false);
             this.userAPI.save(userToUpdated, modUser, false);
+
+            if (wasActive) {
+
+                this.logStatusChange(modUser, userToUpdated);
+            }
 
             return new ResponseUserMapEntityView(Map.of(USER_ID, userToUpdated.getUserId(),
                     "user", userToUpdated.toMap())); // 200
@@ -1544,6 +1574,25 @@ public class UserResource implements Serializable {
         throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to update users");
     } // deactivate.
 
+    /**
+     * Writes the audit trail for a change of a user's account status, the way the legacy Users
+     * portlet does it (DWR {@code UserAjax#saveUserAdditionalInfo}), so that enabling or disabling
+     * an account through the REST API leaves the same trace and the existing log readers keep
+     * working. Unlike the legacy entry, this one names the user whose status changed as well as the
+     * user who changed it.
+     *
+     * @param modUser The user performing the request.
+     * @param changed The user whose status changed, already carrying the new value.
+     */
+    private void logStatusChange(final User modUser, final User changed) {
+
+        final String message = "Updating User Additional Info. 'Is User Enabled' was set to: "
+                + changed.isActive() + " for User:" + changed.getUserId();
+        final String detail = "Date: " + DateUtil.getCurrentDate() + "; User:" + modUser.getUserId();
+
+        ActivityLogger.logInfo(this.getClass(), message, detail);
+        AdminLogger.log(this.getClass(), message, detail);
+    }
 
 	/**
 	 * Updates a user from the payload and, when the payload has a {@code roles} field, reconciles the
@@ -1559,6 +1608,8 @@ public class UserResource implements Serializable {
 	 * When the payload has an {@code active} flag, the user's status is set from it, and making a
 	 * user inactive invalidates their login tokens and ends their sessions (again through
 	 * {@link UserAPI#save(User, User, boolean, boolean)}). Without the flag, the status is left as it is.
+	 * Deactivating the calling user's own account is refused with a 400, the same refusal the legacy
+	 * Users portlet gives, because it would take the caller's own session away.
 	 *
 	 * @param modUser        The user performing the request.
 	 * @param request        The current request.
@@ -1593,6 +1644,17 @@ public class UserResource implements Serializable {
 
 		final User userToSave = (User)userRecovery.clone();
 
+		// Refusing to let a caller switch their own account off is what the legacy Users portlet
+		// does (UserAjax#saveUserAdditionalInfo). Deactivating takes the caller's own login tokens
+		// and session away, so on an instance with a single administrator nobody is left who could
+		// undo it. Checked before anything is written, so a refused request changes nothing.
+		if (Boolean.FALSE.equals(updateUserForm.getActive())
+				&& userRecovery.getUserId().equals(modUser.getUserId())) {
+
+			throw new BadRequestException(LanguageUtil.get(modUser.getLocale(),
+					"deactivate-your-own-user-error"));
+		}
+
 		validateMaximumLength(updateUserForm.getFirstName(),updateUserForm.getLastName(),updateUserForm.getEmail(),
 				updateUserForm.getMiddleName(),updateUserForm.getNickName(),updateUserForm.getBirthday());
 
@@ -1626,7 +1688,11 @@ public class UserResource implements Serializable {
 			userToSave.setTimeZoneId(updateUserForm.getTimeZoneId());
 		}
 
-		userToSave.setMale(updateUserForm.isMale());
+		// An absent flag (null) leaves the stored value as it is. The Users (Beta) portlet never
+		// sends this field, so reading the omission as false overwrote the stored value on every save.
+		if (null != updateUserForm.getMale()) {
+			userToSave.setMale(updateUserForm.getMale());
+		}
 
 		// An absent flag (null) leaves the status as it is; an explicit value activates or
 		// deactivates the user. No extra privilege check is needed here: this endpoint already
@@ -1664,6 +1730,13 @@ public class UserResource implements Serializable {
 					!WebAPILocator.getUserWebAPI().isLoggedToBackend(request));
 			Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
 					updateUserForm.getEmail() + "' has been updated.");
+
+			// only an actual change is worth an audit entry: resending the status the user already
+			// has is not one
+			if (userRecovery.isActive() != userToSave.isActive()) {
+
+				this.logStatusChange(modUser, userToSave);
+			}
 
             if (null != roleChanges) {
                 this.applyRoleChanges(roleChanges, userToSave);

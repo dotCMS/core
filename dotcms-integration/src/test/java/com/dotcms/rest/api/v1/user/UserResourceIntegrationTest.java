@@ -13,6 +13,7 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.ejb.UserTestUtil;
 import java.util.Collections;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.LayoutAPI;
@@ -2045,6 +2046,13 @@ public class UserResourceIntegrationTest {
         return plain;
     }
 
+    /** Sets the given user's male flag straight through the API, bypassing the resource under test. */
+    private static void setMaleDirectly(final User user) throws Exception {
+        final User toSave = (User) APILocator.getUserAPI().loadUserById(user.getUserId()).clone();
+        toSave.setMale(true);
+        APILocator.getUserAPI().save(toSave, APILocator.systemUser(), false);
+    }
+
     /** Makes the given user inactive straight through the API, bypassing the resource under test. */
     private static void deactivateDirectly(final User user) throws Exception {
         final User toSave = (User) APILocator.getUserAPI().loadUserById(user.getUserId()).clone();
@@ -2139,23 +2147,127 @@ public class UserResourceIntegrationTest {
                 stored.getRememberMeToken());
     }
 
+    // Not covered here: a Role administrator who is not a CMS Administrator changing ANOTHER
+    // user's status. That needs EDIT on the target's UserProxy, and an individual permission on a
+    // UserProxy cannot be stored at all today — UserProxy#getPermissionId returns "user:" + a
+    // 36-character user id, 41 characters in all, while permission_reference.asset_id is
+    // varchar(36), so PermissionBitFactoryImpl#upsertPermissionReferences fails with "value too
+    // long for type character varying(36)". Status changes by a CMS Administrator and the refusals
+    // below cover the behaviour this change introduces; the permission gate itself is unchanged.
+
     /**
      * Method to test: {@link UserResource#update(HttpServletRequest, HttpServletResponse, UserForm)}
-     * Given Scenario: A user with the Users and Roles tools who is not a CMS Administrator
-     * deactivates their own account. This endpoint admits exactly the callers the
-     * activate/deactivate endpoints admit, so a Role administrator who is not a CMS Administrator
-     * must be able to change a status here too.
-     * Expected Result: 200; the account is inactive.
+     * Given Scenario: A user with the Users and Roles tools sends {@code active = false} for their
+     * own account. Deactivating takes the caller's own login tokens and session away, and on an
+     * instance with a single administrator nobody would be left who could undo it, which is why
+     * the legacy Users portlet refuses it in {@code UserAjax#saveUserAdditionalInfo}.
+     * Expected Result: 400; the account is still active and nothing else in the payload was applied.
      */
     @Test
-    public void test_update_activeFalse_roleManagerIsAllowed() throws Exception {
+    public void test_update_selfDeactivation_isRefused() throws Exception {
         final User manager = newUserManager();
 
-        final Response resourceResponse = resource.update(requestAs(manager), response,
-                updateFormFor(manager).active(false).build());
+        assertThrows(BadRequestException.class, () -> resource.update(requestAs(manager), response,
+                updateFormFor(manager).firstName("Renamed").active(false).build()));
+
+        final User stored = APILocator.getUserAPI().loadUserById(manager.getUserId());
+        assertTrue("the caller must still be active", stored.isActive());
+        assertNotEquals("the refused request must not have applied the rest of the payload",
+                "Renamed", stored.getFirstName());
+    }
+
+    /**
+     * Method to test: {@link UserResource#update(HttpServletRequest, HttpServletResponse, UserForm)}
+     * Given Scenario: A CMS Administrator sends {@code active = false} for their own account.
+     * Expected Result: 400; being a CMS Administrator does not buy an exception to the refusal.
+     */
+    @Test
+    public void test_update_adminSelfDeactivation_isRefused() throws Exception {
+        assertThrows(BadRequestException.class, () -> resource.update(mockRequest(), response,
+                updateFormFor(adminUser).active(false).build()));
+
+        assertTrue("the administrator must still be active",
+                APILocator.getUserAPI().loadUserById(adminUser.getUserId()).isActive());
+    }
+
+    /**
+     * Method to test: {@link UserResource#deactivate(HttpServletRequest, HttpServletResponse, String)}
+     * Given Scenario: A CMS Administrator calls the deactivate endpoint on their own user id. The
+     * endpoint had the same gap the update endpoint had.
+     * Expected Result: 400; the administrator is still active.
+     */
+    @Test
+    public void test_deactivateEndpoint_self_isRefused() throws Exception {
+        assertThrows(BadRequestException.class,
+                () -> resource.deactivate(mockRequest(), response, adminUser.getUserId()));
+
+        assertTrue("the administrator must still be active",
+                APILocator.getUserAPI().loadUserById(adminUser.getUserId()).isActive());
+    }
+
+    /**
+     * Method to test: {@link UserResource#deactivate(HttpServletRequest, HttpServletResponse, String)}
+     * and {@link UserResource#active(HttpServletRequest, HttpServletResponse, String)}
+     * Given Scenario: A CMS Administrator deactivates and then reactivates another user. Guards the
+     * self-deactivation refusal against being written so broadly that it blocks the ordinary path.
+     * Expected Result: 200 each time, with the stored status following the call.
+     */
+    @Test
+    public void test_deactivateEndpoint_otherUser_stillWorks() throws Exception {
+        final User target = newPlainBackendUser();
+
+        assertEquals("the response must name the user that was deactivated", target.getUserId(),
+                resource.deactivate(mockRequest(), response, target.getUserId())
+                        .getEntity().get(UserResource.USER_ID));
+        assertFalse("the other user must be inactive",
+                APILocator.getUserAPI().loadUserById(target.getUserId()).isActive());
+
+        assertEquals("the response must name the user that was reactivated", target.getUserId(),
+                resource.active(mockRequest(), response, target.getUserId())
+                        .getEntity().get(UserResource.USER_ID));
+        assertTrue("the other user must be active again",
+                APILocator.getUserAPI().loadUserById(target.getUserId()).isActive());
+    }
+
+    /**
+     * Method to test: {@link UserResource#update(HttpServletRequest, HttpServletResponse, UserForm)}
+     * Given Scenario: A CMS Administrator updates a user whose {@code male} flag is set, with a
+     * payload that carries no {@code male} field — what the Users (Beta) portlet sends on every
+     * save.
+     * Expected Result: 200; the stored flag is untouched. A primitive read the omission as
+     * {@code false} and overwrote it on every save.
+     */
+    @Test
+    public void test_update_maleAbsent_leavesTheValueUntouched() throws Exception {
+        final User target = newPlainBackendUser();
+        setMaleDirectly(target);
+
+        final Response resourceResponse = resource.update(mockRequest(), response,
+                updateFormFor(target).firstName("Renamed").build());
 
         assertEquals(Status.OK.getStatusCode(), resourceResponse.getStatus());
-        assertFalse(APILocator.getUserAPI().loadUserById(manager.getUserId()).isActive());
+        final User stored = APILocator.getUserAPI().loadUserById(target.getUserId());
+        assertTrue("an absent male field must not clear the stored value", stored.isMale());
+        assertEquals("the rest of the payload must still be applied", "Renamed", stored.getFirstName());
+    }
+
+    /**
+     * Method to test: {@link UserResource#update(HttpServletRequest, HttpServletResponse, UserForm)}
+     * Given Scenario: A CMS Administrator updates a user whose {@code male} flag is set, sending
+     * {@code male = false} explicitly.
+     * Expected Result: 200; the stored flag is cleared. An explicit value is still applied.
+     */
+    @Test
+    public void test_update_maleExplicit_appliesTheValue() throws Exception {
+        final User target = newPlainBackendUser();
+        setMaleDirectly(target);
+
+        final Response resourceResponse = resource.update(mockRequest(), response,
+                updateFormFor(target).male(false).build());
+
+        assertEquals(Status.OK.getStatusCode(), resourceResponse.getStatus());
+        assertFalse("an explicit male=false must be applied",
+                APILocator.getUserAPI().loadUserById(target.getUserId()).isMale());
     }
 
     /**
