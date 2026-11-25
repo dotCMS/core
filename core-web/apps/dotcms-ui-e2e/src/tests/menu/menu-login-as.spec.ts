@@ -1,8 +1,7 @@
 import { DotNavigationPage, LoginPage } from '@pages';
 import { expect, test } from '@playwright/test';
-import { createBackendUser, deleteUser, TestUser } from '@requests/users';
+import { createBackendUser, deleteUser, signIn, TestUser } from '@requests/users';
 import { admin1 } from '@utils/credentials';
-import { generateBase64Credentials } from '@utils/generateBase64Credential';
 
 import { startWithBar } from './helpers/menu-state';
 
@@ -22,7 +21,6 @@ test.use({ storageState: { cookies: [], origins: [] } });
 test.describe('Admin navigation — login as', () => {
     test('login-as shows the navigation of the impersonated user', async ({
         page,
-        request,
         playwright,
         baseURL
     }) => {
@@ -36,7 +34,11 @@ test.describe('Admin navigation — login as', () => {
             email: `e2e-menu-login-as-${suffix}@dotcms.com`,
             password: 'e2e-menu-pass'
         };
-        await createBackendUser(request, user);
+        // With no saved login, `request` has no session. The administrator signs in on a context
+        // of its own, apart from the browser's session the login-as below turns into the user's.
+        const asAdmin = await playwright.request.newContext({ baseURL });
+        await signIn(asAdmin, admin1.username, admin1.password);
+        await createBackendUser(asAdmin, user);
 
         try {
             await startWithBar(page, 'expanded');
@@ -59,14 +61,12 @@ test.describe('Admin navigation — login as', () => {
             await page.getByTestId('dot-login-as-submit-button').click();
 
             await nav.waitForGroups();
-            // A context of its own: `request` holds the administrator's session cookie from creating
-            // the user, and the server would answer this call as the administrator.
+            // A third session, signed in as the user itself: what the server gives that user is
+            // read apart from the browser session under test.
             const asUser = await playwright.request.newContext({ baseURL });
-            const impersonatedMenu = await asUser.get('/api/v1/menu', {
-                headers: {
-                    Authorization: generateBase64Credentials(user.email, user.password)
-                }
-            });
+            await signIn(asUser, user.email, user.password);
+            const impersonatedMenu = await asUser.get('/api/v1/menu');
+            expect(impersonatedMenu.status()).toBe(200);
             const expected = ((await impersonatedMenu.json()).entity as { tabName: string }[]).map(
                 (group) => group.tabName
             );
@@ -76,7 +76,8 @@ test.describe('Admin navigation — login as', () => {
             await expect(nav.nav.getByTestId('nav-item-label')).toHaveText(expected);
             expect(expected).not.toEqual(adminGroups);
         } finally {
-            await deleteUser(request, user.id);
+            await deleteUser(asAdmin, user.id);
+            await asAdmin.dispose();
         }
     });
 });
