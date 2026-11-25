@@ -50,6 +50,12 @@ export class DotUploadTypeSelectorComponent {
         alias: 'allowedBaseTypes'
     });
 
+    /**
+     * Where the settings hint sits: below the options by default, or above them for a host that
+     * adds its own entries after the options, as Content Drive's Upload menu does (#37896).
+     */
+    $hintPosition = input<'top' | 'bottom'>('bottom', { alias: 'hintPosition' });
+
     /** Emits the chosen base type plus the upload context when the user picks an option. */
     selectUploadType = output<DotUploadSelection>();
 

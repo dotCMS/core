@@ -1,9 +1,9 @@
-import { merge, Observable, timer } from 'rxjs';
+import { EMPTY, merge, Observable, timer } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { exhaustMap, filter, map, switchMap, take } from 'rxjs/operators';
+import { catchError, exhaustMap, filter, map, switchMap, take } from 'rxjs/operators';
 
 import {
     DotCMSAPIResponse,
@@ -47,7 +47,7 @@ export const DOT_CONTENT_IMPORT_URL = '/api/v1/content/_import';
 
 /**
  * Talks to the content import endpoints (`/api/v1/content/_import`, #37896): the content types a
- * user can import into, the synchronous preview, the import job, and the sample CSV.
+ * user can import into, the preview, the import job, and the CSV template.
  */
 @Injectable({ providedIn: 'root' })
 export class DotContentImportService {
@@ -83,7 +83,8 @@ export class DotContentImportService {
                         timer(PREVIEW_POLL_MS, PREVIEW_POLL_MS)
                     ).pipe(
                         // One read at a time: a tick that lands while a read is in flight is dropped.
-                        exhaustMap(() => this.readJob(jobId)),
+                        // A read that fails (a network blip) is skipped, and the next tick tries again.
+                        exhaustMap(() => this.readJob(jobId).pipe(catchError(() => EMPTY))),
                         filter((job) => FINISHED_JOB_STATES.has(job.state)),
                         take(1)
                     )
@@ -117,27 +118,6 @@ export class DotContentImportService {
     }
 
     /**
-     * Starts an import of a CSV the server already holds, by its temp file id: the one a preview
-     * stored. The CSV isn't uploaded again, and the import reads exactly the file that was
-     * previewed. The server refuses an id that doesn't exist or isn't this user's.
-     *
-     * @param tempFileId the preview job's `tempFileId`
-     * @param form the import options; `language` and `site` are always sent
-     */
-    importPreviewed(
-        tempFileId: string,
-        form: DotContentImportForm
-    ): Observable<DotImportJobCreated> {
-        const body = new FormData();
-        body.append('tempFileId', tempFileId);
-        body.append('form', new Blob([JSON.stringify(form)], { type: 'application/json' }));
-
-        return this.#http
-            .post<DotCMSAPIResponse<DotImportJobCreated>>(DOT_CONTENT_IMPORT_URL, body)
-            .pipe(map((response) => response.entity));
-    }
-
-    /**
      * The imports still running on the server, so the status toast can come back after a reload.
      * Previews are left out: they belong to an import dialog, which a reload closes.
      */
@@ -158,13 +138,14 @@ export class DotContentImportService {
     }
 
     /**
-     * The sample CSV Content Search offers for a content type: a header row of its importable
-     * fields and a row of placeholders showing each field's format.
+     * The CSV template of a content type, from `GET /_template`: a header row of its importable
+     * fields and a row of placeholders showing each field's format. Content Search offers the same
+     * file.
      *
      * @param contentType the content type's id or variable
      */
     downloadSample(contentType: string): Observable<Blob> {
-        return this.#http.get(`${DOT_CONTENT_IMPORT_URL}/_sample`, {
+        return this.#http.get(`${DOT_CONTENT_IMPORT_URL}/_template`, {
             params: { contentType },
             responseType: 'blob'
         });

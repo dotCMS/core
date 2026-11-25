@@ -106,6 +106,32 @@ describe('DotContentImportService', () => {
 
             expect(received()).toEqual(finishedJob);
         });
+
+        it('keeps waiting when one read of the job fails', () => {
+            vi.useFakeTimers();
+            let failed = false;
+            let job: DotImportJob | undefined;
+            spectator.service.preview(CSV, FORM).subscribe({
+                next: (value) => (job = value),
+                error: () => (failed = true)
+            });
+            spectator
+                .expectOne(`${IMPORT_URL}/_validate`, HttpMethod.POST)
+                .flush({ entity: { jobId: 'preview-1' } });
+
+            vi.advanceTimersByTime(1000);
+            spectator
+                .expectOne(`${IMPORT_URL}/preview-1`, HttpMethod.GET)
+                .flush(null, { status: 502, statusText: 'Bad Gateway' });
+
+            vi.advanceTimersByTime(1000);
+            spectator.expectOne(`${IMPORT_URL}/preview-1`, HttpMethod.GET).flush({
+                entity: finishedJob
+            });
+
+            expect(failed).toBe(false);
+            expect(job).toEqual(finishedJob);
+        });
     });
 
     /** #37896 US1: the import itself runs as a background job. */
@@ -123,28 +149,6 @@ describe('DotContentImportService', () => {
 
             req.flush({ entity: { jobId: 'job-2' } });
             expect(jobId).toBe('job-2');
-        });
-    });
-
-    /**
-     * PR #38054 review: the import reuses the file the preview already uploaded, by its temp file
-     * id, so the CSV goes up once and the import reads exactly what was previewed.
-     */
-    describe('importPreviewed', () => {
-        it("posts the preview's temp file id and the form, without the CSV", async () => {
-            let jobId: string | undefined;
-            spectator.service
-                .importPreviewed('temp_123', FORM)
-                .subscribe((created) => (jobId = created.jobId));
-
-            const req = spectator.expectOne(IMPORT_URL, HttpMethod.POST);
-            const body = req.request.body as FormData;
-            expect(body.get('file')).toBeNull();
-            expect(body.get('tempFileId')).toBe('temp_123');
-            expect(JSON.parse(await (body.get('form') as Blob).text())).toEqual(FORM);
-
-            req.flush({ entity: { jobId: 'job-3' } });
-            expect(jobId).toBe('job-3');
         });
     });
 
@@ -193,14 +197,14 @@ describe('DotContentImportService', () => {
         });
     });
 
-    /** #37896 US4: the sample CSV Content Search offers, for the picked content type. */
+    /** #37896 US4: the CSV template of the picked content type, from `GET /_template`. */
     describe('downloadSample', () => {
-        it('asks for the sample of the content type as a file', () => {
+        it('asks for the CSV template of the content type as a file', () => {
             let blob: Blob | undefined;
             spectator.service.downloadSample('Blog').subscribe((value) => (blob = value));
 
             const req = spectator.expectOne(
-                `${IMPORT_URL}/_sample?contentType=Blog`,
+                `${IMPORT_URL}/_template?contentType=Blog`,
                 HttpMethod.GET
             );
             expect(req.request.responseType).toBe('blob');

@@ -189,4 +189,33 @@ describe('DotUploadTypeSelectorComponent', () => {
             expect(spectator.queryAll('[data-testid^="upload-selector-option-"]').length).toBe(2);
         });
     });
+
+    /**
+     * Content Drive puts the settings hint above the options, so its Import CSV entry can follow
+     * them directly (#37896). Every other host keeps the hint below the options.
+     */
+    describe('hintPosition', () => {
+        const hintComesFirst = () => {
+            const hint = spectator.query(byTestId('upload-selector-settings-hint'));
+            const firstOption = spectator.query(byTestId('upload-selector-option-DOTASSET'));
+
+            return Boolean(
+                hint &&
+                firstOption &&
+                hint.compareDocumentPosition(firstOption) & Node.DOCUMENT_POSITION_FOLLOWING
+            );
+        };
+
+        it('shows the hint after the options by default', () => {
+            expect(spectator.query(byTestId('upload-selector-settings-hint'))).toBeTruthy();
+            expect(hintComesFirst()).toBe(false);
+        });
+
+        it('shows the hint before the options when asked to', () => {
+            spectator.setInput('hintPosition', 'top');
+            spectator.detectChanges();
+
+            expect(hintComesFirst()).toBe(true);
+        });
+    });
 });

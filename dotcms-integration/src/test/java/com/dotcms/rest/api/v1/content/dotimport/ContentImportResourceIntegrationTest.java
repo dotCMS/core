@@ -13,10 +13,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import com.dotcms.Junit5WeldBaseTest;
-import java.util.Map;
-import com.dotcms.jobs.business.job.JobResult;
-import com.dotcms.jobs.business.job.JobView;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.LineDividerField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -24,15 +20,10 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
-import com.dotcms.rest.exception.ForbiddenException;
-import com.dotcms.datagen.SiteDataGen;
-import java.util.Arrays;
-import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.beans.Permission;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.jobs.business.job.Job;
+import com.dotcms.jobs.business.job.JobView;
 import com.dotcms.jobs.business.job.JobViewPaginatedResult;
 import com.dotcms.jobs.business.util.JobUtil;
 import com.dotcms.mock.request.FakeHttpRequest;
@@ -45,9 +36,12 @@ import com.dotcms.rest.api.v1.job.SSEMonitorUtil;
 import com.dotcms.rest.exception.ValidationException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.WebKeys;
@@ -57,7 +51,6 @@ import com.liferay.portal.model.User;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.List;
 import javax.inject.Inject;
@@ -73,6 +66,12 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import java.util.Map;
+import com.dotcms.jobs.business.job.JobResult;
+import com.dotcms.rest.exception.ForbiddenException;
+import com.dotcms.datagen.SiteDataGen;
+import java.util.Arrays;
+import com.dotmarketing.business.Permissionable;
 
 /**
  * Integration test suite for content import functionality.
@@ -685,6 +684,29 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
     }
 
     /**
+     * Given scenario: a preview names another site in {@code site}, and is refused for a reason
+     * unrelated to the site (an unknown workflow action).
+     * Expected result: 400, and the refused job reports the site the request named, not the
+     * session's (PR #38054 review).
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    void test_refused_validate_reports_the_requested_site() throws Exception {
+        final Host otherSite = new SiteDataGen().nextPersisted();
+        final ContentImportForm form = createContentImportForm(contentType.name(),
+                String.valueOf(defaultLanguage.getId()), "no-such-action",
+                List.of(fieldId), otherSite.getIdentifier());
+
+        final Response result = importResource.validateContentImport(request, response,
+                createContentImportParams(csvFile, form));
+
+        assertBadRequestResponse(result);
+        final JobView refused = ((ResponseEntityView<JobView>) result.getEntity()).getEntity();
+        assertEquals(otherSite.getIdentifier(), refused.parameters().get("siteIdentifier"));
+        assertEquals(otherSite.getHostname(), refused.parameters().get("siteName"));
+    }
+
+    /**
      * Given scenario: {@code site} names a site that doesn't exist.
      * Expected result: the request is refused with 400 and no job runs (#37896, FR-023).
      */
@@ -768,87 +790,8 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
     }
 
     /**
-     * Given scenario: a preview is queued through {@code /_validate}, and the import is then
-     * started with the preview job's {@code tempFileId} instead of uploading the CSV again.
-     * Expected result: the import job reads the very file that was previewed (same temp file id)
-     * and keeps its original name (#37896, FR-017; PR #38054 review).
-     */
-    @Test
-    void test_import_reuses_the_previewed_file() throws Exception {
-        final ContentImportForm form = createContentImportForm(contentType.name(),
-                String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
-                List.of(fieldId));
-        final Job preview = jobOf(importResource.validateContentImport(request, response,
-                createContentImportParams(csvFile, form)));
-        final String tempFileId = String.valueOf(preview.parameters().get("tempFileId"));
-
-        final ContentImportParams params = new ContentImportParams();
-        params.setJsonForm(mapper.writeValueAsString(form));
-        params.setTempFileId(tempFileId);
-        final Job job = jobOf(importResource.importContent(request, response, params));
-
-        assertEquals(tempFileId, job.parameters().get("tempFileId"));
-        assertEquals(csvFile.getName(), job.parameters().get("fileName"));
-    }
-
-    /**
-     * Given scenario: an import names a temp file id that doesn't exist.
-     * Expected result: 400, and no job is created.
-     */
-    @Test
-    void test_import_with_unknown_temp_file_is_refused() throws Exception {
-        final ContentImportParams params = new ContentImportParams();
-        params.setJsonForm(mapper.writeValueAsString(createContentImportForm(contentType.name(),
-                String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
-                List.of(fieldId))));
-        params.setTempFileId("temp_" + System.currentTimeMillis());
-
-        assertBadRequestResponse(importResource.importContent(request, response, params));
-    }
-
-    /**
-     * Given scenario: another backend user uploaded a temp file, and the admin's import names it.
-     * Expected result: 400. A temp file can only be used by whoever uploaded it, so one user can't
-     * import another user's CSV by its id.
-     */
-    @Test
-    void test_import_with_another_users_temp_file_is_refused() throws Exception {
-        final User otherUser = new UserDataGen().roles(TestUserUtils.getBackendRole())
-                .nextPersisted();
-        final HttpServletRequest otherRequest =
-                JobUtil.generateMockRequest(otherUser, defaultSite.getHostname());
-        final String othersTempFileId;
-        try (final InputStream csv = new FileInputStream(csvFile)) {
-            othersTempFileId = APILocator.getTempFileAPI()
-                    .createTempFile(csvFile.getName(), otherRequest, csv).id;
-        }
-
-        final ContentImportParams params = new ContentImportParams();
-        params.setJsonForm(mapper.writeValueAsString(createContentImportForm(contentType.name(),
-                String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
-                List.of(fieldId))));
-        params.setTempFileId(othersTempFileId);
-
-        assertBadRequestResponse(importResource.importContent(request, response, params));
-    }
-
-    /**
-     * Given scenario: an import sends both a CSV and a temp file id.
-     * Expected result: 400, since it is ambiguous which file should be imported.
-     */
-    @Test
-    void test_import_with_file_and_temp_file_is_refused() throws Exception {
-        final ContentImportParams params = createContentImportParams(csvFile,
-                createContentImportForm(contentType.name(),
-                        String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
-                        List.of(fieldId)));
-        params.setTempFileId("temp_" + System.currentTimeMillis());
-
-        assertBadRequestResponse(importResource.importContent(request, response, params));
-    }
-
-    /**
-     * Reads the job a successful create/validate response refers to.
+     * Reads the job a successful create/validate response refers to, as the administrator, who may
+     * read any user's job.
      *
      * @param result the endpoint's response
      * @return the job

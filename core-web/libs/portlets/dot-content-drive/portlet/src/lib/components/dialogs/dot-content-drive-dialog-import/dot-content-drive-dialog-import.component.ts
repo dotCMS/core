@@ -419,15 +419,17 @@ export class DotContentDriveDialogImportComponent {
     }
 
     /**
-     * Asks the user to confirm the import. When the preview found errors, the question says those
-     * rows will be skipped, as Content Search does; otherwise it is Content Search's usual question.
+     * Asks the user to confirm the import. When the preview found errors, the question says how
+     * many rows will be skipped, as Content Search does; otherwise it is Content Search's usual
+     * question. Rows are counted, not error messages: one row can carry several errors, and an
+     * error about the whole file belongs to no row.
      */
     confirmImport(): void {
-        const errorCount = this.$previewErrors().length;
-        const message = errorCount
+        const hasErrors = this.$previewErrors().length > 0;
+        const message = hasErrors
             ? this.#dotMessageService.get(
                   'content-drive.import.preview.errors-will-be-skipped',
-                  String(errorCount)
+                  String(this.$summary().failed)
               )
             : this.#dotMessageService.get('message.contentlet.proceed.importing');
 
@@ -491,20 +493,14 @@ export class DotContentDriveDialogImportComponent {
     /**
      * Starts the import with exactly the previewed file and options, then hands the run to the
      * status toast and closes: the import runs in the background (#37896, FR-019).
-     *
-     * The preview already stored the CSV on the server, so the import names it by its temp file id
-     * rather than uploading it again; only a preview that didn't report one falls back to the file.
      */
     #startImport(): void {
         const { file } = this.importForm.getRawValue();
-        const tempFileId = this.$preview()?.parameters?.tempFileId;
         const form = this.#requestForm();
 
         this.$error.set(null);
-        (tempFileId
-            ? this.#importService.importPreviewed(tempFileId, form)
-            : this.#importService.importContent(file as File, form)
-        )
+        this.#importService
+            .importContent(file as File, form)
             .pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe({
                 next: ({ jobId }) => {
@@ -518,7 +514,8 @@ export class DotContentDriveDialogImportComponent {
     }
 
     /**
-     * Downloads the sample CSV for the picked content type, as Content Search names it.
+     * Downloads the CSV template of the picked content type, under the name Content Search gives
+     * it.
      */
     downloadSample(): void {
         const { contentType } = this.importForm.getRawValue();

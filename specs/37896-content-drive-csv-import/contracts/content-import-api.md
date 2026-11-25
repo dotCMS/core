@@ -14,7 +14,7 @@ multipart: `file` (`.csv`), `form` (JSON, see data-model.md).
 
 ## POST `/_validate` (existing; the Drive's preview)
 
-multipart: `file` (`.csv`) or `tempFileId`, and `form` (JSON, see data-model.md). Queues the import
+multipart: `file` (`.csv`) and `form` (JSON, see data-model.md). Queues the import
 in preview mode and answers `{entity: {jobId, statusUrl}}`; form errors are a 400 before anything is
 queued. Content Drive waits for the job: the `IMPORT_CONTENTLETS_COMPLETED` event for that `jobId`,
 or `GET /{jobId}` every second as a fallback, then reads the finished job.
@@ -43,10 +43,13 @@ Moved out of the import resource in the PR #38054 review (nollymar), so any sele
 - Consumer: the import dialog, through the shared `dot-content-type` selector's `pageLoader`, sends
   `exclude=Host` (Host is never offered, as in Content Search's import).
 
-## GET `/_sample?contentType={idOrVar}` (new)
+## GET `/_template?contentType={idOrVar}` (existing, reused)
 
-- 200: `text/csv`, `Content-Disposition: attachment; filename="CSV_Template.csv"`, body
-  byte-identical to Content Search's "download a CSV sample" for that type.
+The CSV template endpoint `main` added for Content Search (0b746a515d7) serves this need, so no
+separate sample endpoint is added. Content Search and Content Drive offer the same file.
+
+- 200: `text/csv`, `Content-Disposition: attachment; filename="CSV_Template.csv"`: a header line of
+  the type's importable fields and one sample row.
 - 400: `contentType` missing. 403: type not readable. 404: type not found.
 
 ## Docs

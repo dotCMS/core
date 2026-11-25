@@ -220,7 +220,9 @@ public class ContentImportHelper {
     }
 
     /**
-     * Creates a map of job parameters for error handling during content import.
+     * Creates a map of job parameters for error handling during content import. The site reported
+     * is the one the form names when the user can read it, so a refused request shows the site it
+     * was sent for; otherwise it is the session's site.
      *
      * @param command The command indicating the type of operation (e.g., "preview" or "import").
      * @param params  The content import parameters containing the details of the import operation.
@@ -247,8 +249,21 @@ public class ContentImportHelper {
         jobParameters.put("cmd", command);
         jobParameters.put("userId", user.getUserId());
 
-        // Add site information
-        addSiteInformation(request, jobParameters);
+        // The form's site when it names one the user can read (#37896), else the session's. The
+        // request is already refused, so a site that can't be read is no reason to fail here.
+        final Object requestedSite = jobParameters.get("site");
+        final Optional<Host> formSite = requestedSite instanceof String
+                && UtilMethods.isSet((String) requestedSite)
+                ? Try.of(() -> APILocator.getHostAPI()
+                        .findByIdOrKey((String) requestedSite, user, false))
+                        .getOrElse(Optional.empty())
+                : Optional.empty();
+        if (formSite.isPresent()) {
+            jobParameters.put("siteName", formSite.get().getHostname());
+            jobParameters.put("siteIdentifier", formSite.get().getIdentifier());
+        } else {
+            addSiteInformation(request, jobParameters);
+        }
 
         return jobParameters;
     }
@@ -327,18 +342,13 @@ public class ContentImportHelper {
     }
 
     /**
-     * Adds the CSV to the job's parameters: either the uploaded file, stored as a new temp file, or
-     * the temp file the caller names by id, such as the one its preview stored (#37896). A named
-     * temp file must exist and must have been uploaded by this same user. The temp file API on its
-     * own also accepts a matching session or browser fingerprint, which two users behind the same
-     * browser or proxy can share; matching the user only keeps one user from importing another
-     * user's CSV by its id.
+     * Stores the uploaded CSV as a temp file and adds it to the job's parameters, with the file's
+     * name so Content Drive can name a running import after a reload (#37896).
      *
      * @param params        The content import parameters.
      * @param jobParameters The map of job parameters.
      * @param request       The HTTP request containing the uploaded file.
-     * @throws DotDataException    If there is an error processing the file upload.
-     * @throws ValidationException If the named temp file doesn't exist or can't be used (400).
+     * @throws DotDataException If there is an error processing the file upload.
      */
     private void processFileUpload(
             final ContentImportParams params,
@@ -346,23 +356,10 @@ public class ContentImportHelper {
             final HttpServletRequest request) throws DotDataException {
 
         try {
-            final DotTempFile tempFile;
-            final String fileName;
-            if (UtilMethods.isSet(params.getTempFileId())) {
-                tempFile = APILocator.getTempFileAPI()
-                        .getTempFile(List.of(String.valueOf(jobParameters.get("userId"))),
-                                params.getTempFileId())
-                        .orElseThrow(() -> new ValidationException(
-                                "The temporary file doesn't exist or can't be used: "
-                                        + params.getTempFileId()));
-                fileName = tempFile.fileName;
-            } else {
-                fileName = params.getContentDisposition().getFileName();
-                tempFile = APILocator.getTempFileAPI().createTempFile(
-                        fileName, request, params.getFileInputStream());
-            }
+            final String fileName = params.getContentDisposition().getFileName();
+            final DotTempFile tempFile = APILocator.getTempFileAPI().createTempFile(
+                    fileName, request, params.getFileInputStream());
             jobParameters.put("tempFileId", tempFile.id);
-            // Lets Content Drive name a running import after a reload (#37896).
             jobParameters.put("fileName", fileName);
             jobParameters.put("requestFingerPrint",
                     APILocator.getTempFileAPI().getRequestFingerprint(request));

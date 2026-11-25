@@ -270,6 +270,7 @@
                 [targetFolder]="payload.targetFolder"
                 [files]="payload.files"
                 [allowedBaseTypes]="payload.allowedBaseTypes"
+                hintPosition="top"
                 (selectUploadType)="onUploadTypeSelected($event)" />
         }
         <!-- Import CSV (#37896) only from the Upload button: dropped files always upload. It is not
