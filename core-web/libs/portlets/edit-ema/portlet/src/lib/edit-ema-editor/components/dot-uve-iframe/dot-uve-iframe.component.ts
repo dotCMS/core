@@ -96,6 +96,12 @@ export class DotUveIframeComponent {
     private lastWrittenSrcRef: unknown = null;
 
     /**
+     * Where the user last scrolled a traditional page. Every save re-renders the page into a
+     * fresh document at the top, so the next load of the same page scrolls back here.
+     */
+    #lastScroll: { pageId: string | undefined; y: number } = { pageId: undefined, y: 0 };
+
+    /**
      * Rendered HTML for traditional pages.
      * @type {Signal<string>}
      */
@@ -147,9 +153,48 @@ export class DotUveIframeComponent {
         if (this.uveStore.pageType() !== PageType.HEADLESS) {
             this.insertPageContent(this.$pageRender(), this.$enableInlineEdit());
             this.setSeoData();
+            this.restoreScroll();
         }
 
         this.load.emit();
+    }
+
+    /**
+     * Scrolls a re-rendered page back to where the user left it, as after adding or moving a
+     * contentlet. A different page starts at the top, and forgets the previous page's offset.
+     * @returns {void}
+     */
+    private restoreScroll(): void {
+        const pageId = this.uveStore.pageAsset()?.page?.identifier;
+
+        if (this.#lastScroll.pageId !== pageId) {
+            this.#lastScroll = { pageId, y: 0 };
+
+            return;
+        }
+
+        // A fresh document already sits at the top.
+        if (this.#lastScroll.y > 0) {
+            this.contentWindow?.scrollTo({ top: this.#lastScroll.y, left: 0, behavior: 'instant' });
+        }
+    }
+
+    /**
+     * The page HTML to load, with a script that scrolls it back to where the user left it as
+     * soon as it is parsed. `load` waits for images, so restoring only there paints the page at
+     * the top first. `restoreScroll` still runs on load, for a page whose CSP blocks the script
+     * and for images that grow the page after it is parsed.
+     * @param {string} pageRender - Rendered HTML of the page.
+     * @returns {string} the HTML to write into `srcdoc`
+     */
+    private withScrollRestore(pageRender: string): string {
+        const { pageId, y } = this.#lastScroll;
+
+        if (y <= 0 || pageId !== this.uveStore.pageAsset()?.page?.identifier) {
+            return pageRender;
+        }
+
+        return `${pageRender}<script>addEventListener('DOMContentLoaded',()=>scrollTo({top:${y},left:0,behavior:'instant'}))</script>`;
     }
 
     /**
@@ -178,7 +223,7 @@ export class DotUveIframeComponent {
             // run again — even across legitimate re-renders (e.g. preview → edit
             // mode returns different server-rendered HTML that still contains the
             // same let/const declarations).
-            iframeElement.srcdoc = pageRender;
+            iframeElement.srcdoc = this.withScrollRestore(pageRender);
         }
 
         this.handleInlineScripts(enableInlineEdit);
@@ -398,6 +443,12 @@ export class DotUveIframeComponent {
                 this.internalNav.emit(e);
                 this.inlineEditing.emit(e);
             });
+
+        const pageId = this.uveStore.pageAsset()?.page?.identifier;
+
+        fromEvent(win, 'scroll')
+            .pipe(takeUntil(this.iframeClickListener$), takeUntilDestroyed(this.destroyRef))
+            .subscribe(() => (this.#lastScroll = { pageId, y: win.scrollY }));
 
         if (enableInlineEdit) {
             this.inlineEditingService.injectInlineEdit(this.iframe);
