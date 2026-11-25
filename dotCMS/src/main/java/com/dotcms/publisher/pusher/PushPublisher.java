@@ -83,6 +83,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -507,7 +508,8 @@ public class PushPublisher extends Publisher {
 	 * Returns the key configured for an endpoint: the stored value itself, or the content of the
 	 * file it names when it is a path. An endpoint whose key (or key file) is empty or made only of
 	 * spaces has no key, and neither has one whose key file is larger than
-	 * {@link #MAX_KEY_FILE_BYTES}, so push publishing neither sends a token for it nor accepts one from it.
+	 * {@link #MAX_KEY_FILE_BYTES}, nor one whose key contains a path separator but is not a valid
+	 * path, so push publishing neither sends a token for it nor accepts one from it.
 	 *
 	 * @param endpoint the endpoint, may be {@code null}
 	 * @return the key, or empty when the endpoint has none
@@ -523,7 +525,16 @@ public class PushPublisher extends Publisher {
 		String token = PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString());
 		String key = null;
 		if(token.contains(File.separator)) {
-			final Path keyPath = Path.of(token);
+			final Path keyPath;
+			try {
+				keyPath = Path.of(token);
+			} catch (final InvalidPathException e) {
+				// not logged: the exception message carries the stored key
+				Logger.warn(PushPublisher.class, String.format(
+						"The key of push publishing endpoint '%s' (id %s) looks like a file path but is not a valid one, so it is not used as a key.",
+						endpoint.getServerName(), endpoint.getId()));
+				return Optional.empty();
+			}
 			if (Files.isRegularFile(keyPath)) {
 				try (InputStream input = Files.newInputStream(keyPath)) {
 					final byte[] bytes = input.readNBytes(MAX_KEY_FILE_BYTES + 1);

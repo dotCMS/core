@@ -293,4 +293,22 @@ public class AuthCredentialPushPublishUtilTest extends IntegrationTestBase {
             java.nio.file.Files.delete(keyFile.getParent());
         }
     }
+
+    /**
+     * Method to test: {@link AuthCredentialPushPublishUtil#getRequestToken(PublishingEndPoint)}
+     * Given Scenario: The sender's record of a receiver stores a key that contains a path
+     *                 separator but is not a valid path (it holds a NUL character).
+     * ExpectedResult: No token is produced and no exception escapes, so audit polling of the
+     *                 other endpoints carries on.
+     */
+    @Test
+    public void test_getRequestToken_invalidKeyPath_isEmpty() throws Exception {
+        final PublishingEndPoint endpoint = sendingEndpoint("192.0.2.108", "/pp-key\u0000/bad.key");
+        try {
+            assertTrue("A key that is not a valid path must not produce a token",
+                    AuthCredentialPushPublishUtil.INSTANCE.getRequestToken(endpoint).isEmpty());
+        } finally {
+            APILocator.getPublisherEndPointAPI().deleteEndPointById(endpoint.getId());
+        }
+    }
 }
