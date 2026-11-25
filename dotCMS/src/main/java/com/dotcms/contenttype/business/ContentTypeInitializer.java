@@ -71,6 +71,7 @@ public class ContentTypeInitializer implements DotInitializer {
     private static final String FAVORITES_OFF_SYSTEM_HOST_SQL = "select i.id, min(c.inode) as inode from identifier i join contentlet c on c.identifier = i.id where c.structure_inode = ? and (i.host_inode <> ? or i.parent_path <> ?) group by i.id";
     private static final String DELETE_OTHER_ROLES_ROWS_SQL = "delete from permission where inode_id = ? and roleid <> ?";
     private static final String DELETE_ROWS_SQL = "delete from permission where inode_id = ?";
+    private static final String DELETE_REFERENCES_OF_FAVORITES_WITH_OWN_ROWS_SQL = "delete from permission_reference where asset_id in (select id from identifier where asset_subtype = ?) and exists (select 1 from permission where permission.inode_id = permission_reference.asset_id)";
     private static final String INSERT_ROW_SQL = "insert into permission (id, permission_type, inode_id, roleid, permission) values (nextval('permission_seq'), ?, ?, ?, ?)";
     /** Seconds after the repair commits before the permission cache is cleared a second time. */
     private static final long PERMISSION_CACHE_RECLEAR_SECONDS = 30;
@@ -254,19 +255,37 @@ public class ContentTypeInitializer implements DotInitializer {
     }
 
     /**
-     * Clears both permission cache groups, the rows and the read decisions, then queues every
-     * favorite for reindex, so each index document is rebuilt from permissions read after the
-     * clear. The repair already queues them inside its transaction, but that reindex can run
-     * before the cache is cleared and index the old permissions. The favorites are queued by
-     * identifier rather than with {@link ReindexQueueAPI#addStructureReindexEntries}, which logs a
-     * failed insert and returns normally, so a failure here is seen. Failures are logged, since
-     * this also runs on a scheduler thread where they would otherwise be lost.
+     * Deletes the permission references of favorites that have their own permission rows, clears
+     * both permission cache groups, the rows and the read decisions, then queues every favorite
+     * for reindex, so each index document is rebuilt from permissions read after the clear. A
+     * lookup that read a favorite while it still inherited from its site, before the repair
+     * committed, writes a reference to that site once it has read it, which can land after the
+     * repair deleted the favorite's references; permission loading adds the referenced site's
+     * rows to the favorite's own rows, so such a reference would give the favorite its site's
+     * grants back. The repair already queues the favorites for reindex inside its transaction, but
+     * that reindex can run before the cache is cleared and index the old permissions. The
+     * favorites are queued by identifier rather than with
+     * {@link ReindexQueueAPI#addStructureReindexEntries}, which logs a failed insert and returns
+     * normally, so a failure here is seen. Failures are logged, since this also runs on a
+     * scheduler thread where they would otherwise be lost.
      *
      * @param contentType the favorite page content type
-     * @return {@code true} if the favorites were queued for reindex
+     * @return {@code true} if the references were deleted and the favorites queued for reindex
      */
     private boolean clearPermissionCacheAndReindex(final ContentType contentType) {
 
+        boolean referencesDeleted = true;
+        try {
+
+            // committed before the cache clear, so a lookup after the clear cannot read them
+            LocalTransaction.wrapReturn(() -> new DotConnect().executeUpdate(
+                    DELETE_REFERENCES_OF_FAVORITES_WITH_OWN_ROWS_SQL, contentType.variable()));
+        } catch (final Throwable e) {
+
+            Logger.error(this, "Favorite pages: could not delete the permission references of favorites with their own permissions: "
+                    + e.getMessage(), e);
+            referencesDeleted = false;
+        }
         CacheLocator.getPermissionCache().clearCache();
         try {
 
@@ -274,7 +293,7 @@ public class ContentTypeInitializer implements DotInitializer {
                     new DotConnect().setSQL(FAVORITE_IDENTIFIERS_SQL)
                             .addParam(contentType.variable()).loadObjectResults().stream()
                             .map(row -> String.valueOf(row.get("id"))).collect(Collectors.toList())));
-            return true;
+            return referencesDeleted;
         } catch (final Throwable e) {
 
             Logger.error(this, "Favorite pages: could not queue the favorites for reindex: " + e.getMessage(), e);
@@ -287,8 +306,8 @@ public class ContentTypeInitializer implements DotInitializer {
      * {@link #FAVORITE_PAGE_PERMISSIONS_CLEANUP_PENDING_KEY} if it still holds the value this step
      * was scheduled with. A repair that committed after that value was read wrote its own, and
      * its own delayed step deletes it, so this one leaves it. The reindex queue is a database
-     * table, so once the favorites are queued the step survives a restart. If they could not be
-     * queued the key stays, and the next start runs the step again. Failures are logged, since
+     * table, so once the favorites are queued the step survives a restart. If their references could
+     * not be deleted or they could not be queued, the key stays, and the next start runs the step again. Failures are logged, since
      * this runs on a scheduler thread.
      *
      * @param contentType the favorite page content type

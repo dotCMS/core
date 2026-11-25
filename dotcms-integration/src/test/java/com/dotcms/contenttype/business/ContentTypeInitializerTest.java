@@ -744,12 +744,97 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
                             lockedRole.getId(), PermissionAPI.PERMISSION_READ, true)),
                     site, APILocator.systemUser(), false);
             APILocator.getRoleAPI().lock(lockedRole);
-            favorite = moveToSite(new ContentletDataGen(contentType).setPolicy(IndexPolicy.WAIT_FOR)
+            final Contentlet saved = new ContentletDataGen(contentType).setPolicy(IndexPolicy.WAIT_FOR)
                     .setProperty("title", "favorite").setProperty("url", "/favorite-" + System.nanoTime())
-                    .nextPersisted(), site);
+                    .nextPersisted();
 
-            new ContentTypeInitializer().init();
+            // moving the favorite queues it for reindex, and a reindex that reads its permissions
+            // while it inherits from the site writes a reference to the site; one landing after
+            // the repair deleted the references is covered by
+            // test_permission_cleanup_deletes_a_late_reference_of_a_favorite_to_its_site, so keep
+            // reindexing paused until the repair has committed
+            Config.setProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", true);
+            ReindexThread.pause();
+            try {
 
+                favorite = moveToSite(saved, site);
+                new ContentTypeInitializer().init();
+            } finally {
+
+                ReindexThread.unpause();
+                Config.setProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false);
+            }
+
+            assertOnlyCMSOwnerRows(favorite);
+            Assert.assertFalse("The locked role must not read the favorite: "
+                            + describePermissions(favorite, "favorite"),
+                    permissionAPI.doesRoleHavePermission(favorite, PermissionAPI.PERMISSION_READ, lockedRole));
+        } finally {
+
+            if (null != favorite) {
+                ContentletDataGen.destroy(favorite);
+            }
+            APILocator.getHostAPI().archive(site, APILocator.systemUser(), false);
+            APILocator.getHostAPI().delete(site, APILocator.systemUser(), false);
+            APILocator.getRoleAPI().unLock(lockedRole);
+            RoleDataGen.remove(lockedRole, true);
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentTypeInitializer#finishPermissionCleanup(ContentType, String)}
+     * Given Scenario: A site gives a locked role READ on its content and the first repair gave a
+     * favorite on that site its own CMS Owner rows. A lookup that read the favorite while it still
+     * inherited from the site then writes its reference to the site after the repair, as one that
+     * started before the repair committed can.
+     * ExpectedResult: The cleanup step deletes that reference, so the favorite has only its own
+     * rows and the locked role cannot read it.
+     */
+    @Test
+    public void test_permission_cleanup_deletes_a_late_reference_of_a_favorite_to_its_site() throws Exception {
+
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final ContentType contentType = prepareFirstInit();
+        final Role lockedRole = new RoleDataGen().nextPersisted();
+        final Host site = new SiteDataGen().nextPersisted();
+        Contentlet favorite = null;
+        try {
+
+            permissionAPI.assignPermissions(List.of(
+                    new Permission(Contentlet.class.getCanonicalName(), site.getPermissionId(),
+                            lockedRole.getId(), PermissionAPI.PERMISSION_READ, true)),
+                    site, APILocator.systemUser(), false);
+            APILocator.getRoleAPI().lock(lockedRole);
+            final Contentlet saved = new ContentletDataGen(contentType).setPolicy(IndexPolicy.WAIT_FOR)
+                    .setProperty("title", "favorite").setProperty("url", "/favorite-" + System.nanoTime())
+                    .nextPersisted();
+            // paused so the only reference to the site is the one written below
+            Config.setProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", true);
+            ReindexThread.pause();
+            try {
+
+                favorite = moveToSite(saved, site);
+                new ContentTypeInitializer().init();
+            } finally {
+
+                ReindexThread.unpause();
+                Config.setProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false);
+            }
+
+            // what the late lookup leaves behind
+            new DotConnect().executeUpdate("insert into permission_reference (id, asset_id, reference_id, permission_type)"
+                            + " values (nextval('permission_reference_seq'), ?, ?, ?)",
+                    favorite.getPermissionId(), site.getPermissionId(), Contentlet.class.getCanonicalName());
+            CacheLocator.getPermissionCache().clearCache();
+            Assert.assertTrue("The planted reference must give the locked role READ before the cleanup",
+                    permissionAPI.doesRoleHavePermission(favorite, PermissionAPI.PERMISSION_READ, lockedRole));
+
+            new ContentTypeInitializer().finishPermissionCleanup(contentType, "not-the-pending-value");
+
+            Assert.assertEquals("The favorite must not reference its site: "
+                            + describePermissions(favorite, "favorite"), 0,
+                    new DotConnect().setSQL("select count(*) as total from permission_reference where asset_id = ?")
+                            .addParam(favorite.getPermissionId()).getInt("total"));
             assertOnlyCMSOwnerRows(favorite);
             Assert.assertFalse("The locked role must not read the favorite: "
                             + describePermissions(favorite, "favorite"),
