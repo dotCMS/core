@@ -1385,6 +1385,44 @@ describe.each([
             expect(spectator.query(byTestId('edit-content-layout__body'))).not.toBeNull();
         });
 
+        it('should keep the form mounted under the reload overlay while the permission re-settles (#38724)', () => {
+            // After a save in the dialog (or an in-place reload) the content re-initialises and
+            // forgets canLock. The previous form must stay under the overlay until the answer is
+            // in — dropping to the first-load spinner unmounts the sidebar and resets its tab.
+            const canLock$ = new Subject<DotContentletCanLock>();
+            spectator.inject(DotContentletService, true).canLock.mockReturnValue(canLock$);
+            loadContentlet();
+            patchState(unprotected(store), { canLock: true });
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('edit-content-layout__body'))).not.toBeNull();
+
+            // Reload starts: stale-while-revalidate keeps the form, arms the overlay.
+            patchState(unprotected(store), { state: ComponentStatus.LOADING, canLock: null });
+            spectator.detectChanges();
+            expect(
+                spectator.query(byTestId('edit-content-layout__reloading-overlay'))
+            ).not.toBeNull();
+
+            // Content loaded, permission still unknown.
+            patchState(unprotected(store), {
+                state: ComponentStatus.LOADED,
+                contentlet: { ...MOCK_CONTENTLET_1_TAB, inode: 'new-inode' }
+            });
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('edit-content-layout__loading'))).toBeNull();
+            expect(spectator.query(byTestId('edit-content-layout__body'))).not.toBeNull();
+            expect(
+                spectator.query(byTestId('edit-content-layout__reloading-overlay'))
+            ).not.toBeNull();
+
+            canLock$.next({ canLock: true, locked: false } as DotContentletCanLock);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('edit-content-layout__reloading-overlay'))).toBeNull();
+            expect(spectator.query(byTestId('edit-content-layout__body'))).not.toBeNull();
+        });
+
         it('should refresh after the sidebar component is destroyed and recreated', fakeAsync(() => {
             loadContentlet();
             tick();

@@ -1,10 +1,17 @@
 @let permissionsSettled = $store.isPermissionsSettled();
+@let reloadOverlay = $showReloadOverlay();
 
 <!-- An existing content renders only once its edit permission is known (`permissionsSettled`),
-     so the form never shows enabled and then flips to read-only when `_canlock` answers. A
-     reload keeps the previous form under the overlay, which `isFullyLoaded` holds for the
-     same reason. -->
-@if (($store.isLoaded() && permissionsSettled) || $store.isSaving() || $store.isReloading()) {
+     so the form never shows enabled and then flips to read-only when `_canlock` answers. That
+     hold is for the FIRST load only: a reload (in-place navigation, the first save in the
+     dialog) keeps the previous form and sidebar mounted under the overlay, which
+     `isFullyLoaded` holds until the permission re-settles — unmounting them here would reset
+     the sidebar tab and flash the full spinner. -->
+@if (
+    ($store.isLoaded() && (permissionsSettled || reloadOverlay)) ||
+    $store.isSaving() ||
+    $store.isReloading()
+) {
     @let showSidebar = $store.isSidebarOpen();
     @let showSelectWorkflowWarning = $store.showSelectWorkflowWarning();
     @let lockWarningMessage = $store.lockWarningMessage();
