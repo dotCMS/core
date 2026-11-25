@@ -174,7 +174,9 @@ public class PublisherQueueJob implements StatefulJob {
 						// Re-check the status the queue query filters on, so a bundle in progress is not
 						// sent again while the receiver is still reading the first copy.
 						final PublishAuditStatus currentAudit = pubAuditAPI.getPublishAuditStatus(tempBundleId);
-						if (null != currentAudit
+						// A null or unknown status column loads as a null status, which the queue query
+						// admits; List.contains(null) would throw, so such a bundle stays eligible
+						if (null != currentAudit && null != currentAudit.getStatus()
 								&& PublisherAPIImpl.STATUSES_NOT_TO_PROCESS.contains(currentAudit.getStatus())) {
 							PushPublishLogger.log(this.getClass(), "Pre-publish skipped: bundle is "
 									+ currentAudit.getStatus() + " after the audit update.");
