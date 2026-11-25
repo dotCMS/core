@@ -56,9 +56,15 @@ const angularApp = new AngularNodeAppEngine();
 
 /**
  * `/data/page` runs with the server-side dotCMS token and is reachable from the
- * internet, so it must not be an open proxy. The app only ever sends `url` and,
- * optionally, `params.graphql`; everything else (`mode`, `publishDate`, ...) is
- * dropped so callers cannot widen what the token reads (e.g. unpublished content).
+ * internet. The app only ever sends `url` and, optionally, `params.graphql`;
+ * everything else (`mode`, `publishDate`, ...) is dropped so callers cannot ask
+ * for unpublished content through those params.
+ *
+ * `params.graphql` is forwarded as sent, so any client can run read queries with
+ * the server token: the `sec-fetch-site` check below only stops browsers on other
+ * sites, not `curl`. Use a read-only token limited to content the site already
+ * publishes, and in a production app replace the pass-through with fixed
+ * server-side queries.
  */
 const MAX_URL_LENGTH = 2048;
 const MAX_GRAPHQL_LENGTH = 16 * 1024;

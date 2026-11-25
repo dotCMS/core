@@ -217,6 +217,12 @@ and the entry loads it at startup.
 > **read-only** token with the narrowest permissions the site needs. For production,
 > keep the token in AWS Secrets Manager or SSM Parameter Store and load it when the
 > compute starts, instead of bundling it.
+>
+> The token's permissions also decide what `/data/page` exposes. The endpoint forwards the
+> `graphql` queries it receives, so any client that can reach the app can run read queries
+> with the token, not only the queries this app sends. Limit the token to content the site
+> already publishes, and in a production app replace the pass-through with fixed
+> server-side queries.
 
 ### Deploy steps
 

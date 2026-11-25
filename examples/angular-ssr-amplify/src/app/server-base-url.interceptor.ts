@@ -5,6 +5,9 @@ import { EventEmitter } from 'node:events';
 import { createRequest, createResponse, RequestMethod } from 'node-mocks-http';
 import type { Express } from 'express';
 
+/** How long an in-process request may run before the render gives up on it. */
+const IN_PROCESS_TIMEOUT_MS = 30_000;
+
 interface ServerRequestContext {
   app: Express;
 }
@@ -43,7 +46,19 @@ export const serverBaseUrlInterceptor: HttpInterceptorFn = (req, next) => {
     });
     const mockRes = createResponse({ eventEmitter: EventEmitter });
 
+    // A handler that never ends its response would otherwise hang the render.
+    const timer = setTimeout(() => {
+      observer.error(
+        new HttpErrorResponse({
+          status: 504,
+          statusText: 'In-process request timed out',
+          url: path,
+        })
+      );
+    }, IN_PROCESS_TIMEOUT_MS);
+
     mockRes.on('end', () => {
+      clearTimeout(timer);
       const status = mockRes.statusCode;
       const body = mockRes._getData();
       const parsed = typeof body === 'string' && body.length ? safeJsonParse(body) : body;
@@ -62,6 +77,8 @@ export const serverBaseUrlInterceptor: HttpInterceptorFn = (req, next) => {
 
     // Run the request through the Express app in-memory.
     app(mockReq as never, mockRes as never);
+
+    return () => clearTimeout(timer);
   });
 };
 

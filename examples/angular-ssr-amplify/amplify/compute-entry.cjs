@@ -34,7 +34,10 @@ const appPromise = import(path.join(__dirname, 'server', 'server.mjs'));
 const server = http.createServer(async (req, res) => {
   const forwardedHost = req.headers['x-forwarded-host'];
   if (forwardedHost) {
-    req.headers.host = Array.isArray(forwardedHost) ? forwardedHost[0] : forwardedHost;
+    // A chain of proxies can send several hosts, as repeated headers or as one
+    // comma-separated value. The first one is the host the client asked for.
+    const [firstHost] = String(forwardedHost).split(',');
+    req.headers.host = firstHost.trim();
   }
   for (const name of Object.keys(req.headers)) {
     if (name.startsWith('x-forwarded-')) {
