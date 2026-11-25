@@ -5,24 +5,43 @@ import {
     Spectator
 } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
-import { Mocked, vi } from 'vitest';
+import { Mock, MockInstance, Mocked, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { Button } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { Toast } from 'primeng/toast';
 
-import { DotContentletEditUrlService, DotMessageService } from '@dotcms/data-access';
-import { BundleAssetView } from '@dotcms/dotcms-models';
+import {
+    DotContentChangeService,
+    DotContentletEditUrlService,
+    DotMessageService
+} from '@dotcms/data-access';
+import { BundleAssetView, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotEditContentOpenerService, DotEditContentOpenOptions } from '@dotcms/edit-content';
+import { DotSidePanelRef } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotPublishingQueueAssetListDialogComponent } from './dot-publishing-queue-asset-list-dialog.component';
 
 import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store';
 
+/** Whether anything resolved `DotContentletEditUrlService` while the dialog was mounted. */
+let editUrlServiceInjected: boolean;
+
+// A type whose display name is not its variable: the opener looks the type up by its variable,
+// and a lookup by name finds nothing and falls back to the legacy editor.
 const ASSETS: BundleAssetView[] = [
-    { asset: 'a1', title: 'Asset 1', type: 'contentlet', inode: 'i1', content_type_name: 'Blog' },
+    {
+        asset: 'a1',
+        title: 'Asset 1',
+        type: 'contentlet',
+        inode: 'i1',
+        content_type_name: 'Blog Post',
+        content_type_variable: 'Blog'
+    },
     { asset: 'a2', title: 'Asset 2', type: 'template' }
 ];
 
@@ -41,18 +60,33 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
             selectedAssets,
             assetListStatus,
             selectedBundleId,
-            removeBundleAsset: vi.fn()
+            removeBundleAsset: vi.fn(),
+            loadAssets: vi.fn()
         };
     }
 
     const createComponent = createComponentFactory({
         component: DotPublishingQueueAssetListDialogComponent,
-        componentProviders: [mockProvider(DotPublishingQueueStore, storeStub())],
+        // The store comes from the portlet, above the dialog. Not `componentProviders`: that would
+        // replace the dialog's own providers (ConfirmationService, MessageService) under test.
         providers: [
-            ConfirmationService,
+            mockProvider(DotPublishingQueueStore, storeStub()),
+            // Stands in for a MessageService an ancestor would provide.
+            MessageService,
             mockProvider(DynamicDialogRef, { close: vi.fn() }),
-            mockProvider(DotContentletEditUrlService, {
-                resolveEditUrl: vi.fn().mockReturnValue(of('/dotAdmin/#/edit/inode/i1'))
+            // Records whether the dialog asked for it at all: it no longer resolves URLs (#38303).
+            {
+                provide: DotContentletEditUrlService,
+                useFactory: () => {
+                    editUrlServiceInjected = true;
+
+                    return {
+                        resolveEditUrl: vi.fn().mockReturnValue(of('/dotAdmin/#/edit/inode/i1'))
+                    };
+                }
+            },
+            mockProvider(DotEditContentOpenerService, {
+                open: vi.fn(() => new DotSidePanelRef(() => undefined))
             }),
             {
                 provide: DotMessageService,
@@ -76,6 +110,7 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
     });
 
     beforeEach(() => {
+        editUrlServiceInjected = false;
         selectedAssets.set([]);
         assetListStatus.set('loading');
         selectedBundleId.set(null);
@@ -83,7 +118,10 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
         store = spectator.inject(DotPublishingQueueStore, true) as unknown as ReturnType<
             typeof storeStub
         >;
-        confirmationService = spectator.inject(ConfirmationService) as Mocked<ConfirmationService>;
+        confirmationService = spectator.inject(
+            ConfirmationService,
+            true
+        ) as Mocked<ConfirmationService>;
         dialogRef = spectator.inject(DynamicDialogRef) as Mocked<DynamicDialogRef>;
         vi.spyOn(confirmationService, 'confirm').mockImplementation((cfg) => {
             cfg.accept?.();
@@ -130,29 +168,181 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
         expect(headers.length).toBe(3);
     });
 
+    /**
+     * #38303 (R12) — a contentlet row opens the side panel over this dialog, in whichever editor its
+     * type uses; closing the panel returns to the dialog on the same row. Every save, and the close,
+     * reload the dialog's asset list (FR-017).
+     */
     describe('row click → open editor', () => {
+        let windowOpen: MockInstance;
+
+        /** The opener's `open`, as the mock records it. */
+        const opened = () => spectator.inject(DotEditContentOpenerService).open as Mock;
+
+        /** The options the dialog handed the opener, on its only `open`. */
+        const openOptions = (): DotEditContentOpenOptions => {
+            expect(opened().mock.calls.length, 'the row opens one panel').toBe(1);
+
+            return opened().mock.calls[0][1] as DotEditContentOpenOptions;
+        };
+
+        /** Clicks the row at `index`, as the author does. */
+        const clickRow = (index: number): void =>
+            spectator.click(spectator.queryAll(byTestId('pq-asset-list-row'))[index]);
+
         beforeEach(() => {
+            windowOpen = vi.spyOn(window, 'open').mockReturnValue(null);
             selectedAssets.set(ASSETS);
             assetListStatus.set('loaded');
             spectator.detectChanges();
         });
 
-        it('opens the resolved contentlet URL in a new tab', () => {
-            const openSpy = vi.spyOn(window, 'open').mockReturnValue(null);
-            // First asset is a contentlet with a resolved URL (see mock in providers).
-            spectator.component.onAssetRowClick(ASSETS[0]);
-            expect(openSpy).toHaveBeenCalledWith('/dotAdmin/#/edit/inode/i1', '_blank', 'noopener');
-            openSpy.mockRestore();
+        afterEach(() => windowOpen.mockRestore());
+
+        /**
+         * FR-039: closing the panel puts the author back on the row it opened from. The close
+         * reloads the list, which empties the table and renders new rows, so the focus lands on
+         * the new row for the same asset once the reload has rendered.
+         */
+        it('returns focus to the row the panel opened from once the list has reloaded', () => {
+            const before = spectator.queryAll<HTMLElement>(byTestId('pq-asset-list-row'))[0];
+            clickRow(0);
+            // The panel holds focus while it is open.
+            (document.activeElement as HTMLElement | null)?.blur();
+
+            openOptions().editorResolved?.('legacy');
+            openOptions().closed?.();
+            // The reload, as the store runs it: the list empties, then the assets come back.
+            selectedAssets.set([]);
+            assetListStatus.set('loading');
+            spectator.detectChanges();
+            selectedAssets.set(ASSETS.map((asset) => ({ ...asset })));
+            assetListStatus.set('loaded');
+            spectator.detectChanges();
+
+            const row = spectator.queryAll<HTMLElement>(byTestId('pq-asset-list-row'))[0];
+            expect(store.loadAssets).toHaveBeenCalled();
+            expect(row === before, 'the reload rendered a new row').toBe(false);
+            expect(document.activeElement === row, 'the reloaded row has focus').toBe(true);
         });
 
-        it('is a no-op for non-contentlet assets (no URL resolved)', () => {
-            const openSpy = vi.spyOn(window, 'open').mockReturnValue(null);
-            spectator.component.onAssetRowClick(ASSETS[1]);
-            expect(openSpy).not.toHaveBeenCalled();
-            openSpy.mockRestore();
+        it('lets the keyboard reach a contentlet row and open it with Enter', () => {
+            const row = spectator.queryAll<HTMLElement>(byTestId('pq-asset-list-row'))[0];
+
+            // A native event, as the browser sends it: the row checks it is the event's target.
+            row.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+            expect(row.getAttribute('tabindex')).toBe('0');
+            expect(opened().mock.calls.length, 'Enter opens the row').toBe(1);
         });
 
-        it('marks rows with resolved URLs as clickable via cursor-pointer', () => {
+        it('opens a contentlet row in the side panel, naming the Publishing Queue', () => {
+            clickRow(0);
+
+            expect(opened().mock.calls.length, 'the row opens one panel').toBe(1);
+            expect(opened().mock.calls[0][0]).toEqual({
+                mode: 'edit',
+                inode: 'i1',
+                contentType: 'Blog',
+                portletId: 'publishing-queue'
+            });
+        });
+
+        // The panel then closes with the dialog, not with the portlet.
+        it("opens it with the dialog's injector", () => {
+            clickRow(0);
+
+            // Compared by identity: printing an injector runs the worker out of memory.
+            expect(
+                openOptions().injector.get(DotPublishingQueueAssetListDialogComponent, null) ===
+                    spectator.component
+            ).toBe(true);
+        });
+
+        // The admin root provides none (it would shadow the page editor's), so the panel's editor
+        // toasts through this one.
+        it('opens it with an injector that resolves a MessageService of its own', () => {
+            clickRow(0);
+            const own = spectator.inject(MessageService, true);
+
+            // Compared by identity: printing a MessageService on failure floods the output.
+            expect(own === spectator.inject(MessageService), 'the dialog provides one').toBe(false);
+            expect(openOptions().injector.get(MessageService, null) === own).toBe(true);
+        });
+
+        it("renders a toast for the panel's messages", () => {
+            expect(spectator.query(Toast)).not.toBeNull();
+        });
+
+        // #38303, T174: through the content change notification, at any depth, once each.
+        it('reloads the asset list on every content change, at any depth', () => {
+            clickRow(0);
+            const changes = spectator.inject(DotContentChangeService);
+
+            changes.notify({
+                kind: 'saved',
+                contentlet: { inode: 'i1-saved' } as DotCMSContentlet,
+                depth: 0
+            });
+            changes.notify({
+                kind: 'saved',
+                contentlet: { inode: 'related' } as DotCMSContentlet,
+                depth: 1
+            });
+
+            expect(openOptions().saved).toBeUndefined();
+            expect(store.loadAssets).toHaveBeenCalledTimes(2);
+        });
+
+        // The safety net for workflow actions in the legacy editor, which report nothing.
+        it('reloads the asset list when a legacy editor panel closes', () => {
+            clickRow(0);
+            openOptions().editorResolved?.('legacy');
+
+            openOptions().closed?.();
+
+            expect(store.loadAssets).toHaveBeenCalledTimes(1);
+        });
+
+        // The new editor reports every save and delete through the notification, which already
+        // reloaded the list (stack review L7-7).
+        it('reloads nothing when a new editor panel closes', () => {
+            clickRow(0);
+            openOptions().editorResolved?.('new');
+
+            openOptions().closed?.();
+
+            expect(store.loadAssets).not.toHaveBeenCalled();
+        });
+
+        // The opener writes the panel to the portlet's URL; on load the portlet reopens it over the
+        // list, without the dialog (#38303, FR-044).
+        it('asks the opener to write the panel to the URL', () => {
+            clickRow(0);
+
+            expect(openOptions().url).toEqual({});
+        });
+
+        it('never opens a new tab', () => {
+            clickRow(0);
+
+            expect(windowOpen.mock.calls.length).toBe(0);
+        });
+
+        it('does nothing for a non-contentlet row', () => {
+            clickRow(1);
+
+            expect(opened().mock.calls.length).toBe(0);
+            expect(windowOpen.mock.calls.length).toBe(0);
+        });
+
+        // The opener picks the editor per content type, so no URL is resolved ahead of a click.
+        it('resolves no edit URLs', () => {
+            expect(editUrlServiceInjected).toBe(false);
+            expect('$assetEditUrls' in spectator.component).toBe(false);
+        });
+
+        it('marks contentlet rows as clickable via cursor-pointer', () => {
             const rows = spectator.queryAll(byTestId('pq-asset-list-row'));
             // Contentlet row (a1) gets cursor-pointer; template row (a2) does not.
             expect(rows[0].classList.contains('cursor-pointer')).toBe(true);
@@ -290,19 +480,20 @@ describe('DotPublishingQueueAssetListDialogComponent — read-only (allowRemove=
 
     const createComponent = createComponentFactory({
         component: DotPublishingQueueAssetListDialogComponent,
-        componentProviders: [
+        // The store comes from the portlet, above the dialog; the dialog keeps its own providers.
+        providers: [
             mockProvider(DotPublishingQueueStore, {
                 selectedAssets,
                 assetListStatus,
                 selectedBundleId,
                 removeBundleAsset: vi.fn()
-            })
-        ],
-        providers: [
-            ConfirmationService,
+            }),
             mockProvider(DynamicDialogRef, { close: vi.fn() }),
             mockProvider(DotContentletEditUrlService, {
                 resolveEditUrl: vi.fn().mockReturnValue(of('/dotAdmin/#/edit/inode/i1'))
+            }),
+            mockProvider(DotEditContentOpenerService, {
+                open: vi.fn(() => new DotSidePanelRef(() => undefined))
             }),
             { provide: DynamicDialogConfig, useValue: { data: { allowRemove: false } } },
             { provide: DotMessageService, useValue: new MockDotMessageService({}) }

@@ -35,14 +35,14 @@
                     [state]="$deviceSelectorState()"
                     [devices]="$devices()"
                     [isTraditionalPage]="isTraditionalPage()"
-                    (stateChange)="deviceSelectorChange.emit($event)"
+                    (stateChange)="applyDeviceSelectorChange($event)"
                     data-testId="uve-toolbar-device-selector" />
             }
 
             @if ($showUrlContentMap()) {
                 @let urlContentMap = $urlContentMap();
                 <p-button
-                    (click)="editUrlContentMap.emit(urlContentMap)"
+                    (click)="editUrlContentMap(urlContentMap)"
                     [pTooltip]="
                         'editpage.toolbar.edit.url.map.content' | dm: [urlContentMap.contentType]
                     "

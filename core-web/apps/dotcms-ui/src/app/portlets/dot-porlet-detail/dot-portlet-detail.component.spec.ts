@@ -1,5 +1,6 @@
 import { mockProvider } from '@openng/spectator/vitest';
-import { of } from 'rxjs';
+import { MockComponent } from 'ng-mocks';
+import { BehaviorSubject, Observable, of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -7,7 +8,7 @@ import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Params } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
@@ -43,6 +44,7 @@ import {
 import { GlobalStore } from '@dotcms/store';
 import { LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
 
+import { DotEditContentDeepLinkComponent } from './dot-edit-content-deep-link/dot-edit-content-deep-link.component';
 import { DotPortletDetailComponent } from './dot-portlet-detail.component';
 
 import { DotCustomEventHandlerService } from '../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
@@ -50,7 +52,6 @@ import { DotDownloadBundleDialogService } from '../../api/services/dot-download-
 import { MockDotUiColorsService } from '../../test/dot-test-bed';
 import { DotDownloadBundleDialogComponent } from '../../view/components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.component';
 import { IframeOverlayService } from '../../view/components/_common/iframe/service/iframe-overlay.service';
-import { DotContentletEditorService } from '../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotWorkflowTaskDetailService } from '../../view/components/dot-workflow-task-detail/services/dot-workflow-task-detail.service';
 
 describe('DotPortletDetailComponent', () => {
@@ -95,7 +96,6 @@ describe('DotPortletDetailComponent', () => {
                 DotEventsService,
                 DotGenerateSecurePasswordService,
                 DotLicenseService,
-                DotContentletEditorService,
                 DotWorkflowTaskDetailService,
                 DotDownloadBundleDialogService,
                 DotPushPublishDialogService,
@@ -108,6 +108,10 @@ describe('DotPortletDetailComponent', () => {
                 BrowserAnimationsModule,
                 DotDownloadBundleDialogComponent
             ]
+        }).overrideComponent(DotPortletDetailComponent, {
+            // The deep link redirects on init; its own spec covers that.
+            remove: { imports: [DotEditContentDeepLinkComponent] },
+            add: { imports: [MockComponent(DotEditContentDeepLinkComponent)] }
         });
     }));
 
@@ -117,54 +121,51 @@ describe('DotPortletDetailComponent', () => {
         router = de.injector.get(ActivatedRoute);
     });
 
-    it('should not have dot-workflow-task when parent route id is empty', () => {
+    /** Puts the route under a portlet route whose `id` param is `id`, then follows `params$`. */
+    const underPortlet = (id: string, params$: Observable<Params> = of({ id })): void => {
         Object.defineProperty(router, 'parent', {
-            value: {
-                snapshot: {
-                    params: {
-                        id: ''
-                    }
-                }
-            },
+            value: { snapshot: { params: { id } }, params: params$ },
             writable: true
         });
+    };
+
+    it('should not have dot-workflow-task when parent route id is empty', () => {
+        underPortlet('');
 
         fixture.detectChanges();
         expect(de.query(By.css('dot-workflow-task')) === null).toBe(true);
-        expect(de.query(By.css('dot-contentlets')) === null).toBe(false);
+        expect(de.query(By.css('dot-edit-content-deep-link')) === null).toBe(false);
     });
 
     it('should have dot-workflow-task when parent route id is workflow', () => {
-        Object.defineProperty(router, 'parent', {
-            value: {
-                snapshot: {
-                    params: {
-                        id: 'workflow'
-                    }
-                }
-            },
-            writable: true
-        });
+        underPortlet('workflow');
 
         fixture.detectChanges();
         expect(de.query(By.css('dot-workflow-task'))).toBeTruthy();
-        expect(de.query(By.css('dot-contentlets')) === null).toBe(true);
+        expect(de.query(By.css('dot-edit-content-deep-link')) === null).toBe(true);
     });
 
-    it('should have dot-contentlets when parent route id is content', () => {
-        Object.defineProperty(router, 'parent', {
-            value: {
-                snapshot: {
-                    params: {
-                        id: 'content'
-                    }
-                }
-            },
-            writable: true
-        });
+    it('should open the content deep link when parent route id is content', () => {
+        underPortlet('content');
 
         fixture.detectChanges();
-        expect(de.query(By.css('dot-contentlets'))).toBeTruthy();
+        expect(de.query(By.css('dot-edit-content-deep-link'))).toBeTruthy();
+        expect(de.query(By.css('dot-workflow-task')) === null).toBe(true);
+    });
+
+    /**
+     * The `/c/:id/:asset` route is reused (no `reuseRoute: false`), so a hash change from
+     * `/c/workflow/<task>` to `/c/content/<inode>` keeps this component: it follows the portlet.
+     */
+    it('should follow the portlet when a navigation changes it', () => {
+        const params$ = new BehaviorSubject<Params>({ id: 'workflow' });
+        underPortlet('workflow', params$);
+        fixture.detectChanges();
+
+        params$.next({ id: 'content' });
+        fixture.detectChanges();
+
+        expect(de.query(By.css('dot-edit-content-deep-link'))).toBeTruthy();
         expect(de.query(By.css('dot-workflow-task')) === null).toBe(true);
     });
 });

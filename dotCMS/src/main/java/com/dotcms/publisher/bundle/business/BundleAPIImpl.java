@@ -37,6 +37,7 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import org.apache.commons.lang3.mutable.MutableInt;
@@ -177,14 +178,43 @@ public class BundleAPIImpl implements BundleAPI {
 		}
 	}
 
+	/**
+	 * Checks that the user may delete the bundle, keeping this method's existing contract of
+	 * answering a refusal with a {@link DotDataException}.
+	 *
+	 * @param user     the user deleting the bundle
+	 * @param bundleId identifier of the bundle
+	 * @throws DotDataException when the user may not change the bundle, or the data layer fails
+	 */
 	private void validateBundleDeletePermission(final User user, final String bundleId) throws DotDataException {
 
-		//This is meanwhile we make bundles permissionable, if the user is not an admin only the owner of the bundle can delete it
-		if(!userAPI.isCMSAdmin(user)){
-			if(!getBundleById(bundleId).getOwner().equals(user.getUserId())){
-				Logger.error(this,"User: " + user.getUserId() + " is not an admin or is not the owner of the bundle");
-				throw new DotDataException("User: " + user.getUserId() + " is not an admin or is not the owner of the bundle");
-			}
+		try {
+			checkCanModifyBundle(getBundleById(bundleId), user);
+		} catch (final DotSecurityException e) {
+			throw new DotDataException(e.getMessage(), e);
+		}
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>Bundles are not permissionable yet, so ownership is the rule for anyone who is not a CMS
+	 * Administrator.</p>
+	 */
+	@Override
+	public void checkCanModifyBundle(final Bundle bundle, final User user)
+			throws DotDataException, DotSecurityException {
+
+		if (null == user) {
+			throw new DotSecurityException("A user is required to change a bundle");
+		}
+		if (userAPI.isCMSAdmin(user)) {
+			return;
+		}
+		if (null == bundle || !user.getUserId().equals(bundle.getOwner())) {
+			final String message = "User: " + user.getUserId()
+					+ " is not an admin or is not the owner of the bundle";
+			SecurityLogger.logInfo(this.getClass(), message);
+			throw new DotSecurityException(message);
 		}
 	}
 
@@ -408,6 +438,22 @@ public class BundleAPIImpl implements BundleAPI {
 			Try.run(()->APILocator.getPublishAuditAPI().deletePublishAuditStatus(bundleId))
 					.getOrElseThrow(DotDataException::new);
 		}
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@WrapInTransaction
+	@Override
+	public void deleteAssetFromBundleAndAuditStatus(final String assetId, final String bundleId,
+			final User user) throws DotDataException, DotSecurityException {
+
+		final Bundle bundle = getBundleById(bundleId);
+		if (null == bundle) {
+			throw new NotFoundInDbException("The bundle id: " + bundleId + " does not exists");
+		}
+		checkCanModifyBundle(bundle, user);
+		deleteAssetFromBundleAndAuditStatus(assetId, bundleId);
 	}
 
 	@WrapInTransaction

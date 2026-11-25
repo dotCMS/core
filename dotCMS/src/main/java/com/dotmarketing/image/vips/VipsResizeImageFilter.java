@@ -12,9 +12,9 @@ import java.util.Map;
 /**
  * libvips equivalent of {@link com.dotmarketing.image.filter.ResizeImageFilter}.
  *
- * <p>Target dimensions are computed with the exact same {@link ResizeCalc} the legacy filter uses, so
- * output geometry is byte-for-byte identical; only the resampling engine differs (libvips lanczos3
- * vs TwelveMonkeys). Animated GIFs are streamed through libvips with all pages preserved.</p>
+ * <p>Target dimensions use the legacy {@link ResizeCalc}, with static images first normalised to
+ * their displayed EXIF orientation. Animated GIFs are streamed through libvips with all pages
+ * preserved.</p>
  */
 public class VipsResizeImageFilter extends VipsImageFilter {
 
@@ -43,6 +43,14 @@ public class VipsResizeImageFilter extends VipsImageFilter {
         return super.getResultsFile(file, parameters);
     }
 
+    /**
+     * Resizes static images using upright dimensions so EXIF rotation cannot distort their aspect
+     * ratio. Animated GIFs retain their page-strip geometry and animation metadata.
+     *
+     * @param in source image
+     * @param out resized image
+     * @param parameters prefixed resize or scale constraints
+     */
     @Override
     protected void transform(final File in, final File out, final Map<String, String[]> parameters) {
         final int w = intParam(parameters, "w", 0);
@@ -55,10 +63,10 @@ public class VipsResizeImageFilter extends VipsImageFilter {
         final boolean animated = "gif".equalsIgnoreCase(UtilMethods.getFileExtension(in.getName()));
 
         VipsManager.run(arena -> {
-            // Load (all pages for animated GIF) to read original dimensions.
+            // Normalise static-image orientation before ResizeCalc and the no-resampling path.
             final VImage source = animated
                     ? VImage.newFromFile(arena, in.getAbsolutePath(), VipsOption.Int("n", -1))
-                    : VImage.newFromFile(arena, in.getAbsolutePath());
+                    : VImage.newFromFile(arena, in.getAbsolutePath()).autorot();
 
             final int originalWidth = source.getWidth();
             // For animated images getHeight() returns total strip height; use page-height metadata.

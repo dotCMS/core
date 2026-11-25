@@ -11,13 +11,12 @@ import {
     DotLanguage,
     DotSite
 } from '@dotcms/dotcms-models';
-import { EditContentDialogData } from '@dotcms/edit-content';
 import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import { DotUploadBaseType, DotUploadSelection, DotUploadSelectorPayload } from '@dotcms/ui';
+import type { DotPanelUrlIntent } from '@dotcms/utils';
 
 import { DIALOG_TYPE } from './constants';
-import { DotLegacyEditorRequest } from './legacy-editor.models';
 
 /**
  * The parameters for the buildTreeFolderNodes function.
@@ -173,47 +172,16 @@ export interface DotContentDriveFolderPermissionsPayload {
 }
 
 /**
- * What Content Drive has asked a side panel to open, and in which editor (#37759). The content
- * type's editor setting alone picks the editor; each kind has its own panel.
- */
-export type DotContentDrivePanelRequest =
-    | { editor: 'new'; data: EditContentDialogData }
-    // Remove with the legacy editor.
-    | { editor: 'legacy'; data: DotLegacyEditorRequest };
-
-/**
- * What the Content Drive URL must say about the open side panel, for either editor (#37759, FR-020).
- *
- * Kept apart from the panel request on purpose: the URL has to follow the panel after it opened (a
- * create's first save, a language switch in the legacy editor) and changing the request instead would
- * remount the panel and reload the editor under the author.
- */
-export type DotContentDrivePanelLocation =
-    | {
-          kind: 'edit';
-          /** Identifier of the open content (`editContent`). */
-          editContent: string;
-          /** Language of the open version (`editContentLang`); absent only when it is unknown. */
-          editContentLang?: number;
-      }
-    | {
-          kind: 'create';
-          /** Variable of the content type being created (`createContent`). */
-          createContent: string;
-      };
-
-/**
- * What a Content Drive URL asks to open when the portlet loads (#37759, FR-023). `conflict` means
- * the URL combines params that can't hold together, so nothing opens and all of them are removed.
+ * What a Content Drive URL asks to open when the portlet loads (#37759, FR-023): a panel, read as
+ * every surface reads it (`DotPanelUrlIntent`, #38303), or one of Content Drive's folder dialogs.
+ * `refused` (from `DotPanelUrlIntent`) also covers params that can't hold together across panels
+ * and folder dialogs: nothing opens, the author is told, and all of them are removed (T172).
  */
 export type DotContentDriveUrlIntent =
-    | { kind: 'none' }
-    | { kind: 'edit'; identifier: string; languageId?: number }
-    | { kind: 'create'; contentType: string }
+    | DotPanelUrlIntent
     | { kind: 'createFolder' }
     | { kind: 'editFolder'; identifier: string }
-    | { kind: 'folderPermissions'; identifier: string }
-    | { kind: 'conflict' };
+    | { kind: 'folderPermissions'; identifier: string };
 
 /**
  * A workflow action currently being applied to the selection.

@@ -27,7 +27,7 @@ import { SelectModule } from 'primeng/select';
 
 import { take, takeUntil, tap } from 'rxjs/operators';
 
-import { DotMessageService, DotRouterService, DotFormatDateService } from '@dotcms/data-access';
+import { DotRouterService, DotFormatDateService } from '@dotcms/data-access';
 import { DotLoginParams, HttpCode, LoggerService, LoginService, User } from '@dotcms/dotcms-js';
 import { DotLoginInformation, DotLoginLanguage } from '@dotcms/dotcms-models';
 import {
@@ -74,7 +74,7 @@ export class DotLoginComponent implements OnInit, OnDestroy {
     private loggerService = inject(LoggerService);
     private route = inject(ActivatedRoute);
     loginPageStateService = inject(DotLoginPageStateService);
-    private dotMessageService = inject(DotMessageService);
+
     private dotFormatDateService = inject(DotFormatDateService);
 
     message = '';
@@ -143,7 +143,6 @@ export class DotLoginComponent implements OnInit, OnDestroy {
      */
     onLanguageChange(lang: string): void {
         this.loginPageStateService.update(lang);
-        this.dotMessageService.init({ language: lang });
     }
 
     private setInitialFormValues(loginInfo: DotLoginInformation): void {

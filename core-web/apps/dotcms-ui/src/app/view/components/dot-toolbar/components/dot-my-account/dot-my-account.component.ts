@@ -1,17 +1,18 @@
-import { Subject } from 'rxjs';
-
 import {
     ChangeDetectionStrategy,
     Component,
+    DestroyRef,
     EventEmitter,
-    OnDestroy,
     OnInit,
     Output,
     computed,
+    effect,
     inject,
     model,
-    signal
+    signal,
+    untracked
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
     AbstractControl,
     FormBuilder,
@@ -29,7 +30,7 @@ import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 
-import { map, take, takeUntil } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
 import {
     DotAlertConfirmService,
@@ -37,7 +38,7 @@ import {
     DotMessageService,
     DotRouterService
 } from '@dotcms/data-access';
-import { Auth, DotcmsConfigService, LoginService, User } from '@dotcms/dotcms-js';
+import { Auth, LoginService, User } from '@dotcms/dotcms-js';
 import { GlobalStore } from '@dotcms/store';
 import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
@@ -67,7 +68,7 @@ enum FormStatus {
     providers: [DotAlertConfirmService],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotMyAccountComponent implements OnInit, OnDestroy {
+export class DotMyAccountComponent implements OnInit {
     @Output() shutdown = new EventEmitter<void>();
 
     // Signals
@@ -111,17 +112,15 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
     emailRegex = '';
 
     // Private fields
-    private readonly destroy$ = new Subject<boolean>();
     private readonly currentUser = signal<User | null>(null);
 
     // Dependency injection
     private readonly fb = inject(FormBuilder);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly dotAccountService = inject(DotAccountService);
-    private readonly dotcmsConfigService = inject(DotcmsConfigService);
+    readonly #globalStore = inject(GlobalStore);
     private readonly loginService = inject(LoginService);
     private readonly dotRouterService = inject(DotRouterService);
-    readonly #globalStore = inject(GlobalStore);
     private readonly httpErrorManagerService = inject(DotHttpErrorManagerService);
     private readonly dotAlertConfirmService = inject(DotAlertConfirmService);
 
@@ -129,15 +128,26 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
         // Create the form as early as possible
         this.initForm();
 
-        // Get regex for email validation
-        this.dotcmsConfigService
-            .getConfig()
-            .pipe(takeUntil(this.destroy$))
-            .subscribe((res) => {
-                this.emailRegex = res.emailRegex;
-                // Update email validator with regex
+        const destroyRef = inject(DestroyRef);
+        effect(() => {
+            if (this.visible()) {
+                untracked(() =>
+                    this.#globalStore
+                        .waitForSessionReady()
+                        .pipe(takeUntilDestroyed(destroyRef))
+                        .subscribe()
+                );
+            }
+        });
+
+        // Use the shared configuration so a later store retry restores validation too.
+        effect(() => {
+            const emailRegex = this.#globalStore.systemConfig()?.emailRegex;
+            if (emailRegex) {
+                this.emailRegex = emailRegex;
                 this.updateEmailValidator();
-            });
+            }
+        });
 
         // Save current user to use when opening the dialog
         this.loginService.watchUser(this.handleUserChange.bind(this));
@@ -151,11 +161,6 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
             .subscribe(() => {
                 this.showStarter.set(this.#globalStore.hasPortlet('starter'));
             });
-    }
-
-    ngOnDestroy(): void {
-        this.destroy$.next(true);
-        this.destroy$.complete();
     }
 
     /**
@@ -265,7 +270,8 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
                     } else {
                         this.loginService.setAuth({
                             loginAsUser: null,
-                            user: response.user
+                            user: response.user,
+                            sessionLanguageId: this.loginService.sessionLanguageId
                         });
                     }
                 },

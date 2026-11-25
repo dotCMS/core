@@ -33,7 +33,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import org.awaitility.Awaitility;
+import org.awaitility.core.ConditionTimeoutException;
 import org.jboss.weld.junit5.EnableWeld;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -95,6 +97,22 @@ public class FolderBulkDeleteCancellationIT extends Junit5WeldBaseTest {
         contentType = new ContentTypeDataGen().nextPersisted();
     }
 
+    /**
+     * Closes the job queue this test method started. {@code @EnableWeld} builds a fresh CDI
+     * container for every test method and shuts it down afterwards, but shutting a container down
+     * does not stop the queue's ten worker threads. Left running, they keep claiming jobs from the
+     * shared job table, and because their container is gone they fail every claim with
+     * {@code ContextNotActiveException} ("No processor found for queue"). A job claimed by such a
+     * stale thread never reaches {@code RUNNING} in the live queue, which is how this class
+     * intermittently timed out waiting for it.
+     */
+    @AfterEach
+    public void closeQueue() throws Exception {
+        if (jobQueueManagerAPI.isStarted()) {
+            jobQueueManagerAPI.close();
+        }
+    }
+
     private Folder folder() {
         return new FolderDataGen().site(site).nextPersisted();
     }
@@ -139,17 +157,40 @@ public class FolderBulkDeleteCancellationIT extends Junit5WeldBaseTest {
         final String jobId = jobQueueManagerAPI.createJob(FolderBulkDeleteHelper.QUEUE_NAME,
                 parameters);
 
-        Awaitility.await().atMost(10, TimeUnit.SECONDS)
-                .until(() -> jobQueueManagerAPI.getJob(jobId).state() == JobState.RUNNING);
+        awaitState(jobId, JobState.RUNNING, 10, "before cancelling");
 
         jobQueueManagerAPI.cancelJob(jobId);
 
-        Awaitility.await().atMost(30, TimeUnit.SECONDS)
-                .pollInterval(100, TimeUnit.MILLISECONDS)
-                .until(() -> jobQueueManagerAPI.getJob(jobId).state() == JobState.CANCELED);
+        awaitState(jobId, JobState.CANCELED, 30, "after cancelling");
 
         final Job finished = jobQueueManagerAPI.getJob(jobId);
         return new CancelledRun(folders, finished);
+    }
+
+    /**
+     * Waits for the job to reach the given state. On timeout the failure names the state the job
+     * was actually in, so a job that failed or finished instead of reaching the wanted state is
+     * visible in the report rather than a bare {@code ConditionTimeoutException}.
+     *
+     * @param jobId   the job to watch
+     * @param wanted  the state to wait for
+     * @param seconds how long to wait
+     * @param phase   where in the test this wait sits, for the failure message
+     */
+    private void awaitState(final String jobId, final JobState wanted, final int seconds,
+            final String phase) throws Exception {
+        try {
+            Awaitility.await().atMost(seconds, TimeUnit.SECONDS)
+                    .pollInterval(100, TimeUnit.MILLISECONDS)
+                    .until(() -> jobQueueManagerAPI.getJob(jobId).state() == wanted);
+        } catch (final ConditionTimeoutException e) {
+            final Job job = jobQueueManagerAPI.getJob(jobId);
+            throw new AssertionError(String.format(
+                    "job %s did not reach %s within %ds %s: state=%s, executionNode=%s, "
+                            + "startedAt=%s, completedAt=%s, result=%s",
+                    jobId, wanted, seconds, phase, job.state(), job.executionNode(),
+                    job.startedAt(), job.completedAt(), job.result()), e);
+        }
     }
 
     private record CancelledRun(List<Folder> folders, Job job) {

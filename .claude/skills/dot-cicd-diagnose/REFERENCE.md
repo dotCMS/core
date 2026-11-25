@@ -27,7 +27,7 @@ Detailed technical expertise and diagnostic patterns for DotCMS CI/CD failure an
 - Integration test infrastructure
 
 **Testing Frameworks:**
-- JUnit 5, Postman collections, Karate scenarios, Playwright E2E tests
+- JUnit 5, Postman collections, Playwright E2E tests
 
 **Log Analysis:**
 - Efficient parsing of multi-GB logs

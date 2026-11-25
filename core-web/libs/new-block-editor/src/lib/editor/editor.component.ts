@@ -19,8 +19,6 @@ import {
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
-import { ConfirmationService } from 'primeng/api';
-import { ConfirmDialog } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { type AnyExtension, Editor, type JSONContent } from '@tiptap/core';
@@ -44,11 +42,10 @@ import { EditorToolbarStore } from './components/toolbar/editor-toolbar.store';
 import { ToolbarComponent } from './components/toolbar/toolbar.component';
 import { syncCharacterStatsFromEditor } from './editor-character-stats';
 import { handleEditorProseMirrorClick } from './editor-chrome-click';
-import { handleMediaDrop } from './editor.utils';
+import { type MediaUploaders } from './extensions/asset-uploader/asset-uploader.extension';
 import { createEditorExtensions } from './extensions/editor-extensions';
 import { type ContentletEditEvent } from './extensions/nodes/contentlet/contentlet.extension';
 import { SELECTION_PRESERVE_KEY } from './extensions/selection-preserve.extension';
-import { ContentletEditUrlService } from './services/contentlet-edit-url.service';
 import { DotUploadService } from './services/dot-upload.service';
 import { EditorModalService } from './services/editor-modal.service';
 import { EditorPopoverService } from './services/editor-popover.service';
@@ -180,9 +177,7 @@ function normalizeEditorContent(
         EditorPopoverService,
         EditorModalService,
         EditorToolbarStore,
-        ContentletEditUrlService,
         DialogService,
-        ConfirmationService,
         {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotCMSEditorComponent),
@@ -200,7 +195,6 @@ function normalizeEditorContent(
         LinkPopoverComponent,
         AssetByUrlPopoverComponent,
         ToolbarComponent,
-        ConfirmDialog,
         DotMessagePipe
     ],
     template: `
@@ -269,7 +263,6 @@ function normalizeEditorContent(
                     <dot-image-popover [editor]="ed" />
                     <dot-link-popover [editor]="ed" />
                     <dot-asset-by-url-popover [editor]="ed" />
-                    <p-confirmdialog [style]="{ width: '32rem', maxWidth: '90vw' }" />
                 }
             </div>
         </div>
@@ -445,7 +438,7 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
     private pendingDisabled: boolean | null = null;
 
     /**
-     * Constructs the underlying TipTap editor with dotCMS extensions, drop handling,
+     * Constructs the underlying TipTap editor with dotCMS extensions, upload handling,
      * and stats sync. Returns the new instance instead of assigning it, so the caller
      * can pin it inside the {@link editor} signal in a single, atomic update.
      *
@@ -453,6 +446,11 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
      * `customBlocks` field variable. Empty for the fast path.
      */
     private buildEditor(remoteExtensions: AnyExtension[]): Editor {
+        const uploaders: MediaUploaders = {
+            uploadImage: (file) => this.dotUpload.uploadImage(file),
+            uploadVideo: (file) => this.dotUpload.uploadVideo(file),
+            uploadAudio: (file) => this.dotUpload.uploadAudio(file)
+        };
         const editor: Editor = new Editor({
             onCreate: ({ editor }) => syncCharacterStatsFromEditor(editor, this.stats),
             onUpdate: ({ editor }) => {
@@ -472,17 +470,8 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
                     'aria-multiline': 'true',
                     'aria-label': this.$accessibleName()
                 },
-                handleDrop: (view, event, slice, moved) =>
-                    handleMediaDrop(
-                        editor,
-                        view,
-                        event as DragEvent,
-                        slice,
-                        moved,
-                        (file) => this.dotUpload.uploadImage(file),
-                        (file) => this.dotUpload.uploadVideo(file),
-                        (file) => this.dotUpload.uploadAudio(file)
-                    ),
+                // Drops and pastes of files live in the `assetUploader` extension, registered
+                // through `createEditorExtensions` with `uploaders` below.
                 handleScrollToSelection: (view) => scrollCaretIntoEditorContainer(view)
             },
             extensions: createEditorExtensions(
@@ -490,7 +479,8 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
                 parseAllowedBlocks(this.field()),
                 this.injector,
                 this.dotMessageService,
-                remoteExtensions
+                remoteExtensions,
+                uploaders
             ),
             content: ''
         });

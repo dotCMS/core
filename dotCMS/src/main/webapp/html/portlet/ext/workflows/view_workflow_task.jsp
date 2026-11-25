@@ -1,6 +1,8 @@
-<%@page import="org.apache.commons.codec.digest.DigestUtils"%>
+<%@ page import="com.liferay.util.Xss" %><%@page import="org.apache.commons.codec.digest.DigestUtils"%>
 <%@page import="com.dotmarketing.beans.WebAsset"%>
 <%@include file="/html/portlet/ext/workflows/init.jsp"%>
+<%request.setAttribute("requiredPortletAccess", "workflow"); %>
+<%@include file="/html/common/uservalidation.jsp"%>
 
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
@@ -13,6 +15,7 @@
 <%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure" %>
 <%@page import="com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet"%>
+<%@page import="com.dotmarketing.portlets.workflows.action.WorkflowTaskAccess"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.*"%>
 <%@page import="com.dotmarketing.util.DateUtil" %>
 <%@page import="com.dotmarketing.util.Logger" %>
@@ -57,8 +60,12 @@ public String getGravatar(String postedBy){
 <%
     WorkflowTask task = APILocator.getWorkflowAPI().findTaskById(request.getParameter("taskId"));
 
-    //Search for the contentlet (Using the same way the view_tasks_list use to find the contentlet on each WorkflowTask and show it in the list)
-    Contentlet contentlet = APILocator.getContentletAPI().search( "+identifier: " + task.getWebasset() + " +languageId:" + task.getLanguageId(), 0, -1, null, APILocator.getUserAPI().getSystemUser(), true ).get( 0 );
+    // The task id above comes from the request, so it names a task of the caller's choosing. A
+    // task carries no permissions of its own: they live on the contentlet it was opened for, and
+    // resolving that contentlet as the calling user is therefore the check for this whole screen.
+    // Everything below -- the task's content, its roles, its comment and change history -- is
+    // rendered only once this lookup has answered.
+    Contentlet contentlet = WorkflowTaskAccess.contentletFor( task, user ).orElse( null );
     if ( contentlet == null ) {
         out.println( LanguageUtil.get( pageContext, "the-selected-content-cannot-be-found" ) );
         return;
@@ -201,19 +208,29 @@ public String getGravatar(String postedBy){
     }
 
     function doEdit(){
+        <%if(contentlet.getStructure().getName().equals("Event")){%>
+        // Calendar events keep the legacy editor's own screen, inside this dialog.
         window.location="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
-        <%if(contentlet.getStructure().getName().equals("Event")){%>s
             <portlet:param name="struts_action" value="/ext/calendar/edit_event" />
+            <portlet:param name="inode" value="<%= String.valueOf(contentlet.getInode()) %>" />
+            <portlet:param name="cmd" value="edit" />
+            <portlet:param name="referer" value="<%= referer %>" />
+            </portlet:actionURL>";
         <%}else{%>
-            <portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" />
+        // The admin opens the content in its side panel, above this dialog, and loads this task
+        // again once the panel saves or closes (#38303).
+        var customEvent = document.createEvent("CustomEvent");
+        // Not escaped: the inode is a server-generated UUID and the variable a validated content
+        // type variable, so neither can carry a quote or a script.
+        customEvent.initCustomEvent("ng-event", false, false,  {
+            name: "edit-contentlet",
+            data: {
+                inode: "<%= contentlet.getInode() %>",
+                contentType: "<%= contentlet.getContentType().variable() %>"
+            }
+        });
+        document.dispatchEvent(customEvent);
         <%}%>
-        <portlet:param name="inode" value="<%= String.valueOf(contentlet.getInode()) %>" />
-        <portlet:param name="cmd" value="edit" />
-        <portlet:param name="referer" value="<%= referer %>" />
-        </portlet:actionURL>";
-
-
-
     }
 
 
@@ -263,7 +280,7 @@ public String getGravatar(String postedBy){
 	                <span class="pageIcon"></span>
 
 	            </div>
-	            <h1 style="margin:15px 0 15px 10px;"><a href="javascript:doEdit()"><%= contentlet.getTitle() %></a></h1>
+	            <h1 style="margin:15px 0 15px 10px;"><a href="javascript:doEdit()"><%= Xss.encodeForHTML(contentlet.getTitle()) %></a></h1>
 	        </th>
 	        <th>
 	        <!-- START Actions -->
@@ -450,7 +467,7 @@ public String getGravatar(String postedBy){
 			    <tr>
 			        <td>
 			            <strong><%=LanguageUtil.get(pageContext, "Type") %>:</strong>
-			            <%=structure.getName()%>
+			            <%=Xss.encodeForHTML(structure.getName())%>
 			        </td>
 			    </tr>
 			    <tr>
@@ -465,7 +482,7 @@ public String getGravatar(String postedBy){
 			        <td>
 			            <strong><%= LanguageUtil.get(pageContext, "by") %>:</strong>
 			            <% if(createdBy != null){%>
-			                <%= createdBy.getName() %>
+			                <%= Xss.encodeForHTML(createdBy.getName()) %>
 			            <% } else  { %>
 			                <%= LanguageUtil.get(pageContext, "Nobody") %>
 			            <% } %>
@@ -483,7 +500,7 @@ public String getGravatar(String postedBy){
 			        <td>
 			            <strong><%= LanguageUtil.get(pageContext, "Status") %>: </strong>
 			            <%= com.dotmarketing.util.UtilHTML.getStatusIcons(contentlet) %>
-			            <%=step.getName()%>
+			            <%=Xss.encodeForHTML(step.getName())%>
 			        </td>
 			       </tr>
 			       <tr>

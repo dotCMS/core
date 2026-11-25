@@ -1,4 +1,5 @@
 export * from './lib/dot-utils';
+export * from './lib/panel-url/read-panel-url-intent';
 export * from './lib/services/dot-asset.service';
 export * from './lib/services/dot-loading-indicator.service';
 

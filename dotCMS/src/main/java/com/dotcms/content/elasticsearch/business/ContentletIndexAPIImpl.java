@@ -46,6 +46,7 @@ import com.dotcms.content.index.opensearch.ContentletIndexOperationsOS;
 import com.dotcms.content.model.annotation.IndexLibraryIndependent;
 import com.dotcms.content.model.annotation.IndexRouter;
 import com.dotcms.content.model.annotation.IndexRouter.IndexAccess;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
@@ -54,6 +55,7 @@ import com.dotcms.variant.model.Variant;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.BulkProcessorListener;
 import com.dotmarketing.common.reindex.ReindexEntry;
@@ -682,6 +684,72 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         return primaryResult;
     }
 
+    /**
+     * Applies the custom index mapping of a newly created field to the indices that are currently
+     * live, asking each search provider for the names that it owns.
+     *
+     * <p>The providers do not share index names. Elasticsearch names come from the legacy pointer
+     * store and OpenSearch names from the versioned one, and on an instance whose Elasticsearch
+     * indices already existed before the migration the two differ in timestamp as well as in the
+     * {@code .os} marker, so a name taken from one store cannot be translated into the other's.
+     * Resolving the name per provider is what keeps the mapping on the right index — and it is
+     * also what makes the mapping arrive at all once Elasticsearch is decommissioned and its
+     * pointer store is no longer maintained.</p>
+     *
+     * <p>A provider that cannot be reached is logged and skipped, so a problem on one search
+     * engine neither blocks the other nor fails the transaction that created the field.</p>
+     *
+     * @param field the {@link Field} that was just created
+     */
+    @Override
+    public void addCustomMappingForNewField(final Field field) {
+        addCustomMappingForNewField(field, MappingHelper.getInstance());
+    }
+
+    /**
+     * Same as {@link #addCustomMappingForNewField(Field)}, with the mapping helper supplied by the
+     * caller so that tests can observe which indices each provider was handed without needing a
+     * running cluster or the {@link MappingHelper} singleton.
+     *
+     * @param field  the {@link Field} that was just created
+     * @param helper the helper that applies the field's mapping to a provider's indices
+     */
+    @VisibleForTesting
+    void addCustomMappingForNewField(final Field field, final MappingHelper helper) {
+        for (final ContentletIndexOperations ops : router.writeProviders()) {
+            final ProviderIndices indices = loadProviderIndicesQuietly(ops);
+            if (indices == null) {
+                continue;
+            }
+            final IndexTag tag = ops == operationsES ? IndexTag.ES : IndexTag.OS;
+
+            // The reindex pair is included on purpose: content is written to it while a full
+            // reindex runs, so a field created mid-reindex would otherwise be dynamically mapped
+            // in the index that is about to become live — and dynamic mapping cannot be re-typed
+            // afterwards, which would reintroduce this very defect at switchover.
+            final List<String> targets = indices.activeIndices();
+            if (targets.isEmpty()) {
+                Logger.warn(this.getClass(), String.format(
+                        "No active %s index resolved for field '%s': its mapping was not applied to"
+                        + " that provider. Check the %s index pointer store.",
+                        tag, field.name(), tag));
+                continue;
+            }
+            try {
+                helper.addCustomMapping(field, targets, tag);
+            } catch (Exception e) {
+                final String message = String.format(
+                        "Error setting the %s mapping for field '%s' on indices %s: %s",
+                        tag, field.name(), targets, e.getMessage());
+                if (ops == router.readProvider()) {
+                    Logger.error(this.getClass(), message, e);
+                } else {
+                    Logger.warnAndDebug(this.getClass(), message, e);
+                }
+            }
+        }
+    }
+
 
     /**
      * Create an index exclusively in one of the SE Providers.
@@ -778,10 +846,15 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                     .getOrElse(-1L);
 
             if (docCount != 0L) {
-                // Populated (or unknown): reuse in place, untouched. A dotCMS-created index already
-                // carries the full settings + base mapping + custom mapping, so nothing needs to be
-                // (re)applied. Deleting it would force a full reindex (hours, degraded search) —
-                // not justified to clean up an orphan.
+                // Populated (or unknown): reuse in place rather than delete — deleting would force
+                // a full reindex (hours, degraded search), not justified to clean up an orphan.
+                //
+                // The custom mapping is NOT re-applied here — see #36353. The content mapping
+                // references the custom analyzer `my_analyzer`, a static setting that can only be
+                // applied at index creation, so a putMapping-only re-assert against an index that
+                // was not created with dotCMS settings is rejected per content type and leaves the
+                // index half-mapped. QA failed TC-003 on exactly that. An index that is populated
+                // but missing field mappings is repaired by a reindex, not from here.
                 Logger.info(this, String.format(
                         "Bootstrap: orphaned %s index found with %s document(s); reusing in place"
                         + " (not deleting, not remapping): %s",
@@ -2661,7 +2734,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     /**
      * Loads and null-filters the contentlet inodes for a reindex entry.
      * If no versions are found, deletes the queue entry and returns an empty map.
+     * Story Block values are loaded as stored, so the indexed document does not depend on the
+     * user of the request that happens to trigger the reindex.
      */
+    @CloseDBIfOpened
     private Map<String, Contentlet> loadVersionInodes(final ReindexEntry idx) throws Exception {
         final List<ContentletVersionInfo> versions = APILocator.getVersionableAPI()
                 .findContentletVersionInfos(idx.getIdentToIndex());
@@ -2670,10 +2746,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             final String workingInode = cvi.getWorkingInode();
             final String liveInode = cvi.getLiveInode();
             inodes.put(workingInode,
-                    APILocator.getContentletAPI().findInDb(workingInode).orElse(null));
+                    FactoryLocator.getContentletFactory().findInDb(workingInode, true).orElse(null));
             if (UtilMethods.isSet(liveInode) && !inodes.containsKey(liveInode)) {
                 inodes.put(liveInode,
-                        APILocator.getContentletAPI().findInDb(liveInode).orElse(null));
+                        FactoryLocator.getContentletFactory().findInDb(liveInode, true).orElse(null));
             }
         }
         inodes.values().removeIf(Objects::isNull);

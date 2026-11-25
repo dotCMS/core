@@ -13,14 +13,16 @@ import {
 } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DotExperimentStatus } from '@dotcms/dotcms-models';
 import { withFlags } from '@dotcms/store';
-import { UVE_MODE } from '@dotcms/types';
+import { DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
 import {
     DotLanguagesServiceMock,
+    createFakeContentlet,
     getExperimentMock,
     mockWorkflowsActions
 } from '@dotcms/utils-testing';
 
+import { UVE_EDIT_PANEL_TABS } from './models';
 import { withView } from './toolbar/withView';
 import { withEditor } from './withEditor';
 
@@ -29,7 +31,7 @@ import {
     DotPageApiService
 } from '../../../services/dot-page-api/dot-page-api.service';
 import { PERSONA_KEY } from '../../../shared/consts';
-import { EDITOR_STATE } from '../../../shared/enums';
+import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
 import {
     ACTION_MOCK,
     ACTION_PAYLOAD_MOCK,
@@ -40,7 +42,7 @@ import {
     MOCK_RESPONSE_HEADLESS,
     MOCK_RESPONSE_VTL
 } from '../../../shared/mocks';
-import { ActionPayload, SelectedContentlet } from '../../../shared/models';
+import { ActionPayload, ContentletPayload, SelectedContentlet } from '../../../shared/models';
 import { getPersonalization, mapContainerStructureToArrayOfContainers } from '../../../utils';
 import { PageType, UVEState } from '../../models';
 import { createInitialUVEState } from '../../testing/mocks';
@@ -689,6 +691,171 @@ describe('withEditor', () => {
             });
         });
 
+        describe('$editorContentletEditData', () => {
+            const CONTAINER_ID = 'container-1';
+            const CONTAINER_UUID = '1';
+            const CONTENTLET_ID = 'contentlet-1';
+
+            /** Selects the contentlet as the page rendered it, under the inode it had then. */
+            const selectContentlet = (contentlet: Partial<ContentletPayload> = {}) => {
+                store.setSelected(
+                    toSelected({
+                        ...ACTION_PAYLOAD_MOCK,
+                        container: {
+                            ...ACTION_PAYLOAD_MOCK.container,
+                            identifier: CONTAINER_ID,
+                            uuid: CONTAINER_UUID
+                        },
+                        contentlet: {
+                            ...(ACTION_PAYLOAD_MOCK.contentlet as ContentletPayload),
+                            identifier: CONTENTLET_ID,
+                            inode: 'inode-before-save',
+                            ...contentlet
+                        }
+                    })
+                );
+            };
+
+            /** Loads the page asset as it is after a save: the same contentlet, a new inode. */
+            const loadPageAssetAfterSave = () => {
+                store.setPageAsset({
+                    pageAsset: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        containers: {
+                            [CONTAINER_ID]: {
+                                container: { identifier: CONTAINER_ID },
+                                containerStructures: [],
+                                contentlets: {
+                                    [`uuid-${CONTAINER_UUID}`]: [
+                                        createFakeContentlet({
+                                            identifier: CONTENTLET_ID,
+                                            inode: 'inode-after-save'
+                                        })
+                                    ]
+                                }
+                            }
+                        }
+                    } as unknown as DotCMSPageAsset
+                });
+            };
+
+            it('should hold no contentlet when nothing is selected', () => {
+                expect(store.$editorContentletEditData()).toEqual({
+                    container: undefined,
+                    contentlet: undefined
+                });
+            });
+
+            it('should give the selected contentlet and its container when the page asset does not hold it', () => {
+                selectContentlet();
+
+                const { container, contentlet } = store.$editorContentletEditData();
+
+                expect(container?.identifier).toBe(CONTAINER_ID);
+                expect(contentlet.inode).toBe('inode-before-save');
+            });
+
+            it("should give the contentlet's latest saved version from the page asset", () => {
+                selectContentlet();
+                loadPageAssetAfterSave();
+
+                expect(store.$editorContentletEditData().contentlet.inode).toBe('inode-after-save');
+            });
+
+            it('should keep the permission from the selection on the saved version', () => {
+                // The page asset carries no permission; only the selection does.
+                selectContentlet({ canEdit: false });
+                loadPageAssetAfterSave();
+
+                const { contentlet } = store.$editorContentletEditData();
+
+                expect(contentlet.inode).toBe('inode-after-save');
+                expect(contentlet['canEdit']).toBe(false);
+            });
+
+            it('should leave the permission out when the selection has none', () => {
+                selectContentlet();
+                loadPageAssetAfterSave();
+
+                expect(store.$editorContentletEditData().contentlet['canEdit']).toBeUndefined();
+            });
+        });
+
+        describe('editorCanEditSelectedContentlet', () => {
+            it.each([
+                {
+                    case: 'the user can edit the selected contentlet',
+                    canEdit: true,
+                    expected: true
+                },
+                {
+                    case: 'the user cannot edit the selected contentlet',
+                    canEdit: false,
+                    expected: false
+                },
+                // Headless pages give no permission; the gate fails open.
+                { case: 'the selection gives no permission', canEdit: undefined, expected: true }
+            ])('should be $expected when $case', ({ canEdit, expected }) => {
+                store.setSelected(
+                    toSelected({
+                        ...ACTION_PAYLOAD_MOCK,
+                        contentlet: {
+                            ...(ACTION_PAYLOAD_MOCK.contentlet as ContentletPayload),
+                            ...(canEdit === undefined ? {} : { canEdit })
+                        }
+                    })
+                );
+
+                expect(store.editorCanEditSelectedContentlet()).toBe(expected);
+            });
+
+            it('should be true when nothing is selected', () => {
+                store.resetSelected();
+
+                expect(store.editorCanEditSelectedContentlet()).toBe(true);
+            });
+        });
+
+        describe('$editorIsIframeLoading', () => {
+            it('should be loading while a headless page in edit mode waits for its client', () => {
+                store.setIsClientReady(false);
+
+                expect(store.$editorIsIframeLoading()).toBe(true);
+            });
+
+            it('should stop loading once the headless client is ready', () => {
+                store.setIsClientReady(true);
+
+                expect(store.$editorIsIframeLoading()).toBe(false);
+            });
+
+            it('should not wait for a client on a traditional page', () => {
+                store.setIsClientReady(false);
+                patchStoreState(store, { pageType: PageType.TRADITIONAL });
+
+                expect(store.$editorIsIframeLoading()).toBe(false);
+            });
+
+            it('should not wait for a client outside edit mode', () => {
+                store.setIsClientReady(false);
+                patchStoreState(store, {
+                    pageParams: {
+                        ...(initialState.pageParams as DotPageApiParams),
+                        mode: UVE_MODE.PREVIEW
+                    }
+                });
+
+                expect(store.$editorIsIframeLoading()).toBe(false);
+            });
+
+            it('should be loading while the page loads, even with the client ready', () => {
+                store.setIsClientReady(true);
+                patchStoreState(store, { uveStatus: UVE_STATUS.LOADING });
+
+                expect(store.$editorIsIframeLoading()).toBe(true);
+            });
+        });
+
         describe('$iframeURL', () => {
             it("should return the iframe's URL", () => {
                 expect(store.$iframeURL()).toBe(
@@ -818,6 +985,157 @@ describe('withEditor', () => {
 
                 expect(store.editorContentArea()).toBe(null);
             });
+
+            // #38575: a page on a newer SDK reports its scrollY with every scroll. During a drag
+            // the editor keeps the drop targets and moves them with the page instead of hiding
+            // them until the page settles.
+            describe('when the page reports its scrollY', () => {
+                /** The page reports a scroll, at `scrollY` when it says where it is. */
+                const pageScrolled = (scrollY?: number) => store.updateEditorScrollState(scrollY);
+
+                /** Container y in the bounds, as the SDK measured them: 10. */
+                const BOUNDS = getBoundsMock(ACTION_MOCK);
+
+                const containerYs = () => store.editorBounds().map((container) => container.y);
+
+                describe('during a drag', () => {
+                    beforeEach(() => {
+                        store.setEditorDragItem(EMA_DRAG_ITEM_CONTENTLET_MOCK);
+                        store.setEditorBounds(BOUNDS);
+                    });
+
+                    it('should keep the editor dragging', () => {
+                        pageScrolled(40);
+
+                        expect(store.editorState()).toEqual(EDITOR_STATE.DRAGGING);
+                    });
+
+                    it('should move the containers up by how far the page scrolled down', () => {
+                        pageScrolled(40);
+
+                        expect(containerYs()).toEqual([-30]);
+                    });
+
+                    it('should leave the contentlets where they are within their container', () => {
+                        pageScrolled(40);
+
+                        expect(
+                            store.editorBounds().map((container) => container.contentlets)
+                        ).toEqual([BOUNDS[0].contentlets]);
+                    });
+
+                    it('should measure each scroll from where the page was when the bounds were taken, not add them up', () => {
+                        pageScrolled(40);
+                        pageScrolled(100);
+
+                        expect(containerYs()).toEqual([-90]);
+                    });
+
+                    // The page reports each frame's scroll and again on the scroll event that
+                    // follows it, with the same value: the second report moves nothing.
+                    it('should not move the containers again when the page reports the same scrollY twice', () => {
+                        pageScrolled(40);
+                        pageScrolled(40);
+
+                        expect(containerYs()).toEqual([-30]);
+                    });
+
+                    // New bounds make the dropzone read every payload and resolve its target
+                    // again, twice a frame while the page auto-scrolls.
+                    it('should keep the same bounds when the page reports the same scrollY twice', () => {
+                        pageScrolled(40);
+                        const bounds = store.editorBounds();
+
+                        pageScrolled(40);
+
+                        expect(store.editorBounds()).toBe(bounds);
+                        expect(store.editorState()).toEqual(EDITOR_STATE.DRAGGING);
+                        expect(store.editorContentArea()).toBe(null);
+                    });
+
+                    it('should take fresh bounds as they are and measure later scrolls from them', () => {
+                        pageScrolled(40);
+
+                        const fresh = getBoundsMock(ACTION_MOCK).map((container) => ({
+                            ...container,
+                            y: 200
+                        }));
+                        store.setEditorBounds(fresh);
+
+                        expect(store.editorBounds()).toEqual(fresh);
+
+                        pageScrolled(60);
+
+                        expect(containerYs()).toEqual([180]);
+                    });
+
+                    it('should hide the drop targets until fresh bounds arrive when the page does not report its scrollY', () => {
+                        pageScrolled();
+
+                        expect(store.editorState()).toEqual(EDITOR_STATE.SCROLL_DRAG);
+                        expect(store.editorBounds()).toEqual([]);
+                    });
+                });
+
+                it('should measure from where the page was scrolled to before the drag started', () => {
+                    // The user scrolled before picking up a contentlet; the bounds are taken there.
+                    pageScrolled(100);
+                    store.setEditorBounds(BOUNDS);
+                    store.setEditorDragItem(EMA_DRAG_ITEM_CONTENTLET_MOCK);
+
+                    pageScrolled(130);
+
+                    expect(store.editorState()).toEqual(EDITOR_STATE.DRAGGING);
+                    expect(containerYs()).toEqual([-20]);
+                });
+
+                it.each([{ scrollY: 40 }, { scrollY: undefined }])(
+                    'should hide the overlays as before when nothing is dragged (scrollY: $scrollY)',
+                    ({ scrollY }) => {
+                        store.setEditorBounds(BOUNDS);
+
+                        pageScrolled(scrollY);
+
+                        expect(store.editorState()).toEqual(EDITOR_STATE.SCROLLING);
+                        expect(store.editorBounds()).toEqual([]);
+                        expect(store.editorContentArea()).toBe(null);
+                    }
+                );
+            });
+        });
+
+        describe('editorSetEditPanelTab', () => {
+            it('should set the active tab of the edit panel', () => {
+                store.editorSetEditPanelTab(UVE_EDIT_PANEL_TABS.STYLE_EDITOR);
+
+                expect(store.editorEditPanelTab()).toBe(UVE_EDIT_PANEL_TABS.STYLE_EDITOR);
+
+                store.editorSetEditPanelTab(UVE_EDIT_PANEL_TABS.QUICK_EDIT);
+
+                expect(store.editorEditPanelTab()).toBe(UVE_EDIT_PANEL_TABS.QUICK_EDIT);
+            });
+
+            it('should leave the edit panel open or closed as it was', () => {
+                store.setEditPanelOpen(false);
+
+                store.editorSetEditPanelTab(UVE_EDIT_PANEL_TABS.STYLE_EDITOR);
+
+                expect(store.editorEditPanelOpen()).toBe(false);
+            });
+        });
+
+        describe('editorSetContentEditorPlaced', () => {
+            it('should record whether the content editor is placed', () => {
+                expect(store.editorContentEditorPlaced()).toBe(false);
+
+                store.editorSetContentEditorPlaced(true);
+
+                expect(store.editorContentEditorPlaced()).toBe(true);
+
+                store.editorSetContentEditorPlaced(false);
+
+                expect(store.editorContentEditorPlaced()).toBe(false);
+            });
         });
 
         describe('setPaletteOpen', () => {
@@ -847,15 +1165,6 @@ describe('withEditor', () => {
                 store.updateEditorOnScrollEnd();
 
                 expect(store.editorState()).toEqual(EDITOR_STATE.DRAGGING);
-            });
-        });
-
-        describe('updateEditorScrollDragState', () => {
-            it('should update the store correctly', () => {
-                store.updateEditorScrollDragState();
-
-                expect(store.editorState()).toEqual(EDITOR_STATE.SCROLL_DRAG);
-                expect(store.editorBounds()).toEqual([]);
             });
         });
 

@@ -128,6 +128,16 @@ describe('DotLicenseService', () => {
         });
     });
 
+    it('should title the Forms portlet as Forms for a user without an enterprise license', () => {
+        vi.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
+        let titleKey: string | undefined;
+        dotLicenseService.unlicenseData.subscribe((data) => (titleKey = data.titleKey));
+
+        dotLicenseService.canAccessEnterprisePortlet('/forms').subscribe();
+
+        expect(titleKey).toBe('com.dotcms.repackage.javax.portlet.title.forms');
+    });
+
     it('should not make any request if license is setted', () => {
         dotLicenseService.setLicense({
             displayServerId: 'test',

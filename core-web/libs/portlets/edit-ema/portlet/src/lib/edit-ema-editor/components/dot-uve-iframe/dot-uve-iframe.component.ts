@@ -22,7 +22,6 @@ import { InlineEditService } from '../../../services/inline-edit/inline-edit.ser
 import { UVEStore } from '../../../store/dot-uve.store';
 import { PageType } from '../../../store/models';
 import { isNavigableHref, resolveClickedAnchor, scrollIframeToFragment } from '../../../utils';
-import { addEditorPageScript } from '../../../utils/ema-legacy-script-injection';
 
 /**
  * Renders the UVE (Universal Visual Editor) page preview inside an iframe.
@@ -107,11 +106,6 @@ export class DotUveIframeComponent {
      */
     readonly $enableInlineEdit = this.uveStore.editorEnableInlineEdit;
     /**
-     * Whether the legacy UVE script injection is enabled via feature flag.
-     * @type {Signal<boolean>}
-     */
-    readonly $isEmaLegacyScriptInjectionEnabled = this.uveStore.$isEmaLegacyScriptInjectionEnabled;
-    /**
      * Effect that injects rendered content into traditional pages when ready.
      * @type {EffectRef}
      */
@@ -171,14 +165,10 @@ export class DotUveIframeComponent {
             return;
         }
 
-        const content = this.$isEmaLegacyScriptInjectionEnabled()
-            ? addEditorPageScript(pageRender)
-            : pageRender;
-
         const srcRef = this.src();
 
-        if (content !== this.lastWrittenContent || srcRef !== this.lastWrittenSrcRef) {
-            this.lastWrittenContent = content;
+        if (pageRender !== this.lastWrittenContent || srcRef !== this.lastWrittenSrcRef) {
+            this.lastWrittenContent = pageRender;
             this.lastWrittenSrcRef = srcRef;
             // srcdoc navigates the iframe to a fresh browsing context on every
             // unique render, clearing the window's global lexical scope.
@@ -188,7 +178,7 @@ export class DotUveIframeComponent {
             // run again — even across legitimate re-renders (e.g. preview → edit
             // mode returns different server-rendered HTML that still contains the
             // same let/const declarations).
-            iframeElement.srcdoc = content;
+            iframeElement.srcdoc = pageRender;
         }
 
         this.handleInlineScripts(enableInlineEdit);

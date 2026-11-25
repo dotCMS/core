@@ -80,7 +80,7 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
 
     /** Resolved per test rather than in a static initialiser, which ran before the API was up. */
     private User admin() throws Exception {
-        return APILocator.systemUser();
+        return com.dotcms.datagen.TestUserUtils.getAdminUser();
     }
 
     private Host site() {

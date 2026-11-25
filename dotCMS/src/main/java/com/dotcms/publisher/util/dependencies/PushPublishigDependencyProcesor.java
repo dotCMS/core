@@ -11,6 +11,7 @@ import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.DotBundleException;
+import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.publishing.PublisherFilter;
 import com.dotcms.publishing.manifest.ManifestItem;
@@ -69,6 +70,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
@@ -96,27 +98,34 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
     private final Lazy<ContentletAPI> contentletAPI = Lazy.of(APILocator::getContentletAPI);
 
     /**
-     * Tracks, for the lifetime of this bundle generation, which Contentlet identifiers have
-     * already "consumed" the one extra relationship-traversal hop that
-     * {@link PublisherFilter#isRelationshipsSecondLevel()} allows. A Contentlet's identifier is
-     * added to this set right before its related content is recursively enqueued for its own
-     * dependency processing; once present, that Contentlet's own related content is added to the
-     * bundle without being recursed into again. This both caps traversal at exactly one extra
-     * level and makes circular relationship chains inherently non-recursive beyond that point.
-     * <p>
-     * <b>Known limitation:</b> this set is global to the whole bundle and processing runs
-     * concurrently ({@link ConcurrentDependencyProcessor} dispatches queued assets across a
-     * thread pool). If a Contentlet is <i>both</i> an explicitly-selected bundle root <i>and</i> a
-     * first-level relation of another explicitly-selected root, which one is processed first
-     * determines whether it still gets its own second-level expansion -- the outcome does not
-     * depend on which Contentlet the user actually selected. The cap is never exceeded in this
-     * scenario (no correctness risk beyond this), so it is a bounded, order-dependent
-     * under-inclusion rather than a crash or data-integrity issue. Fixing it properly would mean
-     * distinguishing "explicit bundle root" from "reached via a relationship" across the shared
-     * {@link DependencyProcessor} queue that every asset type uses, which is out of scope for this
-     * opt-in filter.
+     * Server property that caps how many relationship levels any filter may follow, including a
+     * filter asking for {@link FilterDescriptor#RELATIONSHIPS_DEPTH_UNLIMITED}. 0 or less removes
+     * the cap. Environment variable: {@code DOT_PUSH_PUBLISHING_RELATIONSHIPS_MAX_DEPTH}.
      */
-    private final Set<String> relationshipHopConsumed = ConcurrentHashMap.newKeySet();
+    static final String MAX_RELATIONSHIPS_DEPTH_PROPERTY = "push.publishing.relationships.max.depth";
+    /** Default for {@link #MAX_RELATIONSHIPS_DEPTH_PROPERTY}. */
+    static final int DEFAULT_MAX_RELATIONSHIPS_DEPTH = 10;
+
+    /**
+     * For the lifetime of this bundle generation, holds how many relationship levels may still be
+     * followed from each Contentlet, keyed by identifier. An explicitly selected Contentlet is
+     * recorded with the full depth from {@link #configuredRelationshipDepth} when it is added (see
+     * {@link #addAsset(Object, PusheableAsset)}); any other Contentlet not in the map also starts at
+     * the full depth. When a Contentlet with {@code n} levels left is processed and {@code n > 1},
+     * each related Contentlet is recorded with {@code n - 1} and queued for its own dependency
+     * processing; with {@code n == 1} its related content is added to the bundle without being
+     * followed.
+     * <p>
+     * Processing runs concurrently, so a Contentlet can be processed through a long path before a
+     * shorter path reaches it. A recorded value therefore only ever grows, and whenever it grows the
+     * Contentlet is queued again (see {@link #addRelatedContentlet(Contentlet, int, String)}), so the
+     * levels below it are followed with the larger budget. Values can only grow a bounded number of
+     * times, so cyclic graphs still terminate, even when the depth is unlimited.
+     */
+    private final Map<String, Integer> remainingRelationshipDepth = new ConcurrentHashMap<>();
+
+    /** Depth followed from an explicitly selected Contentlet, resolved once per bundle. */
+    private final Lazy<Integer> configuredRelationshipDepth = Lazy.of(this::resolveRelationshipDepth);
 
     /**
      * Creates an instance of the Push Publishing Dependency Processor mechanism, and initializes all the different data
@@ -467,7 +476,35 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
     }
 
     /**
+     * Works out how many relationship levels to follow from an explicitly selected Contentlet.
+     * Takes the filter's depth (where {@link FilterDescriptor#RELATIONSHIPS_DEPTH_UNLIMITED} means
+     * no limit) and reduces it to the server ceiling {@link #MAX_RELATIONSHIPS_DEPTH_PROPERTY}
+     * (default {@value #DEFAULT_MAX_RELATIONSHIPS_DEPTH}; 0 or less removes the ceiling). Logs a
+     * warning when the ceiling lowers the depth, so an operator can see why a deep bundle stopped
+     * where it did.
+     *
+     * @return The number of levels to follow, or {@link Integer#MAX_VALUE} for no limit.
+     */
+    private int resolveRelationshipDepth() {
+        final int requested = publisherFilter.getRelationshipsDepth();
+        final boolean unlimited = requested == FilterDescriptor.RELATIONSHIPS_DEPTH_UNLIMITED;
+        final int requestedDepth = unlimited ? Integer.MAX_VALUE : requested;
+        final int ceiling = Config.getIntProperty(MAX_RELATIONSHIPS_DEPTH_PROPERTY,
+                DEFAULT_MAX_RELATIONSHIPS_DEPTH);
+        if (ceiling <= 0 || requestedDepth <= ceiling) {
+            return requestedDepth;
+        }
+        Logger.warn(this, String.format(
+                "Push Publishing filter '%s' asks for relationship depth %s; limiting it to %d set by %s",
+                publisherFilter.key(), unlimited ? "unlimited" : String.valueOf(requested), ceiling,
+                MAX_RELATIONSHIPS_DEPTH_PROPERTY));
+        return ceiling;
+    }
+
+    /**
      * Takes the specified {@link Contentlet} object and analyzes the different object dependencies it may have.
+     * Related content is followed down to the depth configured on the bundle's filter (see
+     * {@link #remainingRelationshipDepth}).
      */
     private void processContentDependency(final Contentlet contentlet)
             throws  DotBundleException {
@@ -480,6 +517,10 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
 
             final Set<Contentlet> contentsToProcess = new HashSet<>();
             final Set<Contentlet> contentsWithDependenciesToProcess = new HashSet<>();
+            // Levels of related content still allowed below this contentlet; 1 = add its relations but stop there
+            final int remainingDepth = remainingRelationshipDepth.getOrDefault(contentId,
+                    configuredRelationshipDepth.get());
+            final boolean recurseIntoRelated = remainingDepth > 1;
 
             for (final Contentlet contentletVersion : contentList) {
 
@@ -503,21 +544,14 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                         contentRelationships.keySet(), ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(contentlet));
 
                 if(publisherFilter.isRelationships() && publisherFilter.isDependencies()) {
-                    // Only recurse into a related Contentlet's OWN relationships when the current
-                    // Contentlet hasn't itself already consumed its one allowed extra hop — this
-                    // caps traversal at exactly one extra level instead of recursing unbounded.
-                    final boolean recurseOneMoreLevel = publisherFilter.isRelationshipsSecondLevel()
-                            && !relationshipHopConsumed.contains(contentId);
-
                     for (Entry<Relationship, List<Contentlet>> relationshipListEntry : contentRelationships
                             .entrySet()) {
-                        if (recurseOneMoreLevel) {
-                            relationshipListEntry.getValue().forEach(
-                                    relatedContentlet -> relationshipHopConsumed.add(relatedContentlet.getIdentifier()));
-
-                            tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET,
-                                    relationshipListEntry.getValue(),
-                                    ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(relationshipListEntry.getKey()));
+                        if (recurseIntoRelated) {
+                            final String reason = ManifestReason.INCLUDE_DEPENDENCY_FROM
+                                    .getMessage(relationshipListEntry.getKey());
+                            for (final Contentlet relatedContentlet : relationshipListEntry.getValue()) {
+                                addRelatedContentlet(relatedContentlet, remainingDepth - 1, reason);
+                            }
                         } else {
                             contentsToProcess.addAll(relationshipListEntry.getValue());
 
@@ -944,9 +978,63 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
         return result;
     }
 
+    /**
+     * Queues an explicitly selected asset for dependency processing. A selected Contentlet is
+     * recorded with the full relationship depth first, so it is followed to the configured depth
+     * even if it is also related to another selected item and is reached through it.
+     *
+     * @param asset          The selected asset.
+     * @param pusheableAsset The type of the asset.
+     */
     @Override
-    public void addAsset(Object asset, PusheableAsset pusheableAsset) {
+    public void addAsset(final Object asset, final PusheableAsset pusheableAsset) {
+        if (asset instanceof Contentlet && UtilMethods.isSet(((Contentlet) asset).getIdentifier())) {
+            remainingRelationshipDepth.merge(((Contentlet) asset).getIdentifier(),
+                    configuredRelationshipDepth.get(), Math::max);
+        }
         dependencyProcessor.addAsset(asset, pusheableAsset);
+    }
+
+    /**
+     * Adds a Contentlet reached through a relationship and queues it so its own relationships are
+     * followed with {@code depthLeft} levels. If an earlier path already recorded it with fewer
+     * levels left, the larger value is recorded and the Contentlet is queued again, because it may
+     * already have been processed with the smaller value. If it was recorded with as many or more
+     * levels left, the earlier processing already covers this path.
+     *
+     * @param relatedContentlet The related Contentlet.
+     * @param depthLeft         Relationship levels that may still be followed from it.
+     * @param evaluateReason    The manifest reason for including it.
+     */
+    private void addRelatedContentlet(final Contentlet relatedContentlet, final int depthLeft,
+            final String evaluateReason) {
+        if (!UtilMethods.isSet(relatedContentlet)
+                || !UtilMethods.isSet(relatedContentlet.getIdentifier())) {
+            return;
+        }
+        final AtomicBoolean raisedExistingValue = new AtomicBoolean(false);
+        remainingRelationshipDepth.compute(relatedContentlet.getIdentifier(), (id, previous) -> {
+            if (previous == null) {
+                return depthLeft;
+            }
+            if (depthLeft > previous) {
+                raisedExistingValue.set(true);
+                return depthLeft;
+            }
+            return previous;
+        });
+
+        if (!raisedExistingValue.get()) {
+            tryToAddAndProcessDependencies(PusheableAsset.CONTENTLET, relatedContentlet, evaluateReason);
+            return;
+        }
+        try {
+            if (shouldIncludeDependency(tryToAdd(PusheableAsset.CONTENTLET, relatedContentlet, evaluateReason))) {
+                dependencyProcessor.reprocessAsset(relatedContentlet, PusheableAsset.CONTENTLET);
+            }
+        } catch (final AssetExcludeException e) {
+            dependencyProcessor.reprocessAsset(relatedContentlet, PusheableAsset.CONTENTLET);
+        }
     }
 
     @Override

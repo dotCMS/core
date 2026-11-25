@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.browser.ajax;
 
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
@@ -84,7 +85,7 @@ public class BrowserAjaxTest {
         childFolderOne = new FolderDataGen().site(testSite).parent(parentFolderOne).name("child-one").nextPersisted();
         childFolderTwo = new FolderDataGen().site(testSite).parent(childFolderOne).name("child-two").nextPersisted();
 
-        setUpDwrContext(APILocator.getUserAPI().getSystemUser());
+        setUpDwrContext(TestUserUtils.getAdminUser());
     }
 
     /**
@@ -306,7 +307,7 @@ public class BrowserAjaxTest {
      */
     @Test
     public void test_getFolderSubfolders() throws Exception {
-        setUpDwrContext(APILocator.getUserAPI().getSystemUser());
+        setUpDwrContext(TestUserUtils.getAdminUser());
         final User sysUser = APILocator.getUserAPI().getSystemUser();
         final Host host = new SiteDataGen().nextPersisted();
         final Folder mainFolder = new FolderDataGen().name("mainFolder"+System.currentTimeMillis()).site(host).nextPersisted();
@@ -362,7 +363,7 @@ public class BrowserAjaxTest {
         assertTrue(hosts.size() > 0);
         //should contain the system host as a limited user
         assertTrue(hosts.stream().anyMatch(host -> host.get("identifier").equals(APILocator.systemHost().getIdentifier())) && loggedInUser.getFirstName().equals(user.getFirstName()) );
-        setUpDwrContext(APILocator.getUserAPI().getSystemUser());
+        setUpDwrContext(TestUserUtils.getAdminUser());
     }
 
     /**
@@ -379,7 +380,7 @@ public class BrowserAjaxTest {
      */
     @Test
     public void test_getFolderContentWithDotAssets_dotPageMimeType_returnsPages() throws Exception {
-        setUpDwrContext(APILocator.getUserAPI().getSystemUser());
+        setUpDwrContext(TestUserUtils.getAdminUser());
 
         final Host host = new SiteDataGen().nextPersisted();
         final Folder folder = new FolderDataGen().site(host).nextPersisted();

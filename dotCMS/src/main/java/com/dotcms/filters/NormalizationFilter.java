@@ -1,6 +1,7 @@
 package com.dotcms.filters;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import javax.servlet.Filter;
@@ -99,9 +100,18 @@ public class NormalizationFilter implements Filter {
      * URIs. (mailto:a@b.com)
      */
 
+    /**
+     * Tells whether the raw URI contains any of the forbidden strings. The comparison ignores
+     * case, because percent-encoded sequences are case-insensitive and the container decodes
+     * {@code %2e} exactly as it decodes {@code %2E}.
+     *
+     * @param newNormal the raw request URI
+     * @return true if the URI must be refused
+     */
     boolean containsNastyChar(final String newNormal) {
+        final String upperCaseUri = newNormal.toUpperCase(Locale.ROOT);
         for (String reserved : forbiddenURIStrings.get()) {
-            if (newNormal.contains(reserved)) {
+            if (upperCaseUri.contains(reserved.toUpperCase(Locale.ROOT))) {
                 return true;
             }
         }

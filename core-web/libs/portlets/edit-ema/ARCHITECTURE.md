@@ -119,6 +119,33 @@ but **not** on `pointerleave` of the iframe document — leaving the
 iframe usually means heading for the floating toolbar in parent
 chrome, and killing the overlay there would yank it away mid-reach.
 
+## Drag and drop
+
+### The dropzone decides where a drop goes
+
+The dropzone (`edit-ema-editor/components/ema-page-dropzone/`) is the one place that resolves a drop target. On every `dragover` inside a container it works out the target from the bounds and the pointer, draws the insertion line there, and reports the target through its `dropTargetChange` output (an `EmaDropTarget`), only when it changes. The canvas keeps the last target and drops on it; it never reads `data-*` from the element under the pointer. The insertion line and the drop therefore cannot disagree.
+
+- Over a contentlet: before or after it, by which half the pointer is in.
+- Between contentlets: next to the contentlet whose block is nearest the pointer (distance to its rectangle, so blocks in a row work as well as blocks in a column), before it when the pointer is above that block's vertical centre. A container appends only when it holds no contentlets (`kind: 'empty-container'`; its overlay's `data-empty` says so).
+- No target (`kind: 'none'`, insertion line hidden): over the moved contentlet's own place, right after the contentlet above it, right before the one below it, over a container's error zone, over the dropzone outside every container, and once the pointer leaves the dropzone.
+
+While a contentlet on the page is moved, the dropzone draws a gray placeholder over its original place, only in the container it came from (matched on container identifier and uuid, since one contentlet can sit in several containers). The placeholder takes the pointer, so it does not fall through to the container, and resolves to no target.
+
+The canvas resets the editor without saving when the target is `none`, when the drop lands outside the dropzone (`data-dropzone` on the drop's target is not `"true"`), or when a move would leave its container's order as it is (`doesMoveChangeOrder` in `utils/index.ts`). At the utils level a positioned insert whose pivot is the contentlet being inserted (a move dropped next to itself) inserts nothing rather than appending; a pivot that is gone for any other reason, as when someone removed it while new content was being created, still lets the contentlet in at the end.
+
+### Auto-scroll during a drag
+
+The page scrolls itself; the editor only sets the speed.
+
+- **Editor → page, `uve-scroll-velocity`**: `DotUveDragDropService` turns the pointer's depth in the 100px edge zone into a signed velocity in px per 60fps frame, eased quadratically from `IFRAME_SCROLL_VELOCITY.MIN` to `MAX` (`shared/consts.ts`), negative near the top. At and past the top or bottom edge it is the maximum. It is sent only when it changes. A scroll starts only with the pointer over the iframe itself, so a pointer over the toolbar above it or beside it starts nothing; once running, it keeps following the pointer's height when the pointer moves past an edge or beside the iframe, and it keeps its last velocity while the pointer is outside the app window. `0` is sent when the pointer is back in the middle (between both zones), on drop, on drag end, and when a file dragged in from the desktop leaves the window. A drag from the editor that leaves the window does not reset the editor, so its drag item and drop targets are there when the pointer comes back.
+- **Page**: `registerUVEEvents` (`libs/sdk/uve/src/script/utils.ts`) runs a `requestAnimationFrame` loop of instant `scrollBy` steps scaled by frame time, clamped to 40px per frame, until the velocity is `0`, the page reaches its top or bottom, or the subscriptions end. Anything that is not a finite number counts as `0`.
+- **Page → editor, `scroll`**: the report carries `payload.scrollY`. The store records every reported value in `editorScrollY` (reset to 0 when a new document loads in the iframe). During a drag, `updateEditorScrollState(scrollY)` keeps `editorState` at `DRAGGING` and moves every container in `editorBounds` by how far the page scrolled since the bounds were taken; contentlets are relative to their container, so they move with it. The dropzone stays mounted and aligned while the page scrolls.
+- **Edge zone**: the editor no longer clears the bounds on `dragover`. At the top or bottom of the page nothing scrolls and no `scroll` report arrives, so the first and last contentlets keep their targets.
+
+### Older `@dotcms/uve`
+
+The editor keeps sending the one-step `uve-scroll-inside-iframe` direction request, at most once every `IFRAME_LEGACY_SCROLL_THROTTLE_MS` (250ms), for pages that do not know the velocity message; they answer with a smooth 120px step as before. A page that has received a velocity ignores the direction request for as long as its events are registered. A `scroll` report without `scrollY` takes the old path: bounds cleared, `SCROLL_DRAG`, then `SET_BOUNDS` brings them back. That is the only path that still uses `SCROLL_DRAG` during a drag. Each side discovers the other from what arrives, with no version handshake.
+
 ## Slice composition (excerpt)
 
 `withSelectionAnchor` is composed *after* `withEditor` because it
@@ -135,6 +162,8 @@ is documented in store CLAUDE.md.
 - `services/dot-uve-actions-handler/` — message router (thin dispatcher)
 - `services/iframe-messenger/` — postMessage envelope (`flushBounds`, etc.)
 - `edit-ema-editor/components/dot-uve-contentlet-tools/` — the overlays
+- `edit-ema-editor/components/ema-page-dropzone/` — drop targets, drop-target resolution, source placeholder
+- `services/dot-uve-drag-drop/` — drag events, edge-zone velocity, legacy scroll throttle
 - `libs/sdk/uve/src/internal/events.ts` — SDK observers
 - `libs/sdk/uve/src/script/utils.ts` — SDK ↔ editor dispatcher
 
@@ -202,12 +231,11 @@ store is the source of truth; the iframe is a measuring instrument.
 
 ### The pencil button's stateless contract
 
-Pencil (full-editor modal) does NOT write to `editorSelected`. It
-receives the hovered contentlet's `ActionPayload` directly via the
-`openFullEditor` output and passes it to `dialog.editContentlet(...)`
-without touching editor selection state. The modal stays orthogonal
-to the selection surface — closing it leaves the editor exactly
-where it was.
+The pencil (the full editor), and the full-edit item in the contentlet tools' menu, do NOT write to `editorSelected`. `DotUveContentletToolsComponent.editContent` reads the hovered contentlet's `ActionPayload` and dispatches `uveEditContentRequested` with the contentlet, and its container as `forkFrom`; it never calls `promoteHoverToSelected`. It sends nothing for a contentlet without an inode or whose `canEdit` is explicitly `false`.
+
+`DotUveContentEditorComponent` is the only listener. A contentlet on more than one page first asks whether to edit it on every page or a copy on this page only; a copy is made in place, the page reloads, and the copy opens. The content editor then builds one edit request with the page's context (site, language, experiment variant) and opens it in the Edit Content side panel through `@dotcms/edit-content`'s opener, which picks the editor from the content type: the new editor when it enables `CONTENT_EDITOR2_ENABLED`, the legacy editor otherwise (#38303).
+
+The full editor stays orthogonal to the selection surface: the pencil leaves `editorSelected` as it was.
 
 ### Why two, not three (history)
 
@@ -283,9 +311,27 @@ No special path — composes the cross-cutting rules and the seam.
 ## Where to find things
 
 - Store: `portlet/src/lib/store/`
-- Editor screen + components: `portlet/src/lib/edit-ema-editor/`
+- Editor screen and its regions: `portlet/src/lib/edit-ema-editor/` (see below)
 - Layout-tab screen: `portlet/src/lib/edit-ema-layout/`
 - Cross-screen components: `portlet/src/lib/components/`
 - Services (drag/drop, inline edit, page API, messenger, actions handler): `portlet/src/lib/services/`
 - SDK that runs inside the iframe: `libs/sdk/uve/`
 - Event types: `libs/sdk/types/src/lib/`
+
+### The editor's regions
+
+`EditEmaEditorComponent` (`edit-ema-editor/edit-ema-editor.component.ts`) is layout only: it places the regions on its grid and decides which show in edit and preview mode. It injects only `UVEStore`, binds no inputs or outputs on its regions, and its one call is to put the edit panel back on quick edit each time it is created, because the store outlives it. It also provides `DotPaletteListStore`, so the palette's lists keep their search while the palette hides and comes back, and places the confirm dialog the toolbar, canvas and content editor ask through.
+
+Each region reads and writes `UVEStore` itself: store state for what persists, and the `uveContentEditorEvents` group (`edit-ema-editor/components/dot-uve-content-editor/dot-uve-content-editor.events.ts`) for one-off requests to open a content editor. Only the content editor listens to that group. Folders are under `portlet/src/lib/edit-ema-editor/components/`.
+
+| Region | Folder | Shows | Owns | Store state it uses | Requests it sends |
+|---|---|---|---|---|---|
+| Toolbar | `dot-uve-toolbar/` | Always | Mode, API link, device and social-media selector, URL-mapped content edit, live-mode date, page lock, running experiment, language, persona, workflow actions | `viewMode`, `pageParams`, `pageLanguages`, `$viewDeviceSelectorState`, `viewSocialMedia`, `workflowToggleLock` | `uveTranslatePageRequested`, `uveEditUrlContentMapRequested` |
+| Palette | `dot-uve-palette/` | Edit mode, while `editorCanEditContent()` | Content types, widgets, favorites and the layer tree; opens and closes itself | `editorPaletteOpen`, `pageURI`, `pageLanguageId`, `pageVariantId`, `$allowedContentTypes` | None |
+| Browser toolbar | `dot-uve-browser-toolbar/` | Always, hidden during a social-media preview | Palette and edit-panel toggles, page URL, device controls, zoom, iframe size | `editorPaletteOpen`, `editorEditPanelOpen`, `$viewDeviceSelectorState`, `viewZoomLevel` | None |
+| Canvas | `dot-uve-canvas/` | Always, hidden during a social-media preview | The page's iframe and the overlays on it, messages to and from the page, drops, deletes, link clicks, sizing; reads the page's og tags into the store | `editorSelected`, `editorContentArea`, `editorDragItem`, `editorState`, `$iframeURL`, `$viewCanvasOuterStyles`, `$viewCanvasInnerStyles`, `editorOgTags`, `viewOgTagsResults` | `uveCreateContentRequested`; through its contentlet tools and actions handler also `uveEditContentRequested`, `uveAddContentRequested`, `uveEditSourceRequested`, `uveEditBlockEditorFieldRequested`, `uveReorderMenuRequested`. The actions handler passes on the page's own edit, create and menu-reorder requests only while `editorCanEditContent()` |
+| SEO results | `dot-uve-seo-results/` | Always placed; shows while a social-media preview is chosen and the og tags are read | How the page looks when shared on the chosen social media | `viewSocialMedia`, `editorOgTags`, `viewOgTagsResults` | None |
+| Edit panel | `dot-uve-edit-panel/` | Edit mode | Quick edit and the style editor for the selected contentlet; opens and closes itself | `editorEditPanelOpen`, `editorEditPanelTab`, `editorSelected`, `$editorContentletEditData`, `$styleSchema`, `editorCanEditStyles` | `uveEditContentRequested`, from quick edit |
+| Content editor | `dot-uve-content-editor/` | Always, in any mode | Every content editor, each in a side panel: the Edit Content panel through the opener (new or legacy editor, by content type), the legacy content selector and menu reorder screens, the form selector, a translation, the VTL source editor; and the block editor sidebar. Inserts what the user creates or picks, and reloads the page after a save | `pageAsset`, `pageParams`, `editorInsertContentlet`, `pageReload`; sets `editorContentEditorPlaced` while it is placed | None; it listens to every request in the group |
+
+Outside the editor, the shell (`dot-ema-shell/`) sends `uveEditContentRequested` for the page's Properties while a content editor is placed, which it reads from `editorContentEditorPlaced`: the content editor sets it when it is created and clears it when it is destroyed. On the layout, rules and experiments screens, and on a page the user cannot read (the shell then renders no router outlet), no content editor is placed, so the shell opens the page in the side panel itself, through the opener.

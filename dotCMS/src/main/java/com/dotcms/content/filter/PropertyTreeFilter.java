@@ -1,0 +1,395 @@
+package com.dotcms.content.filter;
+
+import com.dotcms.contenttype.model.field.CustomField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.JSONField;
+import com.dotcms.contenttype.model.field.KeyValueField;
+import com.dotcms.contenttype.model.field.StoryBlockField;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.util.JsonUtil;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONObject;
+import io.vavr.control.Try;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
+/**
+ * Filters a JSON-like response tree ({@link java.util.Map}, {@link java.util.Collection},
+ * {@link com.dotmarketing.util.json.JSONObject}, {@link com.dotmarketing.util.json.JSONArray} and
+ * scalars) for one caller. In every object, the user properties the given {@link ContentFieldFilter}
+ * replaces are sent as {@link ContentFieldFilter#USER_PROPERTY_PLACEHOLDER}, and objects that are
+ * contentlets also get the configured content property lists. The values of a contentlet's JSON, Key/Value and Custom fields are customer data and
+ * are left as they are. A Story Block value held as JSON text, and its {@code _raw} copy, is read and
+ * filtered the same way, since it carries the data of the contentlets embedded in it. The result is a copy;
+ * the input tree is never changed.
+ *
+ * @author hassandotcms
+ */
+public final class PropertyTreeFilter {
+
+    /** Field types whose values are customer data and are never walked into. */
+    private static final Set<String> CUSTOMER_VALUE_FIELD_TYPES = Set.of(
+            JSONField.class.getName(), KeyValueField.class.getName(), CustomField.class.getName());
+
+    /** Suffix of the property that repeats a Story Block value as stored, e.g. {@code blogContent_raw}. */
+    private static final String RAW_SUFFIX = "_raw";
+
+    /** Key of the attributes of a Story Block node. */
+    private static final String ATTRIBUTES_KEY = "attrs";
+
+    /** Key of the attribute that holds the data of the contentlet embedded in a Story Block node. */
+    private static final String DATA_KEY = "data";
+
+    /** Marks, while a Story Block is filtered, the nodes whose data is stored as JSON text. */
+    private static final String DATA_AS_TEXT_MARKER = "\u0000dataAsText";
+
+    /**
+     * Resolves the type of a contentlet field, so the values of JSON, Key/Value and Custom fields can be
+     * left untouched.
+     */
+    @FunctionalInterface
+    public interface FieldTypes {
+
+        /**
+         * Returns the type of a field of a content type.
+         *
+         * @param contentType the variable name or identifier of the contentlet's content type
+         * @param fieldVariable the variable name of the field
+         * @return the fully qualified class name of the field type, or {@code null} when it cannot be resolved
+         */
+        String typeOf(String contentType, String fieldVariable);
+    }
+
+    private PropertyTreeFilter() {
+    }
+
+    /**
+     * Returns a filtered copy of the given tree.
+     *
+     * @param tree the response tree; may be {@code null} or a scalar
+     * @param filter the {@link ContentFieldFilter} built for the caller
+     * @param fieldTypes resolves field types of the contentlets found in the tree
+     * @return the filtered copy, of the same JSON types as the input; scalars are returned as they are
+     */
+    public static Object filter(final Object tree, final ContentFieldFilter filter, final FieldTypes fieldTypes) {
+        if (null == filter || !filter.isActive()) {
+            return tree;
+        }
+        return copy(tree, filter, fieldTypes);
+    }
+
+    /**
+     * Returns a filtered copy of some properties of one contentlet of the given content type, such as the single
+     * property a GraphQL {@code _map(key:)} asks for, or the map written for the XML of the legacy Content API.
+     *
+     * @param contentType the variable name or identifier of the contentlet's content type
+     * @param properties the contentlet's properties; may be {@code null}
+     * @param filter the {@link ContentFieldFilter} built for the caller
+     * @param fieldTypes resolves field types of the contentlets found in the properties
+     * @return the filtered copy, without the properties removed for the caller; the properties themselves when
+     * the filter changes nothing
+     */
+    @SuppressWarnings("unchecked")
+    public static Map<String, Object> filterContentletProperties(final String contentType,
+            final Map<String, Object> properties, final ContentFieldFilter filter, final FieldTypes fieldTypes) {
+        if (null == filter || !filter.isActive() || null == properties) {
+            return properties;
+        }
+        // Filter them as a contentlet of that type, so Story Block text is read and customer fields are kept,
+        // then take off the identifier and content type added for that
+        final Map<String, Object> contentlet = new HashMap<>(properties);
+        final boolean addIdentifier = !contentlet.containsKey(Contentlet.IDENTIFIER_KEY)
+                && !contentlet.containsKey(Contentlet.INODE_KEY);
+        if (addIdentifier) {
+            contentlet.put(Contentlet.IDENTIFIER_KEY, null);
+        }
+        contentlet.put(Contentlet.CONTENT_TYPE_KEY, contentType);
+        final Map<String, Object> filtered = (Map<String, Object>) copyObject(contentlet, filter, fieldTypes);
+        if (addIdentifier) {
+            filtered.remove(Contentlet.IDENTIFIER_KEY);
+        }
+        if (properties.containsKey(Contentlet.CONTENT_TYPE_KEY)) {
+            filtered.put(Contentlet.CONTENT_TYPE_KEY, properties.get(Contentlet.CONTENT_TYPE_KEY));
+        } else {
+            filtered.remove(Contentlet.CONTENT_TYPE_KEY);
+        }
+        return filtered;
+    }
+
+    /**
+     * Returns the field types of the content types stored in dotCMS, read as the system user. Each content
+     * type is looked up once per returned instance, so one instance should serve one response.
+     *
+     * @return the field types of the stored content types; {@code null} for a type or field that cannot be found
+     */
+    public static FieldTypes storedContentTypes() {
+        final Map<String, Optional<ContentType>> types = new HashMap<>();
+        return (contentType, fieldVariable) -> types
+                .computeIfAbsent(contentType, variable -> Try.of(() -> APILocator
+                        .getContentTypeAPI(APILocator.systemUser()).find(variable)).toJavaOptional())
+                .map(type -> type.fieldMap().get(fieldVariable))
+                .map(PropertyTreeFilter::typeName)
+                .orElse(null);
+    }
+
+    /**
+     * Names the type of a field by the field family it belongs to, so the generated implementations of
+     * a field type answer the same as the type itself.
+     *
+     * @param field the {@link Field} to name
+     * @return the class name of its field family, or of the field itself for other families
+     */
+    private static String typeName(final Field field) {
+        if (field instanceof JSONField) {
+            return JSONField.class.getName();
+        }
+        if (field instanceof KeyValueField) {
+            return KeyValueField.class.getName();
+        }
+        if (field instanceof CustomField) {
+            return CustomField.class.getName();
+        }
+        if (field instanceof StoryBlockField) {
+            return StoryBlockField.class.getName();
+        }
+        return field.getClass().getName();
+    }
+
+    /**
+     * Copies one node of the tree, filtering every object found in it.
+     *
+     * @param node the node to copy
+     * @param filter the caller's filter
+     * @param fieldTypes the field type resolver
+     * @return the filtered copy, or the node itself when it is a scalar
+     */
+    private static Object copy(final Object node, final ContentFieldFilter filter, final FieldTypes fieldTypes) {
+        if (node instanceof Map) {
+            return copyObject((Map<?, ?>) node, filter, fieldTypes);
+        }
+        if (node instanceof Collection) {
+            return copyArray((Collection<?>) node, filter, fieldTypes);
+        }
+        return node;
+    }
+
+    /**
+     * Copies an object with the values of the user properties replaced. A contentlet also gets the configured
+     * content property lists, and the values of its JSON, Key/Value and Custom fields are copied as they are.
+     *
+     * @param object the object to copy
+     * @param filter the caller's filter
+     * @param fieldTypes the field type resolver
+     * @return the filtered copy; a {@link JSONObject} when the input is one
+     */
+    private static Map<?, ?> copyObject(final Map<?, ?> object, final ContentFieldFilter filter,
+                                        final FieldTypes fieldTypes) {
+        final Set<String> userProperties = filter.userProperties();
+        final String contentType = isContentlet(object) ? contentTypeOf(object) : null;
+        final boolean jsonObject = object instanceof JSONObject;
+        final JSONObject jsonCopy = jsonObject ? new JSONObject() : null;
+        final Map<Object, Object> mapCopy = jsonObject ? null : new LinkedHashMap<>();
+        object.forEach((key, value) -> {
+            final String name = String.valueOf(key);
+            final Object copiedValue;
+            if (userProperties.contains(name.toLowerCase(Locale.ROOT))) {
+                copiedValue = ContentFieldFilter.userPropertyValue(value);
+            } else if (isCustomerValue(contentType, name, fieldTypes)) {
+                copiedValue = value;
+            } else if (value instanceof String && isStoryBlock(contentType, name, fieldTypes)) {
+                copiedValue = copyStoryBlockText((String) value, filter, fieldTypes);
+            } else {
+                copiedValue = copy(value, filter, fieldTypes);
+            }
+            if (jsonObject) {
+                jsonCopy.put(name, copiedValue);
+            } else {
+                mapCopy.put(key, copiedValue);
+            }
+        });
+        final Map<?, ?> copy = jsonObject ? jsonCopy : mapCopy;
+        return null != contentType || isContentlet(object) ? filter.apply(copy) : copy;
+    }
+
+    /**
+     * Copies an array, filtering every element.
+     *
+     * @param array the array to copy
+     * @param filter the caller's filter
+     * @param fieldTypes the field type resolver
+     * @return the filtered copy; a {@link JSONArray} when the input is one
+     */
+    private static Collection<?> copyArray(final Collection<?> array, final ContentFieldFilter filter,
+                                           final FieldTypes fieldTypes) {
+        if (array instanceof JSONArray) {
+            final JSONArray copy = new JSONArray();
+            array.forEach(element -> copy.put(copy(element, filter, fieldTypes)));
+            return copy;
+        }
+        final List<Object> copy = new ArrayList<>(array.size());
+        array.forEach(element -> copy.add(copy(element, filter, fieldTypes)));
+        return copy;
+    }
+
+    /**
+     * Tells whether an object is a contentlet: it has an identifier or an inode, and a content type, a base type
+     * or, as in a contentlet's own property map, the identifier of its content type in {@code stInode}.
+     *
+     * @param object the object to check
+     * @return {@code true} for a contentlet
+     */
+    private static boolean isContentlet(final Map<?, ?> object) {
+        return (object.containsKey(Contentlet.IDENTIFIER_KEY) || object.containsKey(Contentlet.INODE_KEY))
+                && (object.containsKey(Contentlet.CONTENT_TYPE_KEY) || object.containsKey(Contentlet.BASE_TYPE_KEY)
+                    || object.containsKey(Contentlet.STRUCTURE_INODE_KEY));
+    }
+
+    /**
+     * Returns the content type of a contentlet object, from {@code contentType} or else {@code stInode}, or
+     * {@code null} when it only has a base type.
+     *
+     * @param contentlet the contentlet object
+     * @return the content type variable name or identifier, or {@code null}
+     */
+    private static String contentTypeOf(final Map<?, ?> contentlet) {
+        final Object contentType = null != contentlet.get(Contentlet.CONTENT_TYPE_KEY)
+                ? contentlet.get(Contentlet.CONTENT_TYPE_KEY)
+                : contentlet.get(Contentlet.STRUCTURE_INODE_KEY);
+        return null == contentType ? null : String.valueOf(contentType);
+    }
+
+    /**
+     * Tells whether a property of a contentlet holds a Story Block value: the field itself or its
+     * {@code _raw} copy.
+     *
+     * @param contentType the contentlet's content type, or {@code null} when the object is not a contentlet
+     * @param name the property name
+     * @param fieldTypes the field type resolver
+     * @return {@code true} for a Story Block value
+     */
+    private static boolean isStoryBlock(final String contentType, final String name, final FieldTypes fieldTypes) {
+        if (null == contentType) {
+            return false;
+        }
+        final String field = name.endsWith(RAW_SUFFIX) ? name.substring(0, name.length() - RAW_SUFFIX.length()) : name;
+        return StoryBlockField.class.getName().equals(Try.of(() -> fieldTypes.typeOf(contentType, field)).getOrNull());
+    }
+
+    /**
+     * Filters a Story Block value held as JSON text and returns it as text again. The data of an embedded
+     * contentlet stored as JSON text in its node is filtered too, and kept as text. Text that cannot name a
+     * filtered property, or that is not a JSON object or array (such as HTML kept from a converted field), is
+     * returned as it is.
+     *
+     * @param text the Story Block value
+     * @param filter the caller's filter
+     * @param fieldTypes the field type resolver
+     * @return the filtered JSON text, or the original text
+     */
+    private static String copyStoryBlockText(final String text, final ContentFieldFilter filter,
+                                             final FieldTypes fieldTypes) {
+        if (!mayName(text, filter)) {
+            return text;
+        }
+        final Object tree = Try.of(() -> JsonUtil.getObjectFromJson(text, Object.class)).getOrNull();
+        if (!(tree instanceof Map) && !(tree instanceof Collection)) {
+            return text;
+        }
+        readDataText(tree);
+        final Object copied = copy(tree, filter, fieldTypes);
+        writeDataText(copied);
+        return Try.of(() -> JsonUtil.JSON_MAPPER.writeValueAsString(copied)).get();
+    }
+
+    /**
+     * Replaces, in a Story Block tree parsed for filtering, the data of each node that is stored as JSON object
+     * text with the object it holds, and marks the node so {@link #writeDataText(Object)} can turn it back into
+     * text.
+     *
+     * @param node a node of the parsed tree, changed in place
+     */
+    @SuppressWarnings("unchecked")
+    private static void readDataText(final Object node) {
+        if (node instanceof Map) {
+            final Object attributes = ((Map<String, Object>) node).get(ATTRIBUTES_KEY);
+            if (attributes instanceof Map && ((Map<String, Object>) attributes).get(DATA_KEY) instanceof String) {
+                final Map<String, Object> attributesMap = (Map<String, Object>) attributes;
+                final Object data = Try.of(() -> JsonUtil.getObjectFromJson(
+                        (String) attributesMap.get(DATA_KEY), Object.class)).getOrNull();
+                if (data instanceof Map) {
+                    attributesMap.put(DATA_KEY, data);
+                    attributesMap.put(DATA_AS_TEXT_MARKER, Boolean.TRUE);
+                }
+            }
+            ((Map<String, Object>) node).values().forEach(PropertyTreeFilter::readDataText);
+        } else if (node instanceof Collection) {
+            ((Collection<?>) node).forEach(PropertyTreeFilter::readDataText);
+        }
+    }
+
+    /**
+     * Writes back as JSON text, in a filtered Story Block tree, the data of the nodes marked by
+     * {@link #readDataText(Object)}, nested ones first.
+     *
+     * @param node a node of the filtered tree, changed in place
+     */
+    @SuppressWarnings("unchecked")
+    private static void writeDataText(final Object node) {
+        if (node instanceof Map) {
+            ((Map<String, Object>) node).values().forEach(PropertyTreeFilter::writeDataText);
+            final Object attributes = ((Map<String, Object>) node).get(ATTRIBUTES_KEY);
+            if (attributes instanceof Map && null != ((Map<String, Object>) attributes).remove(DATA_AS_TEXT_MARKER)) {
+                final Map<String, Object> attributesMap = (Map<String, Object>) attributes;
+                final Object data = attributesMap.get(DATA_KEY);
+                attributesMap.put(DATA_KEY, Try.of(() -> JsonUtil.JSON_MAPPER.writeValueAsString(data)).get());
+            }
+        } else if (node instanceof Collection) {
+            ((Collection<?>) node).forEach(PropertyTreeFilter::writeDataText);
+        }
+    }
+
+    /**
+     * Tells whether a text may hold, as a JSON key, a property the filter masks or removes, also as a key of
+     * JSON text nested in it. Text with {@code \}{@code u} character codes is always read, since a key could be
+     * written with them.
+     *
+     * @param text the text to check
+     * @param filter the caller's filter
+     * @return {@code false} only when the text cannot hold any of them
+     */
+    private static boolean mayName(final String text, final ContentFieldFilter filter) {
+        if (text.contains("\\u")) {
+            return true;
+        }
+        final String lowerCased = text.toLowerCase(Locale.ROOT);
+        return filter.restrictedProperties().stream().anyMatch(name -> lowerCased.contains('"' + name + '"')
+                || lowerCased.contains("\\\"" + name + "\\\""));
+    }
+
+    /**
+     * Tells whether a property of a contentlet holds customer data that must not be walked into: the value
+     * of a JSON, Key/Value or Custom field.
+     *
+     * @param contentType the contentlet's content type, or {@code null} when the object is not a contentlet
+     * @param name the property name
+     * @param fieldTypes the field type resolver
+     * @return {@code true} when the value must be copied as it is
+     */
+    private static boolean isCustomerValue(final String contentType, final String name, final FieldTypes fieldTypes) {
+        if (null == contentType) {
+            return false;
+        }
+        final String type = Try.of(() -> fieldTypes.typeOf(contentType, name)).getOrNull();
+        return null != type && CUSTOMER_VALUE_FIELD_TYPES.contains(type);
+    }
+
+}

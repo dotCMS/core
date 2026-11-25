@@ -100,6 +100,17 @@ public class UserPersistence extends BasePersistence {
 		}
 
 	}
+
+	/**
+	 * Inserts or updates the user. A new user, or a change to the password, active flag, company,
+	 * email, layouts or user id, gets a new random login token id ({@code skinid}), which rejects
+	 * the login tokens issued before. Otherwise the stored login token id is kept as it is, and the
+	 * value on {@code user} is ignored.
+	 *
+	 * @param user the user to store
+	 * @return the same user, marked as no longer new or modified
+	 * @throws SystemException if the user cannot be stored
+	 */
 	@WrapInTransaction
 	protected com.liferay.portal.model.User update(
 			com.liferay.portal.model.User user) throws SystemException {
@@ -144,9 +155,9 @@ public class UserPersistence extends BasePersistence {
 						if (this.diff(userHBM, user)) {
 
 							userHBM.setSkinId(UUIDGenerator.generateUuid()); // Id created for jwt user token
-						} else {
-							userHBM.setSkinId(user.getSkinId());
 						}
+						// otherwise keep the stored login token id: a User loaded before a logout
+						// must not write the replaced value back
 
 						userHBM.setCompanyId(user.getCompanyId());
 						userHBM.setPassword(user.getPassword());

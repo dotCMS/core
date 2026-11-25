@@ -1,8 +1,12 @@
 package com.dotcms.rest.api.v1.contenttype;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -64,7 +68,21 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.core.Response;
-import java.util.Base64;
+import com.dotcms.contenttype.model.field.CustomField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FieldVariableDataGen;
+import com.dotcms.datagen.UserDataGen;
+import com.dotcms.rest.AnonymousAccess;
+import com.dotcms.rest.exception.SecurityException;
+import com.dotmarketing.beans.Permission;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.util.Config;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.api.web.HttpServletResponseThreadLocal;
+import javax.servlet.http.HttpServletResponse;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -73,10 +91,18 @@ import org.mockito.Mockito;
 @RunWith(DataProviderRunner.class)
 public class ContentTypeResourceTest {
 
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
+
 	private static final String HOST_TO_REPLACE = "{REPLACE_ME_WITH_HOST_ID}";
 	private static final ObjectMapper mapper = new ObjectMapper();
 
 	private static Host site;
+
+	private static final String RENDERED_FIELD_VAR = "renderedField";
+	private static ContentType renderedFieldType;
+	private static User frontEndUser;
+	private static User backEndUser;
 
 	@BeforeClass
 	public static void prepare() throws Exception{
@@ -84,6 +110,55 @@ public class ContentTypeResourceTest {
 
 		//Prepare test data
 		site = new SiteDataGen().nextPersisted();
+		prepareRenderedFieldType();
+	}
+
+	/**
+	 * Creates a Content Type with one Custom Field rendered as a component, readable by the
+	 * anonymous, front-end and back-end roles, plus one user holding only the front-end role and
+	 * one user holding only the back-end role.
+	 */
+	private static void prepareRenderedFieldType() throws Exception {
+		final String variable = "renderedFieldType" + System.currentTimeMillis();
+		renderedFieldType = new ContentTypeDataGen()
+				.host(site)
+				.name(variable)
+				.velocityVarName(variable)
+				.field(new FieldDataGen()
+						.name(RENDERED_FIELD_VAR)
+						.velocityVarName(RENDERED_FIELD_VAR)
+						.type(CustomField.class)
+						.values("#set($a = 40)#set($b = 2)$math.add($a, $b)")
+						.next())
+				.nextPersisted();
+		final Field field = renderedFieldType.fieldMap().get(RENDERED_FIELD_VAR);
+		new FieldVariableDataGen().field(field).key("newRenderMode").value("component").nextPersisted();
+
+		final RoleAPI roleAPI = APILocator.getRoleAPI();
+		for (final Role role : List.of(roleAPI.loadCMSAnonymousRole(), roleAPI.loadFrontEndUserRole(),
+				roleAPI.loadBackEndUserRole())) {
+			APILocator.getPermissionAPI().save(new Permission(renderedFieldType.getPermissionId(),
+					role.getId(), PermissionAPI.PERMISSION_READ, true), renderedFieldType,
+					APILocator.systemUser(), false);
+		}
+		frontEndUser = new UserDataGen().roles(roleAPI.loadFrontEndUserRole()).nextPersisted();
+		backEndUser = new UserDataGen().roles(roleAPI.loadBackEndUserRole()).nextPersisted();
+	}
+
+	/**
+	 * Removes the Content Type and the users created for the rendered Custom Field tests.
+	 */
+	@AfterClass
+	public static void cleanUp() {
+		if (null != renderedFieldType) {
+			ContentTypeDataGen.remove(renderedFieldType, true);
+		}
+		if (null != frontEndUser) {
+			UserDataGen.remove(frontEndUser, true);
+		}
+		if (null != backEndUser) {
+			UserDataGen.remove(backEndUser, true);
+		}
 	}
 
 
@@ -367,6 +442,11 @@ public class ContentTypeResourceTest {
 	}
 
 
+	/**
+	 * Builds an admin request authenticated with a Bearer API token.
+	 *
+	 * @return the request
+	 */
 	static HttpServletRequest getHttpRequest() {
 		MockHeaderRequest request = new MockHeaderRequest(
 				(
@@ -374,7 +454,7 @@ public class ContentTypeResourceTest {
 				).request()
 		);
 
-		request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
+		request.setHeader("Authorization", TOKEN_UTILS.adminBearerHeader());
 
 		return request;
 	}
@@ -663,5 +743,105 @@ public class ContentTypeResourceTest {
 					APILocator.getContentTypeAPI(APILocator.systemUser()).find(variable));
 		}
 		assertFalse("a refused field must not leave its content type behind", created);
+	}
+
+	/**
+	 * Given a user holding only the front-end role, who can read the Content Type,
+	 * When the Content Type is requested as is and with its Custom Fields rendered,
+	 * Then the plain request succeeds and the rendered one is rejected with a 401.
+	 */
+	@Test
+	public void getTypeWithRenderedCustomFields_frontEndUser_requiresBackEndUser() throws Exception {
+		final Response plain = new ContentTypeResource().getType(renderedFieldType.variable(),
+				requestAs(frontEndUser), new EmptyHttpResponse(), null, null);
+		assertEquals(Response.Status.OK.getStatusCode(), plain.getStatus());
+
+		assertUnauthorized(() -> renderAs(requestAs(frontEndUser)));
+	}
+
+	/**
+	 * Given anonymous access to the content APIs set to READ,
+	 * When the Content Type is requested with its Custom Fields rendered and no user,
+	 * Then the request is rejected with a 401.
+	 */
+	@Test
+	public void getTypeWithRenderedCustomFields_anonymousReadEnabled_requiresBackEndUser() throws Exception {
+		final String previous = Config.getStringProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS,
+				AnonymousAccess.NONE.name());
+		Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, AnonymousAccess.READ.name());
+		try {
+			assertUnauthorized(() -> renderAs(requestAs(null)));
+		} finally {
+			Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, previous);
+		}
+	}
+
+	/**
+	 * Given a user holding only the back-end role, who can read the Content Type,
+	 * When the Content Type is requested with its Custom Fields rendered,
+	 * Then the Custom Field comes back with its Velocity code evaluated.
+	 */
+	@Test
+	public void getTypeWithRenderedCustomFields_backEndUser_rendersCustomField() throws Exception {
+		final Response response = renderAs(requestAs(backEndUser));
+
+		assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+		final String rendered = renderedValue(response);
+		assertNotNull("The Custom Field should come back with a rendered value", rendered);
+		assertEquals("42", rendered.trim());
+	}
+
+	/**
+	 * Builds a request carrying the given user, or no user at all when it is {@code null}.
+	 */
+	private static HttpServletRequest requestAs(final User user) {
+		final HttpServletRequest request = new MockSessionRequest(new MockAttributeRequest(
+				new MockHttpRequestIntegrationTest("localhost", "/api/v1/contenttype").request()).request())
+				.request();
+		if (null != user) {
+			request.setAttribute(WebKeys.USER, user);
+		}
+		return request;
+	}
+
+	/**
+	 * Requests the test Content Type with its Custom Fields rendered. The request and response are
+	 * placed on the thread, as a real request would, and the previous ones are put back afterwards.
+	 */
+	private static Response renderAs(final HttpServletRequest request) throws DotDataException {
+		final HttpServletRequest previousRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+		final HttpServletResponse previousResponse = HttpServletResponseThreadLocal.INSTANCE.getResponse();
+		final HttpServletResponse response = new EmptyHttpResponse();
+		HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+		HttpServletResponseThreadLocal.INSTANCE.setResponse(response);
+		try {
+			return new ContentTypeResource().getTypeWithRenderedCustomFields(renderedFieldType.variable(),
+					request, response, null, null, null);
+		} finally {
+			HttpServletRequestThreadLocal.INSTANCE.setRequest(previousRequest);
+			HttpServletResponseThreadLocal.INSTANCE.setResponse(previousResponse);
+		}
+	}
+
+	/**
+	 * Returns the {@code rendered} value of the test Custom Field in a Content Type response.
+	 */
+	@SuppressWarnings("unchecked")
+	private static String renderedValue(final Response response) {
+		final Map<String, Object> entity =
+				(Map<String, Object>) ((ResponseEntityView<?>) response.getEntity()).getEntity();
+		return ((List<Map<String, Object>>) entity.get("fields")).stream()
+				.filter(fieldMap -> RENDERED_FIELD_VAR.equals(fieldMap.get("variable")))
+				.map(fieldMap -> (String) fieldMap.get("rendered"))
+				.findFirst()
+				.orElse(null);
+	}
+
+	/**
+	 * Asserts that the call is rejected with a 401.
+	 */
+	private static void assertUnauthorized(final org.junit.function.ThrowingRunnable call) {
+		final SecurityException exception = assertThrows(SecurityException.class, call);
+		assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), exception.getResponse().getStatus());
 	}
 }

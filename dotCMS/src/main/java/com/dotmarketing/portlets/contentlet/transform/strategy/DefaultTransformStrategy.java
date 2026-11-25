@@ -6,6 +6,7 @@ import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.beans.Host;
@@ -160,7 +161,9 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
     }
 
     /**
-     * Tells whether a Content Type declares a field of its own whose variable is the given name.
+     * Tells whether a Content Type declares a field value whose variable is the given name.
+     * Host/Folder selectors are excluded: their site assignment is stored separately, so they
+     * have no field value that could collide with a derived property.
      * <p>
      * The Contentlet map is a single flat namespace holding both stored field values and derived
      * properties computed at read time, so the two can collide. {@link com.dotcms.contenttype.business.FieldFactoryImpl#RESERVED_FIELD_VARS}
@@ -175,11 +178,12 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
      * @param type          The {@link ContentType} to inspect. A {@code null} type declares nothing.
      * @param fieldVariable The field variable to look for.
      *
-     * @return {@code true} if the Content Type declares a field with that variable.
+     * @return {@code true} if a non-Host/Folder field declares that variable.
      */
     public static boolean declaresField(final ContentType type, final String fieldVariable) {
         return null != type && type.fields().stream()
-                .anyMatch(field -> null != field && fieldVariable.equals(field.variable()));
+                .anyMatch(field -> null != field && !(field instanceof HostFolderField)
+                        && fieldVariable.equals(field.variable()));
     }
 
     /**

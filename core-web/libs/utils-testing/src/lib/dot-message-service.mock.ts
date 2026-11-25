@@ -1,3 +1,5 @@
+import { Observable, of } from 'rxjs';
+
 /**
  * Mock of DotMessageService.
  * How to use:
@@ -18,10 +20,17 @@
  * @class MockDotMessageService
  */
 export class MockDotMessageService {
+    /** The messages are there from the start, so this has emitted already, as once loaded. */
+    readonly ready$: Observable<void> = of(undefined);
+
     constructor(private messages: MessageConfig) {}
 
-    init() {
-        // do nothing
+    init(): Observable<void> {
+        return of(void 0);
+    }
+
+    invalidatePendingSession(): void {
+        // The mock has no pending requests.
     }
 
     get(key: string, ...args: string[]): string {

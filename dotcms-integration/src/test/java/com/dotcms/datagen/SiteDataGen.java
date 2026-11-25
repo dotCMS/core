@@ -39,6 +39,12 @@ public class SiteDataGen extends AbstractDataGen<Host> {
         return this;
     }
 
+    /**
+     * Builds a new, unsaved test {@link Host} from this generator's settings, set to index with
+     * {@link IndexPolicy#FORCE}.
+     *
+     * @return the unsaved site
+     */
     @Override
     public Host next() {
 
@@ -46,7 +52,7 @@ public class SiteDataGen extends AbstractDataGen<Host> {
         site.setHostname(name);
         site.setDefault(isDefault);
         site.setLanguageId(language.getId());
-        site.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        site.setIndexPolicy(IndexPolicy.FORCE);
         site.setBoolProperty(Contentlet.IS_TEST_MODE, true);
 
         if (aliases != null) {
@@ -56,17 +62,26 @@ public class SiteDataGen extends AbstractDataGen<Host> {
         return site;
     }
 
+    /**
+     * Saves the given site, and publishes it if requested. Both writes use
+     * {@link IndexPolicy#FORCE}, which refreshes the index before returning, so the site is
+     * searchable as soon as this method returns.
+     *
+     * @param site    the site to save
+     * @param publish whether to publish the site after saving it
+     * @return the saved site
+     */
     @WrapInTransaction
     public Host persist(final Host site, boolean publish) {
         try {
 
-            site.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            site.setIndexPolicy(IndexPolicy.FORCE);
             site.setBoolProperty(Contentlet.IS_TEST_MODE, true);
             site.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
 
             final Host newSite = APILocator.getHostAPI().save(site, user, false);
             if (publish) {
-                newSite.setIndexPolicy(IndexPolicy.WAIT_FOR);
+                newSite.setIndexPolicy(IndexPolicy.FORCE);
                 newSite.setBoolProperty(Contentlet.IS_TEST_MODE, true);
                 newSite.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
                 APILocator.getHostAPI().publish(newSite, user, false);

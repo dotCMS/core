@@ -19,7 +19,6 @@ core/
 │   └── libs/                 # Shared libraries and SDKs
 ├── dotcms-integration/        # Integration tests (JUnit, CI suites)
 ├── dotcms-postman/            # Postman API tests
-├── test-karate/               # Karate API tests
 ├── test-jmeter/               # JMeter performance tests
 ├── docs/                      # Full patterns by domain
 ├── tools/dotcms-cli/          # CLI (compiles to its own maven.compiler.release)

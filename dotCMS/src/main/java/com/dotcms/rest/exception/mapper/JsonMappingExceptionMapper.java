@@ -23,11 +23,21 @@ public class JsonMappingExceptionMapper implements ExceptionMapper<ValueInstanti
     private static final Set<Class<? extends Throwable>> EXCEPTIONS =
                     Set.of(WebApplicationException.class, ValidationException.class, BadRequestException.class, HttpStatusCodeException.class);
 
+    /**
+     * Answers a request whose body could not be turned into the resource's form object. The log
+     * line names the target type only; the body text is left out.
+     *
+     * @param exception the instantiation failure raised by Jackson
+     * @return the response carried by a known cause, or a 400 response describing the problem
+     */
     @Override
     public Response toResponse(final ValueInstantiationException exception)
     {
         //Log into our logs first.
-        Logger.warn(this.getClass(), exception.getMessage(), exception);
+        Logger.warn(this.getClass(), "Rejected request: the body could not be converted to "
+                + (exception.getType() != null
+                        ? exception.getType().getRawClass().getSimpleName()
+                        : "the expected type"));
 
         final Optional<Throwable> throwable = ExceptionUtil.getCause(exception,  EXCEPTIONS);
         //Return 4xx message to the client.

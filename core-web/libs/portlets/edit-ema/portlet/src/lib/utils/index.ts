@@ -4,19 +4,28 @@ import {
     DotCMSContentlet,
     DotContainerMap,
     DotDevice,
-    DotExperiment
+    DotExperiment,
+    EXPERIMENT_RETURN_PARAM
 } from '@dotcms/dotcms-models';
+import { DotEditContentRequest } from '@dotcms/edit-content';
 import {
     DotCMSPage,
     DotCMSPageAssetContainers,
+    DotCMSSite,
     DotCMSURLContentMap,
     DotCMSVanityUrl,
     DotCMSViewAsPersona
 } from '@dotcms/types';
 
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
-import { DotPageApiParams } from '../services/dot-page-api/dot-page-api.service';
-import { COMMON_ERRORS, DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
+import { DotPageApiParams, DotPageAssetKeys } from '../services/dot-page-api/dot-page-api.service';
+import {
+    COMMON_ERRORS,
+    CONTENTLET_SELECTOR_URL,
+    DEFAULT_PERSONA,
+    LAYOUT_URL,
+    PERSONA_KEY
+} from '../shared/consts';
 import { CONTAINER_INSERT_ERROR } from '../shared/enums';
 import {
     ActionPayload,
@@ -25,7 +34,8 @@ import {
     ContentTypeDragPayload,
     DotPageAssetParams,
     DragDatasetItem,
-    PageContainer
+    PageContainer,
+    SelectedContentlet
 } from '../shared/models';
 import { IframeAccessMode, Orientation } from '../store/models';
 
@@ -386,20 +396,87 @@ export function deleteContentletFromContainer(action: ActionPayload): {
 }
 
 /**
- * Check if two containers are equals
+ * Whether moving a contentlet next to a pivot in the container it already sits in changes the
+ * container's order. It does not when the pivot is the moved contentlet itself, when the drop is
+ * right after the contentlet above it or right before the one below it, or when the pivot is not
+ * in the container, so there is nothing to place it next to.
  *
- * @param {PageContainer} currentContainer
- * @param {ContainerPayload} containerToFind
+ * @param contentletsId the container's contentlets, in order, before the move
+ * @param contentletId the contentlet being moved
+ * @param pivotId the contentlet it is dropped next to
+ * @param position which side of the pivot it is dropped on
+ * @returns true when the move leaves a different order
+ */
+export function doesMoveChangeOrder({
+    contentletsId,
+    contentletId,
+    pivotId,
+    position
+}: {
+    contentletsId: string[];
+    contentletId: string;
+    pivotId: string | undefined;
+    position: 'before' | 'after' | undefined;
+}): boolean {
+    const remaining = contentletsId.filter((id) => id !== contentletId);
+    const pivotIndex = pivotId === undefined ? -1 : remaining.indexOf(pivotId);
+
+    if (pivotIndex === -1) {
+        return false;
+    }
+
+    const offset = position === 'before' ? pivotIndex : pivotIndex + 1;
+    const moved = [...remaining.slice(0, offset), contentletId, ...remaining.slice(offset)];
+
+    return moved.some((id, index) => id !== contentletsId[index]);
+}
+
+/**
+ * Check if two containers are equals: the same container, by identifier, in the same place on
+ * the page, by uuid. Takes a page container or a container payload on either side.
+ *
+ * @param {Pick<PageContainer, 'identifier' | 'uuid'>} currentContainer
+ * @param {Pick<ContainerPayload, 'identifier' | 'uuid'>} containerToFind
  * @return {*}  {boolean}
  */
 export function areContainersEquals(
-    currentContainer: PageContainer,
-    containerToFind?: ContainerPayload
+    currentContainer: Pick<PageContainer, 'identifier' | 'uuid'>,
+    containerToFind?: Pick<ContainerPayload, 'identifier' | 'uuid'>
 ): boolean {
     return (
         currentContainer.identifier === containerToFind?.identifier &&
         currentContainer.uuid === containerToFind?.uuid
     );
+}
+
+/**
+ * Whether the selected contentlet is gone from the container it was selected in, once the page's
+ * containers become `pageContainers`. False when no contentlet is selected.
+ *
+ * @param {SelectedContentlet | null} selected - The editor's selection.
+ * @param {PageContainer[]} pageContainers - The page's containers after a change.
+ * @return {boolean} True when the selection points at a contentlet that is no longer there.
+ */
+export function isSelectedContentletGone(
+    selected: SelectedContentlet | null,
+    pageContainers: PageContainer[]
+): boolean {
+    const payload = selected?.payload;
+
+    if (!payload?.contentlet?.identifier) {
+        return false;
+    }
+
+    const selectedContentletId = payload.contentlet.identifier;
+
+    return !pageContainers.some((container) => {
+        // For now, if is not the same container, we deactivate the active contentlet
+        // This can be improved in the future to check if the contentlet was moved, but we need to implement optimistic updates in UVE first
+        // Because moving contentlets change the container structure, and we need to have a rollback mechanism in case the update fails
+        const isSameContainer = areContainersEquals(container, payload.container);
+
+        return container.contentletsId?.includes(selectedContentletId) && isSameContainer;
+    });
 }
 
 /**
@@ -455,14 +532,21 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
                 return pageContainer;
             }
 
-            const index = pageContainer.contentletsId.indexOf(contentlet.identifier);
+            const pivotId = contentlet?.identifier;
+            const index = pivotId === undefined ? -1 : pageContainer.contentletsId.indexOf(pivotId);
 
             if (index !== -1) {
                 const offset = position === 'before' ? index : index + 1;
                 pageContainer.contentletsId.splice(offset, 0, newContentletId);
 
                 didInsert = true;
+            } else if (pivotId !== undefined && pivotId === newContentletId) {
+                // A moved contentlet dropped next to itself: its place left with the move, so
+                // there is nothing to place it next to, and it is not appended to the end (#38575).
+                errorCode = CONTAINER_INSERT_ERROR.PIVOT_NOT_FOUND;
             } else {
+                // The pivot is gone, as when someone removed it while new content was being
+                // created: the contentlet still goes in, at the end.
                 pageContainer.contentletsId.push(newContentletId);
                 didInsert = true;
             }
@@ -998,6 +1082,135 @@ export const createReorderMenuURL = ({
     return urlObject.toString();
 };
 
+/** The page an editor request is opened from, as {@link withPageContext} reads it. */
+export interface EditPageRequestContext {
+    /** The experiment variant the page is on. */
+    variantId: string;
+    /** The page's site, if it has one. */
+    siteId: string | undefined;
+    /** The page's language, for content that names none. */
+    languageId: number;
+}
+
+/** What {@link pageRequestContext} reads from the page editor's store. */
+export interface EditPageContextSource {
+    pageVariantId: () => string;
+    pageAsset: () => { site?: { identifier?: string } | null } | null | undefined;
+    pageLanguageId: () => number;
+}
+
+/**
+ * The page an editor request is opened from, as the page editor's store holds it: its variant,
+ * site and language. The one place every editor entry point reads it, for {@link withPageContext}.
+ *
+ * @param uveStore The page editor's store.
+ * @returns The context a request is completed with.
+ */
+export function pageRequestContext(uveStore: EditPageContextSource): EditPageRequestContext {
+    return {
+        variantId: uveStore.pageVariantId(),
+        siteId: uveStore.pageAsset()?.site?.identifier,
+        languageId: uveStore.pageLanguageId()
+    };
+}
+
+/**
+ * Completes a request the page editor opens in the side panel with the page it is opened from: the
+ * page editor as the portlet, the site, the page's language when the content names none, and the
+ * experiment variant when the page is not on the default one (#38303, FR-022). The one rule every
+ * editor entry point and SDK action shares.
+ *
+ * @param request The content to open: an inode to edit or a content type to create.
+ * @param page The page it is opened from.
+ * @returns The request, completed, without keys it leaves unset.
+ */
+export function withPageContext(
+    request: DotEditContentRequest,
+    page: EditPageRequestContext
+): DotEditContentRequest {
+    const completed: DotEditContentRequest = {
+        ...request,
+        languageId: request.languageId ?? page.languageId,
+        siteId: page.siteId,
+        portletId: 'edit-page',
+        variantName:
+            page.variantId && page.variantId !== DEFAULT_VARIANT_ID ? page.variantId : undefined
+    };
+
+    return Object.fromEntries(
+        Object.entries(completed).filter(([, value]) => value !== undefined)
+    ) as unknown as DotEditContentRequest;
+}
+
+/**
+ * Builds the URL of the legacy content selector a container's "+" opens in the side panel: the
+ * contents (or widgets) a container accepts, in a language, for an experiment variant (#38303).
+ *
+ * @param containerId The container the selection goes in.
+ * @param acceptTypes The content types the container accepts, `WIDGET` for widgets, `*` for any.
+ * @param languageId The language to list content in.
+ * @param variantName The experiment variant the page is on.
+ * @returns The selector's same-origin URL.
+ */
+export function createAddContentletUrl(
+    containerId: string,
+    acceptTypes: string,
+    languageId: string,
+    variantName: string
+): string {
+    const queryParams = new URLSearchParams({
+        ng: 'true',
+        container_id: containerId,
+        add: acceptTypes,
+        language_id: languageId,
+        variantName
+    });
+
+    return `${CONTENTLET_SELECTOR_URL}?${queryParams.toString()}`;
+}
+
+/**
+ * Builds the URL of the legacy screen that creates a page's translation into another language,
+ * opened in the side panel when the page editor switches to a language the page lacks (#38303).
+ *
+ * @param page The page to translate; its working inode when it is a working version.
+ * @param newLanguage The language to translate into.
+ * @param variantName The experiment variant the page is on.
+ * @param siteId The page's site, sent as `host_id` when there is one.
+ * @returns The translate screen's same-origin URL.
+ */
+export function createTranslatePageUrl(
+    page: DotCMSPage,
+    newLanguage: number | string,
+    variantName: string,
+    siteId: string | undefined
+): string {
+    const { working, workingInode, inode } = page;
+    const pageInode = working ? workingInode : inode;
+    const queryParams = new URLSearchParams({
+        p_p_id: 'content',
+        p_p_action: '1',
+        p_p_state: 'maximized',
+        angularCurrentPortlet: 'edit-page',
+        _content_sibbling: pageInode,
+        _content_cmd: 'edit',
+        p_p_mode: 'view',
+        _content_sibblingStructure: pageInode,
+        _content_struts_action: '/ext/contentlet/edit_contentlet',
+        inode: '',
+        lang: newLanguage.toString(),
+        populateaccept: 'true',
+        reuseLastLang: 'true',
+        variantName
+    });
+
+    if (siteId) {
+        queryParams.set('host_id', siteId);
+    }
+
+    return `${LAYOUT_URL}?${queryParams.toString()}`;
+}
+
 /**
  * Check if the clientHost is in the whitelist provided by the app
  *
@@ -1029,25 +1242,62 @@ export const checkClientHostAccess = (
  * Otherwise, it falls back to the URL extracted from the event.
  *
  * @param {string | undefined} url - The URL extracted from the event.
+ * @param {DotCMSURLContentMap | undefined} urlContentMap - The page's URL map, when it has one.
  * @returns {string | undefined} - The final target URL for navigation, or undefined if none.
  */
 export function getTargetUrl(
     url: string | undefined,
-    urlContentMap: DotCMSURLContentMap
+    urlContentMap: DotCMSURLContentMap | undefined
 ): string | undefined {
     // Return URL from content map or fallback to the provided URL
     return urlContentMap?.URL_MAP_FOR_CONTENT || url;
 }
 
 /**
- * Determines whether navigation to a new URL is necessary.
+ * Whether a URL is somewhere other than the current page.
  *
- * @param {string | undefined} targetUrl - The target URL for navigation.
- * @returns {boolean} - True if the current URL differs from the target URL and navigation is required.
+ * @param targetUrl The URL to go to. Anything but a non-empty string is nowhere: a saved
+ * contentlet's `URL_MAP_FOR_CONTENT` is `null` for a type with no detail page.
+ * @param currentUrl The current page's URL.
+ * @returns True when `targetUrl` is a URL and a different one from `currentUrl`.
  */
-export function shouldNavigate(targetUrl: string | undefined, currentUrl: string): boolean {
-    // Navigate if the target URL is defined and different from the current URL
-    return targetUrl !== undefined && !compareUrlPaths(targetUrl, currentUrl);
+export function shouldNavigate(targetUrl: unknown, currentUrl: string): boolean {
+    // Only a non-empty URL other than the current one is somewhere to go. A saved contentlet's
+    // `URL_MAP_FOR_CONTENT` is `null` for a type with no detail page (#38303).
+    return (
+        typeof targetUrl === 'string' && targetUrl !== '' && !compareUrlPaths(targetUrl, currentUrl)
+    );
+}
+
+/**
+ * The page to load after the legacy editor saved a page in a new language. The language comes from
+ * the `htmlPageReferer` the editor reports; the URL is added only when that page is not the one on
+ * screen. A URL-mapped page is compared by its URL map, since its referer is the detail page.
+ *
+ * @param {string} htmlPageReferer - The page URL the legacy editor reports, relative or absolute.
+ * @param {string} options.origin - Where a relative referer resolves from.
+ * @param {DotCMSURLContentMap | undefined} options.urlContentMap - The URL map of the page on screen, if any.
+ * @param {string} options.currentUrl - The URL of the page on screen.
+ * @returns The params for `pageLoad`: the language, plus the URL when the page moved. The language
+ * is `undefined` when the referer carries none, which the legacy editor never sends.
+ */
+export function getLanguageChangePageParams(
+    htmlPageReferer: string,
+    {
+        origin,
+        urlContentMap,
+        currentUrl
+    }: { origin: string; urlContentMap: DotCMSURLContentMap | undefined; currentUrl: string }
+): { url?: string; language_id?: string } {
+    const url = new URL(htmlPageReferer, origin); // Add base for relative URLs
+    const targetUrl = getTargetUrl(url.pathname, urlContentMap);
+    const language_id = url.searchParams.get('com.dotmarketing.htmlpage.language') ?? undefined;
+
+    if (shouldNavigate(targetUrl, currentUrl)) {
+        return { url: targetUrl, language_id };
+    }
+
+    return { language_id };
 }
 
 /**
@@ -1229,6 +1479,57 @@ export const isSamePageNavigation = (incomingUrl: string, currentUrl: string): b
 
     return target.pathname === current.pathname;
 };
+
+/**
+ * Tells whether a link's hostname points at the site of the page being edited.
+ *
+ * Pages often link to their own site with an absolute URL
+ * (`https://www.site.com/news?year=2025`), and the admin usually runs on a
+ * different host than the site. Those links must load inside the editor like
+ * relative ones, so the site's hostname and aliases count as internal, as
+ * well as the admin host itself.
+ *
+ * @param {string} hostname - Hostname of the clicked link
+ * @param {Pick<DotCMSSite, 'hostname' | 'aliases'> | undefined} site - Site of the edited page
+ * @param {string} adminHostname - Hostname the admin runs on
+ * @returns {boolean} `true` when the link belongs to the edited site
+ */
+export function isPageSiteHost(
+    hostname: string,
+    site: Pick<DotCMSSite, 'hostname' | 'aliases'> | undefined,
+    adminHostname: string
+): boolean {
+    // Aliases are stored one per line, but commas are accepted too.
+    const aliases = (site?.aliases ?? '').split(/[\s,]+/);
+    const siteHosts = [adminHostname, site?.hostname, ...aliases];
+
+    return siteHosts.some((host) => !!host && host.toLowerCase() === hostname.toLowerCase());
+}
+
+/**
+ * Returns the query params of the current page that the editor does not own,
+ * such as a filter a page link added.
+ *
+ * `pageLoad` merges new params over the current ones, so these would otherwise
+ * survive every later link navigation. Setting them to `undefined` clears
+ * them: `undefined` values are left out of both the Page API request and the
+ * admin URL. Editor params (language, persona, mode, variant, device…) are not
+ * returned, so they still follow the editor.
+ *
+ * @param {DotPageAssetParams | null} pageParams - Params of the current page
+ * @returns {string[]} The keys of the page-owned params
+ */
+export function getPageOwnedParamKeys(pageParams: DotPageAssetParams | null): string[] {
+    const editorKeys = new Set<string>([
+        ...Object.values(DotPageAssetKeys),
+        EXPERIMENT_RETURN_PARAM,
+        'device',
+        'orientation',
+        'seo'
+    ]);
+
+    return Object.keys(pageParams ?? {}).filter((key) => !editorKeys.has(key));
+}
 
 /**
  * Scrolls a traditional page's iframe to the element a URL fragment points at.

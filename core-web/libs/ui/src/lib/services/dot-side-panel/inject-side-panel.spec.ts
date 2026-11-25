@@ -22,11 +22,13 @@ class TestOpenerComponent {
     readonly request = signal<TestRequest | null>(null);
     readonly closed = vi.fn();
     readonly saved = vi.fn();
+    readonly opened = vi.fn();
     readonly panel = injectSidePanel(this.request, {
         component: () => TestContentComponent,
         heading: (request) => request.title,
         inputs: (request) => ({ id: request.id }),
         outputs: { saved: (value: string) => this.saved(value) },
+        opened: (ref, request) => this.opened(ref, request),
         closed: () => this.closed()
     });
 }
@@ -110,6 +112,32 @@ describe('injectSidePanel', () => {
         spectator.component.panel.requestClose();
 
         expect(requestClose).toHaveBeenCalled();
+    });
+
+    // Content Drive writes Edit Code's file to the URL with the panel's ref (#38303, FR-044).
+    it('hands the opener the panel and its request once, when the panel opens', () => {
+        request({ title: 'header.vtl', id: 'a' });
+        const [panel] = panels();
+
+        request({ title: 'footer.vtl', id: 'b' });
+
+        expect(spectator.component.opened).toHaveBeenCalledTimes(1);
+        const [ref, opened] = spectator.component.opened.mock.calls[0];
+        expect(ref === panel.ref).toBe(true);
+        expect(opened).toEqual({ title: 'header.vtl', id: 'a' });
+    });
+
+    it('hands over each panel it opens, after a close', () => {
+        request({ title: 'header.vtl', id: 'a' });
+        request(null);
+
+        request({ title: 'footer.vtl', id: 'b' });
+
+        expect(spectator.component.opened).toHaveBeenCalledTimes(2);
+        expect(spectator.component.opened.mock.calls[1][1]).toEqual({
+            title: 'footer.vtl',
+            id: 'b'
+        });
     });
 
     it('closes the panel with the opener, without reporting a close', () => {

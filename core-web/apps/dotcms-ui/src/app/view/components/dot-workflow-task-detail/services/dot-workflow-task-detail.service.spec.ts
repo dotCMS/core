@@ -68,6 +68,38 @@ describe('DotWorkflowTaskDetailService', () => {
             });
         }));
 
+    // The task component views its task again after the content is saved or closed in the side
+    // panel (#38303, FR-025a); the dialog's iframe reloads only when its URL changes.
+    it('should give the same task a new URL when it is viewed again, so the dialog reloads', () => {
+        const urls: string[] = [];
+        service.viewUrl$.subscribe((url: string) => urls.push(url));
+
+        service.view({ id: '999' });
+        service.view({ id: '999' });
+
+        const [first, again] = urls.slice(-2);
+        expect(again).not.toEqual(first);
+        expect(again).toContain('&_workflow_struts_action=/ext/workflows/edit_workflow_task');
+        expect(again).toContain('&_workflow_cmd=view');
+        expect(again).toContain('&_workflow_taskId=999');
+    });
+
+    // The task component sets the header once the app's messages load, after the task is viewed
+    // (#38303, T177): the dialog's header changes and the task is not loaded again.
+    it('should change the header alone, without viewing the task again', () => {
+        const urls: string[] = [];
+        const headers: string[] = [];
+        service.viewUrl$.subscribe((url: string) => urls.push(url));
+        service.header$.subscribe((header: string) => headers.push(header));
+
+        service.view({ id: '999' });
+        const viewed = urls.length;
+        service.setHeader('Task Detail');
+
+        expect(headers.at(-1)).toEqual('Task Detail');
+        expect(urls.length).toBe(viewed);
+    });
+
     it('should clear url and undbind', () => {
         service.viewUrl$.subscribe((url: string) => {
             expect(url).toEqual('');

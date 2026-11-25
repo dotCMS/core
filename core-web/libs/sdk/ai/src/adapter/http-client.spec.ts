@@ -1,6 +1,17 @@
 import { vi } from 'vitest';
 
 import { createApiAdapter, isBinaryResponseEnvelope } from './http-client';
+import { fetchRemoteFile } from './remote-file';
+import { requestCore } from './request-core';
+
+import { AbortError, TimeoutError, ValidationError } from '../sandbox/errors';
+
+// The download of a `formData` file URL is its own unit (remote-file.spec.ts); here it is
+// replaced to prove the wiring from the descriptor to it.
+vi.mock('./remote-file', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('./remote-file')>()),
+    fetchRemoteFile: vi.fn()
+}));
 
 import type { Adapter, AdapterMethod } from '../sandbox/types';
 
@@ -203,5 +214,146 @@ describe('createApiAdapter response parsing', () => {
             expect(isBinaryResponseEnvelope('string')).toBe(false);
             expect(isBinaryResponseEnvelope({ hello: 'world' })).toBe(false);
         });
+    });
+});
+
+describe('createApiAdapter formData', () => {
+    const fetchMock = vi.fn();
+    const download = vi.mocked(fetchRemoteFile);
+
+    beforeEach(() => {
+        fetchMock.mockReset();
+        download.mockReset();
+        global.fetch = fetchMock as unknown as typeof fetch;
+    });
+
+    const fileField = (url: string) => ({
+        file: { name: 'f.txt', type: 'text/plain', url }
+    });
+
+    it('downloads a file URL through the checked download and sends it to dotCMS', async () => {
+        download.mockResolvedValue(new Blob(['hello'], { type: 'text/plain' }));
+        fetchMock.mockResolvedValue(makeResponse('{}', { contentType: 'application/json' }));
+
+        const adapter = createApiAdapter(CONFIG);
+        await getRequestMethod(adapter).execute({
+            method: 'POST',
+            path: '/api/v1/workflow/actions/default/fire/PUBLISH',
+            formData: fileField('https://cdn.example.com/f.txt')
+        });
+
+        expect(download).toHaveBeenCalledTimes(1);
+        const [url, options] = download.mock.calls[0];
+        expect(url).toBe('https://cdn.example.com/f.txt');
+        expect(options).toMatchObject({ type: 'text/plain', maxBytes: 25 * 1024 * 1024 });
+        expect(options.signal).toBeInstanceOf(AbortSignal);
+        // dotCMS is contacted once, with the downloaded bytes in the multipart body.
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        const [dotcmsUrl, init] = fetchMock.mock.calls[0];
+        expect(String(dotcmsUrl)).toContain('example.dotcms.com');
+        const sent = (init.body as FormData).get('file') as Blob;
+        expect(sent.size).toBe(5);
+    });
+
+    it('rejects a file URL pointing at a non-public address before contacting dotCMS', async () => {
+        // Given the real download and a multipart field whose file is to be downloaded from an
+        //   IPv6 literal that embeds a loopback IPv4 address
+        const actual = await vi.importActual<typeof import('./remote-file')>('./remote-file');
+        download.mockImplementation(actual.fetchRemoteFile);
+        const adapter = createApiAdapter(CONFIG);
+        const request = getRequestMethod(adapter).execute({
+            method: 'POST',
+            path: '/api/v1/workflow/actions/default/fire/PUBLISH',
+            formData: fileField('http://[::ffff:127.0.0.1]/f')
+        });
+
+        // Then the request is refused as a validation error and nothing is fetched
+        await expect(request).rejects.toBeInstanceOf(ValidationError);
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('aborts the download when the surrounding execution is aborted', async () => {
+        const controller = new AbortController();
+        download.mockImplementation(() => new Promise(() => undefined));
+
+        const request = requestCore(
+            {
+                method: 'POST',
+                path: '/api/x',
+                formData: fileField('https://cdn.example.com/f.txt')
+            },
+            { baseUrl: CONFIG.dotcmsUrl, authToken: CONFIG.authToken, signal: controller.signal }
+        );
+        await vi.waitFor(() => expect(download).toHaveBeenCalled());
+        const handed = download.mock.calls[0][1].signal as AbortSignal;
+        expect(handed.aborted).toBe(false);
+
+        const reason = new Error('sandbox torn down');
+        controller.abort(reason);
+
+        expect(handed.aborted).toBe(true);
+        expect(handed.reason).toBe(reason);
+        request.catch(() => undefined);
+    });
+
+    it("passes the download's own abort error through, reason included", async () => {
+        const controller = new AbortController();
+        const downloadAborted = new AbortError(
+            'Download of "https://cdn.example.com/f.txt" was aborted: sandbox torn down'
+        );
+        download.mockImplementation(
+            (_url, options) =>
+                new Promise((_resolve, reject) => {
+                    options.signal?.addEventListener('abort', () => reject(downloadAborted));
+                })
+        );
+
+        const request = requestCore(
+            {
+                method: 'POST',
+                path: '/api/x',
+                formData: fileField('https://cdn.example.com/f.txt')
+            },
+            { baseUrl: CONFIG.dotcmsUrl, authToken: CONFIG.authToken, signal: controller.signal }
+        );
+        await vi.waitFor(() => expect(download).toHaveBeenCalled());
+        controller.abort(new Error('sandbox torn down'));
+
+        await expect(request).rejects.toBe(downloadAborted);
+    });
+
+    it('times out a download that never answers, as a TimeoutError', async () => {
+        vi.useFakeTimers();
+        try {
+            download.mockImplementation(
+                (_url, options) =>
+                    new Promise((_resolve, reject) => {
+                        options.signal?.addEventListener('abort', () =>
+                            reject(options.signal?.reason)
+                        );
+                    })
+            );
+
+            const request = requestCore(
+                {
+                    method: 'POST',
+                    path: '/api/x',
+                    formData: fileField('https://cdn.example.com/f.txt')
+                },
+                { baseUrl: CONFIG.dotcmsUrl, authToken: CONFIG.authToken }
+            );
+            const outcome = request.then(
+                () => 'resolved',
+                (err: unknown) => err
+            );
+            await vi.advanceTimersByTimeAsync(15000);
+
+            const err = await outcome;
+            expect(err).toBeInstanceOf(TimeoutError);
+            expect((err as TimeoutError).message).toContain('cdn.example.com');
+            expect(fetchMock).not.toHaveBeenCalled();
+        } finally {
+            vi.useRealTimers();
+        }
     });
 });

@@ -82,4 +82,17 @@ public interface PublisherFilter {
     default boolean isRelationshipsSecondLevel() {
         return false;
     }
+
+    /**
+     * Returns how many relationship levels to follow when building the bundle: 1 for direct
+     * relationships only, 2 for one extra level, N for N levels, and
+     * {@link FilterDescriptor#RELATIONSHIPS_DEPTH_UNLIMITED} for no limit. The default is
+     * worked out from {@link #isRelationshipsSecondLevel()}, so implementations that don't
+     * override it (including out-of-repo plugins) keep their current behavior.
+     *
+     * @return The configured relationship traversal depth.
+     */
+    default int getRelationshipsDepth() {
+        return isRelationshipsSecondLevel() ? 2 : 1;
+    }
 }

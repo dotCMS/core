@@ -4,7 +4,7 @@
     "projectType": "application",
     "sourceRoot": "apps/dotcdn/src",
     "prefix": "dotcms",
-    "tags": [],
+    "tags": ["skip:build"],
     "targets": {
         "build": {
             "executor": "@angular-devkit/build-angular:browser",

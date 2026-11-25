@@ -61,19 +61,11 @@ test('a JSON value survives save and reopen, still indented @critical', async ({
     // while a marker from a half-typed state is still there blocks the save as an invalid form.
     await expect(page.locator('dot-edit-content-json-field .squiggly-error')).toHaveCount(0);
 
-    await formPage.save();
+    // `save()` returns the contentlet the workflow response carries: the form was opened from the
+    // listing, so it is in the side panel and the address never names the new content.
+    const saved = await formPage.save();
 
-    // `save()` only waits for the workflow API response, not for the editor to navigate from
-    // /content/new/<type> to the saved contentlet. Reloading before that lands re-opens the *new*
-    // content form — an empty one — which is why this read back nothing. Same wait the image,
-    // file and binary specs already use.
-    await page.waitForURL(/\/content\/([a-f0-9-]+)/);
-    const [, savedContentIdentifier] = page
-        .url()
-        .match(/\/content\/([a-f0-9-]+)/) as RegExpMatchArray;
-    expect(savedContentIdentifier).toBeTruthy();
-
-    await formPage.goToContent(savedContentIdentifier);
+    await formPage.reopen(saved.inode);
 
     // Retrying assertions: the editor paints its lines after it becomes visible, so a one-shot
     // read right after `toBeVisible` can return an empty string.

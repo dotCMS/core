@@ -138,12 +138,22 @@ runs:
         GRAALVM_VERSION="${{ steps.get-requested-version.outputs.graalvm_version }}"
         
         
-        TEST_HOME=$(sdk home java "$REQUESTED_VERSION" 2>/dev/null) || true
-        if [ -z "$TEST_HOME" ]; then
+        # Resolve JDK homes from the candidates directory rather than capturing the output of
+        # `sdk home`. Every `sdk` call runs SDKMAN's health check first, and when
+        # api.sdkman.io does not answer in time it prints an "INTERNET NOT REACHABLE" banner to
+        # stdout. A captured banner ends up in TEST_HOME and then in $GITHUB_ENV, whose parser
+        # rejects the banner's blank lines with "Invalid format ''" and fails the job.
+        JAVA_CANDIDATES="$HOME/.sdkman/candidates/java"
+
+        TEST_HOME="$JAVA_CANDIDATES/$REQUESTED_VERSION"
+        if [ ! -d "$TEST_HOME" ]; then
           echo "Java version $REQUESTED_VERSION is not installed. Installing now..."
           echo "y" | sdk install java "$REQUESTED_VERSION"
+          if [ ! -d "$TEST_HOME" ]; then
+            echo "::error::sdk install did not create $TEST_HOME"
+            exit 1
+          fi
           sdk use java "$REQUESTED_VERSION"
-          TEST_HOME=$(sdk home java "$REQUESTED_VERSION")
         else
           echo "Java version $REQUESTED_VERSION is already installed."
           sdk use java "$REQUESTED_VERSION"
@@ -164,7 +174,11 @@ runs:
           if [ -z "$GRAALVM_HOME" ] && [ "$REQUESTED_VERSION" != "$GRAALVM_VERSION" ]; then
             echo "Requested version does not match required GraalVM version and GRAALVM_HOME is not set. Installing GraalVM version $GRAALVM_VERSION..."
             echo "n" | sdk install java "$GRAALVM_VERSION"
-            GRAALVM_HOME=$(sdk home java "$GRAALVM_VERSION")
+            GRAALVM_HOME="$JAVA_CANDIDATES/$GRAALVM_VERSION"
+            if [ ! -d "$GRAALVM_HOME" ]; then
+              echo "::error::sdk install did not create $GRAALVM_HOME"
+              exit 1
+            fi
             echo "GRAALVM_HOME=$GRAALVM_HOME" >> $GITHUB_ENV
             echo "GRAALVM_HOME installed and set to $GRAALVM_HOME"
           elif [ -n "$GRAALVM_HOME" ]; then

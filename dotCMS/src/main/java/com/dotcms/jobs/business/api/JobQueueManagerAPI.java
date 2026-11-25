@@ -5,10 +5,13 @@ import com.dotcms.jobs.business.error.CircuitBreaker;
 import com.dotcms.jobs.business.error.JobProcessorNotFoundException;
 import com.dotcms.jobs.business.error.RetryStrategy;
 import com.dotcms.jobs.business.job.Job;
+import com.dotcms.jobs.business.job.JobListView;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotcms.jobs.business.queue.JobQueue;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.liferay.portal.model.User;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -86,13 +89,28 @@ public interface JobQueueManagerAPI {
             throws JobProcessorNotFoundException, DotDataException;
 
     /**
-     * Retrieves a job by its ID.
+     * Retrieves a job by its ID, whoever created it. Code that serves a request on behalf of a
+     * user must use {@link #getJob(String, User)} instead.
      *
      * @param jobId The ID of the job
      * @return The Job object, or null if not found
      * @throws DotDataException if there's an error fetching the job
      */
     Job getJob(String jobId) throws DotDataException;
+
+    /**
+     * Retrieves a job on behalf of a user. Only the user who created the job (its {@code userId}
+     * parameter) and CMS Administrators can read it; for anyone else the job is reported as not
+     * found, the same as an id that does not exist. A job created without a {@code userId}, such
+     * as one started internally, is readable by CMS Administrators only.
+     *
+     * @param jobId The ID of the job
+     * @param user  The {@link User} asking for the job
+     * @return The Job object
+     * @throws DoesNotExistException if there is no such job, or the user may not read it
+     * @throws DotDataException      if there's an error fetching the job
+     */
+    Job getJob(String jobId, User user) throws DotDataException;
 
     /**
      * Retrieves a list of active jobs for a specific queue.
@@ -249,12 +267,41 @@ public interface JobQueueManagerAPI {
     JobPaginatedResult getAbandonedJobs(int page, int pageSize) throws DotDataException;
 
     /**
-     * Cancels a job.
+     * Cancels a job, whoever created it. Code that serves a request on behalf of a user must use
+     * {@link #cancelJob(String, User)} instead.
      *
      * @param jobId The ID of the job to cancel
      * @throws DotDataException if there's an error cancelling the job
      */
     void cancelJob(String jobId) throws DotDataException;
+
+    /**
+     * Cancels a job on behalf of a user. Only the user who created the job and CMS Administrators
+     * can cancel it; for anyone else the job is reported as not found and left untouched.
+     *
+     * @param jobId The ID of the job to cancel
+     * @param user  The {@link User} asking for the cancellation
+     * @throws DoesNotExistException if there is no such job, or the user may not cancel it
+     * @throws DotDataException      if there's an error cancelling the job
+     */
+    void cancelJob(String jobId, User user) throws DotDataException;
+
+    /**
+     * Retrieves one page of a job listing on behalf of a user. CMS Administrators see every
+     * user's jobs; anyone else sees only the jobs they created, and paging and the total count
+     * reflect that. A {@code null} user gets an empty page. The other listing methods of this API
+     * list every user's jobs; code that serves a request on behalf of a user must use this one.
+     *
+     * @param view      The listing to read, which decides the job states included
+     * @param queueName The queue to read from, or {@code null} for every queue
+     * @param user      The {@link User} asking for the listing
+     * @param page      The page number
+     * @param pageSize  The number of jobs per page
+     * @return A result object containing the list of jobs and pagination information
+     * @throws DotDataException if there's an error fetching the jobs
+     */
+    JobPaginatedResult getJobs(JobListView view, String queueName, User user, int page,
+            int pageSize) throws DotDataException;
 
     /**
      * Registers a watcher for a specific job.

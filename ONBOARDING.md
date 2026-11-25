@@ -154,20 +154,14 @@ just test-integration-stop    # tear down when done
 **Debug the running app:** `just dev-run-debug-suspend` starts dotCMS in Docker
 waiting on debug port **5005** for your IDE to attach.
 
-### API tests — Postman & Karate
+### API tests — Postman
 
-dotCMS uses two API testing frameworks: **Postman** (legacy) and **Karate** (the
-modern replacement, in `test-karate/` — prefer it for new API tests).
+dotCMS API tests are Postman collections in `dotcms-postman/`.
 
 ```bash
 # Postman
 just test-postman ai          # a single collection (recommended)
 just test-postman all         # all collections (slower)
-
-# Karate
-just test-karate                          # default collection
-just test-karate KarateCITests#defaults   # a specific runner/collection
-just test-karate-ide                      # boot services to run Karate from your IDE
 ```
 
 More detail: [`docs/testing/API_TESTING.md`](docs/testing/API_TESTING.md).
