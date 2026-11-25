@@ -118,18 +118,7 @@
                     @let status = statusOf(token);
                     @let isInactive = status !== 'valid';
                     <tr
-                        [class.cursor-pointer]="!isInactive"
                         [class.opacity-60]="isInactive"
-                        [attr.role]="!isInactive ? 'button' : null"
-                        [attr.tabindex]="!isInactive ? 0 : null"
-                        [attr.aria-label]="
-                            !isInactive ? ('users.dialog.tokens.row.reveal-hint' | dm) : null
-                        "
-                        [attr.title]="
-                            !isInactive ? ('users.dialog.tokens.row.reveal-hint' | dm) : null
-                        "
-                        (click)="onRowClick(token)"
-                        (keydown)="onRowKeydown(token, $event)"
                         [attr.data-testid]="'users-api-tokens-row-' + token.id">
                         <!--
                             No per-column font overrides — every cell
@@ -148,7 +137,7 @@
                         <td>
                             {{ token.allowNetwork || ('users.dialog.tokens.network.any' | dm) }}
                         </td>
-                        <td (click)="$event.stopPropagation()">
+                        <td>
                             @if (!isInactive) {
                                 <p-button
                                     [label]="'users.dialog.tokens.revoke' | dm"
@@ -169,63 +158,72 @@
                     </tr>
                 }
             </ng-template>
-            <ng-template pTemplate="emptymessage">
-                <tr class="hover:bg-transparent!">
-                    <td colspan="7" class="border-none p-0">
-                        @if ($loadError()) {
-                            <!--
-                            Error and empty states share the dot-tags
-                            empty-state shape: centred icon + title +
-                            copy, neutral typography. Colour drops off
-                            the copy line — the icon + heading carry
-                            enough weight without turning the message
-                            red.
-                        -->
-                            <div
-                                class="mx-auto flex max-w-100 flex-col items-center gap-4 p-6 text-center"
-                                data-testid="users-api-tokens-error">
-                                <div class="flex size-16 items-center justify-center rounded-full">
-                                    <span
-                                        class="material-symbols-rounded text-5xl! text-surface-500"
-                                        aria-hidden="true">
-                                        error
-                                    </span>
-                                </div>
-                                <p class="m-0 text-base leading-6 text-color">
-                                    {{ 'users.dialog.tokens.error' | dm }}
-                                </p>
-                                <p-button
-                                    [label]="'users.dialog.tokens.retry' | dm"
-                                    [outlined]="true"
-                                    size="small"
-                                    (onClick)="retryLoad()"
-                                    data-testid="users-api-tokens-retry-btn" />
-                            </div>
-                        } @else {
-                            <div
-                                class="mx-auto flex max-w-100 flex-col items-center gap-4 p-6 text-center"
-                                data-testid="users-api-tokens-empty">
-                                <div class="flex size-16 items-center justify-center rounded-full">
-                                    <span
-                                        class="material-symbols-rounded text-5xl! text-surface-500"
-                                        aria-hidden="true">
-                                        key
-                                    </span>
-                                </div>
-                                <p class="m-0 text-base leading-6 text-color">
-                                    {{
-                                        ($showRevoked()
-                                            ? 'users.dialog.tokens.empty-all'
-                                            : 'users.dialog.tokens.empty'
-                                        ) | dm
-                                    }}
-                                </p>
-                            </div>
-                        }
-                    </td>
-                </tr>
-            </ng-template>
         </p-table>
+
+        <!--
+            Empty and error states sit outside the `<p-table>` on purpose.
+            PrimeNG's `emptymessage` template renders inside a `<tr>`, so it
+            can only be as tall as its own content and ends up pinned under
+            the header. As a `flex-1` sibling it claims the rest of the
+            bordered wrapper and centres in it, at any dialog size
+            (including maximized).
+        -->
+        @if (!$tokens().length) {
+            <div
+                class="flex flex-1 items-center justify-center"
+                data-testid="users-api-tokens-state">
+                @if ($loadError()) {
+                    <!--
+                        Error and empty states share the dot-tags
+                        empty-state shape: centred icon + title +
+                        copy, neutral typography. Colour drops off
+                        the copy line — the icon + heading carry
+                        enough weight without turning the message
+                        red.
+                    -->
+                    <div
+                        class="flex max-w-100 flex-col items-center gap-4 p-6 text-center"
+                        data-testid="users-api-tokens-error">
+                        <div class="flex size-16 items-center justify-center rounded-full">
+                            <span
+                                class="material-symbols-rounded text-5xl! text-surface-500"
+                                aria-hidden="true">
+                                error
+                            </span>
+                        </div>
+                        <p class="m-0 text-base leading-6 text-color">
+                            {{ 'users.dialog.tokens.error' | dm }}
+                        </p>
+                        <p-button
+                            [label]="'users.dialog.tokens.retry' | dm"
+                            [outlined]="true"
+                            size="small"
+                            (onClick)="retryLoad()"
+                            data-testid="users-api-tokens-retry-btn" />
+                    </div>
+                } @else {
+                    <div
+                        class="flex max-w-100 flex-col items-center gap-4 p-6 text-center"
+                        data-testid="users-api-tokens-empty">
+                        <div class="flex size-16 items-center justify-center rounded-full">
+                            <span
+                                class="material-symbols-rounded text-5xl! text-surface-500"
+                                aria-hidden="true">
+                                key
+                            </span>
+                        </div>
+                        <p class="m-0 text-base leading-6 text-color">
+                            {{
+                                ($showRevoked()
+                                    ? 'users.dialog.tokens.empty-all'
+                                    : 'users.dialog.tokens.empty'
+                                ) | dm
+                            }}
+                        </p>
+                    </div>
+                }
+            </div>
+        }
     </div>
 
     <!--
@@ -249,8 +247,8 @@
         [visible]="$revealVisible()"
         (visibleChange)="$revealVisible.set($event)"
         [modal]="true"
-        [closable]="true"
-        [closeOnEscape]="true"
+        [closable]="false"
+        [closeOnEscape]="false"
         [draggable]="false"
         [style]="{ width: '600px' }"
         [header]="'users.dialog.tokens.reveal.title' | dm"
@@ -305,24 +303,6 @@
                             {{ $copied() ? 'check' : 'content_copy' }}
                         </span>
                     </p-button>
-                </div>
-            } @else {
-                <div
-                    class="flex items-center gap-2 text-sm text-slate-500"
-                    data-testid="users-api-tokens-reveal-loading">
-                    <!--
-                        Portlet-wide icon font is Google Material Symbols
-                        (see the profile tab / list). `progress_activity`
-                        is the equivalent of `pi pi-spinner` under that
-                        family; `animate-spin` from Tailwind gives the
-                        rotation.
-                    -->
-                    <span
-                        class="material-symbols-rounded animate-spin text-base!"
-                        aria-hidden="true">
-                        progress_activity
-                    </span>
-                    {{ 'users.dialog.tokens.reveal.loading' | dm }}
                 </div>
             }
         </div>

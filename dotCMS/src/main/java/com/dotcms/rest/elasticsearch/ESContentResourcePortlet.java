@@ -1,5 +1,6 @@
 package com.dotcms.rest.elasticsearch;
 
+import com.dotcms.content.filter.ContentFieldFilter;
 import com.dotcms.content.index.domain.Aggregation;
 import com.dotcms.content.index.domain.AggregationBucket;
 import com.dotcms.content.index.domain.ContentSearchResponse;
@@ -117,6 +118,12 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 			return ExceptionMapperUtil.createResponse(e1, Response.Status.BAD_REQUEST);
 		}
 
+		// Decided for the caller, never for the user a CMS administrator may search as
+		final ContentFieldFilter fieldFilter = ContentFieldFilter.forUser(user);
+		if (!fieldFilter.allowsJsonSearch(esQuery.toString())) {
+			return ExceptionMapperUtil.createResponse(null, fieldFilter.searchRejectedMessage());
+		}
+
 		final User userForSearch;
 		try {
 			userForSearch = resolveUserForSearch(user, useridParam);
@@ -131,8 +138,8 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 			// endpoint observes the engine selected by the current OpenSearch migration phase (ES in
 			// phases 0-1, OS in phases 2-3) instead of always hitting Elasticsearch.
 			final ContentSearchResults<Contentlet> esresult = esapi
-					.search(esQuery.toString(), isAnonymous ? mode.showLive : liveParam, userForSearch,
-							mode.respectAnonPerms);
+					.search(fieldFilter.restrictTopHits(esQuery.toString()), isAnonymous ? mode.showLive : liveParam,
+							userForSearch, mode.respectAnonPerms);
 			
     			final JSONObject json = new JSONObject();
 			final JSONArray jsonCons = new JSONArray();
@@ -282,6 +289,11 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 		User user = initData.getUser();
 		try {
 			String esQuery = IOUtils.toString(request.getInputStream());
+			final ContentFieldFilter fieldFilter = ContentFieldFilter.forUser(user);
+			if (!fieldFilter.allowsJsonSearch(esQuery)) {
+				return ExceptionMapperUtil.createResponse(null, fieldFilter.searchRejectedMessage());
+			}
+			esQuery = fieldFilter.restrictTopHits(esQuery);
 
 			// Route through the phase-aware ContentletAPI.searchRaw() (delegates to SearchAPI) so the
 			// endpoint observes the engine selected by the current OpenSearch migration phase (ES in

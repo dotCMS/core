@@ -46,6 +46,13 @@ import java.util.Optional;
  *
  */
 public class PageDataFetcher implements DataFetcher<Contentlet> {
+    /**
+     * Resolves and transforms the requested page for the current GraphQL user.
+     *
+     * @param environment the query arguments and request context
+     * @return the transformed page {@link Contentlet}
+     * @throws Exception if the page cannot be resolved or transformed
+     */
     @Override
     public Contentlet get(final DataFetchingEnvironment environment) throws Exception {
         try {
@@ -160,7 +167,7 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
                 pageUrl = APILocator.getHTMLPageAssetRenderedAPI()
                         .getHtmlPageAsset(pageContext, request);
             } catch (HTMLPageAssetNotFoundException e) {
-                Logger.error(this, "Page not found: " + resolvedUri, e);
+                Logger.debug(this, "Page not found: " + resolvedUri, e);
                 throw new ResourceNotFoundException(
                         "Page not found: " + resolvedUri, "Page", resolvedUri);
             } catch (DotSecurityException e) {
@@ -194,6 +201,9 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
             }
             return out;
 
+        } catch (ResourceNotFoundException e) {
+            Logger.debug(this, e.getMessage());
+            throw e;
         } catch (Exception e) {
             Logger.error(this, e.getMessage());
             throw e;

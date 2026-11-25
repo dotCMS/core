@@ -1,5 +1,6 @@
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowAction"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
+<%@page import="com.liferay.util.Xss"%>
 <%@page
 		import="com.dotmarketing.portlets.workflows.business.WorkflowAPI"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowStep"%>
@@ -46,7 +47,7 @@
 			<dd>
 				<input type="text" name="stepName" id=""stepName""
 				dojoType="dijit.form.ValidationTextBox"  required="true"
-				value="<%=UtilMethods.webifyString(step.getName())%>"
+				value="<%=UtilMethods.webifyString(Xss.encodeForHTML(step.getName()))%>"
 				maxlength="255">
 			</dd>
 		</dl>
@@ -89,7 +90,7 @@
 					<% for(WorkflowAction wa : actions) {%>
 					<option value="<%=UtilMethods.webifyString(wa.getId())%>"
 							<%= wa.getId().equals(step.getEscalationAction()) ? "selected='true'" : "" %>>
-						<%=UtilMethods.webifyString(wa.getName()) %>
+						<%=UtilMethods.webifyString(Xss.encodeForHTML(wa.getName())) %>
 					</option>
 					<% }%>
 				</select>

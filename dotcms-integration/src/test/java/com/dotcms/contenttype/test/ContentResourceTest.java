@@ -1,9 +1,13 @@
 package com.dotcms.contenttype.test;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
+
 
 import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.content.filter.ContentFieldFilter;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -18,8 +22,14 @@ import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.ContentResource;
 import com.dotcms.rest.RESTParams;
+import com.dotcms.rest.JsonObjectView;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.SearchForm;
+import com.dotcms.rest.SearchView;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
@@ -29,10 +39,13 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
@@ -49,7 +62,6 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
-import java.util.Base64;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -99,6 +111,9 @@ import static org.mockito.Mockito.when;
 @ApplicationScoped
 @RunWith(DataProviderWeldRunner.class)
 public class ContentResourceTest extends IntegrationTestBase {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     final static String REQUIRED_NUMERIC_FIELD_NAME = "numeric";
     final static String NON_REQUIRED_IMAGE_FIELD_NAME = "image";
@@ -1356,6 +1371,112 @@ public class ContentResourceTest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Method to test: {@link ContentResource#canLockContent(HttpServletRequest, HttpServletResponse, String)}
+     * <p>
+     * Given scenario: a published contentlet readable by anonymous visitors, a front-end user
+     * and a back-end user, locked by another back-end user.
+     * <p>
+     * Expected result: anonymous and front-end callers get the lock state without the lock
+     * owner; the back-end caller gets the owner's id and the owner's full name as a String.
+     */
+    @Test
+    public void test_canLockContent_lockOwnerOnlyForBackendCallers() throws Exception {
+        final String password = "TestPass" + System.currentTimeMillis() + "!";
+        User owner = null;
+        User backendCaller = null;
+        User frontendCaller = null;
+        Structure structure = null;
+        Contentlet content = null;
+        try {
+            owner = new UserDataGen().firstName("Lock").lastName("Owner")
+                    .roles(TestUserUtils.getBackendRole()).nextPersisted();
+            backendCaller = new UserDataGen().password(password)
+                    .roles(TestUserUtils.getBackendRole()).nextPersisted();
+            frontendCaller = new UserDataGen().password(password)
+                    .roles(TestUserUtils.getFrontendRole()).nextPersisted();
+            structure = new StructureDataGen().nextPersisted();
+            content = ContentletDataGen.publish(new ContentletDataGen(structure.getInode())
+                    .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                    .nextPersisted());
+            final User systemUser = APILocator.systemUser();
+            final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+            permissionAPI.save(new Permission(content.getPermissionId(),
+                    APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
+                    PermissionAPI.PERMISSION_READ, true), content, systemUser, false);
+            permissionAPI.save(new Permission(content.getPermissionId(),
+                    APILocator.getRoleAPI().getUserRole(backendCaller).getId(),
+                    PermissionAPI.PERMISSION_READ, true), content, systemUser, false);
+            permissionAPI.save(new Permission(content.getPermissionId(),
+                    APILocator.getRoleAPI().getUserRole(frontendCaller).getId(),
+                    PermissionAPI.PERMISSION_READ, true), content, systemUser, false);
+            APILocator.getVersionableAPI().setLocked(content, true, owner);
+
+            final ContentResource contentResource = new ContentResource();
+            final String params = "id/" + content.getIdentifier();
+
+            final JSONObject anonymousView = new JSONObject(contentResource.canLockContent(
+                    lockStatusRequest(null), mock(HttpServletResponse.class), params)
+                    .getEntity().toString());
+            assertTrue(anonymousView.getBoolean("locked"));
+            assertFalse(anonymousView.has("lockedBy"));
+            assertFalse(anonymousView.has("lockedByName"));
+
+            final JSONObject frontendView = new JSONObject(contentResource.canLockContent(
+                    lockStatusRequest(frontendCaller),
+                    mock(HttpServletResponse.class), params).getEntity().toString());
+            assertTrue(frontendView.getBoolean("locked"));
+            assertFalse(frontendView.has("lockedBy"));
+            assertFalse(frontendView.has("lockedByName"));
+
+            final JSONObject backendView = new JSONObject(contentResource.canLockContent(
+                    lockStatusRequest(backendCaller),
+                    mock(HttpServletResponse.class), params).getEntity().toString());
+            assertTrue(backendView.getBoolean("locked"));
+            assertEquals(owner.getUserId(), backendView.getString("lockedBy"));
+            assertEquals(owner.getFullName(), backendView.getString("lockedByName"));
+        } finally {
+            if (content != null) {
+                APILocator.getVersionableAPI().setLocked(content, false, APILocator.systemUser());
+                ContentletDataGen.destroy(content, true);
+            }
+            if (structure != null) {
+                StructureDataGen.remove(structure);
+            }
+            for (final User user : new User[]{owner, backendCaller, frontendCaller}) {
+                if (user != null) {
+                    UserDataGen.remove(user, true);
+                }
+            }
+        }
+    }
+
+    /**
+     * Builds a request that authenticates as the given user with a Bearer API token, or with no
+     * credentials for the anonymous caller. Username/password Basic is disabled by default.
+     *
+     * @param user the fixture user to authenticate as, or null for the anonymous caller
+     * @return the request
+     */
+    private HttpServletRequest lockStatusRequest(final User user) {
+        final MockHeaderRequest request = new MockHeaderRequest(new MockSessionRequest(
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/")
+                        .request()).request()).request());
+        if (user != null) {
+            request.setHeader("Authorization", TOKEN_UTILS.bearerHeader(user));
+        }
+        return request;
+    }
+
+
+    /**
+     * Builds a request that authenticates with a Bearer API token: the admin token when no user is
+     * supplied, the given user's token otherwise, and no credential for the anonymous user.
+     *
+     * @param jsonPayload the request body, or null
+     * @param user the fixture user to authenticate as, or null for the admin
+     * @return the request
+     */
     private HttpServletRequest createHttpRequest(final String jsonPayload, final User user) throws Exception{
 
         MockHeaderRequest request = new MockHeaderRequest(
@@ -1366,10 +1487,10 @@ public class ContentResourceTest extends IntegrationTestBase {
         );
 
         if (user == null){
-            request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString(("admin@dotcms.com:admin").getBytes()));
+            request.setHeader("Authorization", TOKEN_UTILS.adminBearerHeader());
 
         } else if (!user.equals(userAPI.getAnonymousUser())){
-            request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString((user.getEmailAddress() + ":" + user.getPassword()).getBytes()));
+            request.setHeader("Authorization", TOKEN_UTILS.bearerHeader(user));
         }
 
         if (jsonPayload != null) {
@@ -1720,7 +1841,13 @@ public class ContentResourceTest extends IntegrationTestBase {
                 .setProperty("code", code)
                 .setProperty("url", "somevalue");
 
-        final Contentlet contentlet = contentletDataGen.nextPersisted();
+        // A widget's field values are only evaluated as Velocity when its last modifier holds the
+        // Scripting Developer role, so the content is checked in by a user who has it.
+        final Contentlet toCheckin = contentletDataGen.next();
+        toCheckin.setIndexPolicy(IndexPolicy.FORCE);
+        toCheckin.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+        final Contentlet contentlet = contentletAPI.checkin(toCheckin, getScriptingDeveloperUser(),
+                false);
         ContentletDataGen.publish(contentlet);
 
         // Build request and response
@@ -1747,6 +1874,28 @@ public class ContentResourceTest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Returns a reusable back-end user holding the Scripting Developer role, which is what allows a
+     * widget's field values to be evaluated as Velocity, plus the CMS Administrator role so the
+     * user can check content in.
+     *
+     * @return the user, created on the first call and reused afterwards
+     * @throws DotDataException if the role or the user cannot be read or created
+     */
+    private static User getScriptingDeveloperUser() throws DotDataException {
+        Role scriptingRole = roleAPI.loadRoleByKey(Role.SCRIPTING_DEVELOPER);
+        if (scriptingRole == null) {
+            scriptingRole = new RoleDataGen().key(Role.SCRIPTING_DEVELOPER)
+                    .name(Role.SCRIPTING_DEVELOPER).nextPersisted();
+        }
+        final User scriptingDeveloper = TestUserUtils.getUser(scriptingRole,
+                "scripting.developer@dotcms.com", "Scripting", "Developer", "scripting");
+        // The CMS Administrator role, not the deprecated "Administrator" one, is what grants the
+        // write permission the checkin needs.
+        roleAPI.addRoleToUser(roleAPI.loadCMSAdminRole(), scriptingDeveloper);
+        return scriptingDeveloper;
+    }
+
     public static String removeSpecialCharacters(String input) {
         return input.replaceAll("[^a-zA-Z0-9\\s]", "");
     }
@@ -1771,5 +1920,634 @@ public class ContentResourceTest extends IntegrationTestBase {
         final List<?> contentlets = (List<?>)map.get("contentlets");
         Assert.assertFalse(contentlets.isEmpty());
         return (Map<?, ?>)contentlets.get(0);
+    }
+
+    /**
+     * Content created by the system user, with one related child, both live and readable by the
+     * anonymous, front-end and back-end roles, to exercise the Content API field filter.
+     */
+    private static final class FilteredContentFixture {
+        private final ContentType contentType;
+        private final Contentlet parent;
+        private final Contentlet child;
+
+        private FilteredContentFixture(final ContentType contentType, final Contentlet parent, final Contentlet child) {
+            this.contentType = contentType;
+            this.parent = parent;
+            this.child = child;
+        }
+    }
+
+    /**
+     * Creates a content type with a "children" relationship to itself, a parent and a child related to it,
+     * publishes both and lets the anonymous, front-end and back-end roles read the type and the content.
+     *
+     * @return the created content
+     * @throws Exception if the content cannot be created
+     */
+    private FilteredContentFixture createFilteredContentFixture() throws Exception {
+        final long language = languageAPI.getDefaultLanguage().getId();
+        final ContentType contentType = createSampleContentType(false);
+        final Field childrenField = createRelationshipField("children", contentType,
+                contentType.variable(), RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal());
+
+        final ContentletDataGen dataGen = new ContentletDataGen(contentType.id()).languageId(language);
+        final Contentlet child = dataGen.nextPersisted();
+        Contentlet parent = dataGen.next();
+        parent.setRelated(childrenField.variable(), CollectionsUtils.list(child));
+        parent = contentletAPI.checkin(parent, user, false);
+        ContentletDataGen.publish(child);
+        ContentletDataGen.publish(parent);
+
+        for (final Role role : List.of(roleAPI.loadCMSAnonymousRole(), TestUserUtils.getFrontendRole(),
+                TestUserUtils.getBackendRole())) {
+            permissionAPI.save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                    contentType.getPermissionId(), role.getId(), PermissionAPI.PERMISSION_READ, true),
+                    contentType, user, false);
+            for (final Contentlet contentlet : List.of(parent, child)) {
+                permissionAPI.save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                        contentlet.getPermissionId(), role.getId(), PermissionAPI.PERMISSION_READ, true),
+                        contentlet, user, false);
+            }
+        }
+        return new FilteredContentFixture(contentType, parent, child);
+    }
+
+    /**
+     * Masks modUser and owner and hides modUserName and ownerUserName. identifier is listed too, to prove
+     * it is never filtered.
+     */
+    private static void configureFieldFilter() {
+        Config.setProperty(ContentFieldFilter.FIELDS_TO_MASK_PROPERTY, "modUser, owner, identifier");
+        Config.setProperty(ContentFieldFilter.FIELDS_TO_HIDE_PROPERTY, "modUserName,ownerUserName");
+    }
+
+    /**
+     * Restores the field filter configuration to its default, which filters nothing.
+     */
+    private static void clearFieldFilter() {
+        Config.setProperty(ContentFieldFilter.FIELDS_TO_MASK_PROPERTY, "");
+        Config.setProperty(ContentFieldFilter.FIELDS_TO_HIDE_PROPERTY, "");
+    }
+
+    /**
+     * Creates a user with the given role only.
+     *
+     * @param role the {@link Role} to give the user
+     * @return the persisted {@link User}
+     */
+    private static User createUserWithRole(final Role role) {
+        return new UserDataGen().active(true)
+                .emailAddress("filter" + System.nanoTime() + "@dotcms.com")
+                .skinId(UUIDGenerator.generateUuid())
+                .password("password" + System.currentTimeMillis()).roles(role).nextPersisted();
+    }
+
+    /**
+     * Calls GET /api/content/id/{id}/depth/1 in JSON for the given user and returns the parent contentlet.
+     *
+     * @param user the caller
+     * @param fixture the content to fetch
+     * @return the parent contentlet as JSON
+     * @throws Exception if the call fails
+     */
+    private JSONObject getParentAsJson(final User user, final FilteredContentFixture fixture) throws Exception {
+        final Response endpointResponse = new ContentResource().getContent(createHttpRequest(null, user),
+                mock(HttpServletResponse.class), "/id/" + fixture.parent.getIdentifier() + "/depth/1");
+        assertEquals(Status.OK.getStatusCode(), endpointResponse.getStatus());
+        final JSONArray contentlets = new JSONObject(endpointResponse.getEntity().toString())
+                .getJSONArray("contentlets");
+        assertEquals(1, contentlets.length());
+        return contentlets.getJSONObject(0);
+    }
+
+    /**
+     * Returns the first related child of a parent returned with depth 1.
+     *
+     * @param parent the parent contentlet as JSON
+     * @return the related child as JSON
+     * @throws JSONException if the relationship is missing
+     */
+    private static JSONObject firstChild(final JSONObject parent) throws JSONException {
+        final Object children = parent.get("children");
+        return children instanceof JSONArray ? ((JSONArray) children).getJSONObject(0) : (JSONObject) children;
+    }
+
+    /**
+     * Asserts a contentlet is masked and hidden as configured by {@link #configureFieldFilter()}.
+     *
+     * @param json the contentlet as JSON
+     * @param source the contentlet it represents
+     * @throws JSONException if a property cannot be read
+     */
+    private static void assertFiltered(final JSONObject json, final Contentlet source) throws JSONException {
+        assertEquals("identifier must never be filtered", source.getIdentifier(), json.getString("identifier"));
+        assertEquals(source.getInode(), json.getString("inode"));
+        for (final String masked : List.of("modUser", "owner")) {
+            final String value = json.getString(masked);
+            assertNotEquals(masked + " must be masked", source.getStringProperty(masked), value);
+            assertTrue(masked + " must be masked: " + value, value.contains("*****"));
+        }
+        assertFalse(json.has("modUserName"));
+        assertFalse(json.has("ownerUserName"));
+    }
+
+    /**
+     * Asserts a contentlet is returned without any filtering.
+     *
+     * @param json the contentlet as JSON
+     * @param source the contentlet it represents
+     * @throws JSONException if a property cannot be read
+     */
+    private static void assertUnfiltered(final JSONObject json, final Contentlet source) throws JSONException {
+        assertEquals(source.getModUser(), json.getString("modUser"));
+        assertEquals(source.getOwner(), json.getString("owner"));
+        assertTrue(json.has("modUserName"));
+        assertTrue(json.has("ownerUserName"));
+    }
+
+    /**
+     * Method to test: {@link ContentResource#getContent(HttpServletRequest, HttpServletResponse, String)}
+     * Given scenario: CONTENT_API_FIELDS_TO_MASK and CONTENT_API_FIELDS_TO_HIDE are set, and an anonymous
+     * caller and a front-end user request a contentlet with its related content (depth 1) in JSON.
+     * Expected result: modUser and owner are masked and modUserName and ownerUserName are removed, on the
+     * contentlet and on its related content; identifier is returned even though it is listed.
+     */
+    @Test
+    public void test_getContent_fieldFilterConfigured_masksAndHidesForAnonymousAndFrontendUsers() throws Exception {
+        final FilteredContentFixture fixture = createFilteredContentFixture();
+        try {
+            configureFieldFilter();
+            for (final User caller : List.of(userAPI.getAnonymousUser(),
+                    createUserWithRole(TestUserUtils.getFrontendRole()))) {
+                final JSONObject parent = getParentAsJson(caller, fixture);
+                assertFiltered(parent, fixture.parent);
+                assertFiltered(firstChild(parent), fixture.child);
+            }
+        } finally {
+            clearFieldFilter();
+            deleteContentTypes(List.of(fixture.contentType));
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentResource#getContent(HttpServletRequest, HttpServletResponse, String)}
+     * Given scenario: the field filter is configured and an anonymous caller requests a contentlet with its
+     * related content (depth 1) in XML.
+     * Expected result: the original modUser value and the hidden properties are not in the response.
+     */
+    @Test
+    public void test_getContent_fieldFilterConfigured_masksAndHidesInXml() throws Exception {
+        final FilteredContentFixture fixture = createFilteredContentFixture();
+        try {
+            configureFieldFilter();
+            final Response endpointResponse = new ContentResource().getContent(
+                    createHttpRequest(null, userAPI.getAnonymousUser()), mock(HttpServletResponse.class),
+                    "/id/" + fixture.parent.getIdentifier() + "/type/xml/depth/1");
+            assertEquals(Status.OK.getStatusCode(), endpointResponse.getStatus());
+
+            final String xml = endpointResponse.getEntity().toString();
+            assertTrue(xml.contains(fixture.parent.getIdentifier()));
+            assertTrue(xml.contains(fixture.child.getIdentifier()));
+            assertTrue(xml.contains("*****"));
+            assertFalse(xml.contains("<modUser>" + fixture.parent.getModUser() + "</modUser>"));
+            assertFalse(xml.contains("<owner>" + fixture.parent.getOwner() + "</owner>"));
+            assertFalse(xml.contains("<modUserName>"));
+            assertFalse(xml.contains("<ownerUserName>"));
+        } finally {
+            clearFieldFilter();
+            deleteContentTypes(List.of(fixture.contentType));
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentResource#getContent(HttpServletRequest, HttpServletResponse, String)}
+     * Given scenario: the field filter is configured and an administrator and a back-end user request a
+     * contentlet with its related content.
+     * Expected result: both get every property unfiltered.
+     */
+    @Test
+    public void test_getContent_fieldFilterConfigured_adminsAndBackendUsersGetUnfilteredContent() throws Exception {
+        final FilteredContentFixture fixture = createFilteredContentFixture();
+        try {
+            configureFieldFilter();
+            for (final User caller : List.of(TestUserUtils.getAdminUser(),
+                    createUserWithRole(TestUserUtils.getBackendRole()))) {
+                final JSONObject parent = getParentAsJson(caller, fixture);
+                assertUnfiltered(parent, fixture.parent);
+                assertUnfiltered(firstChild(parent), fixture.child);
+            }
+        } finally {
+            clearFieldFilter();
+            deleteContentTypes(List.of(fixture.contentType));
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentResource#getContent(HttpServletRequest, HttpServletResponse, String)}
+     * Given scenario: neither CONTENT_API_FIELDS_TO_MASK nor CONTENT_API_FIELDS_TO_HIDE is set, and an
+     * anonymous caller requests a contentlet.
+     * Expected result: the response is not filtered.
+     */
+    @Test
+    public void test_getContent_fieldFilterNotConfigured_returnsUnfilteredContent() throws Exception {
+        final FilteredContentFixture fixture = createFilteredContentFixture();
+        try {
+            clearFieldFilter();
+            final JSONObject parent = getParentAsJson(userAPI.getAnonymousUser(), fixture);
+            assertUnfiltered(parent, fixture.parent);
+            assertUnfiltered(firstChild(parent), fixture.child);
+        } finally {
+            deleteContentTypes(List.of(fixture.contentType));
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentResource#getContent(HttpServletRequest, HttpServletResponse, String)} and
+     * {@link ContentResource#search(HttpServletRequest, HttpServletResponse, boolean, SearchForm)}
+     * Given scenario: the field filter is configured and an anonymous caller queries or sorts by a masked
+     * property, which would let them recover its value.
+     * Expected result: the anonymous caller gets a 400 with a readable message, never the raw message key, while
+     * an administrator can still run the query; an id lookup with the same orderby, which searches nothing, is not
+     * refused.
+     */
+    @Test
+    public void test_search_fieldFilterConfigured_rejectsQueriesOnRestrictedFieldsForAnonymousUsers() throws Exception {
+        final FilteredContentFixture fixture = createFilteredContentFixture();
+        final String query = "+contentType:" + fixture.contentType.variable() + " +modUser:"
+                + fixture.parent.getModUser();
+        try {
+            configureFieldFilter();
+            final ContentResource contentResource = new ContentResource();
+            final User anonymous = userAPI.getAnonymousUser();
+
+            final Response rejected = contentResource.getContent(createHttpRequest(null, anonymous),
+                    mock(HttpServletResponse.class), "/query/" + query);
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), rejected.getStatus());
+            final String body = String.valueOf(rejected.getEntity());
+            assertFalse("the raw message key must not reach the caller: " + body,
+                    body.contains(ContentFieldFilter.SEARCH_REJECTED_MESSAGE_KEY));
+            assertTrue(body, body.contains("not available to this user"));
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), contentResource.getContent(
+                    createHttpRequest(null, anonymous), mock(HttpServletResponse.class),
+                    "/query/+contentType:" + fixture.contentType.variable() + "/orderby/owner").getStatus());
+            assertThrows(BadRequestException.class, () -> contentResource.search(
+                    createHttpRequest(null, anonymous), mock(HttpServletResponse.class), false,
+                    new SearchForm.Builder().query(query).build()));
+            assertEquals("an id lookup searches nothing, so its unused orderby must not be refused",
+                    Status.OK.getStatusCode(), contentResource.getContent(createHttpRequest(null, anonymous),
+                            mock(HttpServletResponse.class),
+                            "/id/" + fixture.parent.getIdentifier() + "/orderby/owner").getStatus());
+
+            assertEquals(Status.OK.getStatusCode(), contentResource.getContent(
+                    createHttpRequest(null, TestUserUtils.getAdminUser()), mock(HttpServletResponse.class),
+                    "/query/" + query).getStatus());
+            assertEquals(Status.OK.getStatusCode(), contentResource.search(
+                    createHttpRequest(null, TestUserUtils.getAdminUser()), mock(HttpServletResponse.class), false,
+                    new SearchForm.Builder().query(query).build()).getStatus());
+        } finally {
+            clearFieldFilter();
+            deleteContentTypes(List.of(fixture.contentType));
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentResource#getContent(HttpServletRequest, HttpServletResponse, String)}, over the
+     * catchall field built when content is indexed
+     * Given scenario: the user properties are masked before content is indexed, and a caller searches catchall for
+     * the ID of the user who last edited it, exactly and with a trailing wildcard, as an attacker would to rebuild it.
+     * Expected result: neither the anonymous caller nor an administrator finds the content that way, while the
+     * administrator still finds it by naming the field; content indexed with nothing configured is found through
+     * catchall as before.
+     */
+    @Test
+    public void test_search_fieldFilterConfigured_keepsRestrictedValuesOutOfCatchall() throws Exception {
+        // A user ID no other indexed value starts with ("system" is not one), and without hyphens, which would keep
+        // the wildcard query from matching it at all
+        final User author = new UserDataGen().id("catchalluser" + System.nanoTime()).active(true)
+                .emailAddress("catchall" + System.nanoTime() + "@dotcms.com")
+                .skinId(UUIDGenerator.generateUuid())
+                .password("password" + System.currentTimeMillis()).roles(roleAPI.loadCMSAdminRole()).nextPersisted();
+        final String userId = author.getUserId().toLowerCase();
+        final String prefix = userId.substring(0, userId.length() - 1) + "*";
+
+        clearFieldFilter();
+        final FilteredContentFixture indexedUnfiltered = createFilteredContentFixture();
+        republishAs(indexedUnfiltered.parent, author);
+        Config.setProperty(ContentFieldFilter.FIELDS_TO_MASK_PROPERTY, "modUser,owner,publishUser,wfCreatedBy");
+        final FilteredContentFixture indexedFiltered = createFilteredContentFixture();
+        republishAs(indexedFiltered.parent, author);
+        try {
+
+            for (final String term : List.of(userId, prefix)) {
+                assertEquals("catchall must not hold " + term, 0, countFound(userAPI.getAnonymousUser(),
+                        indexedFiltered, "+catchall:" + term));
+                assertEquals("catchall must not hold " + term, 0, countFound(TestUserUtils.getAdminUser(),
+                        indexedFiltered, "+catchall:" + term));
+                assertEquals("content indexed with nothing configured keeps " + term + " in catchall", 1,
+                        countFound(TestUserUtils.getAdminUser(), indexedUnfiltered, "+catchall:" + term));
+            }
+            assertEquals(1, countFound(TestUserUtils.getAdminUser(), indexedFiltered, "+modUser:" + userId));
+        } finally {
+            clearFieldFilter();
+            deleteContentTypes(List.of(indexedUnfiltered.contentType, indexedFiltered.contentType));
+        }
+    }
+    /**
+     * Method to test: {@link ContentResource#getContent(HttpServletRequest, HttpServletResponse, String)}
+     * Given scenario: one live item on the default variant and one on a named variant, both readable by the
+     * anonymous role, fetched through the Lucene path by an anonymous caller — once without mentioning a
+     * variant, which is how that endpoint is normally called, and once naming the variant in the query text,
+     * which is the one way the query reaching the index can carry a variant today.
+     * Expected result: the anonymous caller only ever gets the item on the default variant; naming the variant
+     * changes nothing. The controls run first, so a failure here is about the scope and not about a fixture
+     * that never held: an administrator reaching the named variant, and the anonymous caller still getting
+     * the item on the default one, are both asserted before the behaviour under test.
+     */
+    @Test
+    public void test_getContentByQuery_anonymousUser_isScopedToTheDefaultVariant() throws Exception {
+        final VariantContentFixture fixture = createVariantContentFixture();
+        try {
+            final User anonymous = userAPI.getAnonymousUser();
+            final String named = fixture.onNamedVariant.getIdentifier();
+            final String namedClause = "+identifier:" + named + " +variant:" + fixture.variant.name();
+
+            assertEquals("fixture problem: a back-end caller does not reach the named variant, so there "
+                            + "is nothing here for an anonymous caller to reach either", 1,
+                    countByQuery(TestUserUtils.getAdminUser(), namedClause));
+            assertEquals("the item on the default variant must still be returned", 1,
+                    countByQuery(anonymous, "+identifier:" + fixture.onDefaultVariant.getIdentifier()));
+
+            assertEquals("the Lucene endpoint names no variant, so it must resolve on the default one",
+                    0, countByQuery(anonymous, "+identifier:" + named));
+            assertEquals("a caller without back-end access must not be able to choose the variant its "
+                            + "query resolves on", 0, countByQuery(anonymous, namedClause));
+
+            // The item that is live on both axes shows the other half of the behaviour: naming the
+            // variant does not empty the answer, it moves it to the default variant.
+            assertEquals("a caller that named a variant must still be answered, on the default "
+                            + "variant", 1,
+                    countByQuery(anonymous, "+identifier:" + fixture.onBothVariants.getIdentifier()
+                            + " +variant:" + fixture.variant.name()));
+        } finally {
+            deleteContentTypes(List.of(fixture.contentType));
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentResource#search(HttpServletRequest, HttpServletResponse, boolean, SearchForm)}
+     * Given scenario: the same two items, reached through the endpoint that already defaults the variant, by
+     * an anonymous caller whose query names the variant — which is what turns that default off.
+     * Expected result: the named variant is not returned, while a back-end caller still gets it.
+     */
+    @Test
+    public void test_search_anonymousUserNamingTheVariant_isScopedToTheDefaultVariant() throws Exception {
+        final VariantContentFixture fixture = createVariantContentFixture();
+        try {
+            final SearchForm namingTheVariant = new SearchForm.Builder()
+                    .query("+identifier:" + fixture.onNamedVariant.getIdentifier() + " +variant:"
+                            + fixture.variant.name()).build();
+
+            assertEquals("fixture problem: a back-end caller does not reach the named variant through "
+                            + "this endpoint, so an anonymous caller could not either", 1,
+                    searchHitCount(new ContentResource().search(
+                            createHttpRequest(null, TestUserUtils.getAdminUser()),
+                            mock(HttpServletResponse.class), false, namingTheVariant)));
+
+            assertEquals("naming the variant must not take the default scope off this endpoint", 0,
+                    searchHitCount(new ContentResource().search(
+                            createHttpRequest(null, userAPI.getAnonymousUser()),
+                            mock(HttpServletResponse.class), false, namingTheVariant)));
+        } finally {
+            deleteContentTypes(List.of(fixture.contentType));
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentResource#search(HttpServletRequest, HttpServletResponse, boolean, SearchForm)}
+     * Given scenario: the item that is live on both the default variant and the named one, asked for by an
+     * anonymous caller whose query names the variant.
+     * Expected result: the caller is answered with the version on the default variant, not with an empty
+     * result. Contradicting the caller's variant term would be enough to keep the named version away — and the
+     * search layer does exactly that on every path — but it would also take the content away from a front end
+     * that forwards the variant name it was routed with. Dropping the term answers the question that was
+     * actually asked, on the default variant.
+     */
+    @Test
+    public void test_search_anonymousUserNamingTheVariant_answersWithTheDefaultVersion() throws Exception {
+        final VariantContentFixture fixture = createVariantContentFixture();
+        try {
+            final SearchForm namingTheVariant = new SearchForm.Builder()
+                    .query("+identifier:" + fixture.onBothVariants.getIdentifier() + " +variant:"
+                            + fixture.variant.name()).build();
+
+            final List<String> inodes = searchInodes(new ContentResource().search(
+                    createHttpRequest(null, userAPI.getAnonymousUser()),
+                    mock(HttpServletResponse.class), false, namingTheVariant));
+
+            assertEquals("a caller that named a variant must still be answered, on the default variant",
+                    List.of(fixture.onBothVariants.getInode()), inodes);
+            assertFalse("the version stored on the named variant must not be the one answered with",
+                    inodes.contains(fixture.onBothVariantsNamedVersion.getInode()));
+        } finally {
+            deleteContentTypes(List.of(fixture.contentType));
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentResource#getContent(HttpServletRequest, HttpServletResponse, String)}
+     * Given scenario: the same items, asked for by inode rather than by query. An inode names one exact
+     * version, so this lookup resolves no variant of its own: the caller already named the version it wants.
+     * Expected result: an anonymous caller is answered as if the version on the named variant did not exist,
+     * while the version on the default variant is still returned. The controls run first: a back-end caller
+     * reaches the named variant by inode, and the anonymous caller reaches the default one.
+     */
+    @Test
+    public void test_getContentByInode_anonymousUser_isScopedToTheDefaultVariant() throws Exception {
+        final VariantContentFixture fixture = createVariantContentFixture();
+        try {
+            final User anonymous = userAPI.getAnonymousUser();
+            final String namedVariantInode = fixture.onBothVariantsNamedVersion.getInode();
+
+            assertEquals("fixture problem: a back-end caller does not reach the version on the named "
+                            + "variant by inode, so there is nothing here for an anonymous caller to reach",
+                    1, countByInode(TestUserUtils.getAdminUser(), namedVariantInode));
+            assertEquals("the version on the default variant must still be returned by inode", 1,
+                    countByInode(anonymous, fixture.onBothVariants.getInode()));
+
+            assertEquals("a caller without back-end access must not reach a version on another variant "
+                    + "by naming its inode", 0, countByInode(anonymous, namedVariantInode));
+        } finally {
+            deleteContentTypes(List.of(fixture.contentType));
+        }
+    }
+
+    /**
+     * Counts what GET /api/content/inode/&lt;inode&gt; returns for the given user.
+     *
+     * @param caller the user asking for the version
+     * @param inode the version's inode
+     * @return the number of contentlets returned
+     * @throws Exception if the call fails
+     */
+    private int countByInode(final User caller, final String inode) throws Exception {
+        final Response endpointResponse = new ContentResource().getContent(createHttpRequest(null, caller),
+                mock(HttpServletResponse.class), "/inode/" + inode);
+        assertEquals(String.valueOf(endpointResponse.getEntity()), Status.OK.getStatusCode(),
+                endpointResponse.getStatus());
+        return new JSONObject(endpointResponse.getEntity().toString()).getJSONArray("contentlets").length();
+    }
+
+    /**
+     * One content type holding three live items — one on the default variant, one on a named variant, and one
+     * that is live on both at once — all readable by the anonymous role, so the only thing separating them in
+     * a query is the variant.
+     */
+    private static final class VariantContentFixture {
+        private final ContentType contentType;
+        private final Variant variant;
+        private final Contentlet onDefaultVariant;
+        private final Contentlet onNamedVariant;
+        private final Contentlet onBothVariants;
+        private final Contentlet onBothVariantsNamedVersion;
+
+        private VariantContentFixture(final ContentType contentType, final Variant variant,
+                final Contentlet onDefaultVariant, final Contentlet onNamedVariant,
+                final Contentlet onBothVariants, final Contentlet onBothVariantsNamedVersion) {
+            this.contentType = contentType;
+            this.variant = variant;
+            this.onDefaultVariant = onDefaultVariant;
+            this.onNamedVariant = onNamedVariant;
+            this.onBothVariants = onBothVariants;
+            this.onBothVariantsNamedVersion = onBothVariantsNamedVersion;
+        }
+    }
+
+    /**
+     * Creates the three live items and lets the anonymous role read the type and all of them.
+     *
+     * @return the created content
+     * @throws Exception if the content cannot be created
+     */
+    private VariantContentFixture createVariantContentFixture() throws Exception {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final ContentType contentType = createSampleContentType(false);
+        final Role anonymousRole = roleAPI.loadCMSAnonymousRole();
+        final ContentletDataGen dataGen = new ContentletDataGen(contentType.id())
+                .languageId(languageAPI.getDefaultLanguage().getId()).setPolicy(IndexPolicy.WAIT_FOR);
+        final Contentlet onDefaultVariant = dataGen.nextPersisted();
+        final Contentlet onNamedVariant = ContentletDataGen.createNewVersion(dataGen.nextPersisted(),
+                variant, null);
+        // A third item is live on both axes at once. Without it a scoped query and an emptied one
+        // look the same, because the other two items have nothing live on the default variant to
+        // answer with.
+        final Contentlet onBothVariants = dataGen.nextPersisted();
+        final Contentlet onBothVariantsNamedVersion = ContentletDataGen.createNewVersion(
+                onBothVariants, variant, null);
+
+        for (final Contentlet contentlet : List.of(onDefaultVariant, onNamedVariant,
+                onBothVariants, onBothVariantsNamedVersion)) {
+            ContentletDataGen.publish(contentlet);
+        }
+        // Keyed by identifier, so the two versions of the third item are granted once
+        for (final Contentlet contentlet : List.of(onDefaultVariant, onNamedVariant,
+                onBothVariants)) {
+            permissionAPI.save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                            contentlet.getPermissionId(), anonymousRole.getId(),
+                            PermissionAPI.PERMISSION_READ, true), contentlet, user, false);
+        }
+        permissionAPI.save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                        contentType.getPermissionId(), anonymousRole.getId(),
+                        PermissionAPI.PERMISSION_READ, true), contentType, user, false);
+        return new VariantContentFixture(contentType, variant, onDefaultVariant, onNamedVariant,
+                onBothVariants, onBothVariantsNamedVersion);
+    }
+
+    /**
+     * Counts what GET /api/content/query returns for the given user and Lucene query.
+     *
+     * @param caller the user running the query
+     * @param query the Lucene query to run
+     * @return the number of contentlets returned
+     * @throws Exception if the call fails
+     */
+    private int countByQuery(final User caller, final String query) throws Exception {
+        final Response endpointResponse = new ContentResource().getContent(createHttpRequest(null, caller),
+                mock(HttpServletResponse.class), "/query/" + query);
+        assertEquals(String.valueOf(endpointResponse.getEntity()), Status.OK.getStatusCode(),
+                endpointResponse.getStatus());
+        return new JSONObject(endpointResponse.getEntity().toString()).getJSONArray("contentlets").length();
+    }
+
+    /**
+     * Reads how many contentlets a POST /api/content/_search response carried. The contentlets are read off
+     * the view rather than off serialized JSON, because {@link JsonObjectView} serializes through its own
+     * serializer and the round trip does not reproduce the shape the endpoint writes.
+     *
+     * @param response the endpoint response
+     * @return the number of contentlets returned
+     */
+    private int searchHitCount(final Response response) {
+        assertEquals(String.valueOf(response.getEntity()), Status.OK.getStatusCode(), response.getStatus());
+        final SearchView searchView = (SearchView) ((ResponseEntityView<?>) response.getEntity()).getEntity();
+        final JSONArray contentlets = searchView.getJsonObjectView().getJsonObject()
+                .optJSONArray("contentlets");
+        return contentlets == null ? 0 : contentlets.length();
+    }
+
+    /**
+     * Reads the inode of every contentlet a POST /api/content/_search response carried, so the version that
+     * answered can be told apart from its sibling on another variant.
+     *
+     * @param response the endpoint response
+     * @return the inodes returned, in the order the endpoint wrote them
+     */
+    private List<String> searchInodes(final Response response) {
+        assertEquals(String.valueOf(response.getEntity()), Status.OK.getStatusCode(), response.getStatus());
+        final SearchView searchView = (SearchView) ((ResponseEntityView<?>) response.getEntity()).getEntity();
+        final JSONArray contentlets = searchView.getJsonObjectView().getJsonObject()
+                .optJSONArray("contentlets");
+        final List<String> inodes = new ArrayList<>();
+        for (int index = 0; contentlets != null && index < contentlets.length(); index++) {
+            inodes.add(contentlets.getJSONObject(index).getString("inode"));
+        }
+        return inodes;
+    }
+
+    /**
+     * Saves and publishes a new version of a contentlet as the given user, who becomes its modUser and publishUser,
+     * and waits for it to be indexed.
+     *
+     * @param contentlet the contentlet to save again
+     * @param author the user saving it
+     * @throws Exception if the contentlet cannot be saved or published
+     */
+    private void republishAs(final Contentlet contentlet, final User author) throws Exception {
+        final Contentlet draft = contentletAPI.checkout(contentlet.getInode(), author, false);
+        draft.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+        draft.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        final Contentlet saved = contentletAPI.checkin(draft, author, false);
+        saved.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+        saved.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        contentletAPI.publish(saved, author, false);
+    }
+
+    /**
+     * Counts the contentlets the given user finds with GET /api/content/query, limited to the parent of a fixture.
+     *
+     * @param caller the user running the query
+     * @param fixture the content to look for
+     * @param clause the Lucene clause to add to the query
+     * @return the number of contentlets found
+     * @throws Exception if the call fails
+     */
+    private int countFound(final User caller, final FilteredContentFixture fixture, final String clause)
+            throws Exception {
+        final Response endpointResponse = new ContentResource().getContent(createHttpRequest(null, caller),
+                mock(HttpServletResponse.class), "/query/+contentType:" + fixture.contentType.variable()
+                        + " +identifier:" + fixture.parent.getIdentifier() + " " + clause);
+        assertEquals(String.valueOf(endpointResponse.getEntity()), Status.OK.getStatusCode(),
+                endpointResponse.getStatus());
+        return new JSONObject(endpointResponse.getEntity().toString()).getJSONArray("contentlets").length();
     }
 }

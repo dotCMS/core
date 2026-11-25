@@ -1,12 +1,12 @@
 package com.dotcms.rest;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Collections;
+import java.util.List;
+
 /**
- * This View contains the results of searching for Contentlets in dotCMS. It's used by several
- * content search REST Endpoints in order to provide Users the results, and additional information
- * related to the execution of the query per se.
- *
- * @author Jonathan Sanchez
- * @since Oct 9th, 2020
+ * Result of a content search: how many contentlets matched, how long the query and the content
+ * pull took, the contentlets themselves, and any warnings about how they were rendered.
  */
 public class SearchView {
 
@@ -14,32 +14,35 @@ public class SearchView {
     private final long queryTook;
     private final long contentTook;
     private final JsonObjectView jsonObjectView;
+    private final List<String> warnings;
 
-    /**
-     * Creates an instance of this View class with the results returned from a content query, and
-     * additional search metadata.
-     *
-     * @param resultsSize    The total number of results that are pulled from the query <b>WITHOUT
-     *                       taking pagination into account</b>. For instance, if you're pulling 10
-     *                       results per result page, but your query matches 35 results total, this
-     *                       value will be 35.
-     * @param queryTook      Represents the time in milliseconds that dotCMS needed to retrieve the
-     *                       total number of results being returned by the query.
-     * @param contentTook    Represents the time in milliseconds that dotCMS needed to retrieve the
-     *                       actual results and transform them into the appropriate JSON
-     *                       representation.
-     * @param jsonObjectView Contains the actual list of returned Contentlets in the appropriate
-     *                       JSON format, in the form of a {@link JsonObjectView} object.
-     */
     public SearchView(final long resultsSize,
                       final long queryTook,
                       final long contentTook,
                       final JsonObjectView jsonObjectView) {
+        this(resultsSize, queryTook, contentTook, jsonObjectView, Collections.emptyList());
+    }
+
+    /**
+     * Builds a search result.
+     *
+     * @param resultsSize    how many contentlets matched the query
+     * @param queryTook      milliseconds spent counting the matches
+     * @param contentTook    milliseconds spent pulling and converting the contentlets
+     * @param jsonObjectView the contentlets as JSON
+     * @param warnings       notes about how the contentlets were rendered; empty when there are none
+     */
+    public SearchView(final long resultsSize,
+                      final long queryTook,
+                      final long contentTook,
+                      final JsonObjectView jsonObjectView,
+                      final List<String> warnings) {
 
         this.resultsSize = resultsSize;
         this.queryTook = queryTook;
         this.contentTook = contentTook;
         this.jsonObjectView = jsonObjectView;
+        this.warnings = warnings == null ? Collections.emptyList() : List.copyOf(warnings);
     }
 
     public long getResultsSize() {
@@ -56,6 +59,18 @@ public class SearchView {
 
     public JsonObjectView getJsonObjectView() {
         return jsonObjectView;
+    }
+
+    /**
+     * Notes about how the contentlets were rendered, for example that widget field values were
+     * returned as text because widget field scripting is off. Empty when there is nothing to report.
+     *
+     * @return the warnings, never null
+     */
+    @Schema(description = "Notes about how the contentlets were rendered, such as widget field values "
+            + "returned as text because widget field scripting is off. Empty when there is nothing to report.")
+    public List<String> getWarnings() {
+        return warnings;
     }
 
 }

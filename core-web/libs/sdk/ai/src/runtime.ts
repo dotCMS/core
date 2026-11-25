@@ -4,7 +4,8 @@ import {
     type RequestCallEvent,
     type RequestOptions,
     type RequestPolicy,
-    requestCore
+    requestCore,
+    toRequestPolicy
 } from './adapter/request-core';
 import { serializeError } from './sandbox/errors';
 import { Executor } from './sandbox/executor';
@@ -13,8 +14,9 @@ import type { DotCMSContext } from './adapter/context';
 import type { SandboxResult } from './sandbox/types';
 
 /**
- * Policy controlling which requests are permitted. Either a list of allowed path prefixes
- * (a request is allowed if its path starts with any entry) or a predicate consulted per call.
+ * Policy controlling which requests are permitted. Either a list of allowed paths (a request
+ * is allowed if its path is an entry or lies under one, matched by whole segment, so
+ * `/api/v1/content` does not allow `/api/v1/contenttype`) or a predicate consulted per call.
  * Both verbs honor it, because both flow through the one shared request core.
  */
 export type RuntimeAllow = string[] | RequestPolicy;
@@ -63,14 +65,6 @@ export interface DotCMSRuntime {
 const DEFAULT_TIMEOUT_MS = 15000;
 const DEFAULT_SESSION_ID = '__default__';
 
-/** Normalize the `allow` config into the policy predicate the request core understands. */
-function toPolicy(allow: RuntimeAllow | undefined): RequestPolicy | undefined {
-    if (!allow) return undefined;
-    if (typeof allow === 'function') return allow;
-    const prefixes = allow;
-    return ({ path }) => prefixes.some((prefix) => path.startsWith(prefix));
-}
-
 /**
  * The front door. One runtime, two verbs.
  *
@@ -88,7 +82,7 @@ export function createRuntime(config: DotCMSRuntimeConfig): DotCMSRuntime {
 
     const sessionId = config.sessionId ?? DEFAULT_SESSION_ID;
     const timeout = config.timeout ?? DEFAULT_TIMEOUT_MS;
-    const policy = toPolicy(config.allow);
+    const policy = toRequestPolicy(config.allow);
 
     // The runtime OWNS its context cache instance (keyed on sessionId+url internally), so two
     // runtimes for different instances never collide on a shared module singleton.
@@ -208,6 +202,7 @@ export {
     ValidationError,
     PolicyError,
     HttpError,
+    NetworkError,
     TimeoutError,
     AbortError,
     SandboxError,
@@ -227,7 +222,8 @@ export { isBinaryResponseEnvelope } from './adapter/request-core';
 export type {
     BinaryResponseEnvelope,
     RequestOptions,
-    RequestCallEvent
+    RequestCallEvent,
+    ResponseBodyInfo
 } from './adapter/request-core';
 
 // Instance-context types injected into `run(code)` as globals.

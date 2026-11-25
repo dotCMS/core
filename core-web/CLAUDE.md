@@ -31,8 +31,10 @@ Two installs that now fail where they used to warn:
 Configured in `/.mcp.json`. Use these instead of guessing:
 
 - **`angular-cli`** — Angular best practices, documentation search, code examples. Use before writing Angular code.
-- **`primeng`** — PrimeNG component API, props, events, examples. Use when building UI.
 - **`chrome-devtools`** — Browser automation, screenshots, network debugging, performance tracing.
+
+PrimeNG has no MCP server here. For component API, props and events, read the installed types in
+`node_modules/primeng/types/primeng-<component>.d.ts`, which match the version the app ships.
 
 ## Essential Commands
 
@@ -40,12 +42,14 @@ Configured in `/.mcp.json`. Use these instead of guessing:
 pnpm nx serve dotcms-ui                    # Dev server (proxies /api/* to port 8080)
 pnpm nx build dotcms-ui                    # Build
 pnpm nx test {project}                     # Test specific project
-pnpm nx test {project} --testPathPatterns=  # Test specific file (note the plural — the singular form now hard-errors)
+pnpm nx test {project} -- {file-or-substring}  # Test specific spec files (Vitest filters by path)
 pnpm nx lint {project}                     # Lint
 pnpm nx affected:test                      # Test only changed projects
 pnpm run test:dotcms                       # Test all
 pnpm run lint:dotcms                       # Lint all
 ```
+
+`--testPathPatterns` (and the singular `--testPathPattern`) is Jest's flag: these Vitest projects reject it with an error. Pass file names or substrings after `--` instead.
 
 ## Architecture
 

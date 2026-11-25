@@ -8,18 +8,44 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.osgi.OSGIConstants;
+import com.dotcms.saml.DotIdentityProviderConfigurationFactoryImpl;
+import com.dotcms.saml.DotLoggerMessageObserver;
+import com.dotcms.saml.IdentityProviderConfiguration;
+import com.dotcms.saml.MessageObserver;
+import com.dotcms.saml.SamlAuthenticationService;
+import com.dotcms.saml.SamlConfigurationService;
+import com.dotcms.saml.SamlServiceBuilder;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.util.VelocityUtil;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.time.Instant;
 import java.util.Arrays;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import net.bytebuddy.agent.ByteBuddyAgent;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.felix.framework.OSGISystem;
 import org.apache.felix.framework.OSGIUtil;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -93,25 +119,142 @@ public class GenericBundleActivatorIntegrationTest {
     }
 
     /**
-     * Method to test: {@link BundleContext#getBundles()}
-     * Given Scenario: SAML bundle initialization is validated
-     * Expected Result: SAML bundle is running successfully
+     * Verifies that the packaged SAML bundle starts, exposes the core service interface, and has
+     * the same release version as the packaged Tika bundle.
      */
     @Test
-    @Ignore
     public void test_dotsaml_inits_properly() {
-        BundleContext context = HostActivator.instance().getBundleContext();
+        assertNotNull(samlServiceBuilder());
+        final OSGISystem system = OSGISystem.getInstance();
+        final Bundle tika = system.findBundle("com.dotcms.tika");
+        assertNotNull("Packaged Tika bundle", tika);
+        assertEquals("SAML must be released with core, like Tika", tika.getVersion(),
+                system.findBundle(OSGIConstants.BUNDLE_NAME_DOTCMS_SAML).getVersion());
+    }
 
-        Bundle[] bundles = context.getBundles();
-        Optional<Bundle> dotSAML = Arrays.asList(bundles)
-                .stream()
-                .filter(b -> b.getSymbolicName().equals("com.dotcms.samlbundle"))
-                .findFirst();
+    /**
+     * Sends a signed HTTP-POST fixture through the installed bundle, then repeats it with a fresh
+     * request-state cookie so rejection must come from the real database-backed replay check.
+     *
+     * @throws Exception if the fixtures or replay table cannot be accessed
+     */
+    @Test
+    public void test_dotsaml_accepts_signed_response_only_once() throws Exception {
+        final SamlServiceBuilder builder = samlServiceBuilder();
+        final SamlConfigurationService configuration = builder.buildSamlConfigurationService();
+        configuration.initService(Collections.emptyMap());
+        final MessageObserver observer = Mockito.spy(new DotLoggerMessageObserver());
+        final Map<Object, Object> services = samlRegistry("com.dotcms.saml.utils.InstanceUtil", "instanceMap");
+        final Map<Object, Object> handlers = samlRegistry("com.dotcms.saml.service.handler.AssertionResolverHandlerFactory",
+                "assertionResolverHandlerInstancesMap");
+        final Map<Object, Object> previousServices = new HashMap<>(services);
+        final Map<Object, Object> previousHandlers = new HashMap<>(handlers);
 
+        final IdentityProviderConfiguration idp = Mockito.mock(IdentityProviderConfiguration.class);
+        Mockito.when(idp.isEnabled()).thenReturn(true);
+        Mockito.when(idp.getId()).thenReturn("bundle-it");
+        Mockito.when(idp.getIdpName()).thenReturn("Installed bundle test IdP");
+        Mockito.when(idp.getSpIssuerURL()).thenReturn("https://saml-it.example/sp");
+        Mockito.when(idp.getSpEndpointHostname()).thenReturn("saml-it.example");
+        Mockito.when(idp.getSignatureValidationType()).thenReturn("assertion");
+        Mockito.when(idp.getIdPMetadataFile()).thenReturn(IOUtils.toString(
+                getClass().getResource("/osgi/saml/idp-metadata.xml"), StandardCharsets.UTF_8).toCharArray());
 
-        assert (dotSAML.isPresent());
-        assertEquals(Bundle.ACTIVE, dotSAML.get().getState());
+        final String assertion = IOUtils.toString(getClass().getResource("/osgi/saml/assertion.xml"),
+                StandardCharsets.UTF_8);
+        final String response = """
+                <samlp:Response xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol"
+                    ID="_saml_bundle_it_response" Version="2.0" IssueInstant="%s"
+                    Destination="https://saml-it.example/dotsaml/login/bundle-it"
+                    InResponseTo="_saml_bundle_it_request">
+                  <saml:Issuer xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">https://saml-it.example/idp</saml:Issuer>
+                  <samlp:Status><samlp:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:Success"/></samlp:Status>
+                  %s
+                </samlp:Response>
+                """.formatted(Instant.now(), assertion);
+        final String encoded = Base64.getEncoder().encodeToString(response.getBytes(StandardCharsets.UTF_8));
 
+        deleteSamlFixtureReplayRecord();
+        try {
+            final SamlAuthenticationService authentication = builder.buildAuthenticationService(
+                    new DotIdentityProviderConfigurationFactoryImpl(APILocator.getAppsAPI(), APILocator.getHostAPI()),
+                    VelocityUtil.getEngine(), observer, configuration);
+            authentication.initService(Collections.emptyMap());
+            assertEquals("saml-bundle-it@example.com", authentication.resolveAllAttributes(
+                    samlPost(encoded), Mockito.mock(HttpServletResponse.class), idp).get("nameID"));
+            assertTrue("Replaying a signed assertion must not authenticate", authentication.resolveAllAttributes(
+                    samlPost(encoded), Mockito.mock(HttpServletResponse.class), idp).isEmpty());
+            final ArgumentCaptor<Throwable> error = ArgumentCaptor.forClass(Throwable.class);
+            Mockito.verify(observer).updateError(Mockito.anyString(), Mockito.anyString(), error.capture());
+            assertEquals("Rejected SAML Response for IdP 'Installed bundle test IdP': "
+                            + "The SAML Assertion '_saml_bundle_it_assertion' has already been used",
+                    error.getValue().getMessage());
+        } finally {
+            services.clear();
+            services.putAll(previousServices);
+            handlers.clear();
+            handlers.putAll(previousHandlers);
+            deleteSamlFixtureReplayRecord();
+        }
+    }
+
+    /**
+     * Accesses a bundle-private registry solely to restore its original contents after the test;
+     * plugin implementation classes must not be added to the integration-test classpath.
+     *
+     * @param className the class in the installed SAML bundle
+     * @param fieldName the static registry field
+     * @return the mutable registry whose contents the builder changes
+     * @throws ReflectiveOperationException if the registry cannot be accessed
+     */
+    @SuppressWarnings("unchecked")
+    private static Map<Object, Object> samlRegistry(final String className, final String fieldName)
+            throws ReflectiveOperationException {
+        final Class<?> type = OSGISystem.getInstance().findBundle(OSGIConstants.BUNDLE_NAME_DOTCMS_SAML)
+                .loadClass(className);
+        final Field registry = type.getDeclaredField(fieldName);
+        registry.setAccessible(true);
+        return (Map<Object, Object>) registry.get(null);
+    }
+
+    /** Returns the real builder registered by the active, packaged system bundle. */
+    private static SamlServiceBuilder samlServiceBuilder() {
+        final OSGISystem system = OSGISystem.getInstance();
+        system.initializeFramework();
+        final Bundle saml = system.findBundle(OSGIConstants.BUNDLE_NAME_DOTCMS_SAML);
+        assertNotNull("Packaged SAML bundle", saml);
+        assertEquals("SAML bundle must start", Bundle.ACTIVE, saml.getState());
+        final SamlServiceBuilder builder = system.getService(SamlServiceBuilder.class,
+                OSGIConstants.BUNDLE_NAME_DOTCMS_SAML);
+        assertNotNull("SAML must expose the core SamlServiceBuilder interface", builder);
+        return builder;
+    }
+
+    /** Creates a fresh browser request so a consumed cookie cannot mask assertion replay. */
+    private static HttpServletRequest samlPost(final String encodedResponse) {
+        final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
+        Mockito.when(request.getMethod()).thenReturn("POST");
+        Mockito.when(request.getParameter("SAMLResponse")).thenReturn(encodedResponse);
+        Mockito.when(request.getCookies()).thenReturn(new Cookie[]{new Cookie("__Host-dotsaml_req_bundle-it",
+                "_saml_bundle_it_request:" + Instant.now().getEpochSecond())});
+        return request;
+    }
+
+    /** Deletes only this fixture's replay record, including after a failed or interrupted run. */
+    private static void deleteSamlFixtureReplayRecord() throws Exception {
+        try (Connection connection = DbConnectionFactory.getDataSource().getConnection();
+                ResultSet table = connection.getMetaData().getTables(null, null,
+                        "dotsaml_assertion_replay", new String[]{"TABLE"})) {
+            connection.setAutoCommit(true);
+            if (table.next()) {
+                try (PreparedStatement delete = connection.prepareStatement(
+                        "DELETE FROM dotsaml_assertion_replay WHERE assertion_key = ?")) {
+                    delete.setString(1, DigestUtils.sha256Hex(
+                            "https://saml-it.example/idp|_saml_bundle_it_assertion"));
+                    delete.executeUpdate();
+                }
+            }
+        }
     }
 
     /**

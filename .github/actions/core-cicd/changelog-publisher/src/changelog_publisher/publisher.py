@@ -10,6 +10,8 @@ import sys
 import time
 from dataclasses import dataclass
 
+from .client import CorpsitesClient, wait_for_prod
+
 # Verified current-track stored values (T004, data-model.md). Not the frontend GraphQL
 # filter artifact — these are the values a current-track contentlet actually stores.
 _LTS_CURRENT = 3
@@ -19,6 +21,11 @@ _DOWNLOAD = 1
 
 class AmbiguousMatchError(RuntimeError):
     """Raised when >1 entry matches a version — the tool refuses to guess (D4)."""
+
+
+class ParityError(RuntimeError):
+    """Auth and prod hold different records for the same thing, so a push would add a
+    second record on prod. Permanent until someone restores parity; never retried."""
 
 
 # dotCMS _search is Elasticsearch-backed and indexes asynchronously after Publish fires.
@@ -110,8 +117,13 @@ def publish(
     service_account: str | None = None,
     force: bool = False,
     apply: bool,
+    prod: CorpsitesClient | None = None,
 ) -> PublishResult:
-    """Search for an existing entry, decide create/update/skip, and fire Publish."""
+    """Search for an existing entry, decide create/update/skip, and fire Publish.
+
+    With a `prod` reader, every write then waits until its inode is live on prod: this
+    runs once per release, so there is no later run that would notice a failed push.
+    """
     release_notes = prepare_notes(release_notes, version)
     hits = client._search(version)
 
@@ -121,6 +133,47 @@ def publish(
             f"{len(hits)} entries match version {version}; refusing to guess which to update"
         )
 
+    # Prod gets whatever this write pushes, so the same rules apply to prod's copy: no
+    # guessing between duplicates, and a hand edit made on prod is not overwritten.
+    # Working and live versions are both looked up (a draft can change `minor` and hide the
+    # live row) and grouped by identifier, since a draft over a live row is one entry.
+    # When auth has the entry, every prod version of its identifier is added too: a draft
+    # whose `minor` changed is invisible to both `minor` lookups.
+    if prod is not None:
+        prod_hits = prod._search(version) + prod._search(version, live=True)
+        if hits:
+            prod_hits += prod.versions(hits[0].identifier)
+        prod_ids = sorted({h.identifier for h in prod_hits})
+        if len(prod_ids) > 1:
+            raise AmbiguousMatchError(
+                f"{len(prod_ids)} entries match version {version} on prod; refusing to guess"
+            )
+        if prod_ids and not hits:
+            # Creating it on auth would push a second row, with a new identifier, to prod.
+            raise ParityError(
+                f"an entry for {version} exists on prod but not on auth; "
+                "restore auth/prod parity before publishing"
+            )
+        if prod_ids and prod_ids != [hits[0].identifier]:
+            # Same reason: auth's row would reach prod as a second row, not an update.
+            raise ParityError(
+                f"auth and prod hold {version} under different identifiers "
+                f"({hits[0].identifier} vs {prod_ids[0]}); "
+                "restore auth/prod parity before publishing"
+            )
+        # Any version of it last touched by a person on prod, draft or live, is protected.
+        edited = [h for h in prod_hits if not _owned_by_service_account(h, service_account)]
+        if edited and not force:
+            editor = edited[0].mod_user_name or edited[0].mod_user
+            return PublishResult(
+                status="skipped",
+                version=version,
+                reason=(
+                    f"last modified on prod by {editor} "
+                    "(not the automation service account); use --force to override"
+                ),
+            )
+
     if not hits:
         contentlet = build_contentlet(
             version=version,
@@ -129,13 +182,15 @@ def publish(
             released_date=released_date,
             eol_date=eol_date,
         )
-        client.fire(contentlet, apply=apply)
+        inode = client.fire(contentlet, apply=apply)
         if apply and not _wait_until_searchable(client, version):
             print(
                 f"warning: created entry for {version} is not yet searchable; "
                 "an immediate re-run may not see it",
                 file=sys.stderr,
             )
+        if apply:
+            _confirm_on_prod(prod, inode, version)
         return PublishResult(status="created", version=version)
 
     # Exactly one hit → update-in-place, unless a human last touched it (FR-011).
@@ -158,8 +213,19 @@ def publish(
         eol_date=eol_date,
         identifier=hit.identifier,
     )
-    client.fire(contentlet, apply=apply)
+    inode = client.fire(contentlet, apply=apply)
+    if apply:
+        _confirm_on_prod(prod, inode, version)
     return PublishResult(status="updated", version=version)
+
+
+def _confirm_on_prod(prod: CorpsitesClient | None, inode: str | None, version: str) -> None:
+    """Wait until the version just written on auth is live on prod; raise if it never is."""
+    if prod is None:
+        return
+    if not inode:
+        raise RuntimeError(f"fire response for {version} had no inode; cannot confirm the push to prod")
+    wait_for_prod(lambda: prod.is_live(inode), f"changelog entry {version}")
 
 
 def _owned_by_service_account(hit, service_account: str | None) -> bool:

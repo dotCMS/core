@@ -37,6 +37,9 @@ import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.parser.node.Node;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.rendering.velocity.viewtools.RestrictedViewToolAccess;
+import javax.servlet.http.HttpServletRequest;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.VelocityUtil;
 
@@ -256,6 +259,13 @@ public class Parse extends InputBase
         /*
          *  and render it
          */
+        // The parsed resource carries Velocity of its own, written by whoever last saved it.
+        // While that code runs the author on the request is that user, so the view tools it
+        // calls are judged on who wrote the code and not on the name this directive was given:
+        // the name is the caller's to choose, but the code it resolves to is not.
+        final HttpServletRequest dotRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        final Object dotPreviousAuthor =
+                RestrictedViewToolAccess.announceRenderingAuthorOf(dotRequest, arg);
         try
         {
             preRender(context);
@@ -294,6 +304,7 @@ public class Parse extends InputBase
         }
         finally
         {
+            RestrictedViewToolAccess.restoreRenderingAuthor(dotRequest, dotPreviousAuthor);
             context.popCurrentTemplateName();
             postRender(context);
         }

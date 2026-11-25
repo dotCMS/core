@@ -60,9 +60,20 @@ function dotCMSWrapAnalytics<T extends Record<string, string | number>>(
 
 function createAnalyticsHealthResponse(available: string | boolean): DotCMSResponse<HealthEntity> {
     return {
-        entity: {
-            available
-        },
+        entity: { available },
+        errors: [],
+        i18nMessagesMap: {},
+        messages: [],
+        pagination: null,
+        permissions: []
+    };
+}
+
+function createAnalyticsHealthResponseWithHealth(
+    health: 'OK' | 'NOT_CONFIGURED' | 'CONFIGURATION_ERROR'
+): DotCMSResponse<HealthEntity> {
+    return {
+        entity: { health },
         errors: [],
         i18nMessagesMap: {},
         messages: [],
@@ -810,40 +821,80 @@ describe('DotAnalyticsService', () => {
     });
 
     describe('healthCheck', () => {
-        it('should return AVAILABLE when entity.available is string "true"', () => {
-            let result!: HealthStatusTypes;
-            spectator.service.healthCheck().subscribe((status) => {
-                result = status;
+        describe('new health field (preferred)', () => {
+            it('should return OK when entity.health is "OK"', () => {
+                let result!: HealthStatusTypes;
+                spectator.service.healthCheck().subscribe((status) => {
+                    result = status;
+                });
+
+                const req = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
+                req.flush(createAnalyticsHealthResponseWithHealth('OK'));
+
+                expect(result).toBe(HealthStatusTypes.OK);
             });
 
-            const req = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
-            req.flush(createAnalyticsHealthResponse('true'));
+            it('should return NOT_CONFIGURED when entity.health is "NOT_CONFIGURED"', () => {
+                let result!: HealthStatusTypes;
+                spectator.service.healthCheck().subscribe((status) => {
+                    result = status;
+                });
 
-            expect(result).toBe(HealthStatusTypes.AVAILABLE);
+                const req = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
+                req.flush(createAnalyticsHealthResponseWithHealth('NOT_CONFIGURED'));
+
+                expect(result).toBe(HealthStatusTypes.NOT_CONFIGURED);
+            });
+
+            it('should return CONFIGURATION_ERROR when entity.health is "CONFIGURATION_ERROR"', () => {
+                let result!: HealthStatusTypes;
+                spectator.service.healthCheck().subscribe((status) => {
+                    result = status;
+                });
+
+                const req = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
+                req.flush(createAnalyticsHealthResponseWithHealth('CONFIGURATION_ERROR'));
+
+                expect(result).toBe(HealthStatusTypes.CONFIGURATION_ERROR);
+            });
         });
 
-        it('should return AVAILABLE when entity.available is boolean true', () => {
-            let result!: HealthStatusTypes;
-            spectator.service.healthCheck().subscribe((status) => {
-                result = status;
+        describe('legacy available field (rollback fallback)', () => {
+            it('should return OK when entity.health is absent and entity.available is string "true"', () => {
+                let result!: HealthStatusTypes;
+                spectator.service.healthCheck().subscribe((status) => {
+                    result = status;
+                });
+
+                const req = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
+                req.flush(createAnalyticsHealthResponse('true'));
+
+                expect(result).toBe(HealthStatusTypes.OK);
             });
 
-            const req = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
-            req.flush(createAnalyticsHealthResponse(true));
+            it('should return OK when entity.health is absent and entity.available is boolean true', () => {
+                let result!: HealthStatusTypes;
+                spectator.service.healthCheck().subscribe((status) => {
+                    result = status;
+                });
 
-            expect(result).toBe(HealthStatusTypes.AVAILABLE);
-        });
+                const req = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
+                req.flush(createAnalyticsHealthResponse(true));
 
-        it('should return NOT_AVAILABLE when entity.available is string "false"', () => {
-            let result!: HealthStatusTypes;
-            spectator.service.healthCheck().subscribe((status) => {
-                result = status;
+                expect(result).toBe(HealthStatusTypes.OK);
             });
 
-            const req = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
-            req.flush(createAnalyticsHealthResponse('false'));
+            it('should return NOT_AVAILABLE when entity.health is absent and entity.available is false', () => {
+                let result!: HealthStatusTypes;
+                spectator.service.healthCheck().subscribe((status) => {
+                    result = status;
+                });
 
-            expect(result).toBe(HealthStatusTypes.NOT_AVAILABLE);
+                const req = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
+                req.flush(createAnalyticsHealthResponse('false'));
+
+                expect(result).toBe(HealthStatusTypes.NOT_AVAILABLE);
+            });
         });
 
         it('should return ERROR on HTTP failure', () => {
@@ -871,11 +922,11 @@ describe('DotAnalyticsService', () => {
 
             const reqs = spectator.controller.match((req) => req.url === ANALYTICS_HEALTH_URL);
             expect(reqs.length).toBe(2);
-            reqs[0].flush(createAnalyticsHealthResponse('true'));
-            reqs[1].flush(createAnalyticsHealthResponse('false'));
+            reqs[0].flush(createAnalyticsHealthResponseWithHealth('OK'));
+            reqs[1].flush(createAnalyticsHealthResponseWithHealth('NOT_CONFIGURED'));
 
-            expect(first).toBe(HealthStatusTypes.AVAILABLE);
-            expect(second).toBe(HealthStatusTypes.NOT_AVAILABLE);
+            expect(first).toBe(HealthStatusTypes.OK);
+            expect(second).toBe(HealthStatusTypes.NOT_CONFIGURED);
         });
     });
 

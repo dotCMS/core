@@ -55,6 +55,33 @@ export async function createFolders(
 }
 
 /**
+ * Creates one folder under a site and answers its inode, for a screen that names a folder by inode
+ * (`?folder=` on a create link). Flushes the FolderCache as {@link createFolders} does.
+ *
+ * @param siteName the site the folder belongs to, e.g. `demo.dotcms.com`
+ * @param path the folder path, leading slash included
+ * @returns the new folder's inode
+ */
+export async function createFolder(
+    request: APIRequestContext,
+    siteName: string,
+    path: string
+): Promise<string> {
+    const response = await request.post(
+        `/api/v1/folder/createfolders/${siteName}?indexPolicy=WAIT_FOR`,
+        { data: [path], headers: authHeaders() }
+    );
+    expect(response.status()).toBe(200);
+    const { entity } = (await response.json()) as { entity: { inode: string }[] };
+
+    await request.delete('/api/v1/caches/region/FolderCache', {
+        headers: authHeaders()
+    });
+
+    return entity[0].inode;
+}
+
+/**
  * Creates one folder that only admits file names matching the given globs.
  *
  * Its own helper because the *filter* is the point: a folder's `fileMasks` is a glob on the file
@@ -89,4 +116,46 @@ export async function createFilteredFolder(
     await request.delete('/api/v1/caches/region/FolderCache', {
         headers: authHeaders()
     });
+}
+
+/**
+ * Submits a bulk folder delete, the same request Content Drive's Action Center sends.
+ *
+ * Answers once the run is queued, not once it has finished: the delete itself happens in a
+ * background job.
+ *
+ * @param siteName the site the folders belong to, e.g. `demo.dotcms.com`
+ * @param paths folder paths from the site root, leading slash included
+ */
+export async function submitFolderDelete(
+    request: APIRequestContext,
+    siteName: string,
+    paths: string[]
+): Promise<void> {
+    const response = await request.post('/api/v1/assets/folders/_bulkdelete', {
+        data: { assetPaths: paths.map((path) => `//${siteName}${path}/`) },
+        headers: authHeaders()
+    });
+    expect(response.status(), await response.text()).toBe(202);
+}
+
+/**
+ * Submits a bulk folder duplicate, the same request Content Drive sends.
+ *
+ * Answers once the run is queued, not once it has finished: the copy itself happens in a
+ * background job.
+ *
+ * @param siteName the site the folders belong to, e.g. `demo.dotcms.com`
+ * @param paths folder paths from the site root, leading slash included
+ */
+export async function submitFolderDuplicate(
+    request: APIRequestContext,
+    siteName: string,
+    paths: string[]
+): Promise<void> {
+    const response = await request.post('/api/v1/assets/folders/_bulkduplicate', {
+        data: { assetPaths: paths.map((path) => `//${siteName}${path}/`) },
+        headers: authHeaders()
+    });
+    expect(response.status(), await response.text()).toBe(202);
 }

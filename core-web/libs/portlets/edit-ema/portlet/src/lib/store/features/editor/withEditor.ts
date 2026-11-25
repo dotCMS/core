@@ -2,12 +2,24 @@ import { patchState, signalStoreFeature, type, withComputed, withMethods } from 
 
 import { computed, inject, Signal, untracked } from '@angular/core';
 
-import { DotTreeNode, SeoMetaTags, SeoMetaTagsResult } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentlet,
+    DotTreeNode,
+    SeoMetaTags,
+    SeoMetaTagsResult
+} from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 import { StyleEditorFormSchema } from '@dotcms/types/internal';
 import { WINDOW } from '@dotcms/utils';
+import { getContentletsInContainer } from '@dotcms/uve/internal';
 
-import { PageData, PageDataContainer, ReloadEditorContent } from './models';
+import {
+    ContentletEditData,
+    PageData,
+    PageDataContainer,
+    ReloadEditorContent,
+    UVE_EDIT_PANEL_TABS
+} from './models';
 
 import {
     Container,
@@ -15,7 +27,7 @@ import {
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
 import { DEFAULT_PERSONA } from '../../../shared/consts';
-import { EDITOR_STATE } from '../../../shared/enums';
+import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
 import {
     ActionPayload,
     ContainerPayload,
@@ -32,7 +44,7 @@ import {
     sanitizeURL
 } from '../../../utils';
 import { PageType, UVEState } from '../../models';
-import { PageComputed } from '../page/withPage';
+import { PageComputed, PageLoadingConfigState } from '../page/withPage';
 
 import type { WorkflowLockComputed } from '../workflow/withWorkflow';
 
@@ -75,6 +87,7 @@ const buildIframeURL = ({ url, params, dotCMSHost }) => {
  *
  * Dependencies:
  * - UVEState: Flat editor state (editorDragItem, editorBounds, etc.)
+ * - PageLoadingConfigState: Client readiness, for the iframe loading state
  * - PageComputed: Access to page data for edit checks
  * - WorkflowLockComputed: Access to lock state for permission checks
  * - ViewComputed: Access to viewMode for edit/preview mode checks
@@ -82,7 +95,7 @@ const buildIframeURL = ({ url, params, dotCMSHost }) => {
 export function withEditor() {
     return signalStoreFeature(
         {
-            state: type<UVEState>(),
+            state: type<UVEState & Pick<PageLoadingConfigState, 'isClientReady'>>(),
             props: type<PageComputed & WorkflowLockComputed & ViewComputed>()
         },
         withComputed((store) => {
@@ -140,8 +153,59 @@ export function withEditor() {
                 return store.viewMode() === UVE_MODE.EDIT;
             });
 
-            const $isEmaLegacyScriptInjectionEnabled = computed(
-                () => store.flags()?.FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION === true
+            /**
+             * The selected contentlet as the edit panel shows it: the page-asset version when the
+             * page holds it, which is the latest saved one, otherwise the selection's own payload.
+             */
+            const $editorContentletEditData = computed<ContentletEditData>(() => {
+                const { container, contentlet: contentletPayload } =
+                    store.editorSelected()?.payload ?? {};
+
+                // Get the full contentlet from containers using the SDK utility.
+                // It handles both uuid-${uuid} and uuid-dotParser_${uuid} key formats.
+                let contentlet: DotCMSContentlet = contentletPayload as DotCMSContentlet;
+                const pageAsset = store.pageAsset();
+
+                if (
+                    container?.identifier &&
+                    container?.uuid &&
+                    contentletPayload?.identifier &&
+                    pageAsset?.containers?.[container.identifier]
+                ) {
+                    const contentlets = getContentletsInContainer(pageAsset, {
+                        identifier: container.identifier,
+                        uuid: container.uuid,
+                        historyUUIDs: []
+                    });
+                    const foundContentlet = contentlets.find(
+                        (c) => c.identifier === contentletPayload.identifier
+                    );
+
+                    if (foundContentlet) {
+                        // The page-asset contentlet is the fresher one (new inode after
+                        // a save), but it carries no permission — `canEdit` only exists
+                        // on the DOM payload. Carry it across the swap or the quick-edit
+                        // panel has nothing to gate on.
+                        contentlet = {
+                            ...(foundContentlet as DotCMSContentlet),
+                            ...(contentletPayload?.canEdit === undefined
+                                ? {}
+                                : { canEdit: contentletPayload.canEdit })
+                        };
+                    }
+                }
+
+                return { container, contentlet };
+            });
+
+            /**
+             * Whether the selected contentlet may be modified. Drives the edit panel's style tab
+             * and the style-editor guard, mirroring the quick-edit gate so neither tab offers a
+             * way to change a contentlet the user has no permission on. Fail-open when the
+             * permission is absent.
+             */
+            const editorCanEditSelectedContentlet = computed(
+                () => $editorContentletEditData()?.contentlet?.['canEdit'] !== false
             );
 
             return {
@@ -149,8 +213,22 @@ export function withEditor() {
                 editorCanEditLayout,
                 editorCanEditStyles,
                 editorEnableInlineEdit,
-                $isEmaLegacyScriptInjectionEnabled,
                 editorHasAccessToEditMode,
+                $editorContentletEditData,
+                editorCanEditSelectedContentlet,
+                /**
+                 * Whether the page in the iframe is still loading: the page itself is loading,
+                 * or a headless page in edit mode is still waiting for its client to be ready.
+                 */
+                $editorIsIframeLoading: computed<boolean>(() => {
+                    const isEditMode = store.viewMode() === UVE_MODE.EDIT;
+                    const isPageReady =
+                        store.pageType() === PageType.TRADITIONAL ||
+                        store.isClientReady() ||
+                        !isEditMode;
+
+                    return !isPageReady || store.uveStatus() === UVE_STATUS.LOADING;
+                }),
 
                 $allowContentDelete: computed<boolean>(() => {
                     const numberContents = store.pageAsset()?.numberContents;
@@ -294,8 +372,45 @@ export function withEditor() {
         }),
         withMethods((store) => {
             return {
-                updateEditorScrollState() {
+                /**
+                 * The page scrolled. During a drag on a page that reports its `scrollY`, the
+                 * drop targets stay and move with the page: every container is shifted by how
+                 * far the page scrolled since the bounds were taken, and the drag stays in
+                 * `DRAGGING`. Otherwise the bounds are cleared until the page sends fresh ones,
+                 * in `SCROLL_DRAG` during a drag and `SCROLLING` outside one. Every reported
+                 * `scrollY` is recorded, so a later drag measures from it.
+                 *
+                 * @param scrollY the page's scroll offset; absent on older `@dotcms/uve`
+                 */
+                updateEditorScrollState(scrollY?: number) {
                     const dragItem = store.editorDragItem();
+                    const reportsScrollY = typeof scrollY === 'number' && Number.isFinite(scrollY);
+
+                    if (dragItem && reportsScrollY) {
+                        // Contentlets are placed relative to their container, so moving the
+                        // containers moves everything. Each report shifts by the change since
+                        // the last one, which adds up to the change since the bounds were taken.
+                        const delta = scrollY - store.editorScrollY();
+                        // The page reports each frame twice with the same scrollY. New bounds
+                        // make the dropzone resolve its target again, so a zero shift keeps them.
+                        const editorBounds =
+                            delta === 0
+                                ? store.editorBounds()
+                                : store.editorBounds().map((container) => ({
+                                      ...container,
+                                      y: container.y - delta
+                                  }));
+
+                        patchState(store, {
+                            editorScrollY: scrollY,
+                            editorBounds,
+                            editorContentArea: null,
+                            editorState: EDITOR_STATE.DRAGGING
+                        });
+
+                        return;
+                    }
+
                     // Keep editorSelected: the SDK's auto-bounds
                     // channel pushes fresh SET_BOUNDS once scrolling settles
                     // and the SET_BOUNDS handler re-anchors the selected
@@ -303,21 +418,23 @@ export function withEditor() {
                     // Hover area is dropped because pointer state is
                     // undefined mid-scroll.
                     patchState(store, {
+                        editorScrollY: reportsScrollY ? scrollY : store.editorScrollY(),
                         editorBounds: [],
                         editorContentArea: null,
                         editorState: dragItem ? EDITOR_STATE.SCROLL_DRAG : EDITOR_STATE.SCROLLING
                     });
                 },
+                /**
+                 * A new document loaded in the iframe, at the top: later scroll reports are
+                 * measured from 0, not from where the previous document was.
+                 */
+                resetEditorScrollY() {
+                    patchState(store, { editorScrollY: 0 });
+                },
                 updateEditorOnScrollEnd() {
                     const dragItem = store.editorDragItem();
                     patchState(store, {
                         editorState: dragItem ? EDITOR_STATE.DRAGGING : EDITOR_STATE.IDLE
-                    });
-                },
-                updateEditorScrollDragState() {
-                    patchState(store, {
-                        editorState: EDITOR_STATE.SCROLL_DRAG,
-                        editorBounds: []
                     });
                 },
                 /**
@@ -492,6 +609,18 @@ export function withEditor() {
                 setEditPanelOpen(open: boolean) {
                     patchState(store, {
                         editorEditPanelOpen: open
+                    });
+                },
+                /** Shows the given tab of the edit panel; leaves the panel open or closed. */
+                editorSetEditPanelTab(tab: UVE_EDIT_PANEL_TABS) {
+                    patchState(store, {
+                        editorEditPanelTab: tab
+                    });
+                },
+                /** Records whether the content editor is placed; it sets this itself. */
+                editorSetContentEditorPlaced(placed: boolean) {
+                    patchState(store, {
+                        editorContentEditorPlaced: placed
                     });
                 },
                 cancelContentletEdit() {

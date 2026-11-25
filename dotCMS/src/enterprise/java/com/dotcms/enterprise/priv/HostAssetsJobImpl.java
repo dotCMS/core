@@ -30,10 +30,13 @@ import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.SiteCreatedEvent;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.db.HibernateUtil;
@@ -84,6 +87,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -124,6 +128,16 @@ public class HostAssetsJobImpl extends ParentProxy{
 	private final User SYSTEM_USER;
 	private final Host SYSTEM_HOST;
 	private final Folder SYSTEM_FOLDER;
+	/**
+	 * Inodes of the folders this copy created in the destination site. Only these get the source
+	 * folder's permissions; folders that were already there keep their own.
+	 * <p>
+	 * It has to outlive a single {@link #copyFolder} call: copying a container-as-file creates its
+	 * parent folders (such as {@code /application}) as a side effect, and those parents only reach
+	 * {@link #copyFolder} later, in the folder sweep, where {@code createFolders} returns them as
+	 * existing folders. Without this record they would never get their source permissions.
+	 */
+	private final Set<String> foldersCreatedByThisCopy = new HashSet<>();
 
 	/**
 	 * This feature flag allows you to enable/disable copying Content Types when you copy a Site.
@@ -1074,6 +1088,11 @@ public class HostAssetsJobImpl extends ParentProxy{
 	 * method will update the Map folderMappingsBySourceId with the new id of the generated folder
 	 * If the folder already exist this method will skip copying it and will still return the
 	 * folder object that was copied.
+	 * <p>
+	 * A folder this copy creates gets the source folder's own permissions, the same way copied
+	 * templates, containers, menu links and contentlets do. A folder with no permissions of its own
+	 * keeps inheriting from its parent in the new site. A folder that was already at that path in
+	 * the destination site keeps its own permissions.
 	 *
 	 * @param sourceFolder             Source original site folder
 	 * @param destinationSite          Target site folder
@@ -1090,14 +1109,28 @@ public class HostAssetsJobImpl extends ParentProxy{
 					.format("---> Folder `%s` has been copied already. ", sourceFolder.getPath()));
 			return folderMappingsBySourceId.get(sourceFolder.getInode()).destinationFolder;
 		}
-		final Folder newFolder = this.folderAPI.createFolders(APILocator.getIdentifierAPI().find(sourceFolder.getIdentifier()).getPath(),
-						destinationSite, this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES);
+		final Folder newFolder = this.folderAPI.createFolders(
+				APILocator.getIdentifierAPI().find(sourceFolder.getIdentifier()).getPath(), destinationSite,
+				this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES,
+				created -> this.foldersCreatedByThisCopy.add(created.getInode()));
 		newFolder.setTitle(sourceFolder.getTitle());
 		if (sourceFolder.isShowOnMenu()) {
 			newFolder.setSortOrder(sourceFolder.getSortOrder());
 			newFolder.setShowOnMenu(true);
 		}
+		final boolean createdByThisCopy = this.foldersCreatedByThisCopy.contains(newFolder.getInode());
+		if (createdByThisCopy) {
+			// grants given to the CMS Owner role only apply to the folder's owner
+			newFolder.setOwner(sourceFolder.getOwner());
+		}
 		this.folderAPI.save(newFolder, this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES);
+		final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+		if (createdByThisCopy && !permissionAPI.isInheritingPermissions(sourceFolder)) {
+			permissionAPI.copyPermissions(sourceFolder, newFolder);
+		}
+		if (createdByThisCopy) {
+			evictCachesAfterCommit(newFolder);
+		}
 		folderMappingsBySourceId.put(sourceFolder.getInode(), new FolderMapping(sourceFolder, newFolder));
 		return newFolder;
 	}
@@ -1465,6 +1498,59 @@ public class HostAssetsJobImpl extends ParentProxy{
             this.destinationContent = destinationContent;
         }
     }
+
+	/**
+	 * Drops what the caches hold for a folder this copy created and then changed, once the current
+	 * transaction commits.
+	 * <p>
+	 * A folder can be created in one phase of the copy (copying a container-as-file creates its
+	 * parent folders) and committed, then get its owner and permissions in a later phase. Saves
+	 * evict the caches before their transaction commits, so a request in between can cache the
+	 * folder, its permissions, or the permissions its children inherit from it, as they were before
+	 * the change. After the commit, on this thread and once per transaction, the copied folders are
+	 * removed from the folder cache and the permission cache is cleared: rows inherited by
+	 * descendants are cached under each descendant's id, so evicting them one by one would mean
+	 * walking every subtree. The copy only clears it once per phase.
+	 *
+	 * @param folder a folder this copy created
+	 */
+	private void evictCachesAfterCommit(final Folder folder) {
+		HibernateUtil.getOrAddSyncCommitListener("site-copy-evict-copied-folders",
+						CopiedFolderCacheEviction::new)
+				.ifPresentOrElse(eviction -> eviction.add(folder),
+						() -> new CopiedFolderCacheEviction(folder).run());
+	}
+
+	/**
+	 * Removes the given folders from the folder cache and clears the permission cache.
+	 */
+	private static final class CopiedFolderCacheEviction implements Runnable {
+
+		private final Map<String, Folder> foldersByInode = new HashMap<>();
+
+		private CopiedFolderCacheEviction() {
+		}
+
+		private CopiedFolderCacheEviction(final Folder folder) {
+			add(folder);
+		}
+
+		private void add(final Folder folder) {
+			this.foldersByInode.put(folder.getInode(), folder);
+		}
+
+		@Override
+		public void run() {
+			for (final Folder folder : this.foldersByInode.values()) {
+				final Identifier identifier = Try.of(
+						() -> APILocator.getIdentifierAPI().find(folder.getIdentifier()))
+						.getOrNull();
+				CacheLocator.getFolderCache().removeFolder(folder, identifier);
+			}
+			CacheLocator.getPermissionCache().clearCache();
+		}
+
+	}
 
     private static class FolderMapping {
         Folder sourceFolder;

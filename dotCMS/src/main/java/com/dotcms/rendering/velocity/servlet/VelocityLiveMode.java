@@ -60,6 +60,8 @@ import org.apache.velocity.context.Context;
 
 public class VelocityLiveMode extends VelocityModeHandler {
 
+    static final String RESOLVED_PAGE_ATTRIBUTE = "idInode";
+
     /**
      * Initial size of the in-memory buffer used when minification is on. Big enough that a typical
      * page never triggers a grow-and-copy, and small enough to be irrelevant if a page is tiny.
@@ -121,7 +123,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
             return;
         } else {
-            request.setAttribute("idInode", id);
+            request.setAttribute(RESOLVED_PAGE_ATTRIBUTE, id);
         }
 
         response.setContentType(CHARSET);

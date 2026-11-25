@@ -5,6 +5,7 @@
 <%@ page import="com.dotcms.contenttype.model.type.ContentType" %>
 <%@ page import="com.dotcms.contenttype.model.field.Field" %>
 <%@ page import="com.dotmarketing.portlets.contentlet.model.Contentlet" %>
+<%@ page import="com.dotcms.rendering.velocity.viewtools.RestrictedViewToolAccess" %>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotmarketing.util.VelocityUtil"%>
 
@@ -16,6 +17,7 @@
 <%@ page import="com.fasterxml.jackson.databind.ObjectMapper" %>
 <%@ page import="com.fasterxml.jackson.datatype.jdk8.Jdk8Module" %>
 <%@ page import="com.dotcms.rest.api.v1.DotObjectMapperProvider" %>
+<%@ page import="com.liferay.util.Xss" %>
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 <%@ page import="com.dotmarketing.util.Logger" %>
 <%@ page import="java.util.HashMap" %>
@@ -237,8 +239,8 @@
     String isModal = request.getParameter("modal"); // Check if opened as modal
     boolean modalMode = "true".equals(isModal);
 
-    // Use DotObjectMapperProvider to get properly configured ObjectMapper
-    ObjectMapper mapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+    // Mapper whose output can be placed inside a script element
+    ObjectMapper mapper = DotObjectMapperProvider.getInstance().getScriptEmbeddableObjectMapper();
 %>
 
 
@@ -278,6 +280,16 @@
         String inode = request.getParameter("inode") != null ? request.getParameter("inode") : null;
         ContentletAPI conAPI = APILocator.getContentletAPI();
         Contentlet contentlet =  (inode!=null) ? conAPI.find(inode,user,false) : new Contentlet();
+        // the type comes from ?variable= and the content from ?inode=: a request naming a
+        // content of some other type is asking for a preview that could never be reached from
+        // the editor, so drop the content and preview the field on its own
+        if (null != contentType && null != contentlet && UtilMethods.isSet(contentlet.getInode())
+                && !contentType.id().equals(contentlet.getContentTypeId())) {
+            Logger.warn("legacy-custom-field.jsp", "Content '" + contentlet.getInode()
+                    + "' is not of type '" + contentTypeVarName + "'; previewing the field "
+                    + "without it");
+            contentlet = new Contentlet();
+        }
         String contentletObj = "{}";
 
         if(contentlet != null){
@@ -341,7 +353,17 @@
                             velocityContext.put(field.variable(), defaultValue);
                         }
                     }
-                    HTMLString = new VelocityUtil().parseVelocity(textValue,velocityContext);
+                    // The field's code is about to run as a preview for this user alone, so
+                    // name them: the restricted view tools it calls answer to their role. Nothing
+                    // else on this path names anybody, and an unnamed render is refused.
+                    final Object previousAuthor =
+                            RestrictedViewToolAccess.announceFieldPreviewAuthor(request,
+                                    contentType, user);
+                    try {
+                        HTMLString = new VelocityUtil().parseVelocity(textValue,velocityContext);
+                    } finally {
+                        RestrictedViewToolAccess.restoreRenderingAuthor(request, previousAuthor);
+                    }
                 }
 %>
                     <body id="legacy-custom-field-body">
@@ -363,8 +385,8 @@
                          */
                         (() => {
                             // Initialize the height manager using the external module
-                            const iframeId = '<%= field.variable() %>';
-                            const inode = '<%= inode != null ? inode : "new" %>';
+                            const iframeId = '<%= Xss.encodeForJavaScript(field.variable()) %>';
+                            const inode = '<%= Xss.encodeForJavaScript(inode != null ? inode : "new") %>';
                             const modalMode = <%= modalMode %>;
 
                             if (window.DotIframeHeightManager) {

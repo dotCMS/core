@@ -5,7 +5,9 @@ import com.dotcms.cache.lettuce.RedisClientFactory;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.apps.view.SecretView;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
+import com.dotcms.rest.api.v1.system.cache.CachedValues;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
@@ -53,6 +55,14 @@ public class RedisResource {
         this.client      = client;
     }
 
+    /**
+     * Pings the Redis server and returns its reply.
+     * Requires a CMS Administrator.
+     *
+     * @param request  the current {@link HttpServletRequest}
+     * @param response the current {@link HttpServletResponse}
+     * @return the Redis ping reply wrapped in a {@link ResponseEntityView}
+     */
     @NoCache
     @GET
     @Path("/ping")
@@ -63,6 +73,7 @@ public class RedisResource {
         new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
@@ -70,6 +81,15 @@ public class RedisResource {
         return Response.ok(new ResponseEntityView(this.client.ping())).build();
     }
 
+    /**
+     * Sends a message to the Redis server and returns the echoed value.
+     * Requires a CMS Administrator.
+     *
+     * @param request  the current {@link HttpServletRequest}
+     * @param response the current {@link HttpServletResponse}
+     * @param message  the message to echo
+     * @return the echoed message wrapped in a {@link ResponseEntityView}
+     */
     @NoCache
     @GET
     @Path("/echo/{message}")
@@ -81,6 +101,7 @@ public class RedisResource {
         new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
@@ -88,6 +109,15 @@ public class RedisResource {
         return Response.ok(new ResponseEntityView(this.client.echo(message))).build();
     }
 
+    /**
+     * Stores a value in Redis under the given key.
+     * Requires a CMS Administrator.
+     *
+     * @param request  the current {@link HttpServletRequest}
+     * @param response the current {@link HttpServletResponse}
+     * @param setForm  the key and the value to store
+     * @return the result of the set operation wrapped in a {@link ResponseEntityView}
+     */
     @NoCache
     @PUT
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -98,6 +128,7 @@ public class RedisResource {
         new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
@@ -106,6 +137,15 @@ public class RedisResource {
                 this.client.set(setForm.getKey(), setForm.getValue()))).build();
     }
 
+    /**
+     * Returns the value stored in Redis under the given key, as {@link #responseValue(String, Object)} writes it.
+     * Requires a CMS Administrator.
+     *
+     * @param request  the current {@link HttpServletRequest}
+     * @param response the current {@link HttpServletResponse}
+     * @param key      the key to read
+     * @return the stored value wrapped in a {@link ResponseEntityView}
+     */
     @NoCache
     @GET
     @Path("/{key}")
@@ -117,13 +157,23 @@ public class RedisResource {
         new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
 
-        return Response.ok(new ResponseEntityView(this.client.get(key))).build();
+        return Response.ok(new ResponseEntityView(responseValue(key, this.client.get(key)))).build();
     }
 
+    /**
+     * Deletes the given key from Redis.
+     * Requires a CMS Administrator.
+     *
+     * @param request  the current {@link HttpServletRequest}
+     * @param response the current {@link HttpServletResponse}
+     * @param key      the key to delete
+     * @return the result of the delete operation wrapped in a {@link ResponseEntityView}
+     */
     @NoCache
     @DELETE
     @Path("/{key}")
@@ -135,6 +185,7 @@ public class RedisResource {
         new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
@@ -143,6 +194,15 @@ public class RedisResource {
     }
 
     /////// HASHES
+    /**
+     * Stores a set of fields as a hash in Redis under the given key.
+     * Requires a CMS Administrator.
+     *
+     * @param request  the current {@link HttpServletRequest}
+     * @param response the current {@link HttpServletResponse}
+     * @param setForm  the key and the fields to store
+     * @return the result of the hash set operation wrapped in a {@link ResponseEntityView}
+     */
     @NoCache
     @PUT
     @Path("/hash")
@@ -154,6 +214,7 @@ public class RedisResource {
         new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
@@ -162,6 +223,15 @@ public class RedisResource {
                 this.client.setHash(setForm.getKey(), setForm.getFields()))).build();
     }
 
+    /**
+     * Returns the hash stored in Redis under the given key, as {@link #responseValue(String, Object)} writes it.
+     * Requires a CMS Administrator.
+     *
+     * @param request  the current {@link HttpServletRequest}
+     * @param response the current {@link HttpServletResponse}
+     * @param key      the key of the hash to read
+     * @return the hash fields and values wrapped in a {@link ResponseEntityView}
+     */
     @NoCache
     @GET
     @Path("/hash/{key}")
@@ -173,13 +243,23 @@ public class RedisResource {
         new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
 
-        return Response.ok(new ResponseEntityView(this.client.getHash(key))).build();
+        return Response.ok(new ResponseEntityView(responseValue(key, this.client.getHash(key)))).build();
     }
 
+    /**
+     * Deletes every field of the hash stored in Redis under the given key.
+     * Requires a CMS Administrator.
+     *
+     * @param request  the current {@link HttpServletRequest}
+     * @param response the current {@link HttpServletResponse}
+     * @param key      the key of the hash to delete
+     * @return the number of deleted fields, as {@code rowsAffected}, wrapped in a {@link ResponseEntityView}
+     */
     @NoCache
     @DELETE
     @Path("/hash/{key}")
@@ -191,6 +271,7 @@ public class RedisResource {
         new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
@@ -204,6 +285,16 @@ public class RedisResource {
     }
 
     /////// INCREMENT
+    /**
+     * Increments by one the counter stored in Redis under the given key and resumes the
+     * asynchronous response with the new value.
+     * Requires a CMS Administrator.
+     *
+     * @param request       the current {@link HttpServletRequest}
+     * @param response      the current {@link HttpServletResponse}
+     * @param asyncResponse the asynchronous response resumed with the incremented value
+     * @param key           the key of the counter to increment
+     */
     @NoCache
     @PUT
     @Path("/incr/{key}")
@@ -216,6 +307,7 @@ public class RedisResource {
         new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
@@ -232,6 +324,15 @@ public class RedisResource {
         }, asyncResponse);
     }
 
+    /**
+     * Returns the current value of the counter stored in Redis under the given key.
+     * Requires a CMS Administrator.
+     *
+     * @param request  the current {@link HttpServletRequest}
+     * @param response the current {@link HttpServletResponse}
+     * @param key      the key of the counter to read
+     * @return the counter value wrapped in a {@link ResponseEntityView}
+     */
     @NoCache
     @GET
     @Path("/incr/{key}")
@@ -243,11 +344,29 @@ public class RedisResource {
         new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
 
         return Response.ok(new ResponseEntityView(this.client.getIncrement(key))).build();
+    }
+
+    /**
+     * Returns what the read routes send back for a stored value. The Redis cache shares this server, so a key it
+     * wrote for the Apps secrets group is answered with the hidden-value mask, and any other value goes through
+     * {@link CachedValues#forResponse(Object)}, which leaves out the credentials of users and the key of companies.
+     *
+     * @param key   the Redis key that was read
+     * @param value the stored value, or {@code null}
+     * @return the mask for an Apps secrets key, otherwise the value as {@link CachedValues#forResponse(Object)}
+     *         returns it
+     */
+    private static Object responseValue(final String key, final Object value) {
+        if (CachedValues.isAppsSecretsKey(key)) {
+            return SecretView.SecretViewSerializer.HIDDEN_SECRET_MASK;
+        }
+        return CachedValues.forResponse(value);
     }
 
 }

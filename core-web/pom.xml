@@ -248,9 +248,9 @@
                                 <argument>nx</argument>
                                 <argument>format:check</argument>
                                 <!-- Explicit base. Without it nx falls back to nx.json defaultBase
-                                     ("main"), i.e. a LOCAL branch that only exists when a job passes
-                                     require-main=true to prepare-runner. origin/main is always there
-                                     after a fetch-depth:0 checkout, so this runs anywhere. -->
+                                     ("main"), i.e. a LOCAL branch that no CI job creates any more.
+                                     origin/main is always there after a fetch-depth:0 checkout, so
+                                     this runs anywhere. -->
                                 <argument>--base=${git.origin.branch}</argument>
                             </arguments>
                         </configuration>
@@ -351,6 +351,13 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
                 <configuration>
+                    <!--
+                      CI reuses Nx build outputs from a cache (maven-job's Restore Nx Cache), so the
+                      Nx target behind each directory below must list every file it reads among its
+                      inputs, including files read by path from other libs or node_modules. See the
+                      warBuild, dotcmsScss and tailwindSources named inputs in nx.json; a new
+                      directory here needs the same treatment.
+                    -->
                     <webResources>
                         <resource>
                             <!-- Explicitly scoped to core-web directory to prevent referencing external folders -->
@@ -396,6 +403,9 @@
                             <directory>${project.basedir}/dist/libs/edit-content-bridge</directory>
                             <filtering>false</filtering>
                             <targetPath>html/js/legacy_custom_field_bridge</targetPath>
+                            <includes>
+                                <include>**/*.js</include>
+                            </includes>
                         </resource>
                     </webResources>
                 </configuration>
@@ -546,18 +556,25 @@
                                     -->
                                     <useMavenLogger>false</useMavenLogger>
                                     <!--
-                                      3 minutes. Measured runtime is 8.4-9.4s typical, 12s at the
-                                      tail, against the 10s budget the spike set. This ceiling is
-                                      ~15x the tail, so a slow-but-healthy run can never reach it;
-                                      only a pathological case can, chiefly the harness's
-                                      unshallow git-fetch fallback when the base ref cannot be
-                                      resolved (a full fetch here is ~1.1GB / ~20min). Timing out
-                                      fails the build through the plugin's watchdog, which throws
-                                      directly and never consults successCodes at all - so adding
-                                      a success code to "allow timeouts" would have no effect. An
-                                      unfinished check is not a passing one.
+                                      10 minutes. Runtime scales with the number of project configs
+                                      the diff touches: the harness type-checks each selected
+                                      config in sequence, with a full program per config. A usual
+                                      pull request touches a few configs and finishes in 8-12s. A
+                                      pull request that touches 29 configs (#38305, 280 core-web
+                                      files) took 133s on one runner and was killed at 180s on
+                                      others (run 45274008584, 4 of 4 attempts). The old 3-minute
+                                      ceiling was ~15x the tail for a usual pull request and about
+                                      1x for a large one.
+
+                                      The pathological case this ceiling still has to catch is the
+                                      harness's unshallow git-fetch fallback when the base ref
+                                      cannot be resolved (a full fetch here is ~1.1GB / ~20min).
+                                      Timing out fails the build through the plugin's watchdog,
+                                      which throws directly and never consults successCodes at
+                                      all - so adding a success code to "allow timeouts" would
+                                      have no effect. An unfinished check is not a passing one.
                                     -->
-                                    <timeout>180000</timeout>
+                                    <timeout>600000</timeout>
                                     <arguments>
                                         <argument>exec</argument>
                                         <argument>node</argument>
@@ -568,6 +585,29 @@
                                         <argument>--scope=core-web</argument>
                                         <argument>--format=github</argument>
                                     </arguments>
+                                </configuration>
+                            </execution>
+                            <!--
+                              Builds the projects tagged skip:build: the SDK libraries, mcp-server,
+                              ai-evals, dotcdn and http. The one exception that reaches the war is
+                              sdk-analytics, whose standalone bundle the build-analytics execution
+                              builds separately and webResources packages at ext/analytics. Nothing
+                              else in the war comes from them (the war's webResources list what
+                              does), so build-test leaves them out and
+                              the Initial Artifact Build no longer waits on them. They are still
+                              compiled here, in Frontend Unit Tests, which runs on every change under
+                              core-web, so a PR that breaks one of them still fails before merge.
+                              Always with the production configuration, as the artifact build used
+                              to build them (that job passes no -Dprod).
+                            -->
+                            <execution>
+                                <id>build-unshipped</id>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <phase>compile</phase>
+                                <configuration>
+                                    <commandlineArgs>exec nx run-many -t build --projects=tag:skip:build --prod</commandlineArgs>
                                 </configuration>
                             </execution>
                         </executions>

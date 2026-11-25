@@ -45,6 +45,15 @@ public class ACheckerDWR {
 		return null;		
 	}
 
+	/**
+	 * Checks content against Accessibility Guidelines for the TinyMCE validation plugin. The
+	 * parameters are handed to the {@link com.dotcms.enterprise.achecker.ACheckerAPI}, so they go
+	 * through the same validation as the REST endpoint.
+	 *
+	 * @param params the {@code content}, {@code guidelines}, {@code lang} and {@code fragment}
+	 *               values sent by the plugin
+	 * @return the {@link ACheckerResponse} with the results, or {@code null} if the check fails
+	 */
 	public ACheckerResponse validate(final Map<String, String> params) {
 	    if (LicenseUtil.getLevel()<LicenseLevel.STANDARD.level) {
 			throw new RuntimeException("need enterprise license");
@@ -52,8 +61,8 @@ public class ACheckerDWR {
 		try {
 			return APILocator.getACheckerAPI().validate(params);
 		} catch (final Exception e) {
-			Logger.error(this, String.format("Failed to validate Accessibility Guidelines in content with params: " +
-							"[ %s ] : %s", params, ExceptionUtil.getErrorMessage(e)), e);
+			Logger.error(this, "Failed to validate Accessibility Guidelines in content: "
+					+ ExceptionUtil.getErrorMessage(e), e);
 		}
 		return null;
 	}

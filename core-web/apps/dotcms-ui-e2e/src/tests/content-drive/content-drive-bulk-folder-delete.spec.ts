@@ -6,6 +6,8 @@ import {
     FolderRunPreview,
     acceptSubmissionsWithoutRunning,
     advertiseFolderCeilings,
+    expectSeen,
+    recordFromNextLoad,
     refuseFolderRunsWith
 } from './helpers/content-drive-folder-runs';
 
@@ -29,6 +31,16 @@ import { type ContentDriveApiHelpers, expect, test } from '../../fixtures/conten
 // that refreshes both surfaces. A measured 20,000-file folder took about eight minutes, so the
 // fixtures here stay deliberately small and the budget still has to be generous.
 test.describe.configure({ timeout: 300000 });
+
+/** Where Content Drive reads the deletes still running when it loads. */
+const ACTIVE_DELETES_URL = '/api/v1/jobs/folderBulkDelete/active';
+
+/** Where Content Drive loads its listing. */
+const DRIVE_SEARCH_URL = '/api/v1/drive/search';
+
+/** The title of every listing row marked as busy. */
+const BUSY_ROW_TITLE =
+    '[data-testid="item-row"]:has([data-testid="row-busy"]) [data-testid="item-title-text"]';
 
 /**
  * Seeds a container folder holding the given subfolders, opens it, and removes it however the
@@ -108,60 +120,40 @@ test.describe('Content Drive bulk folder delete', () => {
         apiHelpers,
         testSuffix
     }) => {
-        let submitted: string[][] = [];
+        const name = `cd-del-reload-${testSuffix}`;
 
         return inSeededContainer(
-            {
-                adminPage,
-                apiHelpers,
-                name: `cd-del-reload-${testSuffix}`,
-                children: ['big'],
-                // The run is held rather than run: a real one over a few folders now finishes
-                // before the page can reload (the job queue picks a new job up at once, #37896),
-                // so whether it was still in flight would be a race. Nothing is deleted; the
-                // first test covers the real delete.
-                beforeOpen: async () => {
-                    submitted = await acceptSubmissionsWithoutRunning(
-                        adminPage,
-                        FOLDER_RUN_URL.delete
-                    );
-                }
-            },
+            { adminPage, apiHelpers, name, children: ['big'] },
             async (_drive, preview) => {
-                await preview.open('DELETE_FOLDER', ['big']);
-                await preview.execute();
-                await preview.expectMarkedInFlight('big');
+                const site = await apiHelpers.getDefaultSite();
 
-                // The queue's active listing answers with the run that was submitted, as it does
-                // while a real one is still going.
+                // Re-established from the queue's active listing, not remembered by the page. The
+                // run must still be going when the reloaded page reads that listing, and a delete
+                // this size ends within a second or two, often before the page is back. So the read
+                // is held until the folder is listed, the delete queued, and only then does the read
+                // reach the server. That narrows the race rather than closing it: the queue could
+                // still pick up and finish the run within the read's own round trip.
+                const listed = adminPage.waitForResponse(
+                    (response) => response.url().includes(DRIVE_SEARCH_URL) && response.ok()
+                );
                 await adminPage.route(
-                    (url) => url.pathname === '/api/v1/jobs/folderBulkDelete/active',
-                    (route) =>
-                        route.fulfill({
-                            contentType: 'application/json',
-                            json: {
-                                entity: {
-                                    jobs: [
-                                        {
-                                            id: 'e2e-not-run-1',
-                                            queueName: 'folderBulkDelete',
-                                            state: 'RUNNING',
-                                            parameters: {
-                                                paths: (submitted[0] ?? []).map((path) => ({
-                                                    path
-                                                }))
-                                            }
-                                        }
-                                    ]
-                                }
-                            }
-                        })
+                    (url) => url.pathname === ACTIVE_DELETES_URL,
+                    async (route) => {
+                        await listed;
+                        await apiHelpers.submitFolderDelete(site.hostname, [`/${name}/big`]);
+                        await route.continue();
+                    },
+                    { times: 1 }
                 );
 
-                // Re-established from the queue's active listing, not remembered by the page that
-                // started it.
+                // The marker lasts only until the run ends, which can be too brief for an
+                // assertion's retries to catch, so it is recorded from the moment the page loads.
+                const busyRows = await recordFromNextLoad(adminPage, BUSY_ROW_TITLE);
+
                 await adminPage.reload();
-                await preview.expectMarkedInFlight('big');
+                await expectSeen(busyRows, 'big');
+
+                await preview.expectGone('big');
             }
         );
     });

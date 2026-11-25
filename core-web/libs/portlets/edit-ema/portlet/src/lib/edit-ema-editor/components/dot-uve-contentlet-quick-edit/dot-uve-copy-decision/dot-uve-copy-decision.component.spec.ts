@@ -8,7 +8,7 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotUveCopyDecisionComponent } from './dot-uve-copy-decision.component';
 
 import { UVEStore } from '../../../../store/dot-uve.store';
-import { ContentletEditData } from '../types';
+import { ContentletEditData } from '../../../../store/features/editor/models';
 
 const makeContentlet = (overrides: Partial<DotCMSContentlet> = {}): DotCMSContentlet =>
     ({

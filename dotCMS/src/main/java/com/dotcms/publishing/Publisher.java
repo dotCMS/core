@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
@@ -44,6 +45,9 @@ import org.apache.commons.collections.map.CompositeMap;
 public abstract class Publisher implements IPublisher {
 
 	protected PublisherConfig config;
+
+	// The tar.gz archive this publisher wrote while processing the bundle, if any
+	private File compressedBundle;
 
     protected static final String BUNDLE_ID = "BundleId";
     protected static final String ENDPOINT_NAME = "EndpointName";
@@ -200,8 +204,15 @@ public abstract class Publisher implements IPublisher {
     /**
      * This method verifies if a given file should be process it in order to be add it to a site search index or not.
      *
-     * @param assetFile
-     * @return
+     * <p>When the config carries a start date (an incremental run), files last modified before it
+     * are skipped. The comparison is done at one-second precision: bundlers stamp a file with the
+     * asset's version timestamp truncated to the whole second, while the start date is the previous
+     * run's fire time and keeps its milliseconds, so comparing exact milliseconds would skip an
+     * asset changed in the same second as the previous run, after it fired, in every later run.
+     * Reprocessing a file stamped earlier in that same second is harmless.</p>
+     *
+     * @param assetFile the bundle file to check
+     * @return {@code true} if the file must be processed
      * @throws IOException
      * @throws DotPublishingException
      */
@@ -209,7 +220,7 @@ public abstract class Publisher implements IPublisher {
 
         if ( assetFile.isDirectory() ) {
             return false;
-        } else if ( config.getStartDate() != null && assetFile.lastModified() < config.getStartDate().getTime() ) {
+        } else if ( config.getStartDate() != null && assetFile.lastModified() < startOfSecond( config.getStartDate().getTime() ) ) {
             return false;
         } else if (!doesPathContainLanguageId(assetFile)) {
             return false;
@@ -250,6 +261,16 @@ public abstract class Publisher implements IPublisher {
         return true;
     }
 
+    /**
+     * Truncates the given epoch milliseconds to the start of its second.
+     *
+     * @param epochMillis a time in epoch milliseconds
+     * @return the same time with the milliseconds dropped
+     */
+    private static long startOfSecond(final long epochMillis) {
+        return epochMillis - Math.floorMod(epochMillis, 1000L);
+    }
+
     private boolean doesPathContainLanguageId(File assetFile) {
         return assetFile.getPath().contains(
                 File.separatorChar + Long.toString(config.getLanguage()) + File.separatorChar);
@@ -265,7 +286,10 @@ public abstract class Publisher implements IPublisher {
 
     /**
      * Compress the bundle root (set up in the config) into a tar.gz file. It will run only if
-     * STATIC_PUBLISHING_GENERATE_TAR_GZ property is True. False by default.
+     * STATIC_PUBLISHING_GENERATE_TAR_GZ property is True. False by default. The archive written is
+     * remembered, see {@link #getCompressedBundle()}.
+     *
+     * @throws IOException the bundle could not be compressed
      */
     protected void compressBundleIfNeeded() throws IOException {
         if (Config.getBooleanProperty("STATIC_PUBLISHING_GENERATE_TAR_GZ", false)) {
@@ -278,7 +302,29 @@ public abstract class Publisher implements IPublisher {
 
             // Compressing the bundle.
             PushUtils.compressFiles(list, bundle, bundleToCompress.getAbsolutePath());
+            recordCompressedBundle(bundle);
         }
+    }
+
+    /**
+     * Remembers the tar.gz archive this publisher wrote while processing the bundle.
+     *
+     * @param archive the archive that was written
+     */
+    protected void recordCompressedBundle(final File archive) {
+        this.compressedBundle = archive;
+    }
+
+    /**
+     * Returns the tar.gz archive this publisher wrote while processing the bundle, if any. The
+     * static and S3 publishers write {@code <bundleId>.tar.gz} when
+     * {@code STATIC_PUBLISHING_GENERATE_TAR_GZ} is on, the same file the push publisher sends to
+     * its receivers, so a later publisher of the same run must not take it for its own bundle.
+     *
+     * @return the archive written, or empty when this publisher wrote none
+     */
+    public Optional<File> getCompressedBundle() {
+        return Optional.ofNullable(compressedBundle);
     }
 
     /**

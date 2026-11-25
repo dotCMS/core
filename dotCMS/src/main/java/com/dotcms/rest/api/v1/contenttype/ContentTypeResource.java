@@ -1095,6 +1095,20 @@ public class ContentTypeResource implements Serializable {
 		}
 	}
 
+	/**
+	 * Returns a Content Type by its ID or Velocity variable name. Requests without a user follow
+	 * the anonymous access setting for the content APIs.
+	 *
+	 * @param idOrVar    The ID or Velocity variable name of the Content Type.
+	 * @param req        The current instance of the {@link HttpServletRequest}.
+	 * @param res        The current instance of the {@link HttpServletResponse}.
+	 * @param languageId The Language ID, used for internationalization purposes.
+	 * @param paramLive  Whether live versions of language variables are used.
+	 *
+	 * @return The Content Type in its JSON format.
+	 *
+	 * @throws DotDataException An error occurred when interacting with the database.
+	 */
 	@GET
 	@Path("/id/{idOrVar}")
 	@JSONP
@@ -1180,9 +1194,27 @@ public class ContentTypeResource implements Serializable {
 			@QueryParam("live") @Parameter(
 					description = "Determines whether live versions of language variables are used in the returned object.",
 					schema = @Schema(type = "boolean")) final Boolean paramLive) throws DotDataException {
-		return retrieveContentType(req, res, idOrVar, languageId, paramLive, false, null);
+		final InitDataObject initData = this.webResource.init(null, req, res, false, null);
+		return retrieveContentType(initData, req, idOrVar, languageId, paramLive, false, null);
 	}
 
+	/**
+	 * Returns a Content Type with the Velocity code of its Custom Fields rendered, as the back-end
+	 * content editor shows them. Requires a logged-in back-end user.
+	 *
+	 * @param idOrVar         The ID or Velocity variable name of the Content Type.
+	 * @param req             The current instance of the {@link HttpServletRequest}.
+	 * @param res             The current instance of the {@link HttpServletResponse}.
+	 * @param languageId      The Language ID, used for internationalization purposes.
+	 * @param paramLive       Whether live versions of language variables are used.
+	 * @param contentletInode Optional contentlet inode whose values are available to the Custom
+	 *                        Fields while they are rendered.
+	 *
+	 * @return The Content Type in its JSON format, with a {@code rendered} attribute on each
+	 * rendered Custom Field.
+	 *
+	 * @throws DotDataException An error occurred when interacting with the database.
+	 */
 	@GET
 	@Path("/render/id/{idOrVar}")
 	@JSONP
@@ -1192,7 +1224,8 @@ public class ContentTypeResource implements Serializable {
 			operationId = "getContentTypeRenderedCustomFieldIdVar",
 			summary = "Retrieves a single content type with their rendered custom fields",
 			description = "Returns a content type based on the provided ID or Velocity variable " +
-					"name. Additionally, the Velocity code in all of its custom fields will be parsed.",
+					"name. Additionally, the Velocity code in all of its custom fields will be parsed. " +
+					"Requires a logged-in back-end user.",
 			tags = {"Content Type"},
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Content type retrieved successfully",
@@ -1243,6 +1276,7 @@ public class ContentTypeResource implements Serializable {
 									}
 							)
 					),
+					@ApiResponse(responseCode = "401", description = "Unauthorized"),
 					@ApiResponse(responseCode = "403", description = "Forbidden"),
 					@ApiResponse(responseCode = "404", description = "Not Found"),
 					@ApiResponse(responseCode = "500", description = "Internal Server Error")
@@ -1267,17 +1301,24 @@ public class ContentTypeResource implements Serializable {
 								  "Velocity variables ($inode, $identifier, $lang, etc.) will be " +
 								  "available when rendering Custom Fields.",
 					schema = @Schema(type = "string")) final String contentletInode) throws DotDataException {
+		final InitDataObject initData = new WebResource.InitBuilder(this.webResource)
+				.requestAndResponse(req, res)
+				.requiredBackendUser(true)
+				.rejectWhenNoUser(true)
+				.init();
 		req.setAttribute("contentTypeId", idOrVar);
-		return retrieveContentType(req, res, idOrVar, languageId, paramLive, true, contentletInode);
+		return retrieveContentType(initData, req, idOrVar, languageId, paramLive, true, contentletInode);
 	}
 
 	/**
-	 * Retrieves a content type based on the provided ID or Velocity variable name.
+	 * Retrieves a content type based on the provided ID or Velocity variable name, for a request
+	 * that the calling endpoint has already initialized and authorized.
 	 *
+	 * @param initData           The request data from the calling endpoint, holding the user the
+	 *                           Content Type is retrieved for.
 	 * @param idOrVar            The ID or Velocity variable name of the {@link ContentType} to
 	 *                           retrieve.
-	 * @param httpRequest                The current instance of the {@link HttpServletRequest}.
-	 * @param httpResponse                The current instance of the {@link HttpServletResponse}.
+	 * @param httpRequest        The current instance of the {@link HttpServletRequest}.
 	 * @param languageId         The Language ID, used for internationalization purposes.
 	 * @param paramLive          Determines whether live versions of language variables are used in
 	 *                           the returned object.
@@ -1290,12 +1331,11 @@ public class ContentTypeResource implements Serializable {
 	 *
 	 * @throws DotDataException An error occurred when interacting with the database.
 	 */
-	private Response retrieveContentType(final HttpServletRequest httpRequest,
-										 final HttpServletResponse httpResponse, final String idOrVar,
+	private Response retrieveContentType(final InitDataObject initData,
+										 final HttpServletRequest httpRequest, final String idOrVar,
 										 final Long languageId, final Boolean paramLive,
 										 final boolean renderCustomFields,
 										 final String contentletInode) throws DotDataException {
-		final InitDataObject initData = this.webResource.init(null, httpRequest, httpResponse, false, null);
 		final User user = initData.getUser();
 		final ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
 		Response response = Response.status(404).build();

@@ -75,6 +75,7 @@ describe('DotContentCompareComponent', () => {
                 {
                     provide: DotcmsConfigService,
                     useValue: {
+                        getConfig: () => of({ languageBundleVersion: 'test-version' }),
                         getSystemTimeZone: () =>
                             of({
                                 id: 'America/Costa_Rica',
@@ -85,7 +86,10 @@ describe('DotContentCompareComponent', () => {
                 },
                 {
                     provide: LoginService,
-                    useValue: { currentUserLanguageId: 'en-US' }
+                    useValue: {
+                        currentUserLanguageId: 'en-US',
+                        loadAuth: () => of({ sessionLanguageId: 'en-US' })
+                    }
                 },
                 {
                     provide: DotPropertiesService,

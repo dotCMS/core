@@ -1,4 +1,5 @@
 import { tapResponse } from '@ngrx/operators';
+import { injectDispatch } from '@ngrx/signals/events';
 import { Observable, of } from 'rxjs';
 
 import { inject, Injectable } from '@angular/core';
@@ -10,6 +11,7 @@ import { switchMap, take, tap } from 'rxjs/operators';
 import { DotMessageService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotTreeNode } from '@dotcms/dotcms-models';
 import {
+    DotCMSIframeScrollPayload,
     DotCMSInlineEditingPayload,
     DotCMSInlineEditingType,
     DotCMSUVEAction
@@ -17,8 +19,7 @@ import {
 import { __DOTCMS_UVE_EVENT__, StyleEditorFormSchema } from '@dotcms/types/internal';
 import { DotCopyContentModalService } from '@dotcms/ui';
 
-import { DotBlockEditorSidebarComponent } from '../../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
-import { DotEmaDialogComponent } from '../../components/dot-ema-dialog/dot-ema-dialog.component';
+import { uveContentEditorEvents } from '../../edit-ema-editor/components/dot-uve-content-editor/dot-uve-content-editor.events';
 import {
     ClientContentletArea,
     Container,
@@ -37,21 +38,31 @@ import { PageType } from '../../store/models';
 import {
     compareUrlPaths,
     convertClientParamsToPageParams,
-    createReorderMenuURL,
     isSamePageNavigation
 } from '../../utils';
 import { InlineEditService } from '../inline-edit/inline-edit.service';
 
 export interface ActionsHandlerDependencies {
     uveStore: InstanceType<typeof UVEStore>;
-    dialog: DotEmaDialogComponent;
-    blockSidebar?: DotBlockEditorSidebarComponent;
     inlineEditingService: InlineEditService;
     contentWindow: Window | null;
     host: string;
     onCopyContent: (currentTreeNode: DotTreeNode) => Observable<DotCMSContentlet>;
-    /** Called when the iframe reports the offsetTop of a section so the editor can scroll to it. */
-    onSectionOffset?: (payload: { sectionIndex: number; offsetTop: number }) => void;
+}
+
+/**
+ * The page's `scrollY` from a `scroll` report, which comes from the page and is read as untrusted.
+ * Older SDKs send no payload.
+ *
+ * @param payload what the page sent with the report
+ * @returns the scroll offset, or undefined when the page sent none
+ */
+function scrollYOf(payload: unknown): DotCMSIframeScrollPayload['scrollY'] {
+    if (typeof payload !== 'object' || payload === null || !('scrollY' in payload)) {
+        return undefined;
+    }
+
+    return typeof payload.scrollY === 'number' ? payload.scrollY : undefined;
 }
 
 @Injectable()
@@ -60,17 +71,10 @@ export class DotUveActionsHandlerService {
     private readonly messageService = inject(MessageService);
     private readonly dotCopyContentModalService = inject(DotCopyContentModalService);
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
+    private readonly contentEditor = injectDispatch(uveContentEditorEvents);
 
     handleAction({ action, payload }: PostMessage, deps: ActionsHandlerDependencies): void {
-        const {
-            uveStore,
-            dialog,
-            inlineEditingService,
-            contentWindow,
-            host,
-            onCopyContent,
-            onSectionOffset
-        } = deps;
+        const { uveStore, inlineEditingService, contentWindow, host, onCopyContent } = deps;
 
         const CLIENT_ACTIONS_FUNC_MAP: Record<DotCMSUVEAction, (payload: unknown) => void> = {
             [DotCMSUVEAction.NAVIGATION_UPDATE]: (payload: SetUrlPayload) => {
@@ -137,8 +141,9 @@ export class DotUveActionsHandlerService {
                     payload: actionPayload
                 });
             },
-            [DotCMSUVEAction.IFRAME_SCROLL]: () => {
-                uveStore.updateEditorScrollState();
+            [DotCMSUVEAction.IFRAME_SCROLL]: (payload: unknown) => {
+                // A newer SDK says where the page is, so a drag can keep its drop targets.
+                uveStore.updateEditorScrollState(scrollYOf(payload));
             },
             [DotCMSUVEAction.IFRAME_SCROLL_END]: () => {
                 // No-op on purpose. We used to flip IDLE here, but that
@@ -331,40 +336,58 @@ export class DotUveActionsHandlerService {
                 uveStore.pageReload(pageParams);
                 uveStore.setIsClientReady(true);
             },
+            /**
+             * Handles the `EDIT_CONTENTLET` postMessage action sent by the SDK's `editContentlet()`,
+             * as every other edit: the content editor opens it in the side panel, in whichever
+             * editor its content type uses (#38303). `fromSdk`: a save also asks the client to
+             * reload, since a headless page renders its own content. Ignored outside edit mode or
+             * without edit permission on the page, as before the split, because the SDK sends it
+             * without checking.
+             */
             [DotCMSUVEAction.EDIT_CONTENTLET]: (contentlet: DotCMSContentlet) => {
-                dialog.editContentlet({ ...contentlet, clientAction: action });
+                if (!uveStore.editorCanEditContent()) {
+                    return;
+                }
+
+                this.contentEditor.uveEditContentRequested({ contentlet, fromSdk: true });
             },
             /**
              * Handles the `CREATE_CONTENTLET` postMessage action sent by `window.dotUVE.createContentlet()`
              * (or `createContentlet()` from `@dotcms/uve` in headless setups).
              *
-             * Opens the contentlet creation dialog for the given content type variable.
-             * The newly created contentlet is saved to the system but is NOT inserted
-             * into the page layout — the page simply reloads after save. This supports
-             * use cases like widgets that pull content automatically (e.g. an events widget).
+             * Asks the content editor to create a contentlet of the given content type variable,
+             * as every other create: it opens in the side panel, in whichever editor the content
+             * type uses (#38303). The request carries no container position, so the newly created
+             * contentlet is saved to the system but is NOT inserted into the page layout — the
+             * page simply reloads after save. This supports use cases like widgets that pull
+             * content automatically (e.g. an events widget). Ignored outside edit mode or without
+             * edit permission on the page, as before the split, because the SDK sends it without
+             * checking.
              *
              * @param {string} contentType - The content type variable (e.g. `'Event'`)
              * @see {DotCMSUVEAction.CREATE_CONTENTLET}
              */
             [DotCMSUVEAction.CREATE_CONTENTLET]: ({ contentType }: { contentType: string }) => {
-                dialog.createContentletFromPalette({
-                    variable: contentType,
-                    name: contentType,
-                    language_id: uveStore.pageLanguageId()
+                if (!uveStore.editorCanEditContent()) {
+                    return;
+                }
+
+                this.contentEditor.uveCreateContentRequested({
+                    contentType: { variable: contentType, name: contentType }
                 });
             },
+            /**
+             * Handles the `REORDER_MENU` postMessage action sent by the SDK's `reorderMenu()`: the
+             * content editor opens the menu reorder screen for the page. Ignored outside edit mode
+             * or without edit permission on the page, as before the split, because the SDK sends
+             * it without checking.
+             */
             [DotCMSUVEAction.REORDER_MENU]: ({ startLevel, depth }: ReorderMenuPayload) => {
-                const urlObject = createReorderMenuURL({
-                    startLevel,
-                    depth,
-                    pagePath: uveStore.pageParams().url,
-                    hostId: uveStore.pageAsset()?.site?.identifier
-                });
+                if (!uveStore.editorCanEditContent()) {
+                    return;
+                }
 
-                dialog.openDialogOnUrl(
-                    urlObject,
-                    this.dotMessageService.get('editpage.content.contentlet.menu.reorder.title')
-                );
+                this.contentEditor.uveReorderMenuRequested({ startLevel, depth });
             },
             [DotCMSUVEAction.INIT_INLINE_EDITING]: (payload: {
                 type: DotCMSInlineEditingType;
@@ -394,7 +417,14 @@ export class DotUveActionsHandlerService {
                 sectionIndex: number;
                 offsetTop: number;
             }) => {
-                onSectionOffset?.(payload);
+                // The SDK's answer to the palette's scroll-to-section request. The iframe scrolls
+                // internally (the canvas viewport is overflow:hidden), and offsetTop is already in
+                // the iframe's CSS coordinate space, so no zoom math is needed.
+                contentWindow?.scrollTo({
+                    top: Math.max(0, payload.offsetTop),
+                    left: 0,
+                    behavior: 'smooth'
+                });
             }
         };
 
@@ -406,7 +436,7 @@ export class DotUveActionsHandlerService {
         { type, data }: { type: DotCMSInlineEditingType; data?: DotCMSInlineEditingPayload },
         deps: ActionsHandlerDependencies
     ): void {
-        const { uveStore, blockSidebar, inlineEditingService, contentWindow } = deps;
+        const { uveStore, inlineEditingService, contentWindow } = deps;
 
         // The Block Editor inline flow arrives as a postMessage rather than a
         // DOM event, so the owning contentlet is resolved from the payload's
@@ -422,7 +452,11 @@ export class DotUveActionsHandlerService {
         // Note: Enterprise check should be done by caller if needed
         switch (type) {
             case 'BLOCK_EDITOR':
-                blockSidebar?.open(data);
+                // The SDK always names the field; a message without one opens nothing.
+                if (data) {
+                    this.contentEditor.uveEditBlockEditorFieldRequested(data);
+                }
+
                 break;
 
             case 'WYSIWYG':

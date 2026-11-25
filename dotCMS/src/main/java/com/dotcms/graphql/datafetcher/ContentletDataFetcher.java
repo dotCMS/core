@@ -7,6 +7,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.graphql.DotGraphQLContext;
 import com.dotcms.graphql.util.TypeUtil;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
 import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
@@ -26,9 +27,14 @@ public class ContentletDataFetcher implements DataFetcher<List<Contentlet>> {
         try {
             final User user = ((DotGraphQLContext) environment.getContext()).getUser();
 
-            String query = UtilMethods.isSet((String) environment.getArgument("query"))
-                ? environment.getArgument("query")
-                : "";
+            // A caller that cannot name its own variant reads the default one: its variant terms
+            // are replaced by the default one here, so a query that named a variant answers with
+            // the default version of that content rather than answering empty.
+            String query = WebAPILocator.getVariantWebAPI().scopeQueryToDefaultVariant(
+                    UtilMethods.isSet((String) environment.getArgument("query"))
+                            ? environment.getArgument("query")
+                            : "",
+                    user);
 
             final var isPageSet = environment.getArgument("page") != null;
 

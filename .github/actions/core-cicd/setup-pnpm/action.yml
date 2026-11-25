@@ -1,0 +1,83 @@
+# Setup pnpm Action
+#
+# Runs pnpm/setup, retrying it when the pnpm download fails.
+#
+# pnpm/setup fetches pnpm (and the Node runtime) from registry.npmjs.org and has no retry of
+# its own: a 30 s metadata timeout, a dropped connection ("TypeError: terminated ...
+# ECONNRESET") or a truncated tarball fails the step, and with it the whole job. Those
+# failures are brief network faults, not a bad pin, so the failed attempt is simply repeated.
+#
+# Bounded: 3 attempts in total, with a 30 s pause before the second and a 90 s pause before
+# the third, so a job that never gets through spends about 3.5 minutes here (three 30 s
+# metadata timeouts plus the pauses) before it fails with the last attempt's error.
+# That rides out an isolated reset or a short blip. It will not ride out a registry outage of
+# several minutes, on purpose: a merge-queue job should fail rather than wait on npm for ever.
+# Raise the ceiling only if outages that long turn out to be common.
+#
+# A composite action cannot loop over a `uses:` step, so the attempts are written out. They
+# all take the same inputs; keep the three `with:` blocks identical.
+#
+# Each attempt's post step still runs at the end of the job. For an attempt that failed
+# before installing pnpm it only logs "command pnpm store prune exits with code 127" as a
+# warning (seen in the failed logs this wrapper is for); the step itself succeeds.
+
+name: 'Setup pnpm'
+description: 'Install pnpm with pnpm/setup, retrying the download up to 3 times'
+inputs:
+  working-directory:
+    description: 'Directory holding the package.json that pins pnpm, relative to the repository root'
+    required: false
+    default: '.'
+  install:
+    description: 'Run `pnpm install` after setup (pnpm/setup input of the same name)'
+    required: false
+    default: 'true'
+  cache:
+    description: 'Cache the pnpm store, keyed on the lockfile (pnpm/setup input of the same name)'
+    required: false
+    default: 'false'
+runs:
+  using: 'composite'
+  steps:
+    - id: attempt-1
+      name: Set up pnpm (attempt 1 of 3)
+      continue-on-error: true
+      uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
+      with:
+        working-directory: ${{ inputs.working-directory }}
+        install: ${{ inputs.install }}
+        cache: ${{ inputs.cache }}
+
+    - name: Wait before pnpm setup attempt 2
+      if: ${{ steps.attempt-1.outcome == 'failure' }}
+      shell: bash
+      run: |
+        echo "::warning::pnpm setup failed (attempt 1 of 3), retrying in 30s"
+        sleep 30
+
+    - id: attempt-2
+      name: Set up pnpm (attempt 2 of 3)
+      if: ${{ steps.attempt-1.outcome == 'failure' }}
+      continue-on-error: true
+      uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
+      with:
+        working-directory: ${{ inputs.working-directory }}
+        install: ${{ inputs.install }}
+        cache: ${{ inputs.cache }}
+
+    - name: Wait before pnpm setup attempt 3
+      if: ${{ steps.attempt-2.outcome == 'failure' }}
+      shell: bash
+      run: |
+        echo "::warning::pnpm setup failed (attempt 2 of 3), retrying in 90s"
+        sleep 90
+
+    # No continue-on-error: the last attempt decides the outcome of this action.
+    - id: attempt-3
+      name: Set up pnpm (attempt 3 of 3)
+      if: ${{ steps.attempt-2.outcome == 'failure' }}
+      uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
+      with:
+        working-directory: ${{ inputs.working-directory }}
+        install: ${{ inputs.install }}
+        cache: ${{ inputs.cache }}

@@ -5,6 +5,7 @@ import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.VariantDataGen;
+import com.dotcms.util.ContentletAsJsonBackup;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
@@ -16,6 +17,8 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import org.apache.felix.framework.OSGIUtil;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -30,6 +33,8 @@ import static org.junit.Assert.assertTrue;
 
 public class PopulateContentletAsJSONUtilTest extends IntegrationTestBase {
 
+    private final ContentletAsJsonBackup jsonBackup = new ContentletAsJsonBackup("populate_contentlet_as_json_backup");
+
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
@@ -38,6 +43,29 @@ public class PopulateContentletAsJSONUtilTest extends IntegrationTestBase {
         if (!OSGIUtil.getInstance().isInitialized()) {
             OSGIUtil.getInstance().initializeFramework();
         }
+    }
+
+    /**
+     * Keeps a copy of the JSON of every contentlet before each test drops the column, so the starter
+     * content, including the default site, is not left empty for the tests that run afterwards.
+     *
+     * @throws Exception if the copy cannot be written
+     */
+    @Before
+    public void saveContentletAsJson() throws Exception {
+        jsonBackup.save();
+    }
+
+    /**
+     * Puts back the JSON saved by {@link #saveContentletAsJson()}.
+     *
+     * @throws DotDataException     if the JSON cannot be restored
+     * @throws DotSecurityException if a leftover site cannot be removed
+     * @throws SQLException         if the column cannot be looked up
+     */
+    @After
+    public void restoreContentletAsJson() throws DotDataException, DotSecurityException, SQLException {
+        jsonBackup.restore();
     }
 
     private void removeContentletAsJSONColumn() throws DotDataException {

@@ -61,6 +61,13 @@ public class CompletionsToolTest {
     private static final String PROBE_TITLE = AiTest.PROBE_MARKUP + " title";
     /** Dedicated index for the probe rows so they can never appear in another test's summarize prompt. */
     private static final String PROBE_INDEX = "escape-probe";
+    /**
+     * Keys whose value is stamped per call, so two calls made moments apart can legitimately differ:
+     * {@code timeToEmbeddings} is a duration, and {@code openAiResponse.created} is the wall-clock
+     * second {@code LangChain4jAIClient.toChatResponseJson} writes into the reply, not the stub's value.
+     * Only the value is skipped, the key must still be present on both sides.
+     */
+    private static final Set<String> PER_CALL_KEYS = Set.of("timeToEmbeddings", "created");
 
     private CompletionsTool completionsTool;
     private CompletionsTool unsafeCompletionsTool;
@@ -119,9 +126,9 @@ public class CompletionsToolTest {
      * And the JSONObject should not contain an "error" key
      */
     @Test
-    public void test_summarize() {
+    public void test_summarize() throws Exception {
         final String query = "Is AI the future";
-        EmbeddingsDTODataGen.persistEmbeddings(query, null, "default", 1);
+        AiTest.persistEmbeddedContentlet(query, "default", true);
 
         final JSONObject result = (JSONObject) completionsTool.summarize(query);
         assertAll(result);
@@ -204,10 +211,10 @@ public class CompletionsToolTest {
      * index, so it is covered by this test without touching the shared index.
      */
     @Test
-    public void test_summarize_providerFailure_returnsGenericError() {
+    public void test_summarize_providerFailure_returnsGenericError() throws Exception {
         final String query = AiTest.FORCE_CHAT_ERROR + " " + UUID.randomUUID();
         final String privateIndex = "idx" + UUID.randomUUID().toString().replace("-", "");
-        EmbeddingsDTODataGen.persistEmbeddings(query, null, privateIndex, 1);
+        AiTest.persistEmbeddedContentlet(query, privateIndex, true);
 
         final Object result = completionsTool.summarize(query, privateIndex);
 
@@ -306,7 +313,7 @@ public class CompletionsToolTest {
      * And the result title is returned exactly as stored
      */
     @Test
-    public void test_summarize_escapesProviderOutputByDefault() {
+    public void test_summarize_escapesProviderOutputByDefault() throws Exception {
         final String text = AiTest.PROBE_CHAT_PROMPT + " summarize default " + AiTest.PROBE_MARKUP;
         seedProbeEmbeddings(text);
 
@@ -330,7 +337,7 @@ public class CompletionsToolTest {
      * Then the payload is what the CompletionsAPI returns, markup intact, apart from the per-call timing value
      */
     @Test
-    public void test_summarize_unsafeReturnsRawPayload() {
+    public void test_summarize_unsafeReturnsRawPayload() throws Exception {
         final String text = AiTest.PROBE_CHAT_PROMPT + " summarize unsafe " + AiTest.PROBE_MARKUP;
         seedProbeEmbeddings(text);
 
@@ -343,7 +350,7 @@ public class CompletionsToolTest {
                 .getJSONArray("matches").getJSONObject(0).getString("extractedText"));
 
         final JSONObject apiResult = APILocator.getDotAIAPI().getCompletionsAPI(appConfig).summarize(summarizeForm(text));
-        AiTest.assertEquivalentIgnoring(apiResult, unsafeResult, Set.of("timeToEmbeddings"));
+        AiTest.assertEquivalentIgnoring(apiResult, unsafeResult, PER_CALL_KEYS);
     }
 
     /**
@@ -354,7 +361,7 @@ public class CompletionsToolTest {
      * And string values differ only under openAiResponse, at query and at matches[].extractedText, by exactly Encode.forHtml
      */
     @Test
-    public void test_summarize_defaultAndUnsafeHaveSameShape() {
+    public void test_summarize_defaultAndUnsafeHaveSameShape() throws Exception {
         final String text = AiTest.PROBE_CHAT_PROMPT + " summarize shape " + AiTest.PROBE_MARKUP;
         seedProbeEmbeddings(text);
 
@@ -363,7 +370,7 @@ public class CompletionsToolTest {
 
         assertResult(unsafeResult);
         assertResult(defaultResult);
-        AiTest.assertEscapedOnlyAt(unsafeResult, defaultResult, AiTest.searchShapedEscapedPaths(), Set.of("timeToEmbeddings"));
+        AiTest.assertEscapedOnlyAt(unsafeResult, defaultResult, AiTest.searchShapedEscapedPaths(), PER_CALL_KEYS);
     }
 
     /**
@@ -391,7 +398,7 @@ public class CompletionsToolTest {
      * Feature: Explicit opt-in for raw completions (#37153, AC-003 / AC-004)
      * Scenario: the three raw overloads on the unsafe construction
      * When each overload is called with escaping off
-     * Then the model text is the literal markup, raw(JSONObject) is byte-for-byte the CompletionsAPI result,
+     * Then the model text is the literal markup, raw(JSONObject) matches the CompletionsAPI result apart from the per-call timestamps,
      * and the default payload differs from it only by Encode.forHtml on string leaves
      */
     @Test
@@ -408,10 +415,10 @@ public class CompletionsToolTest {
         }
         final JSONObject apiResult = APILocator.getDotAIAPI().getCompletionsAPI(appConfig)
                 .raw(new JSONObject(prompt), UtilMethods.extractUserIdOrNull(user));
-        assertEquals(apiResult.toString(), fromJson.toString());
+        AiTest.assertEquivalentIgnoring(apiResult, fromJson, PER_CALL_KEYS);
 
         final JSONObject defaultFromJson = (JSONObject) completionsTool.raw(new JSONObject(prompt));
-        AiTest.assertEscapedOnlyAt(fromJson, defaultFromJson, path -> true);
+        AiTest.assertEscapedOnlyAt(fromJson, defaultFromJson, path -> true, PER_CALL_KEYS);
     }
 
     /**
@@ -438,7 +445,7 @@ public class CompletionsToolTest {
      * so the REST resources that return these objects are unaffected
      */
     @Test
-    public void test_defaultCall_leavesApiLayerUnescaped() {
+    public void test_defaultCall_leavesApiLayerUnescaped() throws Exception {
         final String text = AiTest.PROBE_CHAT_PROMPT + " summarize api " + AiTest.PROBE_MARKUP;
         seedProbeEmbeddings(text);
 
@@ -458,11 +465,10 @@ public class CompletionsToolTest {
      * Persists one embedding row whose extractedText is exactly {@code text} (so the query reuses its
      * vector and the search finds it) and whose title carries markup that must come back untouched.
      */
-    private static void seedProbeEmbeddings(final String text) {
-        // explicit inode: the data-gen default derives it from the current millisecond, and two rows
-        // sharing an inode are merged into one result whose matches[0] may then belong to another test
-        final String inode = "probe-" + UUIDGenerator.generateUuid();
-        new EmbeddingsDTODataGen().generate(inode, PROBE_INDEX, text).withTitle(PROBE_TITLE).nextPersisted();
+    private static void seedProbeEmbeddings(final String text) throws Exception {
+        // a real, published, anonymous-readable contentlet: retrieval returns only chunks of content the
+        // caller can READ (#37151), and each call creates its own contentlet, so rows never merge
+        AiTest.persistEmbeddedContentlet(text, PROBE_INDEX, true, PROBE_TITLE);
     }
 
     private static CompletionsForm summarizeForm(final String text) {

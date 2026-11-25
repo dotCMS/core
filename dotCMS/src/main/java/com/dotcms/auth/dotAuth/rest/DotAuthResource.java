@@ -59,6 +59,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.io.IOException;
+import java.net.URI;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.BadRequestException;
@@ -96,8 +97,12 @@ public class DotAuthResource {
 
     /** Sentinel path value representing the SYSTEM_HOST row (the global default). */
     public static final String SYSTEM_HOST_SENTINEL = "SYSTEM_HOST";
+    /** SAML app field holding the extra accepted assertion consumer URLs. */
+    private static final String SAML_ADDITIONAL_ACS_URLS_KEY = "additionalAcsUrls";
     private static final int OIDC_DISCOVERY_MAX_RESPONSE_BYTES = 1024 * 1024;
     private static final int SAML_METADATA_MAX_RESPONSE_BYTES = 5 * 1024 * 1024;
+    /** Redirects followed by the metadata/discovery proxy; each hop is validated before it is requested. */
+    private static final int PROXY_MAX_REDIRECTS = 5;
 
     private final WebResource webResource;
     private final AppsAPI appsAPI;
@@ -244,7 +249,20 @@ public class DotAuthResource {
                 final ProtocolConfig config = ownConfig.get();
                 ssoProtocol = config.protocol;
                 ssoConfigured = true;
-                ssoValues = config.values;
+                // The runtime resolves each SAML property per key, so a site row without
+                // additionalAcsUrls still accepts the System Host's list. Show that effective
+                // list so an administrator can see what is accepted. Only this one key is merged
+                // in: copying every inherited value would expose System Host extras and, on the
+                // next save, pin them into this site's row.
+                final Map<String, Object> effectiveValues = new LinkedHashMap<>(config.values);
+                if (config.protocol == DotAuthProtocol.SAML) {
+                    final ProtocolHandler activeHandler = handlers.get(config.protocol);
+                    appsAPI.getSecrets(activeHandler.appKey(), true, host, user)
+                            .map(activeHandler::maskedValues)
+                            .map(values -> values.get(SAML_ADDITIONAL_ACS_URLS_KEY))
+                            .ifPresent(urls -> effectiveValues.put(SAML_ADDITIONAL_ACS_URLS_KEY, urls));
+                }
+                ssoValues = effectiveValues;
             }
 
             if (!ssoConfigured && !host.isSystemHost()) {
@@ -584,14 +602,10 @@ public class DotAuthResource {
             if (!UtilMethods.isSet(url)) {
                 throw new BadRequestException("Discovery URL is required");
             }
-            validateProxyUrl(url);
-            final String body = CircuitBreakerUrl.builder()
-                    .setUrl(url)
-                    .setTimeout(8_000)
-                    .setHeaders(ImmutableMap.of("Accept", MediaType.APPLICATION_JSON))
-                    .setMaxResponseBytes(OIDC_DISCOVERY_MAX_RESPONSE_BYTES)
-                    .build()
-                    .doString();
+            final String body = fetchValidated(url, MediaType.APPLICATION_JSON,
+                    OIDC_DISCOVERY_MAX_RESPONSE_BYTES);
+            SecurityLogger.logInfo(DotAuthResource.class,
+                    String.format("User %s fetched OIDC discovery document from %s", user.getUserId(), url));
             final JsonNode doc = MAPPER.readTree(body);
             final Map<String, Object> entity = Map.of(
                     "issuer", text(doc, "issuer"),
@@ -642,15 +656,9 @@ public class DotAuthResource {
             if (!UtilMethods.isSet(url)) {
                 throw new BadRequestException("Metadata URL is required");
             }
-            validateProxyUrl(url);
-            final String xml = CircuitBreakerUrl.builder()
-                    .setUrl(url)
-                    .setTimeout(8_000)
-                    .setHeaders(ImmutableMap.of("Accept",
-                            "application/samlmetadata+xml, application/xml, text/xml"))
-                    .setMaxResponseBytes(SAML_METADATA_MAX_RESPONSE_BYTES)
-                    .build()
-                    .doString();
+            final String xml = fetchValidated(url,
+                    "application/samlmetadata+xml, application/xml, text/xml",
+                    SAML_METADATA_MAX_RESPONSE_BYTES);
             SecurityLogger.logInfo(DotAuthResource.class,
                     String.format("User %s fetched SAML metadata from %s", user.getUserId(), url));
             return Response.ok(new ResponseEntityView<>(Map.of("xml", xml))).build();
@@ -1017,6 +1025,75 @@ public class DotAuthResource {
         final String rejection = OAuthSsrfGuard.validateUrl(url);
         if (rejection != null) {
             throw new BadRequestException(rejection);
+        }
+    }
+
+    /**
+     * Fetches a URL for the metadata/discovery proxy. Automatic redirects are turned off; each
+     * redirect is followed here instead, and every hop goes through {@link #validateProxyUrl}
+     * before it is requested, so a public URL cannot redirect the server to an internal one.
+     *
+     * @param url      the caller-supplied URL
+     * @param accept   the Accept header to send
+     * @param maxBytes response size limit
+     *
+     * @return the body of the first non-redirect response
+     *
+     * @throws BadRequestException when a hop is refused, the redirect limit is exceeded, or the
+     *                             final response is not 2xx
+     */
+    @VisibleForTesting
+    static String fetchValidated(final String url, final String accept, final int maxBytes) throws IOException {
+        String current = url;
+        for (int hop = 0; hop <= PROXY_MAX_REDIRECTS; hop++) {
+            validateProxyUrl(current);
+            final CircuitBreakerUrl fetch = CircuitBreakerUrl.builder()
+                    .setUrl(current)
+                    .setTimeout(8_000)
+                    .setHeaders(ImmutableMap.of("Accept", accept))
+                    .setMaxResponseBytes(maxBytes)
+                    .setAllowRedirects(false)
+                    .setThrowWhenError(false)
+                    .build();
+            final String body = fetch.doString();
+            final int status = fetch.response();
+            if (status >= 300 && status < 400) {
+                current = nextHop(current, locationOf(fetch));
+                continue;
+            }
+            if (status < 200 || status >= 300) {
+                throw new BadRequestException(String.format("Got invalid response for url: [%s] response: [%d]",
+                        current, status));
+            }
+            if (!current.equals(url)) {
+                SecurityLogger.logInfo(DotAuthResource.class,
+                        String.format("Fetch for %s ended at %s after redirects", url, current));
+            }
+            return body;
+        }
+        throw new BadRequestException("Too many redirects");
+    }
+
+    private static String locationOf(final CircuitBreakerUrl fetch) {
+        if (fetch.getResponseHeaders() != null) {
+            for (final org.apache.http.Header header : fetch.getResponseHeaders()) {
+                if (HttpHeaders.LOCATION.equalsIgnoreCase(header.getName())) {
+                    return header.getValue();
+                }
+            }
+        }
+        return null;
+    }
+
+    @VisibleForTesting
+    static String nextHop(final String current, final String location) {
+        if (!UtilMethods.isSet(location)) {
+            throw new BadRequestException("Redirect without a Location header");
+        }
+        try {
+            return URI.create(current).resolve(location.trim()).toString();
+        } catch (final IllegalArgumentException e) {
+            throw new BadRequestException("Invalid redirect location");
         }
     }
 

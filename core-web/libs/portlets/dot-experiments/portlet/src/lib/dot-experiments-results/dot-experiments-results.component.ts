@@ -134,7 +134,11 @@ export class DotExperimentsResultsComponent {
      * that holds a destination.
      */
     readonly #panelHealthStatus = toSignal(
-        this.#panel ? inject(DotExperimentsService).healthCheck() : of(undefined)
+        this.#panel
+            ? inject(DotExperimentsService)
+                  .healthCheck()
+                  .pipe(map((r) => r.health))
+            : of(undefined)
     );
 
     /**

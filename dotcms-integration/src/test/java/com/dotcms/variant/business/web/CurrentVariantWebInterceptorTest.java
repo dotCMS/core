@@ -101,7 +101,8 @@ public class CurrentVariantWebInterceptorTest  {
      * - The current variantName Query Params is not set
      * - the referer is set and had the variantName Parameter.
      * - There is exists any session attribute for the current request.
-     * Should: Not set any attribute on the request.
+     * - The caller is logged into the back end.
+     * Should: Set the referer's variantName as an attribute on the request.
      *
      * @throws IOException
      */
@@ -115,8 +116,10 @@ public class CurrentVariantWebInterceptorTest  {
     public void whenRefererIsSet(String refererValue) throws IOException {
         final CurrentVariantWebInterceptor currentVariantWebInterceptor = new CurrentVariantWebInterceptor();
 
+        final User backEndUser = backEndUser();
         final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getHeader("referer")).thenReturn(refererValue);
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(backEndUser);
 
         final HttpServletResponse response = mock(HttpServletResponse.class);
 
@@ -140,8 +143,9 @@ public class CurrentVariantWebInterceptorTest  {
      * When:
      * - The current variantName Query Params is not set
      * - the referer is not set.
-     * - There is a session attribute for the current request and the LoginMode is equals to BE.
-     * Should: Not set any attribute on the request.
+     * - There is a session attribute for the current request, the LoginMode is equals to BE and the
+     * caller is logged into the back end.
+     * Should: Set the session's variantName as an attribute on the request.
      *
      * @throws IOException
      */
@@ -149,12 +153,16 @@ public class CurrentVariantWebInterceptorTest  {
     public void whenSessionAttributeIsSet() throws IOException {
         final CurrentVariantWebInterceptor currentVariantWebInterceptor = new CurrentVariantWebInterceptor();
 
+        final User backEndUser = backEndUser();
         final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(backEndUser);
         final HttpServletResponse response = mock(HttpServletResponse.class);
 
         final MockSession mockSession = new MockSession(RandomStringUtils.random(10));
         when(request.getSession()).thenReturn(mockSession);
         when(request.getSession(true)).thenReturn(mockSession);
+        // The interceptor reads the session without creating one, so this is the overload it calls
+        when(request.getSession(false)).thenReturn(mockSession);
 
         mockSession.setAttribute(WebKeys.LOGIN_MODE_PARAMETER, LoginMode.BE);
 
@@ -271,5 +279,83 @@ public class CurrentVariantWebInterceptorTest  {
         verify(request, never()).setAttribute(eq(VariantAPI.VARIANT_KEY), any());
     }
 
+    /**
+     * Method to test {@link CurrentVariantWebInterceptor#intercept(HttpServletRequest, HttpServletResponse)}.
+     * When:
+     * - The current variantName Query Params is not set
+     * - the referer is set and had the variantName Parameter.
+     * - The caller never logged in, so there is no user on the request and no LoginMode on the session.
+     * Should: Not set any attribute on the request. The referer is a header the caller sends, so it cannot
+     * decide which version of the content the caller is served.
+     *
+     * @throws IOException
+     */
+    @Test
+    public void whenRefererIsSetAndTheCallerHasNoBackEndAccess() throws IOException {
+        final CurrentVariantWebInterceptor currentVariantWebInterceptor = new CurrentVariantWebInterceptor();
 
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getHeader("referer"))
+                .thenReturn("http://localhost:8080/blog?variantName=variantFromReferer");
+
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        final MockSession mockSession = new MockSession(RandomStringUtils.random(10));
+        when(request.getSession()).thenReturn(mockSession);
+        when(request.getSession(true)).thenReturn(mockSession);
+        when(request.getSession(false)).thenReturn(mockSession);
+
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+
+        currentVariantWebInterceptor.intercept(request, response);
+
+        verify(request, never()).setAttribute(eq(VariantAPI.VARIANT_KEY), any());
+    }
+
+    /**
+     * Method to test {@link CurrentVariantWebInterceptor#intercept(HttpServletRequest, HttpServletResponse)}.
+     * When:
+     * - The current variantName Query Params is not set
+     * - the referer is not set.
+     * - There is a session attribute for the current request, and the caller never logged in, so
+     * {@link LoginMode#get()} is UNKNOWN. That is not FE, which is the only mode the session branch closes on.
+     * Should: Not set any attribute on the request. Naming a variant once must scope that one request, not
+     * every request the caller makes afterwards.
+     *
+     * @throws IOException
+     */
+    @Test
+    public void whenSessionAttributeIsSetAndTheCallerHasNoBackEndAccess() throws IOException {
+        final CurrentVariantWebInterceptor currentVariantWebInterceptor = new CurrentVariantWebInterceptor();
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        final MockSession mockSession = new MockSession(RandomStringUtils.random(10));
+        when(request.getSession()).thenReturn(mockSession);
+        when(request.getSession(true)).thenReturn(mockSession);
+        when(request.getSession(false)).thenReturn(mockSession);
+
+        mockSession.setAttribute(VariantAPI.VARIANT_KEY,
+                new CurrentVariantSessionItem("variantFromSession"));
+
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+
+        currentVariantWebInterceptor.intercept(request, response);
+
+        verify(request, never()).setAttribute(eq(VariantAPI.VARIANT_KEY), any());
+    }
+
+    /**
+     * Builds a user the interceptor reads as logged into the back end. Call it into a local
+     * variable: stubbing it inside another {@code when(...)} nests two stubbings and Mockito
+     * rejects that.
+     *
+     * @return a {@link User} whose {@code isBackendUser()} answers true
+     */
+    private static User backEndUser() {
+        final User user = mock(User.class);
+        when(user.isBackendUser()).thenReturn(true);
+        return user;
+    }
 }

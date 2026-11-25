@@ -1,3 +1,4 @@
+<%@ page import="com.liferay.util.Xss" %>
 <%@page import="com.dotcms.publisher.business.PublishAuditUtil"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
@@ -127,7 +128,7 @@
             <%if (assetTitle != null && assetTitle.equals( assetType )) {%>
                 <%=assetType %>
             <%} else {%>
-                <b><span><%=assetTitle %></span></b> (<%=assetType %>)
+                <b><span><%=Xss.encodeForHTML(assetTitle) %></span></b> (<%=assetType %>)
             <%}%>
             
         </td>

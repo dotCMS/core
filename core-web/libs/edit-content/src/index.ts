@@ -1,12 +1,45 @@
 export * from './lib/edit-content.routes';
-export * from './lib/components/dot-create-content-dialog/dot-create-content-dialog.component';
 export * from './lib/fields/dot-edit-content-file-field/components/dot-binary-field-ce-bridge/dot-binary-field-ce-bridge.component';
 export * from './lib/fields/dot-edit-content-file-field/components/dot-file-field/dot-file-field.component';
 export * from './lib/fields/dot-edit-content-tag-field/components/tag-field/tag-field.component';
-export * from './lib/models/dot-edit-content-dialog.interface';
 export * from './lib/services/dot-edit-content.service';
-// The Edit Content side panel's content, loaded on demand: open it with DotSidePanelService.
+// The Edit Content side panel's content, loaded on demand. Surfaces open content through
+// DotEditContentOpenerService below, which picks this panel or the legacy one.
 export { loadDotEditContentSidePanel } from './lib/components/dot-edit-content-side-panel/load-dot-edit-content-side-panel';
+
+// Open any content in the side panel, in whichever editor its type uses (#38303): one request,
+// one opener, the same five events from either editor.
+export * from './lib/models/dot-edit-content-request.model';
+export * from './lib/models/dot-edit-content-panel-events.model';
+export * from './lib/models/dot-open-content-event.model';
+export { DotEditContentOpenerService } from './lib/opener/dot-edit-content-opener.service';
+export type {
+    DotEditContentOpenOptions,
+    DotEditContentUrlOption
+} from './lib/opener/dot-edit-content-opener.service';
+export { injectEditContentPanel } from './lib/opener/inject-edit-content-panel';
+export type {
+    DotEditContentPanelBinding,
+    DotEditContentPanelHandle
+} from './lib/opener/inject-edit-content-panel';
+// The open panel in the surface's URL (#38303, FR-044 to FR-050): the opener writes it when a
+// surface passes the `url` option; the surface reads it once on load with `readPanelUrlIntent`.
+// The URL reader lives in @dotcms/utils so the admin app can read a URL without this library;
+// re-exported here so a surface that opens content imports everything from one place.
+export { DOT_PANEL_URL_PARAM, readPanelUrlIntent } from '@dotcms/utils';
+export type { DotPanelUrlIntent } from '@dotcms/utils';
+export {
+    DotPanelUrlStateService,
+    type DotPanelUrlRegisterOptions
+} from './lib/opener/url/dot-panel-url-state.service';
+// The legacy editor and any other legacy admin screen as side panel content, loaded on demand.
+// Remove with the legacy editor.
+export { loadDotLegacyEditorSidePanel } from './lib/components/dot-legacy-editor-side-panel/load-dot-legacy-editor-side-panel';
+export { loadDotLegacyScreenSidePanel } from './lib/components/dot-legacy-screen-side-panel/load-dot-legacy-screen-side-panel';
+export type {
+    DotLegacyScreenEvent,
+    DotLegacyScreenRequest
+} from './lib/models/dot-legacy-screen.model';
 // Edit Code: a file's source in Monaco, in a side panel, loaded on demand. Opened from Content
 // Drive's row menu and from the page editor's VTL menu, both deciding with `toSourceEditorRequest`.
 export { loadDotSourceEditorSidePanel } from './lib/components/dot-source-editor-side-panel/load-dot-source-editor-side-panel';

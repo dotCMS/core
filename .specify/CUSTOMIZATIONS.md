@@ -92,7 +92,7 @@ and the **ADR section** (mandatory consultation in the plan phase + the "never c
 guardrail). Loaded by every `/speckit-*` skill. Keep it in sync with the repo root `CLAUDE.md`.
 
 **TDD gate (Principle V):** no implementation code is written before (1) tests are written
-(unit/Postman/integration/Karate/e2e as applicable), (2) the developer validates and approves
+(unit/Postman/integration/e2e as applicable), (2) the developer validates and approves
 them — or explicitly states which type can't be implemented and why, and (3) tests are
 confirmed to FAIL (Red). Enforced via the constitution + the `tasks-template` override's
 per-story `[GATE]` tasks + the plan's Test Strategy section. `/speckit-implement` reads the
@@ -130,7 +130,7 @@ templates:
 - **`overrides/tasks-template.md`** — makes tests **mandatory** (stock template marks them
   optional) and bakes the TDD gates into every user story: Tests → `[GATE]` developer approval
   → `[GATE]` Red (confirmed failing) → Implementation. Includes a dotCMS test-type table
-  (unit/integration/Postman/Karate/e2e).
+  (unit/integration/Postman/e2e).
 
 ### 4. Separate issue-resolution flow — ADDITIVE (one of the three net-new skills)
 

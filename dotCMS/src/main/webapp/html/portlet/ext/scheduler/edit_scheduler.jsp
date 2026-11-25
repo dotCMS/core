@@ -2,6 +2,7 @@
 
 <%@ page import="com.dotmarketing.portlets.scheduler.struts.SchedulerForm" %>
 <%@ page import="com.dotmarketing.util.SchedulerJobLocator" %>
+<%@ page import="com.dotmarketing.quartz.job.ContentImportThread" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Iterator" %>
 <%@ page import="com.dotmarketing.beans.Host" %>
@@ -323,6 +324,21 @@ function deleteSchedule(form) {
 									<option><%= c %></option>
 								 <% } %>
 							</select>
+							<%
+								// Only content imports run as the user who saved the job
+								final String scheduledBy = (String) request.getAttribute("scheduledByUserName");
+								final boolean isContentImport = ContentImportThread.class.getName().equals(schedulerForm.getJavaClass());
+							%>
+							<% if (isContentImport) { %>
+								<div class="hint-text">
+									<% if (UtilMethods.isSet(scheduledBy)) { %>
+										<%= LanguageUtil.get(pageContext, "scheduler.job.runs-as") %>: <%= Xss.encodeForHTML(scheduledBy) %>.
+									<% } %>
+									<%= LanguageUtil.get(pageContext, "scheduler.job.runs-as-saving-user") %>
+								</div>
+							<% } else if (!UtilMethods.isSet(schedulerForm.getJavaClass())) { %>
+								<div class="hint-text"><%= LanguageUtil.get(pageContext, "scheduler.job.runs-as-content-import") %></div>
+							<% } %>
 						<%} else {%>
 							<input type="hidden" name="javaClass" value="<%= schedulerForm.getJavaClass() %>">
 						<%}%>

@@ -37,6 +37,7 @@ import java.util.UUID;
 import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -346,21 +347,134 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
         }
     }
 
-    @WrapInTransaction
+    /**
+     * Method to test: {@link HostIntegrityChecker#executeFix(String)}
+     * When: A site conflict carries a remote working inode that contains a single quote
+     * Should: Refuse the fix with the inode in the message, keep the site's contentlet row and write
+     * nothing under the remote inode or identifier
+     * @throws Exception
+     */
+    @Test
+    public void test_executeFix_refusesQuotedRemoteInode() throws Exception {
+        final Host newSite = new SiteDataGen().nextPersisted();
+        final String remoteInode = "h'" + UUID.randomUUID().toString().replace("-", "").substring(0, 30);
+        final String remoteIdentifier = introduceConflict(newSite, endpointId, remoteInode);
+
+        try {
+            final DotDataException error = Assert.assertThrows(DotDataException.class,
+                    () -> new IntegrityUtil().fixConflicts(endpointId, IntegrityType.HOSTS));
+            assertTrue(error.getMessage(), error.getMessage().contains(remoteInode));
+
+            assertEquals(newSite.getIdentifier(), identifierOfInode(newSite.getInode()));
+            assertNull(identifierOfInode(remoteInode));
+            assertTrue(new DotConnect().setSQL("SELECT 1 FROM identifier WHERE id = ?")
+                    .addParam(remoteIdentifier).loadObjectResults().isEmpty());
+        } finally {
+            integrityChecker.discardConflicts(endpointId);
+            new DotConnect().setSQL("DELETE FROM contentlet_version_info WHERE working_inode = ?")
+                    .addParam(remoteInode).loadResult();
+            new DotConnect().setSQL("DELETE FROM contentlet WHERE inode = ?").addParam(remoteInode).loadResult();
+            new DotConnect().setSQL("DELETE FROM inode WHERE inode = ?").addParam(remoteInode).loadResult();
+            new DotConnect().setSQL("DELETE FROM identifier WHERE id = ?").addParam(remoteIdentifier).loadResult();
+            DbConnectionFactory.closeSilently();
+        }
+    }
+
+    /**
+     * Method to test: {@link IntegrityUtil#fixConflicts(String, IntegrityType)} for sites
+     * When: The remote live inode of a site is the inode of another local site
+     * Should: Refuse the fix and keep both sites' contentlet and version rows as they were
+     */
+    @Test
+    public void test_executeFix_refusesRemoteLiveInodeOfAnotherContentlet() throws Exception {
+        final Host site = new SiteDataGen().nextPersisted(true);
+        final Host other = new SiteDataGen().nextPersisted(true);
+        assertFixRefusedAndRowsKept(site, other,
+                UUID.randomUUID().toString(), other.getInode());
+    }
+
+    /**
+     * Method to test: {@link IntegrityUtil#fixConflicts(String, IntegrityType)} for sites
+     * When: The remote working inode of a site is the inode of another local site
+     * Should: Refuse the fix and keep both sites' contentlet and version rows as they were
+     */
+    @Test
+    public void test_executeFix_refusesRemoteWorkingInodeOfAnotherContentlet() throws Exception {
+        final Host site = new SiteDataGen().nextPersisted(true);
+        final Host other = new SiteDataGen().nextPersisted(true);
+        assertFixRefusedAndRowsKept(site, other, other.getInode(), null);
+    }
+
+    /**
+     * Stores a site conflict with the given remote inodes, runs the fix and checks that it fails
+     * with the colliding inode in the message while both sites keep their rows.
+     */
+    private void assertFixRefusedAndRowsKept(final Host site, final Host other,
+            final String remoteWorkingInode, final String remoteLiveInode) throws Exception {
+        final String siteLiveInode = liveInodeOf(site);
+        final String otherLiveInode = liveInodeOf(other);
+        final String remoteIdentifier = introduceConflict(site, endpointId, remoteWorkingInode,
+                siteLiveInode, remoteLiveInode);
+        try {
+            final DotDataException error = Assert.assertThrows(DotDataException.class,
+                    () -> new IntegrityUtil().fixConflicts(endpointId, IntegrityType.HOSTS));
+            assertTrue(error.getMessage(), error.getMessage().contains(other.getInode()));
+
+            assertEquals(site.getIdentifier(), identifierOfInode(site.getInode()));
+            assertEquals(other.getIdentifier(), identifierOfInode(other.getInode()));
+            assertEquals(siteLiveInode, liveInodeOf(site));
+            assertEquals(otherLiveInode, liveInodeOf(other));
+            assertTrue(new DotConnect().setSQL("SELECT 1 FROM contentlet_version_info WHERE identifier = ?")
+                    .addParam(remoteIdentifier).loadObjectResults().isEmpty());
+        } finally {
+            integrityChecker.discardConflicts(endpointId);
+            DbConnectionFactory.closeSilently();
+        }
+    }
+
+    private String identifierOfInode(final String inode) throws DotDataException {
+        final List<Map<String, Object>> rows = new DotConnect()
+                .setSQL("SELECT identifier FROM contentlet WHERE inode = ?")
+                .addParam(inode).loadObjectResults();
+        return rows.isEmpty() ? null : (String) rows.get(0).get("identifier");
+    }
+
+    private String liveInodeOf(final Host site) throws DotDataException {
+        return (String) new DotConnect()
+                .setSQL("SELECT live_inode FROM contentlet_version_info WHERE identifier = ? AND lang = ?")
+                .addParam(site.getIdentifier())
+                .addParam(site.getLanguageId())
+                .loadObjectResults().get(0).get("live_inode");
+    }
+
     private String introduceConflict(final Host site, final String endpointId) throws DotDataException {
+        return introduceConflict(site, endpointId, UUID.randomUUID().toString());
+    }
+
+    private String introduceConflict(final Host site, final String endpointId,
+            final String remoteWorkingInode) throws DotDataException {
+        return introduceConflict(site, endpointId, remoteWorkingInode, null, null);
+    }
+
+    @WrapInTransaction
+    private String introduceConflict(final Host site, final String endpointId,
+            final String remoteWorkingInode, final String localLiveInode,
+            final String remoteLiveInode) throws DotDataException {
         final DotConnect dotConnect = new DotConnect();
         dotConnect.setSQL("INSERT INTO hosts_ir \n"
-                + "(local_identifier, remote_identifier, endpoint_id, local_working_inode, remote_working_inode, language_id, host)\n"
-                + "VALUES(?, ?, ?, ?, ?, ?, ?)");
+                + "(local_identifier, remote_identifier, endpoint_id, local_working_inode, local_live_inode,"
+                + " remote_working_inode, remote_live_inode, language_id, host)\n"
+                + "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
         final String remoteIdentifier = UUID.randomUUID().toString();
-        final String remoteWorkingInode = UUID.randomUUID().toString();
 
         dotConnect.addParam(site.getIdentifier());
         dotConnect.addParam(remoteIdentifier);
         dotConnect.addParam(endpointId);
         dotConnect.addParam(site.getInode());
+        dotConnect.addParam(localLiveInode);
         dotConnect.addParam(remoteWorkingInode);
+        dotConnect.addParam(remoteLiveInode);
         dotConnect.addParam(site.getLanguageId());
         dotConnect.addParam(site.getHostname());
         dotConnect.loadResult();

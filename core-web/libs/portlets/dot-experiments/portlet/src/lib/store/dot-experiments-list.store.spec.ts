@@ -11,7 +11,8 @@ import { ActivatedRoute, Params, provideRouter } from '@angular/router';
 import {
     DotContentSearchService,
     DotExperimentsService,
-    DotHttpErrorManagerService
+    DotHttpErrorManagerService,
+    ExperimentsHealthResponse
 } from '@dotcms/data-access';
 import {
     ComponentStatus,
@@ -166,6 +167,16 @@ const PAGE_SEARCH_RESULT = {
     }
 };
 
+/** Builds a minimal ExperimentsHealthResponse for test stubs. */
+function healthResponse(
+    health: HealthStatusTypes = HealthStatusTypes.OK,
+    tier: 'full' | 'limited' = 'full',
+    freeExperimentUsed: boolean | null = null,
+    warning?: 'analytics_disabled'
+): ExperimentsHealthResponse {
+    return { health, tier, freeExperimentUsed, warning };
+}
+
 describe('DotExperimentsListStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotExperimentsListStore>>;
     let store: InstanceType<typeof DotExperimentsListStore>;
@@ -265,7 +276,7 @@ describe('DotExperimentsListStore', () => {
     beforeEach(() => {
         vi.resetAllMocks();
 
-        healthCheck.mockReturnValue(of(HealthStatusTypes.OK));
+        healthCheck.mockReturnValue(of(healthResponse()));
         getAllUnfiltered.mockReturnValue(of(EXPERIMENTS));
         getAll.mockReturnValue(of(PAGE_EXPERIMENTS));
         contentSearchGet.mockReturnValue(of(PAGE_SEARCH_RESULT));
@@ -462,7 +473,7 @@ describe('DotExperimentsListStore', () => {
         it.each([HealthStatusTypes.NOT_CONFIGURED, HealthStatusTypes.CONFIGURATION_ERROR])(
             'should flag %s as misconfigured and never query the experiments',
             (healthStatus) => {
-                healthCheck.mockReturnValue(of(healthStatus));
+                healthCheck.mockReturnValue(of(healthResponse(healthStatus)));
 
                 initStore();
 
@@ -495,6 +506,67 @@ describe('DotExperimentsListStore', () => {
             expect(store.error()).toBe(error);
             expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
             expect(getAllUnfiltered).not.toHaveBeenCalled();
+        });
+
+        describe('limited-mode computed signals (isLimitedMode, isSlotUsed, showAnalyticsWarning)', () => {
+            it('should report isLimitedMode=false when tier=FULL', () => {
+                healthCheck.mockReturnValue(of(healthResponse(HealthStatusTypes.OK, 'full')));
+                initStore();
+                expect(store.isLimitedMode()).toBe(false);
+            });
+
+            it('should report isLimitedMode=true when tier=LIMITED', () => {
+                healthCheck.mockReturnValue(
+                    of(healthResponse(HealthStatusTypes.OK, 'limited', false))
+                );
+                initStore();
+                expect(store.isLimitedMode()).toBe(true);
+            });
+
+            it('should report isSlotUsed=false when freeExperimentUsed=false', () => {
+                healthCheck.mockReturnValue(
+                    of(healthResponse(HealthStatusTypes.OK, 'limited', false))
+                );
+                initStore();
+                expect(store.isSlotUsed()).toBe(false);
+            });
+
+            it('should report isSlotUsed=true when freeExperimentUsed=true', () => {
+                healthCheck.mockReturnValue(
+                    of(healthResponse(HealthStatusTypes.OK, 'limited', true))
+                );
+                initStore();
+                expect(store.isSlotUsed()).toBe(true);
+            });
+
+            it('should report showAnalyticsWarning=false when App is configured', () => {
+                healthCheck.mockReturnValue(of(healthResponse(HealthStatusTypes.OK, 'full')));
+                initStore();
+                expect(store.showAnalyticsWarning()).toBe(false);
+            });
+
+            it('should report showAnalyticsWarning=true when App not configured', () => {
+                healthCheck.mockReturnValue(
+                    of(
+                        healthResponse(
+                            HealthStatusTypes.NOT_CONFIGURED,
+                            'limited',
+                            false,
+                            'analytics_disabled'
+                        )
+                    )
+                );
+                initStore();
+                expect(store.showAnalyticsWarning()).toBe(true);
+            });
+
+            it('should report all signals as falsy while health check is pending', () => {
+                healthCheck.mockReturnValue(NEVER);
+                initStore();
+                expect(store.isLimitedMode()).toBe(false);
+                expect(store.isSlotUsed()).toBe(false);
+                expect(store.showAnalyticsWarning()).toBe(false);
+            });
         });
     });
 
@@ -1105,7 +1177,7 @@ describe('DotExperimentsListStore', () => {
 
     describe('site switch while analytics is misconfigured', () => {
         it('should not request the list', () => {
-            healthCheck.mockReturnValue(of(HealthStatusTypes.NOT_CONFIGURED));
+            healthCheck.mockReturnValue(of(healthResponse(HealthStatusTypes.NOT_CONFIGURED)));
             initStore();
 
             expect(getAllUnfiltered).not.toHaveBeenCalled();

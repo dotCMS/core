@@ -29,9 +29,11 @@ public class MyStatefulJob extends DotStatefulJob {
 
     private LocalTime startedAt;
     private LocalTime finishedAt;
+    private String threadName;
 
     @Override
     public void run(final JobExecutionContext jobContext) throws JobExecutionException {
+        threadName = Thread.currentThread().getName();
         startedAt = LocalTime.now();
         Logger.info(DotStatefulJobTest.class, ":: Started ::");
         DateUtil.sleep(randInt(2000, 4000));
@@ -43,6 +45,16 @@ public class MyStatefulJob extends DotStatefulJob {
 
     LocalTimeRange getTimeRange() {
         return LocalTimeRange.of(startedAt, finishedAt);
+    }
+
+    /**
+     * Describes this execution (worker thread, start and end) so a failed overlap assertion can
+     * show which executions ran at the same time.
+     *
+     * @return a one-line description of this execution
+     */
+    String describe() {
+        return String.format("%s [%s -> %s]", threadName, startedAt, finishedAt);
     }
 
     /**

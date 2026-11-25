@@ -7,33 +7,37 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 import com.dotcms.Junit5WeldBaseTest;
 import java.util.Map;
 import com.dotcms.jobs.business.job.JobResult;
 import com.dotcms.jobs.business.job.JobView;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.cache.FieldsCache;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import javax.ws.rs.core.StreamingOutput;
-import javax.ws.rs.BadRequestException;
-import java.nio.charset.StandardCharsets;
-import java.io.ByteArrayOutputStream;
+import com.dotcms.contenttype.model.field.LineDividerField;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.datagen.SiteDataGen;
-import java.util.stream.Collectors;
 import java.util.Arrays;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.beans.Permission;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobViewPaginatedResult;
 import com.dotcms.jobs.business.util.JobUtil;
+import com.dotcms.mock.request.FakeHttpRequest;
+import com.dotcms.mock.request.MockHeaderRequest;
+import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.ResponseEntityJobStatusView;
 import com.dotcms.rest.ResponseEntityView;
@@ -42,11 +46,11 @@ import com.dotcms.rest.exception.ValidationException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.util.importer.ContentImportTemplateGenerator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Constants;
+import com.dotmarketing.util.WebKeys;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
@@ -87,12 +91,18 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
     private static Language defaultLanguage;
 
     private static final String IMPORT_QUEUE_NAME = "importContentlets";
+    private static final String RESTRICTED_FIELD_VAR = "restrictedTemplateMarker";
+    private static final String NON_IMPORTABLE_FIELD_VAR = "restrictedTemplateDivider";
     private static final String CMD_PUBLISH = Constants.PUBLISH;
     private static final String CMD_PREVIEW = Constants.PREVIEW;
 
     private static File csvFile;
     private static ContentType contentType;
     private static String fieldId;
+
+    private static ContentType restrictedContentType;
+    private static User readerUser;
+    private static User strangerUser;
 
     @Inject
     ContentImportHelper contentImportHelper;
@@ -115,6 +125,8 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
         fieldId = contentType.fields().get(0).id();
         assert fieldId != null;
         csvFile = createTestCsvFile();
+
+        prepareTemplateFixture();
     }
 
     @BeforeEach
@@ -130,6 +142,15 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
         }
         // Clean up the test content type
         ContentTypeDataGen.remove(contentType);
+        if (restrictedContentType != null) {
+            ContentTypeDataGen.remove(restrictedContentType);
+        }
+        if (readerUser != null) {
+            UserDataGen.remove(readerUser, true);
+        }
+        if (strangerUser != null) {
+            UserDataGen.remove(strangerUser, true);
+        }
     }
 
 
@@ -551,6 +572,65 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
 
 
     /**
+     * Scenario: an administrator starts an import, then a back-end user who is not an
+     * administrator reads, lists and cancels it, and the administrator reads it back.
+     * <p>
+     * Expected: the back-end user gets "not found" on read and cancel, does not see the job in
+     * any listing and is the user the monitor is opened for; the administrator sees the job in the
+     * listing and reads it, without the staged file's id and request fingerprint in its parameters.
+     * Ordered after the tests that count jobs, since it adds one.
+     * </p>
+     */
+    @Test
+    @Order(100)
+    void test_import_job_is_visible_only_to_its_creator_and_administrators() throws Exception {
+        final ContentImportForm form = createContentImportForm(contentType.name(),
+                String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID, List.of(fieldId));
+        final Response created = importResource.importContent(request, response,
+                createContentImportParams(csvFile, form));
+        final String jobId = ((ResponseEntityJobStatusView) created.getEntity()).getEntity().jobId();
+
+        final User backendUser = new UserDataGen().roles(TestUserUtils.getBackendRole())
+                .nextPersisted();
+        try {
+            assertTrue(importResource.listJobs(request, response, 1, 100).getEntity().jobs()
+                    .stream().anyMatch(job -> jobId.equals(job.id())), "job not listed for admin");
+
+            final HttpServletRequest backendRequest = JobUtil.generateMockRequest(backendUser,
+                    defaultSite.getHostname());
+
+            assertThrows(DoesNotExistException.class,
+                    () -> importResource.getJobStatus(backendRequest, response, jobId));
+            assertThrows(DoesNotExistException.class,
+                    () -> importResource.cancelJob(backendRequest, response, jobId));
+            for (final JobViewPaginatedResult listed : List.of(
+                    importResource.listJobs(backendRequest, response, 1, 100).getEntity(),
+                    importResource.activeJobs(backendRequest, response, 1, 100).getEntity(),
+                    importResource.completedJobs(backendRequest, response, 1, 100).getEntity(),
+                    importResource.canceledJobs(backendRequest, response, 1, 100).getEntity(),
+                    importResource.failedJobs(backendRequest, response, 1, 100).getEntity(),
+                    importResource.abandonedJobs(backendRequest, response, 1, 100).getEntity(),
+                    importResource.successfulJobs(backendRequest, response, 1, 100).getEntity())) {
+                assertTrue(listed.jobs().stream().noneMatch(job -> jobId.equals(job.id())),
+                        "job listed for another user");
+            }
+
+            final SSEMonitorUtil monitor = mock(SSEMonitorUtil.class);
+            new ContentImportResource(contentImportHelper, monitor)
+                    .monitorJob(backendRequest, response, jobId);
+            verify(monitor).monitorJob(eq(jobId),
+                    argThat(user -> backendUser.getUserId().equals(user.getUserId())));
+        } finally {
+            UserDataGen.remove(backendUser);
+        }
+
+        final JobView view = importResource.getJobStatus(request, response, jobId).getEntity();
+        assertEquals(jobId, view.id());
+        assertFalse(view.parameters().containsKey("tempFileId"));
+        assertFalse(view.parameters().containsKey("requestFingerPrint"));
+    }
+
+    /**
      * Scenario: Attempt to validate content import with a valid CSV file but without providing the required form data.
      * <p>
      * Expected: A ValidationException should be thrown since form data is a required parameter
@@ -653,77 +733,6 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
                 createContentImportParams(csvFile, form));
 
         assertEquals(csvFile.getName(), jobOf(result).parameters().get("fileName"));
-    }
-
-    /**
-     * Given scenario: the sample CSV for the suite's content type is requested.
-     * Expected result: 200 {@code text/csv} named {@code CSV_Template.csv}, whose body is what the
-     * template generator writes for that type's fields — the same file Content Search offers
-     * (#37896, FR-024).
-     */
-    @Test
-    void test_sample_csv_is_the_content_search_template() throws Exception {
-        final Response result =
-                importResource.downloadSample(request, response, contentType.variable());
-
-        assertEquals(Response.Status.OK.getStatusCode(), result.getStatus());
-        assertTrue(String.valueOf(result.getMediaType()).startsWith("text/csv"));
-        assertEquals("attachment; filename=\"CSV_Template.csv\"",
-                result.getHeaderString("Content-Disposition"));
-
-        final ByteArrayOutputStream body = new ByteArrayOutputStream();
-        ((StreamingOutput) result.getEntity()).write(body);
-        assertEquals(ContentImportTemplateGenerator.generate(
-                        FieldsCache.getFieldsByStructureInode(contentType.inode())),
-                body.toString(StandardCharsets.UTF_8));
-    }
-
-    /**
-     * Given scenario: the sample CSV is requested with no content type.
-     * Expected result: the request is refused as a bad request (400).
-     */
-    @Test
-    void test_sample_csv_without_content_type_is_refused() {
-        assertThrows(BadRequestException.class,
-                () -> importResource.downloadSample(request, response, null));
-    }
-
-    /**
-     * Given scenario: the sample CSV is requested for a content type that doesn't exist.
-     * Expected result: not found (404).
-     */
-    @Test
-    void test_sample_csv_for_unknown_type_is_not_found() {
-        assertThrows(NotFoundInDbException.class, () -> importResource.downloadSample(request,
-                response, "noSuchType" + System.currentTimeMillis()));
-    }
-
-    /**
-     * Given scenario: a limited backend user asks for the sample of a type they can't read.
-     * Expected result: refused (403), so the endpoint doesn't reveal a type's fields.
-     */
-    @Test
-    void test_sample_csv_for_unreadable_type_is_forbidden() throws Exception {
-        final ContentType privateType = new ContentTypeDataGen()
-                .name("ImportPrivate" + System.currentTimeMillis()).nextPersisted();
-        // Individual permissions for the admin only, so the type stops inheriting the site's
-        // permissions and the limited user really can't read it
-        APILocator.getPermissionAPI().save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
-                        privateType.getPermissionId(),
-                        APILocator.getRoleAPI().loadRoleByKey(adminUser.getUserId()).getId(),
-                        PermissionAPI.PERMISSION_READ, true),
-                privateType, APILocator.systemUser(), false);
-        try {
-            final User limitedUser = new UserDataGen()
-                    .roles(TestUserUtils.getBackendRole()).nextPersisted();
-            final HttpServletRequest limitedRequest =
-                    JobUtil.generateMockRequest(limitedUser, defaultSite.getHostname());
-
-            assertThrows(DotSecurityException.class, () -> importResource.downloadSample(
-                    limitedRequest, response, privateType.variable()));
-        } finally {
-            ContentTypeDataGen.remove(privateType);
-        }
     }
 
     /**
@@ -847,7 +856,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
     private Job jobOf(final Response result) throws DotDataException {
         assertEquals(Response.Status.OK.getStatusCode(), result.getStatus());
         final ResponseEntityJobStatusView view = (ResponseEntityJobStatusView) result.getEntity();
-        return contentImportHelper.getJob(view.getEntity().jobId());
+        return contentImportHelper.getJob(view.getEntity().jobId(), adminUser);
     }
 
     /**
@@ -929,8 +938,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
 
         // Retrieve and validate job exists in the queue
         Job job = contentImportHelper.getJob(responseEntityJobStatusView
-
-                .getEntity().jobId());
+                .getEntity().jobId(), adminUser);
         assertNotNull(job, "Job should exist in queue");
 
         // Validate core import parameters
@@ -1036,5 +1044,158 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      */
     private void assertBadRequestResponse(Response importContentResponse) {
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), importContentResponse.getStatus(), "Expected BAD_REQUEST status");
+    }
+
+    /**
+     * Scenario: a back-end user who holds READ on the Content Type asks for its CSV template.
+     * <p>
+     * Expected result: the template comes back as a CSV attachment, with the variable name of the
+     * type's field on the header line and a sample row underneath, and it is the same template the
+     * administrator gets.
+     * </p>
+     */
+    @Test
+    @Order(101)
+    void test_download_template_for_a_readable_content_type() throws Exception {
+        final Response templateResponse = importResource.downloadTemplate(
+                mockRequestFor(readerUser), response, restrictedContentType.id());
+
+        assertEquals(Response.Status.OK.getStatusCode(), templateResponse.getStatus());
+        assertEquals("attachment; filename=\"CSV_Template.csv\"",
+                templateResponse.getHeaderString("Content-Disposition"));
+
+        final String template = (String) templateResponse.getEntity();
+        final String[] lines = template.split("\n");
+        assertEquals(2, lines.length, "The template is a header line and a sample row");
+        assertTrue(lines[0].contains(RESTRICTED_FIELD_VAR),
+                "The header line names every importable field: " + lines[0]);
+        assertFalse(lines[0].contains(NON_IMPORTABLE_FIELD_VAR),
+                "A field a CSV row cannot set is left out of the template: " + lines[0]);
+        assertFalse(lines[0].endsWith(","),
+                "A type ending in a non-importable field leaves no empty column: " + lines[0]);
+        assertFalse(lines[1].endsWith(","),
+                "The sample row leaves no empty column either: " + lines[1]);
+        assertEquals(lines[0].split(",").length, lines[1].split(",").length,
+                "The sample row has one value per header column");
+
+        final Response adminResponse = importResource.downloadTemplate(
+                mockRequestFor(adminUser), response, restrictedContentType.id());
+        assertEquals(template, adminResponse.getEntity(),
+                "A user who may read the type gets the same template as an administrator");
+    }
+
+    /**
+     * Scenario: a back-end user who holds nothing on the Content Type asks for its CSV template.
+     * <p>
+     * Expected result: the request is refused, so the type's field names are not disclosed to a
+     * user who cannot read the type itself.
+     * </p>
+     */
+    @Test
+    @Order(102)
+    void test_download_template_for_a_content_type_the_user_cannot_read() {
+        assertThrows(DotSecurityException.class, () -> importResource.downloadTemplate(
+                mockRequestFor(strangerUser), response, restrictedContentType.id()));
+    }
+
+    /**
+     * Scenario: the variable name of the Content Type is given instead of its id.
+     * <p>
+     * Expected result: the same template, since the endpoint accepts either.
+     * </p>
+     */
+    @Test
+    @Order(103)
+    void test_download_template_by_content_type_variable() throws Exception {
+        final Response templateResponse = importResource.downloadTemplate(
+                mockRequestFor(readerUser), response, restrictedContentType.variable());
+
+        assertEquals(Response.Status.OK.getStatusCode(), templateResponse.getStatus());
+        assertTrue(((String) templateResponse.getEntity()).contains(RESTRICTED_FIELD_VAR));
+    }
+
+    /**
+     * Scenario: a Content Type that does not exist is asked for.
+     * <p>
+     * Expected result: a not-found failure rather than a template.
+     * </p>
+     */
+    @Test
+    @Order(104)
+    void test_download_template_for_a_missing_content_type() {
+        assertThrows(NotFoundInDbException.class, () -> importResource.downloadTemplate(
+                mockRequestFor(adminUser), response, "nonExistingContentType"));
+    }
+
+    /**
+     * Scenario: no Content Type is given at all.
+     * <p>
+     * Expected result: the request is rejected as a bad request.
+     * </p>
+     */
+    @Test
+    @Order(105)
+    void test_download_template_without_a_content_type() {
+        assertThrows(IllegalArgumentException.class, () -> importResource.downloadTemplate(
+                mockRequestFor(adminUser), response, null));
+    }
+
+    /**
+     * Creates the Content Type the template tests read, a back-end user allowed to read it, and a
+     * back-end user who is not.
+     *
+     * <p>The grant is made on the type itself, which stops it inheriting from the site and is what
+     * makes the second user a genuine "no permission" case; the assertions below state that
+     * premise rather than trusting it, since a type that still inherited would let both users
+     * through and the refusal test would pass without proving anything.</p>
+     */
+    private static void prepareTemplateFixture() throws Exception {
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+
+        // The divider goes last on purpose: a field a CSV row cannot set must be left out of the
+        // template, and the old code decided its separators from the unfiltered list, so a type
+        // ending in one used to emit a trailing empty column.
+        restrictedContentType = new ContentTypeDataGen()
+                .baseContentType(BaseContentType.CONTENT)
+                .field(new FieldDataGen().velocityVarName(RESTRICTED_FIELD_VAR)
+                        .sortOrder(1).next())
+                .field(new FieldDataGen().velocityVarName(NON_IMPORTABLE_FIELD_VAR)
+                        .type(LineDividerField.class).sortOrder(2).next())
+                .nextPersisted();
+
+        readerUser = new UserDataGen().roles(TestUserUtils.getBackendRole()).nextPersisted();
+        strangerUser = new UserDataGen().roles(TestUserUtils.getBackendRole()).nextPersisted();
+
+        permissionAPI.save(new Permission(restrictedContentType.getPermissionId(),
+                        APILocator.getRoleAPI().getUserRole(readerUser).getId(),
+                        PermissionAPI.PERMISSION_READ, true),
+                restrictedContentType, APILocator.systemUser(), false);
+
+        assertTrue(permissionAPI.doesUserHavePermission(restrictedContentType,
+                        PermissionAPI.PERMISSION_READ, readerUser, false),
+                "The fixture needs a user who may read the Content Type");
+        assertFalse(permissionAPI.doesUserHavePermission(restrictedContentType,
+                        PermissionAPI.PERMISSION_READ, strangerUser, false),
+                "The fixture needs a user who may not read the Content Type, or the refusal "
+                        + "test proves nothing");
+    }
+
+    /**
+     * Builds a request carrying the given user, so each test can call the endpoint as somebody in
+     * particular.
+     *
+     * @param user the {@link User} the request is made by
+     * @return the request
+     */
+    private static HttpServletRequest mockRequestFor(final User user) {
+        final HttpServletRequest userRequest = new MockSessionRequest(
+                new MockHeaderRequest(
+                        new FakeHttpRequest(defaultSite.getHostname(), "/").request(),
+                        "referer", "https://" + defaultSite.getHostname() + "/fakeRefer")
+                        .request());
+        userRequest.setAttribute(WebKeys.CMS_USER, user);
+        userRequest.getSession().setAttribute(WebKeys.CMS_USER, user);
+        userRequest.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
+        return userRequest;
     }
 }

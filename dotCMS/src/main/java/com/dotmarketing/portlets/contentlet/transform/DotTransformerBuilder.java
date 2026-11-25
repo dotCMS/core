@@ -281,6 +281,7 @@ public class DotTransformerBuilder {
     public DotTransformerBuilder renderFields(final boolean renderFields){
         if (renderFields) {
             optionsHolder.add(TransformOptions.RENDER_FIELDS);
+            optionsHolder.remove(TransformOptions.SKIP_WIDGET_CODE_RENDERING);
         } else {
             optionsHolder.remove(TransformOptions.RENDER_FIELDS);
             //By default, Widget Strategy render widget code. If we want to skip it, we need to add this option

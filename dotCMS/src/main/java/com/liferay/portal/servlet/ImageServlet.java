@@ -20,6 +20,7 @@
 package com.liferay.portal.servlet;
 
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.company.CompanyLogoPath;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -33,6 +34,7 @@ import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -54,25 +56,76 @@ import com.liferay.util.ParamUtil;
  */
 public class ImageServlet extends HttpServlet {
 
+	/**
+	 * Initializes the servlet and replaces the stored login screen logo with a new dotAsset when
+	 * it is missing or is not a dotAsset path.
+	 *
+	 * @param sc the servlet configuration
+	 * @throws ServletException if the servlet cannot be initialized
+	 */
+	@Override
 	public void init(ServletConfig sc) throws ServletException {
 		synchronized (ImageServlet.class) {
 			super.init(sc);
 		}
 		final Company company = APILocator.getCompanyAPI().getDefaultCompany();
-		//If the City column does not startsWith /dA means that we need to migrate the old logo
-		//to a new dotAsset
-		if (company.getCity() == null || !company.getCity().startsWith("/dA")) {
+		if (needsLogoMigration(company.getCity())) {
+			if (company.getCity() != null && !company.getCity().isEmpty()) {
+				Logger.warn(this, "The stored login screen logo is not a dotAsset path; "
+						+ "it is replaced with the default logo");
+			}
 			migrateCurrentLogoToDotAsset(company);
 		}
 	}
 
+	/**
+	 * Tells whether the stored login screen logo has to be replaced by a new dotAsset at startup:
+	 * when it is missing or is not a dotAsset path ({@link CompanyLogoPath#isValid(String)}).
+	 *
+	 * @param storedLogo the stored login screen logo, may be {@code null}
+	 * @return {@code true} if the logo has to be migrated
+	 */
+	static boolean needsLogoMigration(final String storedLogo) {
+		return !CompanyLogoPath.isValid(storedLogo);
+	}
+
+	/**
+	 * Serves the login screen logo stored on the default company.
+	 *
+	 * @param req the current request
+	 * @param res the current response
+	 * @throws IOException if the logo cannot be written
+	 * @throws ServletException if the forward fails
+	 */
+	@Override
 	public void service(HttpServletRequest req, HttpServletResponse res)
 			throws IOException, ServletException {
 		final Company company = APILocator.getCompanyAPI().getDefaultCompany();
-		//Forward to the Servlet
-		if (company.getCity() != null && company.getCity().startsWith("/dA")) {
-			req.getRequestDispatcher(company.getCity()).forward(req, res);
+		serveLogo(company.getCity(), req, res);
+	}
+
+	/**
+	 * Forwards the request to the stored logo when it is a dotAsset path, using the path built by
+	 * {@link CompanyLogoPath#forwardPath(String)}; any other value, or a path the container
+	 * cannot dispatch to, gets a 404.
+	 *
+	 * @param logoPath the stored login screen logo, may be {@code null}
+	 * @param req the current request
+	 * @param res the current response
+	 * @throws IOException if the response cannot be written
+	 * @throws ServletException if the forward fails
+	 */
+	void serveLogo(final String logoPath, final HttpServletRequest req,
+			final HttpServletResponse res) throws IOException, ServletException {
+		final Optional<String> forwardPath = CompanyLogoPath.forwardPath(logoPath);
+		final RequestDispatcher dispatcher = forwardPath.isPresent()
+				? req.getRequestDispatcher(forwardPath.get())
+				: null;
+		if (dispatcher == null) {
+			res.sendError(HttpServletResponse.SC_NOT_FOUND);
+			return;
 		}
+		dispatcher.forward(req, res);
 	}
 
 	@WrapInTransaction

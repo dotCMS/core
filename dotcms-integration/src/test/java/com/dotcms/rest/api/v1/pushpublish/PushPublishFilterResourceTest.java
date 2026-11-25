@@ -1,5 +1,11 @@
 package com.dotcms.rest.api.v1.pushpublish;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
+
 import com.dotcms.datagen.FilterDescriptorDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
@@ -14,7 +20,9 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.google.common.collect.ImmutableMap;
-import java.util.Base64;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.glassfish.jersey.media.multipart.ContentDisposition;
+import org.glassfish.jersey.media.multipart.FormDataBodyPart;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -23,6 +31,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
@@ -35,6 +48,9 @@ import java.util.Map;
  * @see <a href="https://www.dotcms.com/docs/latest/push-publishing-filters#push-publishing-filters">Push Publishing Filters</a>
  */
 public class PushPublishFilterResourceTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     static HttpServletResponse response;
     static PushPublishFilterResource resource;
@@ -58,6 +74,11 @@ public class PushPublishFilterResourceTest {
         APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
     }
 
+    /**
+     * Builds an admin request authenticated with a Bearer API token when authorization is requested.
+     *
+     * @return the request
+     */
     private HttpServletRequest getHttpRequest(final boolean authorization) {
         final MockHeaderRequest request = new MockHeaderRequest(
                 new MockSessionRequest(
@@ -67,7 +88,7 @@ public class PushPublishFilterResourceTest {
 
         if(authorization) {
             request.setHeader("Authorization",
-                    "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
+                    TOKEN_UTILS.adminBearerHeader());
 
         }
 
@@ -216,6 +237,130 @@ public class PushPublishFilterResourceTest {
             throw e;
         } finally {
             APILocator.getPublisherAPI().clearFilterDescriptorList();
+        }
+    }
+
+    /**
+     * Method to test: {@link PushPublishFilterResource#saveFromForm(HttpServletRequest, HttpServletResponse, FilterDescriptorForm)}
+     * Given Scenario: A filter whose {@code relationshipsDepth} is negative is submitted through the form.
+     * ExpectedResult: The request is rejected with an {@link IllegalArgumentException} (HTTP 400) naming the
+     * field, and the filter is neither saved nor listed (issue #38394).
+     */
+    @Test
+    public void test_saveFromForm_invalidRelationshipsDepth_isRejected() throws DotDataException {
+        final String invalidKey = "invalidRelationshipsDepth" + System.currentTimeMillis() + ".yml";
+        final FilterDescriptorForm form = new FilterDescriptorForm.Builder()
+                .key(invalidKey)
+                .title("Invalid relationships depth")
+                .roles("DOTCMS_BACK_END_USER")
+                .filters(ImmutableMap.of("dependencies", true, "relationships", true,
+                        "relationshipsDepth", -1))
+                .build();
+        try {
+            resource.saveFromForm(getHttpRequest(true), response, form);
+            Assert.fail("A negative relationshipsDepth must be rejected");
+        } catch (final IllegalArgumentException e) {
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("relationshipsDepth"));
+        }
+        Assert.assertFalse("The invalid filter must not be listed",
+                APILocator.getPublisherAPI().existsFilterDescriptor(invalidKey));
+        Assert.assertFalse("The invalid filter must not be written to disk",
+                Path.of(APILocator.getFileAssetAPI().getRealAssetsRootPath(),
+                        "server", "publishing-filters", invalidKey).toFile().exists());
+    }
+
+    /**
+     * Builds the multipart body the YML upload endpoints receive, with one filter file. It is a
+     * mock because a multipart built on the client side cannot return its parts as streams, which
+     * is how the endpoint reads them.
+     *
+     * @param fileName The uploaded file name, which becomes the filter key.
+     * @param yaml     The file contents.
+     *
+     * @return The multipart body.
+     */
+    private static FormDataMultiPart filterFileMultipart(final String fileName, final String yaml) {
+        final FormDataBodyPart filePart = mock(FormDataBodyPart.class);
+        when(filePart.getEntityAs(InputStream.class))
+                .thenReturn(new ByteArrayInputStream(yaml.getBytes(StandardCharsets.UTF_8)));
+        final ContentDisposition contentDisposition = mock(ContentDisposition.class);
+        when(contentDisposition.getFileName()).thenReturn(fileName);
+        when(filePart.getContentDisposition()).thenReturn(contentDisposition);
+        final FormDataMultiPart multipart = mock(FormDataMultiPart.class);
+        when(multipart.getFields("file")).thenReturn(List.of(filePart));
+        return multipart;
+    }
+
+    /**
+     * Returns where a filter with the given key is stored on disk.
+     */
+    private static Path filterPath(final String filterKey) {
+        return Path.of(APILocator.getFileAssetAPI().getRealAssetsRootPath(),
+                "server", "publishing-filters", filterKey);
+    }
+
+    /**
+     * Method to test: {@link PushPublishFilterResource#saveFromFile(HttpServletRequest, HttpServletResponse, FormDataMultiPart)}
+     * Given Scenario: A YML filter file whose {@code relationshipsDepth} is negative is uploaded.
+     * ExpectedResult: The request is rejected with an {@link IllegalArgumentException} (HTTP 400) naming the
+     * field, and the file is neither saved nor listed (issue #38394).
+     */
+    @Test
+    public void test_saveFromFile_invalidRelationshipsDepth_isRejected() throws DotDataException, IOException {
+        final String invalidKey = "invalidRelationshipsDepthFile" + System.currentTimeMillis() + ".yml";
+        final String yaml = "title: Invalid relationships depth\n"
+                + "roles: \"DOTCMS_BACK_END_USER\"\n"
+                + "filters:\n"
+                + "  dependencies: true\n"
+                + "  relationships: true\n"
+                + "  relationshipsDepth: -1\n";
+        try {
+            resource.saveFromFile(getHttpRequest(true), response, filterFileMultipart(invalidKey, yaml));
+            Assert.fail("A negative relationshipsDepth must be rejected");
+        } catch (final IllegalArgumentException e) {
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("relationshipsDepth"));
+        }
+        Assert.assertFalse("The invalid filter must not be listed",
+                APILocator.getPublisherAPI().existsFilterDescriptor(invalidKey));
+        Assert.assertFalse("The invalid filter must not be written to disk",
+                filterPath(invalidKey).toFile().exists());
+    }
+
+    /**
+     * Method to test: {@link PushPublishFilterResource#updateFromFile(HttpServletRequest, HttpServletResponse, FormDataMultiPart)}
+     * Given Scenario: A valid filter is uploaded, then replaced by a YML file that is not a valid filter.
+     * ExpectedResult: The update is rejected with an {@link IllegalArgumentException} (HTTP 400), and the
+     * valid filter stays listed and unchanged on disk (issue #38394).
+     */
+    @Test
+    public void test_updateFromFile_invalidFilter_isRejectedAndKeepsPrevious() throws DotDataException, IOException {
+        final String key = "updateRelationshipsDepthFile" + System.currentTimeMillis() + ".yml";
+        final String validYaml = "title: Valid relationships depth\n"
+                + "roles: \"DOTCMS_BACK_END_USER\"\n"
+                + "filters:\n"
+                + "  dependencies: true\n"
+                + "  relationships: true\n"
+                + "  relationshipsDepth: 3\n";
+        try {
+            final Response saved = resource.saveFromFile(getHttpRequest(true), response,
+                    filterFileMultipart(key, validYaml));
+            Assert.assertEquals(Status.OK.getStatusCode(), saved.getStatus());
+            Assert.assertTrue("The valid filter must be listed",
+                    APILocator.getPublisherAPI().existsFilterDescriptor(key));
+
+            final String invalidYaml = validYaml.replace("relationshipsDepth: 3", "relationshipsDepth: abc");
+            try {
+                resource.updateFromFile(getHttpRequest(true), response, filterFileMultipart(key, invalidYaml));
+                Assert.fail("A non-numeric relationshipsDepth must be rejected");
+            } catch (final IllegalArgumentException e) {
+                Assert.assertTrue(e.getMessage(), e.getMessage().contains("relationshipsDepth"));
+            }
+            Assert.assertTrue("The previous filter must still be listed",
+                    APILocator.getPublisherAPI().existsFilterDescriptor(key));
+            Assert.assertEquals(3, APILocator.getPublisherAPI().getFilterDescriptorByKey(key)
+                    .getFilters().get("relationshipsDepth"));
+        } finally {
+            APILocator.getPublisherAPI().deleteFilterDescriptor(key);
         }
     }
 
