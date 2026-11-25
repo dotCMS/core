@@ -61,12 +61,6 @@ public class ContentTypeForm  {
     public static final class ContentTypeFormDeserialize extends JsonDeserializer<ContentTypeForm> {
 
         public static final String WORKFLOW_ATTRIBUTE_NAME = "workflow";
-        /**
-         * The key GET responses use for the schemes: an array of scheme objects. Accepted on
-         * write when {@link #WORKFLOW_ATTRIBUTE_NAME} is absent, so sending back what GET
-         * returned keeps the schemes.
-         */
-        public static final String WORKFLOWS_ATTRIBUTE_NAME = "workflows";
         public static final String SYSTEM_ACTION_ATTRIBUTE_NAME = "systemActionMappings";
 
         private static final String WORKFLOW_SCHEME_ID_ATTRIBUTE = "id";
@@ -184,10 +178,10 @@ public class ContentTypeForm  {
         }
 
         /**
-         * Reads the workflow schemes of one content type from the request. They come from
-         * {@code workflow}, or from {@code workflows} (what GET returns) when {@code workflow} is
-         * absent. Each entry is a scheme id, or an object with an {@code id} or a
-         * {@code variableName}. A missing key or a {@code null} value gives an empty list.
+         * Reads the workflow schemes of one content type from the request's {@code workflow} key.
+         * Each entry is a scheme id, or an object with an {@code id} or a {@code variableName}.
+         * A missing key or a {@code null} value gives an empty list. The {@code workflows} key
+         * that GET returns is read-only and ignored here.
          *
          * @param fieldJsonObject the content type's JSON object from the request
          * @return the workflow entries, empty when none were sent
@@ -198,9 +192,7 @@ public class ContentTypeForm  {
 
             final List<WorkflowFormEntry> workflowsArray = new ArrayList<>();
 
-            final String attributeName = fieldJsonObject.has(WORKFLOW_ATTRIBUTE_NAME)
-                    ? WORKFLOW_ATTRIBUTE_NAME : WORKFLOWS_ATTRIBUTE_NAME;
-            final JSONArray workflowsJSONArray = fieldJsonObject.optJSONArray(attributeName);
+            final JSONArray workflowsJSONArray = fieldJsonObject.optJSONArray(WORKFLOW_ATTRIBUTE_NAME);
 
             if (null != workflowsJSONArray) {
 

@@ -895,20 +895,24 @@ public class ContentTypeResourceTest {
 
 	/**
 	 * Given a Content Type assigned to the System Workflow and a custom scheme,
-	 * When it is PUT with {@code workflows} (the plural objects GET returns) listing another scheme,
-	 * Then the Content Type is assigned exactly that scheme.
+	 * When it is PUT without {@code workflow} but with {@code workflows} (the read-only key GET
+	 * returns) listing another scheme,
+	 * Then the original schemes are kept, since {@code workflows} is ignored on write.
 	 */
 	@Test
-	public void updateType_withPluralWorkflowsObjects_replacesSchemes() throws Exception {
+	public void updateType_withPluralWorkflowsObjects_keepsSchemes() throws Exception {
 		final WorkflowScheme oldScheme = new WorkflowDataGen().nextPersisted();
 		final WorkflowScheme newScheme = new WorkflowDataGen().name("newScheme" + System.nanoTime()).nextPersisted();
 		final ContentType type = new ContentTypeDataGen().workflowId(oldScheme.getId()).nextPersisted();
 		try {
+			final Set<String> originalSchemeIds = schemeIds(type);
+			assertTrue(originalSchemeIds.contains(oldScheme.getId()));
+
 			final Map<String, Object> body = getTypeAsJson(type.id());
 			body.put("workflows", List.of(Map.of("id", newScheme.getId(), "name", newScheme.getName())));
 			RestUtilTest.verifySuccessResponse(putType(type.id(), body));
 
-			assertEquals(Set.of(newScheme.getId()), schemeIds(type));
+			assertEquals(originalSchemeIds, schemeIds(type));
 		} finally {
 			ContentTypeDataGen.remove(type);
 			WorkflowDataGen.remove(oldScheme);

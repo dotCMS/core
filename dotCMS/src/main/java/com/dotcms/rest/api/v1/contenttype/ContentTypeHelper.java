@@ -1147,16 +1147,15 @@ public class ContentTypeHelper implements Serializable {
     }
 
     /**
-     * Returns {@code true} if the raw request JSON sends workflow schemes, under {@code workflow}
-     * or under {@code workflows} (the key GET returns). When it sends neither, an update leaves
-     * the content type's schemes as they are.
+     * Returns {@code true} if the raw request JSON has a {@code workflow} key, the only key that
+     * sets workflow schemes. When it is absent, an update leaves the content type's schemes as
+     * they are. The {@code workflows} key that GET returns is read-only and ignored on write.
      *
      * @param requestJson the raw request body
-     * @return whether the body has a {@code workflow} or {@code workflows} key
+     * @return whether the body has a {@code workflow} key
      */
-    public static boolean requestContainsWorkflows(final Object requestJson) {
-        return requestContainsKey(requestJson, ContentTypeFormDeserialize.WORKFLOW_ATTRIBUTE_NAME)
-                || requestContainsKey(requestJson, ContentTypeFormDeserialize.WORKFLOWS_ATTRIBUTE_NAME);
+    public static boolean requestContainsWorkflow(final Object requestJson) {
+        return requestContainsKey(requestJson, ContentTypeFormDeserialize.WORKFLOW_ATTRIBUTE_NAME);
     }
 
     /**

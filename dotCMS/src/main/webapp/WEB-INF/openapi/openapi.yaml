@@ -8606,7 +8606,7 @@ paths:
           - `host` *(string)* — site identifier UUID or the literal `SYSTEM_HOST` (defaults to the default site)
           - `folder` *(string)* — folder identifier UUID or the literal `SYSTEM_FOLDER` (defaults to `SYSTEM_FOLDER`)
           - `description` *(string)*
-          - `workflow` *(array of workflow scheme UUIDs)* — e.g. `["d61a59e1-a49c-46f2-a929-db2b4bfa88b2"]` for System Workflow. GET responses return `workflows` (plural, array of scheme objects); that key is also accepted here when `workflow` is absent, so an object copied from GET keeps its schemes.
+          - `workflow` *(array of workflow scheme UUIDs)* — e.g. `["d61a59e1-a49c-46f2-a929-db2b4bfa88b2"]` for System Workflow. GET responses return `workflows` (plural, array of scheme objects); that key is read-only and ignored on write, so send `workflow` to set the schemes.
           - `fields` *(array of field objects)* — see field schema below (`ContentTypeFieldView`)
           - `metadata` *(object)* — known keys: `CONTENT_EDITOR2_ENABLED` (boolean), `DOT_STYLE_EDITOR_SCHEMA` (JSON string)
           - `systemActionMappings` *(object)* — maps system actions (`NEW`, `EDIT`, `PUBLISH`, `UNPUBLISH`, `ARCHIVE`, `UNARCHIVE`, `DELETE`, `DESTROY`) to workflow action UUIDs
@@ -8902,11 +8902,11 @@ paths:
 
         ⚠️ **Destructive semantics.** (with two exceptions). This endpoint treats the request body as the full desired state. Any editable property (including items in `fields[]`) absent from the body will be removed. **Exception: `metadata`** — if the `metadata` key is absent from the request body, the server preserves the existing metadata unchanged. To explicitly clear all metadata, send `"metadata": null`.
 
-        **Exception: workflow schemes** — they are read from `workflow` (array of scheme UUIDs or scheme objects) or, when `workflow` is absent, from `workflows` (the array of scheme objects GET returns). If the body has neither key, the existing schemes are preserved unchanged. To remove every scheme, send `"workflow": []`.
+        **Exception: workflow schemes** — only `workflow` (array of scheme UUIDs or scheme objects) sets them. If `workflow` is absent, the existing schemes are preserved unchanged; the `workflows` array GET returns is read-only and ignored on write. To remove every scheme, send `"workflow": []`.
 
         **Recommended update pattern:**
         1. `GET /api/v1/contenttype/id/{idOrVar}` to fetch the current object.
-        2. Mutate the returned object in place. To change the schemes, edit `workflows` or send `workflow` (array of UUIDs), which takes precedence.
+        2. Mutate the returned object in place. To change the schemes, send `workflow` (array of UUIDs); editing `workflows` has no effect.
         3. PUT the entire mutated object back.
 
         This is also the only supported way to add, remove, or modify individual fields — the `/api/v1/contenttype/{typeId}/fields/**` family is deprecated in favor of this full-CT PUT.
@@ -8950,7 +8950,7 @@ paths:
           | Property | Value | Description |
           |-|-|-|
           | `systemActionMappings` | JSON Object | Maps [Default Workflow Actions](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) (as keys) to workflow action identifiers (as values) for this content type.|
-          | `workflow` | List of Strings | A list of identifiers of workflow schemes to be associated with the content type. When absent, `workflows` (the scheme objects GET returns) is used; when both are absent, the current schemes are kept.|
+          | `workflow` | List of Strings | A list of identifiers of workflow schemes to be associated with the content type. When absent, the current schemes are kept; `workflows` (the scheme objects GET returns) is ignored.|
         required: true
       responses:
         "200":

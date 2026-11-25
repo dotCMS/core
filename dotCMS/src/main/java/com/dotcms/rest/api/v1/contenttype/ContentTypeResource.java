@@ -500,8 +500,8 @@ public class ContentTypeResource implements Serializable {
 														   "- `folder` *(string)* — folder identifier UUID or the literal `SYSTEM_FOLDER` (defaults to `SYSTEM_FOLDER`)\n" +
 														   "- `description` *(string)*\n" +
 														   "- `workflow` *(array of workflow scheme UUIDs)* — e.g. `[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]` for System Workflow. " +
-														   "GET responses return `workflows` (plural, array of scheme objects); that key is also accepted here " +
-														   "when `workflow` is absent, so an object copied from GET keeps its schemes.\n" +
+														   "GET responses return `workflows` (plural, array of scheme objects); that key is read-only and ignored " +
+														   "on write, so send `workflow` to set the schemes.\n" +
 														   "- `fields` *(array of field objects)* — see field schema below (`ContentTypeFieldView`)\n" +
 														   "- `metadata` *(object)* — known keys: `CONTENT_EDITOR2_ENABLED` (boolean), `DOT_STYLE_EDITOR_SCHEMA` (JSON string)\n" +
 														   "- `systemActionMappings` *(object)* — maps system actions (`NEW`, `EDIT`, `PUBLISH`, `UNPUBLISH`, `ARCHIVE`, `UNARCHIVE`, `DELETE`, `DESTROY`) to workflow action UUIDs\n\n" +
@@ -662,12 +662,12 @@ public class ContentTypeResource implements Serializable {
 			"Any editable property (including items in `fields[]`) absent from the body will be removed. " +
 			"**Exception: `metadata`** — if the `metadata` key is absent from the request body, the server " +
 			"preserves the existing metadata unchanged. To explicitly clear all metadata, send `\"metadata\": null`.\n\n" +
-			"**Exception: workflow schemes** — they are read from `workflow` (array of scheme UUIDs or scheme objects) or, " +
-			"when `workflow` is absent, from `workflows` (the array of scheme objects GET returns). If the body has neither key, " +
-			"the existing schemes are preserved unchanged. To remove every scheme, send `\"workflow\": []`.\n\n" +
+			"**Exception: workflow schemes** — only `workflow` (array of scheme UUIDs or scheme objects) sets them. " +
+			"If `workflow` is absent, the existing schemes are preserved unchanged; the `workflows` array GET returns is " +
+			"read-only and ignored on write. To remove every scheme, send `\"workflow\": []`.\n\n" +
 			"**Recommended update pattern:**\n" +
 			"1. `GET /api/v1/contenttype/id/{idOrVar}` to fetch the current object.\n" +
-			"2. Mutate the returned object in place. To change the schemes, edit `workflows` or send `workflow` (array of UUIDs), which takes precedence.\n" +
+			"2. Mutate the returned object in place. To change the schemes, send `workflow` (array of UUIDs); editing `workflows` has no effect.\n" +
 			"3. PUT the entire mutated object back.\n\n" +
 			"This is also the only supported way to add, remove, or modify individual fields — " +
 			"the `/api/v1/contenttype/{typeId}/fields/**` family is deprecated in favor of this full-CT PUT.\n\n" +
@@ -743,9 +743,8 @@ public class ContentTypeResource implements Serializable {
 												"workflows#DefaultActions) (as keys) " +
 												"to workflow action identifiers (as values) for this content type.|\n" +
 												"| `workflow` | List of Strings | A list of identifiers of workflow " +
-												"schemes to be associated with the content type. When absent, `workflows` " +
-												"(the scheme objects GET returns) is used; when both are absent, the current " +
-												"schemes are kept.|",
+												"schemes to be associated with the content type. When absent, the current " +
+												"schemes are kept; `workflows` (the scheme objects GET returns) is ignored.|",
 										required = true,
 										content = @Content(
 												schema = @Schema(implementation = ContentTypeRequestView.class),
@@ -793,9 +792,9 @@ public class ContentTypeResource implements Serializable {
 
 			contentType = contentTypeHelper.preserveMetadataIfAbsent(
 					contentType, form.getRequestJson(), contentTypeAPI);
-			// Like metadata above: a body without workflow keys leaves the schemes as they are.
+			// Like metadata above: a body without a `workflow` key leaves the schemes as they are.
 			final List<WorkflowFormEntry> workflows =
-					ContentTypeHelper.requestContainsWorkflows(form.getRequestJson())
+					ContentTypeHelper.requestContainsWorkflow(form.getRequestJson())
 							? form.getWorkflows() : null;
 
 			final Tuple2<ContentType, List<SystemActionWorkflowActionMapping>> tuple2 =
