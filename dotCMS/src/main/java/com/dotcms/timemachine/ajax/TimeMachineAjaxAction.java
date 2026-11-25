@@ -1,8 +1,6 @@
 package com.dotcms.timemachine.ajax;
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.content.index.IndexAPI;
-import com.dotcms.content.elasticsearch.business.ESIndexHelper;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
@@ -17,7 +15,7 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction;
+import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
@@ -45,7 +43,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-public class TimeMachineAjaxAction extends IndexAjaxAction {
+public class TimeMachineAjaxAction extends AjaxAction {
 
     private final NotificationAPI notificationAPI;
 
@@ -53,16 +51,16 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
         this(APILocator.getNotificationAPI(), new WebResource());
     }
 
-    private TimeMachineAjaxAction(final NotificationAPI notificationAPI,
-            final WebResource webResource) {
-        super(webResource);
-        this.notificationAPI = notificationAPI;
-    }
-
+    /**
+     * Creates the action with the given notification API and the {@link WebResource} that resolves
+     * the user making the request.
+     *
+     * @param notificationAPI the API used to notify the user when a job finishes
+     * @param webResource     resolves the user from the request
+     */
     @VisibleForTesting
-    public TimeMachineAjaxAction(final NotificationAPI notificationAPI, ESIndexHelper indexHelper, IndexAPI indexAPI,
-            final WebResource webResource) {
-        super(indexHelper, indexAPI, webResource);
+    TimeMachineAjaxAction(final NotificationAPI notificationAPI, final WebResource webResource) {
+        super(webResource);
         this.notificationAPI = notificationAPI;
     }
 
@@ -332,7 +330,7 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
         	Logger.error(this, ex.getMessage(),ex);
         	ActivityLogger.logInfo(getClass(), "Error Modifying Job", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: timemachine"  );
             AdminLogger.log(getClass(), "Error Modifying Job", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: timemachine"  );
-        	writeError(resp, ex.getCause().getMessage());
+        	resp.getWriter().println("FAILURE: " + ex.getCause().getMessage());
         	return;
         }
 

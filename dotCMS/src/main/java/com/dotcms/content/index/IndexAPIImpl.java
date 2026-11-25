@@ -515,7 +515,7 @@ public class IndexAPIImpl implements IndexAPI {
             throws DotStateException, IOException, DotDataException {
         // clearIndex is delete + recreate-empty, so it is as destructive as delete: guard the
         // active/building index here too (issue #35640, TC-018, swicken review). Covers every
-        // clear entry point — REST modIndex, legacy PUT /clear, and IndexAjaxAction.clearIndex.
+        // clear entry point — REST modIndex and the legacy PUT /clear.
         APILocator.getContentletIndexAPI().assertIndexNotActive(indexName, "cleared");
         try {
             router.writeChecked(impl -> impl.clearIndex(providerName(impl, indexName)));

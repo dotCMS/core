@@ -75,14 +75,6 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 		color:#aaaaaa;
 	}
 
-	#restoreIndexUploader {
-		width:200px !important;
-	}
-
-	#uploadProgress {
-		float: right;
-		display: none;
-	}
 </style>
 
 		<div class="buttonRow" style="text-align: right;padding:20px;">
@@ -228,51 +220,6 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
         <% } %>
 
 
-		<div data-dojo-type="dijit.Dialog" style="width:345px;text-align: center;" id="restoreIndexDialog">
-		    <img id="uploadProgress" src="/html/images/icons/round-progress-bar.gif"/>
-		    <span id="uploadFileName"></span>
-			<form method="post"
-			      action="/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/restoreIndex"
-			      id="restoreIndexForm"
-			      enctype="multipart/form-data">
-
-			   <input type="hidden" id="indexToRestore" name="indexToRestore" value=""/>
-
-			   <input name="uploadedfile" multiple="false"
-			          type="file" data-dojo-type="dojox.form.Uploader"
-			          label="Select File" id="restoreIndexUploader"
-			          showProgress="true"
-			          onComplete="restoreUploadCompleted()"/>
-
-			   <span id="uploadWarningWorking">
-			      <span class="exclamation"></span>
-			      <%= LanguageUtil.get(pageContext,"File-Doesnt-Look-As-A-Working-Index-Data") %>
-			   </span>
-
-			   <span id="uploadWarningLive">
-			      <span class="exclamation"></span>
-			      <%= LanguageUtil.get(pageContext,"File-Doesnt-Look-As-A-Live-Index-Data") %>
-			   </span>
-
-			   <br/>
-			   <br/>
-
-			   <input type="checkbox" name="clearBeforeRestore"/>&nbsp;<%= LanguageUtil.get(pageContext,"Clear-Existing-Data") %>
-		   </form>
-		   <br/>
-
-		   <button id="uploadSubmit" data-dojo-type="dijit.form.Button" type="button">
-		      <span class="uploadIcon"></span>
-		      <%= LanguageUtil.get(pageContext,"Upload-File") %>
-              <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">doRestoreIndex();</script>
-           </button>
-
-		   <button data-dojo-type="dijit.form.Button" type="button">
-		      <span class="deleteIcon"></span>
-		      <%= LanguageUtil.get(pageContext,"Close") %>
-              <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">hideRestoreIndex();</script>
-           </button>
-		</div>
 
 
 		<%--

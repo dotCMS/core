@@ -242,36 +242,3 @@ try { defaultSiteSearchIndex = ssapi.defaultIndexName().orElse(null); } catch (E
             </div>
         <% } %>
 
-		<div data-dojo-type="dijit.Dialog" style="width:400px;" id="restoreIndexDialog">
-		    <img id="uploadProgress" src="/html/images/icons/round-progress-bar.gif"/>
-		    <span id="uploadFileName"></span>
-			<form method="post"
-			      action="/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/restoreIndex"
-			      id="restoreIndexForm"
-			      enctype="multipart/form-data">
-
-			   <input type="hidden" id="indexToRestore" name="indexToRestore" value=""/>
-
-			   <input name="uploadedfile" multiple="false"
-			          type="file" data-dojo-type="dojox.form.Uploader"
-			          label="Select File" id="restoreIndexUploader"
-			          showProgress="true"
-			          onComplete="restoreUploadCompleted()"/>
-			   <br/>
-
-			   <input type="checkbox" name="clearBeforeRestore"/><%= LanguageUtil.get(pageContext,"Clear-Existing-Data") %>
-		   </form>
-		   <br/>
-
-           <button id="uploadSubmit" data-dojo-type="dijit.form.Button" type="button">
-              <span class="uploadIcon"></span>
-              <%= LanguageUtil.get(pageContext,"Upload-File") %>
-              <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">doRestoreIndex();</script>
-           </button>
-
-		   <button data-dojo-type="dijit.form.Button" type="button">
-		      <span class="deleteIcon"></span>
-		      <%= LanguageUtil.get(pageContext,"Close") %>
-              <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">hideRestoreIndex();</script>
-           </button>
-		</div>

@@ -229,242 +229,74 @@ function resetSiteSearch(){
 
 
 
+/**
+ * Sends a change for one index to the index REST API. On success it reloads the index list; the
+ * API notifies the user itself. When the change is refused it shows the reason the API gives, or
+ * a generic failure message.
+ */
+function changeSiteSearchIndex(url, method) {
+	var showError = function (message) {
+		var text = document.createElement("div");
+		text.textContent = message || "<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed")) %>";
+		showDotCMSSystemMessage(text.innerHTML, true);
+	};
+	var reasonOf = function (body) {
+		try {
+			var json = JSON.parse(body);
+			if (json && json.errors && json.errors.length) {
+				return json.errors[0].message;
+			}
+			return json && json.message;
+		} catch (e) {
+			return body && body.length < 300 && body.indexOf("<") < 0 ? body : null;
+		}
+	};
+	fetch(url, {method: method, cache: "no-cache", credentials: "same-origin"})
+		.then(function (response) {
+			if (response.ok) {
+				refreshIndexStats();
+				return;
+			}
+			return response.text().then(function (body) {
+				showError(reasonOf(body));
+			});
+		})
+		.catch(function () {
+			showError(null);
+		});
+}
+
+function siteSearchIndexUrl(indexName, action) {
+	return "/api/v1/esindex/" + encodeURIComponent(indexName) + (action ? "?action=" + action : "");
+}
+
 function deleteIndex(indexName, live){
-	
-	if(!confirm("<%=LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-delete-this-index")%>")){
+	if(!confirm("<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-delete-this-index")) %>")){
 		return;
-		
 	}
-
-	var xhrArgs = {
-	
-		url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/deleteIndex/indexName/" + indexName,
-
-		handleAs: "text",
-		handle : function(dataOrError, ioArgs) {
-			if (dojo.isString(dataOrError)) {
-				if (dataOrError.indexOf("FAILURE") == 0) {
-					showDotCMSSystemMessage(dataOrError, true);
-				} else {
-					showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Deleted")%>", true);
-					refreshIndexStats();
-				}
-			} else {
-				showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
-			}
-		}
-	};
-	dojo.xhrPost(xhrArgs);
-
+	changeSiteSearchIndex(siteSearchIndexUrl(indexName), "DELETE");
 }
-
-
-
-
-
-
-function doDownloadIndex(indexName){
-	window.location="/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/downloadIndex/indexName/" + indexName;
-}
-
-
-
-
-
-
-
-
-function doClearIndex(indexName){
-	
-	if(!confirm("<%=LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-clear-this-index")%>")){
-		return;
-		
-	}
-
-	var xhrArgs = {
-	
-		url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/clearIndex/indexName/" + indexName,
-
-		handleAs: "text",
-		handle : function(dataOrError, ioArgs) {
-			if (dojo.isString(dataOrError)) {
-				if (dataOrError.indexOf("FAILURE") == 0) {
-					showDotCMSSystemMessage(dataOrError, true);
-				} else {
-					showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Cleared")%>", true);
-					refreshIndexStats();
-				}
-			} else {
-				showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
-			}
-		}
-	};
-	dojo.xhrPost(xhrArgs);
-}
-
-
-
-
-
-
 
 function doActivateIndex(indexName){
-	
-	if(!confirm("<%=LanguageUtil.get(pageContext, "Make-this-index-default")%>")){
+	if(!confirm("<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Make-this-index-default")) %>")){
 		return;
-		
 	}
-
-	var xhrArgs = {
-	
-		url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/activateIndex/indexName/" + indexName,
-
-		handleAs: "text",
-		handle : function(dataOrError, ioArgs) {
-			if (dojo.isString(dataOrError)) {
-				if (dataOrError.indexOf("FAILURE") == 0) {
-					showDotCMSSystemMessage(dataOrError, true);
-				} else {
-					showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Made-Default")%>", true);
-					refreshIndexStats();
-				}
-			} else {
-				showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
-			}
-		}
-	};
-	dojo.xhrPost(xhrArgs);
+	changeSiteSearchIndex(siteSearchIndexUrl(indexName, "activate"), "PUT");
 }
 
-
-
-
-
-
-
-
-
-
 function doDeactivateIndex(indexName){
-	
-	if(!confirm("<%=LanguageUtil.get(pageContext, "Make-this-index-not-default")%>")){
+	if(!confirm("<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Make-this-index-not-default")) %>")){
 		return;
-		
 	}
-
-	var xhrArgs = {
-	
-		url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/deactivateIndex/indexName/" + indexName,
-
-		handleAs: "text",
-		handle : function(dataOrError, ioArgs) {
-			if (dojo.isString(dataOrError)) {
-				if (dataOrError.indexOf("FAILURE") == 0) {
-					showDotCMSSystemMessage(dataOrError, true);
-				} else {
-					showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Deactivated")%>", true);
-					refreshIndexStats();
-				}
-			} else {
-				showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
-			}
-		}
-	};
-	dojo.xhrPost(xhrArgs);
-
+	changeSiteSearchIndex(siteSearchIndexUrl(indexName, "deactivate"), "PUT");
 }
 
 function doCloseIndex(indexName){
-    
-    var xhrArgs = {
-    
-        url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/closeIndex/indexName/" + indexName,
-
-        handleAs: "text",
-        handle : function(dataOrError, ioArgs) {
-            if (dojo.isString(dataOrError)) {
-                if (dataOrError.indexOf("FAILURE") == 0) {
-                    showDotCMSSystemMessage(dataOrError, true);
-                } else {
-                    showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Closed")%>", true);
-                    refreshIndexStats();
-                }
-            } else {
-                showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
-            }
-        }
-    };
-    dojo.xhrPost(xhrArgs);
-
+	changeSiteSearchIndex(siteSearchIndexUrl(indexName, "close"), "PUT");
 }
 
 function doOpenIndex(indexName){
-    
-    var xhrArgs = {
-    
-        url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/openIndex/indexName/" + indexName,
-
-        handleAs: "text",
-        handle : function(dataOrError, ioArgs) {
-            if (dojo.isString(dataOrError)) {
-                if (dataOrError.indexOf("FAILURE") == 0) {
-                    showDotCMSSystemMessage(dataOrError, true);
-                } else {
-                    showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Index-Opened")%>", true);
-                    refreshIndexStats();
-                }
-            } else {
-                showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
-            }
-        }
-    };
-    dojo.xhrPost(xhrArgs);
-
-}
-
-function hideRestoreIndex() {
-    dijit.byId("restoreIndexDialog").hide();
-}
-
-function showRestoreIndexDialog(indexName) {
-	dojo.byId("indexToRestore").value=indexName;
-	var dialog=dijit.byId("restoreIndexDialog");
-	dialog.set('title','Restore index '+indexName);
-	dojo.byId("uploadFileName").innerHTML='';
-	dijit.byId('uploadSubmit').set('disabled',false);
-	dojo.query('#uploadProgress').style({display:"none"});
-	connectUploadEvents();
-	dialog.show();
-}
-
-function restoreUploadCompleted() {
-	hideRestoreIndex();
-}
-
-
-dojo.ready(function() {
-	/*dojo.require("dojox.form.Uploader");
-    dojo.require("dojox.embed.Flash");
-    if(dojox.embed.Flash.available){
-      dojo.require("dojox.form.uploader.plugins.Flash");
-    }else{
-      dojo.require("dojox.form.uploader.plugins.IFrame");
-    }*/
-	if(dojo.isIE && dojo.isIE<10) dojo.require("dojox.form.uploader.plugins.IFrame");
-	else dojo.require("dojox.form.uploader.plugins.HTML5");
-});
-
-function connectUploadEvents() {
-	var uploader=dijit.byId('restoreIndexUploader');
-	dojo.connect(uploader, "onChange", function(dataArray){
-        dojo.forEach(dataArray, function(data){
-               dojo.byId("uploadFileName").innerHTML=data.name;
-        });
-	}); 
-	dojo.connect(uploader, "onComplete", function(dataArray) {
-        hideRestoreIndex();
-        showDotCMSSystemMessage("Upload Complete. Index Restores in background");
-    });
+	changeSiteSearchIndex(siteSearchIndexUrl(indexName, "open"), "PUT");
 }
 
 function doCreateSiteSearch(alias,number) {
