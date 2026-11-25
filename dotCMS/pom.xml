@@ -825,11 +825,11 @@
             <artifactId>javax.annotation-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>javax.validation</groupId>
-            <artifactId>validation-api</artifactId>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.hibernate</groupId>
+            <groupId>org.hibernate.validator</groupId>
             <artifactId>hibernate-validator</artifactId>
         </dependency>
 
@@ -1515,12 +1515,6 @@
         <dependency>
             <groupId>org.glassfish.jersey.ext.cdi</groupId>
             <artifactId>jersey-cdi1x-servlet</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.glassfish.hk2.external</groupId>
-            <artifactId>bean-validator</artifactId>
-            <version>2.5.0-b06</version>
         </dependency>
 
         <dependency>
