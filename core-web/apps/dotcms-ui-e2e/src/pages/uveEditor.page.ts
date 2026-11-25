@@ -4,6 +4,15 @@ import { expect, type FrameLocator, Locator, Page } from '@playwright/test';
 const NO_PERSONA_ID = 'modes.persona.no.persona';
 
 /**
+ * How long one attempt of a pointer-driven gesture waits before it is worth starting over, and how
+ * long the gesture keeps being retried (#38717). The editor redraws the contentlet toolbar and the
+ * drop zones as the pointer moves, so a single long wait can sit on a node that is already gone or
+ * on a state the editor never entered; several short attempts recover from both.
+ */
+const ONE_GESTURE_MS = 2_000;
+const GESTURE_RETRY_MS = 30_000;
+
+/**
  * The Universal Visual Editor, as far as the Experiments entry points (#37478), adding a form to a
  * page and the side-panel flows (#38303) need it.
  *
@@ -84,13 +93,22 @@ export class UveEditorPage {
      * folds them into a menu below that, so specs using this run with a desktop-sized viewport.
      * Moving the pointer out of the page and onto the toolbar keeps it: the page script reports
      * no "left" on `pointerleave`, on purpose, so the toolbar stays reachable.
+     *
+     * The hover and the click are retried together (#38717). The editor rebuilds `hover-actions`
+     * whenever the contentlet under the pointer changes, so the button Playwright resolved can be
+     * detached before the click lands. Playwright's own retry re-resolves the same chain without
+     * hovering again, which re-races the redraw until the test's budget is gone; restarting the
+     * whole gesture gives the next attempt a toolbar that is being drawn for this contentlet.
      */
     async openFullEditor(contentletTitle: string) {
-        await this.contentletHeading(contentletTitle).hover();
-        await this.page
+        const fullEditor = this.page
             .getByTestId('hover-actions')
-            .getByRole('button', { name: 'Full Editor' })
-            .click();
+            .getByRole('button', { name: 'Full Editor' });
+
+        await expect(async () => {
+            await this.contentletHeading(contentletTitle).hover();
+            await fullEditor.click({ timeout: ONE_GESTURE_MS });
+        }).toPass({ timeout: GESTURE_RETRY_MS });
     }
 
     /**
@@ -101,6 +119,12 @@ export class UveEditorPage {
      * first enters the page, which switches the editor to dragging, then moves onto the container's
      * zone, away from the canvas's scroll zones, and drops. Chromium turns these mouse events into
      * the HTML5 drag events the editor listens to.
+     *
+     * The move into the canvas is repeated until the zones appear (#38717). One move and a fixed
+     * wait leaves nothing to recover from: if that move does not reach the editor as a drag — it
+     * can arrive before the editor has wired its handlers — the zones are never drawn and the
+     * wait expires against a state that was never coming. Each retry shifts the pointer by a
+     * pixel because a move to the coordinates it already holds produces no event at all.
      */
     async dragContentTypeToEmptyContainer(contentTypeName: string) {
         const palette = this.page.getByTestId('palette');
@@ -112,12 +136,18 @@ export class UveEditorPage {
         await item.hover();
         await this.page.mouse.down();
         const canvas = await centerOf(this.canvas);
-        await this.page.mouse.move(canvas.x, canvas.y, { steps: 10 });
 
         // The zones are absolutely positioned boxes with no role or test id of their own; their
         // `data-type` is the only thing that tells a container's zone from a contentlet's.
         const zone = this.page.getByTestId('dropzone').locator('[data-type="container"]').first();
-        await expect(zone).toBeVisible({ timeout: 10000 });
+        let nudge = 0;
+
+        await expect(async () => {
+            nudge = nudge === 0 ? 1 : 0;
+            await this.page.mouse.move(canvas.x + nudge, canvas.y, { steps: 10 });
+            await expect(zone).toBeVisible({ timeout: ONE_GESTURE_MS });
+        }).toPass({ timeout: GESTURE_RETRY_MS });
+
         const target = await dropPointIn(zone, this.canvas);
         await this.page.mouse.move(target.x, target.y, { steps: 5 });
         await this.page.mouse.up();
