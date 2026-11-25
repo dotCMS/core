@@ -311,3 +311,28 @@ export async function deleteContentlets(
         expect([200, 404]).toContain(response.status());
     }
 }
+
+/**
+ * How many versions of a contentlet the content index holds, archived ones included, so a test
+ * can tell content that was archived (still there) from content that was deleted (gone).
+ * `findWorkingContentlet` cannot: it leaves archived content out.
+ *
+ * @param request - Playwright APIRequestContext
+ * @param identifier - The contentlet's identifier
+ * @returns The number of indexed versions; `0` once the content is deleted
+ */
+export async function countIndexedVersions(
+    request: APIRequestContext,
+    identifier: string
+): Promise<number> {
+    const response = await request.post('/api/content/_search', {
+        data: { query: `+identifier:${identifier}`, limit: 20, offset: 0 },
+        headers: {
+            Authorization: generateBase64Credentials(admin1.username, admin1.password)
+        }
+    });
+
+    expect(response.status(), `content search failed: ${await response.text()}`).toBe(200);
+
+    return ((await response.json()).entity?.jsonObjectView?.contentlets ?? []).length;
+}

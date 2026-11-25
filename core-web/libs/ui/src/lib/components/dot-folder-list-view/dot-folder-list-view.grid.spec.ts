@@ -279,6 +279,33 @@ describe('DotFolderListViewComponent — grid layout (#37930)', () => {
             );
         });
 
+        // With nothing to page through, the grid shows the empty state alone, as the table does
+        // (#38379).
+        it('should show no paginator on an empty first page', () => {
+            render({ items: [], totalItems: 0, offset: 0 });
+
+            expect(spectator.query(byTestId('grid-empty-state'))).toBeTruthy();
+            expect(spectator.query(byTestId('grid-paginator'))).toBeNull();
+        });
+
+        it('should keep the paginator on an empty page past the first, to page back', () => {
+            render({ items: [], totalItems: 40, offset: 20 });
+
+            expect(spectator.query(byTestId('grid-paginator'))).toBeTruthy();
+        });
+
+        it('should keep the paginator when an empty page still has results to page to', () => {
+            render({ items: [], totalItems: 25, offset: 0 });
+
+            expect(spectator.query(byTestId('grid-paginator'))).toBeTruthy();
+        });
+
+        it('should keep the paginator while an empty listing loads', () => {
+            render({ items: [], totalItems: 0, loading: true });
+
+            expect(spectator.query(byTestId('grid-paginator'))).toBeTruthy();
+        });
+
         it('should tell the cards of a read-only listing to offer no actions', () => {
             render({ readOnly: true });
 

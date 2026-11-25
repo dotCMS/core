@@ -255,6 +255,11 @@ public class PublisherQueueJob implements StatefulJob {
 	/**
 	 * Updates the status of a Bundle in the job queue. This method also verifies and limits the number of times a
 	 * Bundle is allowed to attempt to be published in case of errors.
+	 * <p>
+	 * When the status of a bundle cannot be polled from its receiver, the error is logged and the pass moves on
+	 * to the next bundle. If a receiver refused that bundle and it is no longer in the publishing queue, nothing
+	 * will send it again, so the failed poll counts as an attempt; once the attempts reach {@link #MAX_NUM_TRIES}
+	 * the bundle is finalized as {@link Status#FAILED_TO_PUBLISH}.
 	 *
 	 * @param bundlesInQueue The list of bundles that are currently in the publishing queue.
 	 *
@@ -290,6 +295,17 @@ public class PublisherQueueJob implements StatefulJob {
 				Logger.warn(this, String.format("Unable to verify remote status for bundle '%s' " +
 						"(the endpoint may be unreachable): %s", bundleAudit.getBundleId(),
 						ExceptionUtil.getErrorMessage(e)));
+				// A queued bundle will be sent again, and each send counts an attempt. A bundle that is
+				// no longer queued because a receiver refused it (token or licence) is never sent again,
+				// so the failed poll is its only attempt left to count, or it stays pending forever. A
+				// bundle a receiver accepted is left alone: it may still be installed. "Queued" means any
+				// queue row, not only the ones due now, so a refused bundle scheduled again keeps its push (#35764)
+				// The refusal is read from the audit in memory, so it is checked first and the queue is
+				// only queried for bundles that can be counted
+				if (isRefusedByAReceiver(bundleAudit.getStatusPojo())
+						&& !hasQueueRows(bundleAudit.getBundleId())) {
+					countFailedPoll(bundleAudit);
+				}
 				if (bundleAudit.getStatusPojo().getNumTries() >= MAX_NUM_TRIES) {
 					finalizeFailedBundle(bundleAudit);
 				}
@@ -297,6 +313,58 @@ public class PublisherQueueJob implements StatefulJob {
 				ThreadContext.remove(BUNDLE_ID);
 				ThreadContext.remove(ENDPOINT_NAME);
 			}
+		}
+	}
+
+	/**
+	 * Tells whether the bundle still has rows in the publishing queue, whether they are due now or
+	 * scheduled for later. A bundle refused by a receiver can be given assets again and pushed for a
+	 * later date, and those rows are not in the list of bundles due now. If the queue cannot be read,
+	 * the bundle is treated as queued, so nothing is counted or finalized on a guess.
+	 *
+	 * @param bundleId the bundle to look for
+	 * @return {@code true} if at least one queue row exists for the bundle, or the queue could not be read
+	 */
+	private boolean hasQueueRows(final String bundleId) {
+		try {
+			return !pubAPI.getQueueElementsByBundleId(bundleId).isEmpty();
+		} catch (final Exception e) {
+			Logger.warn(this, "Unable to read the publishing queue for bundle '" + bundleId + "': "
+					+ ExceptionUtil.getErrorMessage(e));
+			return true;
+		}
+	}
+
+	/**
+	 * Tells whether a receiver refused the bundle: an endpoint answered the send with a wrong token
+	 * ({@link Status#INVALID_TOKEN}) or a licence error ({@link Status#LICENSE_REQUIRED}). Such a
+	 * bundle is taken out of the publishing queue and is never sent again.
+	 *
+	 * @param history the local {@link PublishAuditHistory} of the bundle
+	 * @return {@code true} if at least one endpoint refused the bundle
+	 */
+	private boolean isRefusedByAReceiver(final PublishAuditHistory history) {
+		return history.getEndpointsMap().values().stream()
+				.flatMap(endpoints -> endpoints.values().stream())
+				.anyMatch(detail -> detail.getStatus() == Status.INVALID_TOKEN.getCode()
+						|| detail.getStatus() == Status.LICENSE_REQUIRED.getCode());
+	}
+
+	/**
+	 * Counts a failed status poll as one more attempt for the bundle and saves it, so a bundle whose
+	 * receiver can never be asked still runs out of attempts and is finalized (#35764). Any failure is
+	 * logged rather than propagated, to keep the audit pass resilient.
+	 *
+	 * @param bundleAudit The audit status of the bundle whose poll failed.
+	 */
+	private void countFailedPoll(final PublishAuditStatus bundleAudit) {
+		try {
+			bundleAudit.getStatusPojo().addNumTries();
+			pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleAudit.getStatus(),
+					bundleAudit.getStatusPojo());
+		} catch (final Exception e) {
+			Logger.error(this, "Unable to count the failed status poll of bundle '" + bundleAudit.getBundleId()
+					+ "': " + ExceptionUtil.getErrorMessage(e), e);
 		}
 	}
 

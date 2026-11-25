@@ -636,6 +636,15 @@ describe('DotPageActionsService', () => {
             expect(mockPagesStore.getPages).toHaveBeenCalledTimes(1);
             expect(mockPagesStore.getPages).toHaveBeenCalledWith();
         });
+
+        // A lock is not an edit: the listing stays as it is (#38379).
+        it('should not refresh the listing when a page is locked or unlocked in a panel', () => {
+            spectator
+                .inject(DotContentChangeService)
+                .notify({ kind: 'locked', contentlet: MOCK_HTMLPAGE_CONTENTLET, depth: 0 });
+
+            expect(mockPagesStore.getPages).not.toHaveBeenCalled();
+        });
     });
 
     describe('Push Publish Action', () => {

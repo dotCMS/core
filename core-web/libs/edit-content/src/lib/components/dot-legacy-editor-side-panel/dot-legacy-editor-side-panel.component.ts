@@ -122,6 +122,12 @@ export class DotLegacyEditorSidePanelComponent implements DotSidePanelContent {
     /** The content was removed from inside the editor. Reported once; the panel then closes. */
     readonly deleted = output<void>();
 
+    /**
+     * Part of the event set both editor panels share, so the opener binds the same outputs to
+     * either. The legacy editor's lock buttons send no event, so this never emits (#38379).
+     */
+    readonly lockChanged = output<DotCMSContentlet>();
+
     /** The panel closed, for any reason. Emitted once. */
     readonly closed = output<void>();
 
