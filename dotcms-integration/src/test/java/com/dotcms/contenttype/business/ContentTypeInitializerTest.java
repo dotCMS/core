@@ -1543,6 +1543,122 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
     }
 
     /**
+     * Method to test: saving an existing favorite page in place, without a new version.
+     * Given Scenario: A favorite's first version is owned by one user and its newer, working
+     * version in the same language and variant by a second user. The first user saves their
+     * older version in place.
+     * ExpectedResult: The save is refused, because an in-place save makes the saved version the
+     * working one, so it needs WRITE on the working version it replaces; the working version
+     * stays the second user's.
+     */
+    @Test
+    public void test_in_place_favorite_save_cannot_replace_a_working_version_of_another_owner()
+            throws Exception {
+
+        final ContentType contentType = prepareFirstInit();
+        new ContentTypeInitializer().init();
+
+        final User firstOwner = new UserDataGen().active(true)
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        final User workingOwner = new UserDataGen().active(true)
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        final Contentlet favorite = new ContentletDataGen(contentType)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .setProperty("title", "favorite").setProperty("url", "/favorite-" + System.nanoTime())
+                .setProperty(Contentlet.OWNER_KEY, firstOwner.getUserId())
+                .nextPersisted();
+        try {
+
+            final Contentlet workingVersion = ContentletDataGen.createNewVersion(favorite,
+                    VariantAPI.DEFAULT_VARIANT,
+                    Map.of(Contentlet.OWNER_KEY, workingOwner.getUserId()));
+            Assert.assertEquals("The working version must be owned by the second user",
+                    workingOwner.getUserId(), workingVersion.getOwner());
+
+            final Contentlet edit = APILocator.getContentletAPI()
+                    .checkout(favorite.getInode(), APILocator.systemUser(), false);
+            edit.setInode(favorite.getInode());
+            edit.setProperty("title", "edited");
+            // the checkouts locked the favorite for the system user; unlock it so only the
+            // permission check can refuse
+            APILocator.getContentletAPI().unlock(workingVersion, APILocator.systemUser(), false);
+
+            Assert.assertThrows(DotSecurityException.class,
+                    () -> APILocator.getContentletAPI().checkinWithoutVersioning(
+                            edit, (ContentletRelationships) null, null, null, firstOwner, false));
+
+            final ContentletVersionInfo info = APILocator.getVersionableAPI()
+                    .getContentletVersionInfo(favorite.getIdentifier(), favorite.getLanguageId(),
+                            VariantAPI.DEFAULT_VARIANT.name()).orElseThrow();
+            Assert.assertEquals("The working version must stay the second user's",
+                    workingVersion.getInode(), info.getWorkingInode());
+        } finally {
+
+            Try.run(() -> ContentletDataGen.destroy(favorite));
+            UserDataGen.remove(firstOwner);
+            UserDataGen.remove(workingOwner);
+        }
+    }
+
+    /**
+     * Method to test: saving a new version of an existing favorite page through the contentlet
+     * API.
+     * Given Scenario: A favorite's DEFAULT version is owned by one user and its version in another
+     * variant by a second user. The second user adds a translation of their version, in a second
+     * language and the same variant.
+     * ExpectedResult: The save succeeds, because a new translation is authorized against the
+     * version in the variant it is added to, not against the DEFAULT version's owner.
+     */
+    @Test
+    public void test_variant_owner_can_add_a_translation_of_their_version_of_a_favorite()
+            throws Exception {
+
+        final ContentType contentType = prepareFirstInit();
+        new ContentTypeInitializer().init();
+
+        final Language secondLanguage = new LanguageDataGen().nextPersisted();
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final User defaultOwner = new UserDataGen().active(true)
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        final User variantOwner = new UserDataGen().active(true)
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        final Contentlet favorite = new ContentletDataGen(contentType)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .setProperty("title", "favorite").setProperty("url", "/favorite-" + System.nanoTime())
+                .setProperty(Contentlet.OWNER_KEY, defaultOwner.getUserId())
+                .nextPersisted();
+        try {
+
+            final Contentlet variantVersion = ContentletDataGen.createNewVersion(favorite, variant,
+                    Map.of(Contentlet.OWNER_KEY, variantOwner.getUserId()));
+
+            final Contentlet translation = APILocator.getContentletAPI()
+                    .checkout(variantVersion.getInode(), APILocator.systemUser(), false);
+            translation.setVariantId(variant.name());
+            translation.setLanguageId(secondLanguage.getId());
+            translation.setProperty("title", "translated");
+            // the checkouts locked both versions for the system user; unlock them so only the
+            // permission check can refuse
+            APILocator.getContentletAPI().unlock(variantVersion, APILocator.systemUser(), false);
+            APILocator.getContentletAPI().unlock(favorite, APILocator.systemUser(), false);
+
+            final Contentlet saved = APILocator.getContentletAPI()
+                    .checkin(translation, variantOwner, false);
+
+            Assert.assertEquals("The translation must be saved in the second language",
+                    secondLanguage.getId(), saved.getLanguageId());
+            Assert.assertEquals("The translation must be saved in the variant", variant.name(),
+                    saved.getVariantId());
+        } finally {
+
+            Try.run(() -> ContentletDataGen.destroy(favorite));
+            UserDataGen.remove(defaultOwner);
+            UserDataGen.remove(variantOwner);
+            Try.run(() -> LanguageDataGen.remove(secondLanguage));
+        }
+    }
+
+    /**
      * Method to test: {@link ContentTypeInitializer#init()}
      * Given Scenario: The favorites were already reset by an earlier repair, the row the favorite
      * page contentlets inherit is missing one CMS Owner bit, and a favorite has its own rows

@@ -7110,13 +7110,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * on the copy would resolve them from the place it names. The stored favorite is the stored
      * version in the language and variant being edited (the default language when none is set,
      * as checkin saves it there), since each version carries its own owner;
-     * when that version does not exist yet, it is looked up in the DEFAULT variant in any language
-     * and then in any variant, since a favorite may exist only in a variant other than DEFAULT. When the
+     * when that version does not exist yet, it is looked up in the requested variant in any
+     * language, then in the DEFAULT variant in any language and then in any variant, since a
+     * favorite may exist only in a variant other than DEFAULT. When the
      * identifier exists but no version of it can be loaded, the save is refused. When nothing with that identifier is
      * stored yet, the save creates the favorite, so WRITE on its content type applies. A save
      * without a new version overwrites the version with the given inode, so it is judged on that
-     * version alone, and refused when that inode is not a version of the same favorite in the
-     * language and variant being saved.
+     * version, and refused when that inode is not a version of the same favorite in the
+     * language and variant being saved; since the save also makes that version the working one,
+     * the working version it replaces, when it is another one, needs WRITE as well.
      *
      * @param contentlet           the favorite page being checked in, with its identifier set
      * @param respectFrontendRoles whether front-end roles count towards the permission
@@ -7138,20 +7140,33 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         // an in-place save overwrites the version with this inode, so that version is the one
         // whose owner decides. The save also rewrites that row's language and variant and makes it
-        // the working version for them, so they must stay the ones the stored version has
+        // the working version for them, so they must stay the ones the stored version has, and
+        // the working version it replaces there, when it is another one, must be writable too
         if (!createNewVersion) {
             final Contentlet target = contentFactory.find(contentlet.getInode());
-            return null != target && isFavoritePage(target)
-                    && contentlet.getIdentifier().equals(target.getIdentifier())
-                    && languageId == target.getLanguageId()
-                    && contentlet.getVariantId().equals(target.getVariantId())
-                    && permissionAPI.doesUserHavePermission(target,
+            if (null == target || !isFavoritePage(target)
+                    || !contentlet.getIdentifier().equals(target.getIdentifier())
+                    || languageId != target.getLanguageId()
+                    || !contentlet.getVariantId().equals(target.getVariantId())
+                    || !permissionAPI.doesUserHavePermission(target,
+                            PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
+                return false;
+            }
+            final Contentlet working = contentFactory.findContentletByIdentifier(
+                    target.getIdentifier(), false, languageId, target.getVariantId());
+            return null == working || target.getInode().equals(working.getInode())
+                    || permissionAPI.doesUserHavePermission(working,
                             PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles);
         }
 
-        // the version being edited first: each version carries its own owner
+        // the version being edited first: each version carries its own owner; then the requested
+        // variant in any language, since a new translation belongs to the variant it is added to
         Contentlet stored = contentFactory.findContentletByIdentifier(contentlet.getIdentifier(),
                 false, languageId, contentlet.getVariantId());
+        if (null == stored) {
+            stored = findContentletByIdentifierAnyLanguage(contentlet.getIdentifier(),
+                    contentlet.getVariantId(), true);
+        }
         if (null == stored) {
             stored = findContentletByIdentifierAnyLanguage(contentlet.getIdentifier(), true);
         }
