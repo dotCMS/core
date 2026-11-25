@@ -286,8 +286,10 @@ public class PublisherQueueJob implements StatefulJob {
 				// so the failed poll is its only attempt left to count, or it stays pending forever. A
 				// bundle a receiver accepted is left alone: it may still be installed. "Queued" means any
 				// queue row, not only the ones due now, so a refused bundle scheduled again keeps its push (#35764)
-				if (!hasQueueRows(bundleAudit.getBundleId())
-						&& isRefusedByAReceiver(bundleAudit.getStatusPojo())) {
+				// The refusal is read from the audit in memory, so it is checked first and the queue is
+				// only queried for bundles that can be counted
+				if (isRefusedByAReceiver(bundleAudit.getStatusPojo())
+						&& !hasQueueRows(bundleAudit.getBundleId())) {
 					countFailedPoll(bundleAudit);
 				}
 				if (bundleAudit.getStatusPojo().getNumTries() >= MAX_NUM_TRIES) {
