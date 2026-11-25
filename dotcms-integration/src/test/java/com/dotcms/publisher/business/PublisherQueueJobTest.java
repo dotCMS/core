@@ -192,6 +192,128 @@ public class PublisherQueueJobTest {
     }
 
     /**
+     * Method to test: {@link PublisherQueueJob} audit-status pass for a bundle whose receiver refused
+     * the push token (issue #35764).
+     * <p>
+     * Given scenario: the state a 401 on send leaves behind. {@code PushPublisher} marked the endpoint
+     * {@link Status#INVALID_TOKEN}, set the bundle to {@link Status#FAILED_TO_SEND_TO_ALL_GROUPS} after
+     * one attempt, and removed it from the {@code publishing_queue}, so it is never sent again. The
+     * receiver also answers 401 to the audit poll, so every poll fails.
+     * <p>
+     * Expected result: after {@link PublisherQueueJob#MAX_NUM_TRIES} audit passes the bundle reaches
+     * the terminal {@link Status#FAILED_TO_PUBLISH} status. Before the fix each failed poll was only
+     * logged: nothing counted it, the bundle kept its one attempt, and it stayed pending forever.
+     */
+    @Test
+    public void test_refusedTokenOnPoll_bundleReachesFailedToPublish() throws Exception {
+        try (AuditStub stub = AuditStub.unauthorized()) {
+            final User user = TestUserUtils.getAdminUser();
+            final Environment environment = PublisherTestUtil.createEnvironment(user, true);
+            final PublishingEndPoint http = PublisherTestUtil.createEndpoint(environment);
+            http.setPort(String.valueOf(stub.port()));
+            APILocator.getPublisherEndPointAPI().updateEndPoint(http);
+            final Bundle bundle = PublisherTestUtil.createBundle("bundle-" + System.nanoTime(), user, environment);
+            try {
+                seedAudit(bundle, environment, Map.of(http.getId(), Status.INVALID_TOKEN));
+                APILocator.getPublishAuditAPI().updatePublishAuditStatus(bundle.getId(),
+                        Status.FAILED_TO_SEND_TO_ALL_GROUPS,
+                        APILocator.getPublishAuditAPI().getPublishAuditStatus(bundle.getId()).getStatusPojo());
+                assertFalse("A refused push is no longer queued", isBundleQueued(bundle.getId()));
+
+                for (int pass = 0; pass < PublisherQueueJob.MAX_NUM_TRIES; pass++) {
+                    invokeUpdateAuditStatus();
+                }
+
+                assertEquals("A bundle whose every poll fails must end as FAILED_TO_PUBLISH",
+                        Status.FAILED_TO_PUBLISH, statusOf(bundle.getId()));
+            } finally {
+                cleanUpAudit(bundle);
+                PublisherTestUtil.cleanBundleEndpointEnv(bundle, http, environment);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link PublisherQueueJob} audit-status pass for a bundle that is no longer in the
+     * {@code publishing_queue} but whose receiver accepted it (issue #35764).
+     * <p>
+     * Given scenario: the bundle was sent successfully, so its endpoint is
+     * {@link Status#BUNDLE_SENT_SUCCESSFULLY}, and nothing will send it again (a static endpoint of the
+     * same environment, for example, removes the queue rows as soon as it saves). The receiver is
+     * briefly unreachable, so every poll fails.
+     * <p>
+     * Expected result: the failed polls do not give the bundle up. Only a receiver that refused the
+     * bundle makes waiting pointless; one that accepted it may still install it, so after
+     * {@link PublisherQueueJob#MAX_NUM_TRIES} audit passes the bundle keeps its status.
+     */
+    @Test
+    public void test_failedPollOfAcceptedDequeuedBundle_doesNotGiveItUp() throws Exception {
+        final User user = TestUserUtils.getAdminUser();
+        final Environment environment = PublisherTestUtil.createEnvironment(user, true);
+        // createEndpoint points at 127.0.0.1:999, which refuses the connection.
+        final PublishingEndPoint endpoint = PublisherTestUtil.createEndpoint(environment);
+        final Bundle bundle = PublisherTestUtil.createBundle("bundle-" + System.nanoTime(), user, environment);
+        try {
+            seedAudit(bundle, environment, Map.of(endpoint.getId(), Status.BUNDLE_SENT_SUCCESSFULLY));
+            assertFalse("The bundle is no longer queued", isBundleQueued(bundle.getId()));
+
+            for (int pass = 0; pass < PublisherQueueJob.MAX_NUM_TRIES; pass++) {
+                invokeUpdateAuditStatus();
+            }
+
+            assertEquals("Failed polls must not give up a bundle its receiver accepted",
+                    Status.BUNDLE_SENT_SUCCESSFULLY, statusOf(bundle.getId()));
+        } finally {
+            cleanUpAudit(bundle);
+            PublisherTestUtil.cleanBundleEndpointEnv(bundle, endpoint, environment);
+        }
+    }
+
+    /**
+     * Method to test: {@link PublisherQueueJob} audit-status pass for a bundle that is still in the
+     * {@code publishing_queue} while its receiver cannot be polled (issue #35764).
+     * <p>
+     * Given scenario: one send to an unreachable endpoint failed, so the bundle is
+     * {@link Status#FAILED_TO_SEND_TO_ALL_GROUPS} after one attempt and stays queued to be sent again.
+     * Polling the same endpoint fails on every audit pass.
+     * <p>
+     * Expected result: the failed polls do not use up the bundle's attempts. Only its sends count, so
+     * after {@link PublisherQueueJob#MAX_NUM_TRIES} audit passes the bundle is still queued and has not
+     * been given up as {@link Status#FAILED_TO_PUBLISH}.
+     */
+    @Test
+    public void test_failedPollOfQueuedBundle_doesNotUseUpItsAttempts() throws Exception {
+        final User user = TestUserUtils.getAdminUser();
+        final Contentlet contentlet = new ContentletDataGen(new ContentTypeDataGen().nextPersisted())
+                .nextPersisted();
+        final Environment environment = PublisherTestUtil.createEnvironment(user, true);
+        // createEndpoint points at 127.0.0.1:999, which refuses the connection.
+        final PublishingEndPoint endpoint = PublisherTestUtil.createEndpoint(environment);
+        final Bundle bundle = PublisherTestUtil.createBundle("bundle-" + System.nanoTime(), user, environment);
+        try {
+            PublisherAPI.getInstance().addContentsToPublish(
+                    list(contentlet.getIdentifier()), bundle.getId(), new Date(), user);
+            seedAudit(bundle, environment, Map.of(endpoint.getId(), Status.FAILED_TO_SENT));
+            APILocator.getPublishAuditAPI().updatePublishAuditStatus(bundle.getId(),
+                    Status.FAILED_TO_SEND_TO_ALL_GROUPS,
+                    APILocator.getPublishAuditAPI().getPublishAuditStatus(bundle.getId()).getStatusPojo());
+            assertTrue("The bundle must be queued to be sent again", isBundleQueued(bundle.getId()));
+
+            for (int pass = 0; pass < PublisherQueueJob.MAX_NUM_TRIES; pass++) {
+                invokeUpdateAuditStatus(PublisherAPI.getInstance().getQueueBundleIdsToProcess());
+            }
+
+            assertEquals("Failed polls must not give up a bundle that is still being sent",
+                    Status.FAILED_TO_SEND_TO_ALL_GROUPS, statusOf(bundle.getId()));
+            assertTrue("The bundle must still be queued", isBundleQueued(bundle.getId()));
+        } finally {
+            PublisherAPI.getInstance().deleteElementsFromPublishQueueTable(bundle.getId());
+            cleanUpAudit(bundle);
+            PublisherTestUtil.cleanBundleEndpointEnv(bundle, endpoint, environment);
+        }
+    }
+
+    /**
      * Method to test: the stale-bundle guard at the top of the send loop in
      * {@link PublisherQueueJob#execute}.
      * <p>
@@ -782,13 +904,27 @@ public class PublisherQueueJobTest {
         private final com.sun.net.httpserver.HttpServer server;
 
         AuditStub(final List<String> serializedHistories) throws Exception {
+            this(200, new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsBytes(serializedHistories));
+        }
+
+        /**
+         * A receiver that refuses the push token: every audit poll gets a 401 with an error body,
+         * which is not the list of histories the poller expects.
+         *
+         * @return the running stub
+         * @throws Exception the local server could not be started
+         */
+        static AuditStub unauthorized() throws Exception {
+            return new AuditStub(401, "{\"error\":\"Invalid token\"}"
+                    .getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        }
+
+        private AuditStub(final int status, final byte[] body) throws Exception {
             server = com.sun.net.httpserver.HttpServer.create(
                     new java.net.InetSocketAddress("127.0.0.1", 0), 0);
-            final byte[] body = new com.fasterxml.jackson.databind.ObjectMapper()
-                    .writeValueAsBytes(serializedHistories);
             server.createContext("/api/auditPublishing/getAll", exchange -> {
                 exchange.getResponseHeaders().add("Content-Type", "application/json");
-                exchange.sendResponseHeaders(200, body.length);
+                exchange.sendResponseHeaders(status, body.length);
                 try (java.io.OutputStream out = exchange.getResponseBody()) {
                     out.write(body);
                 }
@@ -821,10 +957,22 @@ public class PublisherQueueJobTest {
     }
 
     private void invokeUpdateAuditStatus() throws Exception {
+        invokeUpdateAuditStatus(Collections.emptyList());
+    }
+
+    /**
+     * Runs one audit-status pass the way {@link PublisherQueueJob#execute} does, with the given
+     * bundles as the current publishing queue.
+     *
+     * @param bundlesInQueue the queue rows the pass sees, as returned by
+     *                       {@link PublisherAPI#getQueueBundleIdsToProcess()}
+     * @throws Exception the pass could not be invoked
+     */
+    private void invokeUpdateAuditStatus(final List<Map<String, Object>> bundlesInQueue) throws Exception {
         final PublisherQueueJob job = new PublisherQueueJob();
         final Method updateAuditStatus =
                 PublisherQueueJob.class.getDeclaredMethod("updateAuditStatus", List.class);
         updateAuditStatus.setAccessible(true);
-        updateAuditStatus.invoke(job, Collections.<Map<String, Object>>emptyList());
+        updateAuditStatus.invoke(job, bundlesInQueue);
     }
 }
