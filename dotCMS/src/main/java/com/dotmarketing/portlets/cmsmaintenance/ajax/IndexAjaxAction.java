@@ -16,6 +16,8 @@ import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletID;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageUtil;
@@ -51,6 +53,15 @@ public class IndexAjaxAction extends AjaxAction {
 		this.indexAPI = indexAPI;
 	}
 
+	/**
+	 * Runs the command named by the {@code cmd} URI parameter. Commands run only for a CMS
+	 * administrator who also has access to the Maintenance portlet; anyone else, or a request whose
+	 * access cannot be checked, gets a 401 and the command does not run.
+	 *
+	 * @param request  the current request
+	 * @param response the current response
+	 */
+	@Override
 	public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
 
@@ -62,7 +73,7 @@ public class IndexAjaxAction extends AjaxAction {
 
 		String cmd = map.get("cmd");
 		java.lang.reflect.Method meth = null;
-		Class partypes[] = new Class[] { HttpServletRequest.class, HttpServletResponse.class };
+		final Class<?>[] partypes = new Class<?>[] { HttpServletRequest.class, HttpServletResponse.class };
 		Object arglist[] = new Object[] { request, response };
 		User user = getUser();
 
@@ -70,22 +81,33 @@ public class IndexAjaxAction extends AjaxAction {
 
 
 
+		boolean allowed;
 		try {
-			// Check permissions if the user has access to the CMS Maintenance Portlet
-			if (user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)) {
+			allowed = canRunCommands(user);
+			if (!allowed) {
 				user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
 				if(user==null) {
 				    setUser(request);
                     user = getUser();
 				}
-				if(user==null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)){
-					response.sendError(401);
-					return;
+				allowed = canRunCommands(user);
+				if (!allowed && user != null) {
+					SecurityLogger.logInfo(IndexAjaxAction.class, String.format(
+							"User [%s] is not a CMS administrator with the Maintenance portlet, which index commands require",
+							user.getUserId()));
 				}
 			}
+		} catch (final Exception e) {
+			Logger.warn(IndexAjaxAction.class,
+					"Access to index commands could not be checked: " + e.getMessage());
+			allowed = false;
+		}
+		if (!allowed) {
+			response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+			return;
+		}
 
-
-
+		try {
 			meth = this.getClass().getMethod(cmd, partypes);
 
 		} catch (Exception e) {
@@ -107,6 +129,21 @@ public class IndexAjaxAction extends AjaxAction {
 			return;
 		}
 
+	}
+
+	/**
+	 * Tells whether the given user may run the commands of this action: a CMS administrator who
+	 * also has access to the Maintenance portlet, the same requirement the index REST endpoints
+	 * have.
+	 *
+	 * @param user the {@link User} making the request, or {@code null} when nobody is logged in
+	 * @return {@code true} if the user may run the commands
+	 * @throws DotDataException if the user's portlets cannot be loaded
+	 */
+	private static boolean canRunCommands(final User user) throws DotDataException {
+		return user != null && user.isAdmin()
+				&& APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(
+						PortletID.MAINTENANCE.toString(), user);
 	}
 
 	
