@@ -97,6 +97,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -499,8 +500,8 @@ public class ContentTypeResource implements Serializable {
 														   "- `folder` *(string)* — folder identifier UUID or the literal `SYSTEM_FOLDER` (defaults to `SYSTEM_FOLDER`)\n" +
 														   "- `description` *(string)*\n" +
 														   "- `workflow` *(array of workflow scheme UUIDs)* — e.g. `[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]` for System Workflow. " +
-														   "⚠️ **Note:** this is `workflow` (singular) in the request. GET responses return `workflows` (plural, array of objects) — " +
-														   "clients round-tripping an object must rename this key.\n" +
+														   "GET responses return `workflows` (plural, array of scheme objects); that key is also accepted here " +
+														   "when `workflow` is absent, so an object copied from GET keeps its schemes.\n" +
 														   "- `fields` *(array of field objects)* — see field schema below (`ContentTypeFieldView`)\n" +
 														   "- `metadata` *(object)* — known keys: `CONTENT_EDITOR2_ENABLED` (boolean), `DOT_STYLE_EDITOR_SCHEMA` (JSON string)\n" +
 														   "- `systemActionMappings` *(object)* — maps system actions (`NEW`, `EDIT`, `PUBLISH`, `UNPUBLISH`, `ARCHIVE`, `UNARCHIVE`, `DELETE`, `DESTROY`) to workflow action UUIDs\n\n" +
@@ -657,13 +658,16 @@ public class ContentTypeResource implements Serializable {
 			operationId = "putContentTypeUpdate",
 			summary = "Updates a content type",
 			description = "Updates the content type based on the given ID or Velocity variable name.\n\n" +
-			"⚠️ **Destructive semantics.** (with one exception). This endpoint treats the request body as the full desired state. " +
+			"⚠️ **Destructive semantics.** (with two exceptions). This endpoint treats the request body as the full desired state. " +
 			"Any editable property (including items in `fields[]`) absent from the body will be removed. " +
 			"**Exception: `metadata`** — if the `metadata` key is absent from the request body, the server " +
 			"preserves the existing metadata unchanged. To explicitly clear all metadata, send `\"metadata\": null`.\n\n" +
+			"**Exception: workflow schemes** — they are read from `workflow` (array of scheme UUIDs or scheme objects) or, " +
+			"when `workflow` is absent, from `workflows` (the array of scheme objects GET returns). If the body has neither key, " +
+			"the existing schemes are preserved unchanged. To remove every scheme, send `\"workflow\": []`.\n\n" +
 			"**Recommended update pattern:**\n" +
 			"1. `GET /api/v1/contenttype/id/{idOrVar}` to fetch the current object.\n" +
-			"2. Mutate the returned object in place. Rename `workflows` (array of objects) → `workflow` (array of UUIDs) before sending.\n" +
+			"2. Mutate the returned object in place. To change the schemes, edit `workflows` or send `workflow` (array of UUIDs), which takes precedence.\n" +
 			"3. PUT the entire mutated object back.\n\n" +
 			"This is also the only supported way to add, remove, or modify individual fields — " +
 			"the `/api/v1/contenttype/{typeId}/fields/**` family is deprecated in favor of this full-CT PUT.\n\n" +
@@ -739,7 +743,9 @@ public class ContentTypeResource implements Serializable {
 												"workflows#DefaultActions) (as keys) " +
 												"to workflow action identifiers (as values) for this content type.|\n" +
 												"| `workflow` | List of Strings | A list of identifiers of workflow " +
-												"schemes to be associated with the content type.",
+												"schemes to be associated with the content type. When absent, `workflows` " +
+												"(the scheme objects GET returns) is used; when both are absent, the current " +
+												"schemes are kept.|",
 										required = true,
 										content = @Content(
 												schema = @Schema(implementation = ContentTypeRequestView.class),
@@ -787,10 +793,14 @@ public class ContentTypeResource implements Serializable {
 
 			contentType = contentTypeHelper.preserveMetadataIfAbsent(
 					contentType, form.getRequestJson(), contentTypeAPI);
+			// Like metadata above: a body without workflow keys leaves the schemes as they are.
+			final List<WorkflowFormEntry> workflows =
+					ContentTypeHelper.requestContainsWorkflows(form.getRequestJson())
+							? form.getWorkflows() : null;
 
 			final Tuple2<ContentType, List<SystemActionWorkflowActionMapping>> tuple2 =
 					this.saveContentTypeAndDependencies(contentType, user,
-							form.getWorkflows(), form.getSystemActions(),
+							workflows, form.getSystemActions(),
 							contentTypeAPI, false);
 			final ImmutableMap.Builder<String, Object> builderMap =
 					ImmutableMap.<String, Object>builder()
@@ -830,8 +840,8 @@ public class ContentTypeResource implements Serializable {
 	 *
 	 * @param contentType          The {@link ContentType} to save.
 	 * @param user                 The {@link User} executing this action.
-	 * @param workflows            The {@link Set} of Workflow IDs to associate to the Content
-	 *                             Type.
+	 * @param workflows            The Workflow Schemes to associate to the Content Type, or
+	 *                             {@code null} to leave its current schemes untouched.
 	 * @param systemActionMappings The {@link List} of {@link Tuple2} containing the
 	 *                             {@link WorkflowAPI.SystemAction} and the {@link String}
 	 *                             representing the Workflow Action ID.
@@ -849,13 +859,15 @@ public class ContentTypeResource implements Serializable {
 	@WrapInTransaction
 	private Tuple2<ContentType, List<SystemActionWorkflowActionMapping>> saveContentTypeAndDependencies (final ContentType contentType,
 																								   final User user,
-																								   final List<WorkflowFormEntry> workflows,
+																								   @Nullable final List<WorkflowFormEntry> workflows,
 																								   final List<Tuple2<WorkflowAPI.SystemAction,String>> systemActionMappings,
 																								   final ContentTypeAPI contentTypeAPI,
 																								   final boolean isNew) throws DotSecurityException, DotDataException, UniqueFieldValueDuplicatedException {
 
 		ContentType contentTypeSaved = contentTypeAPI.save(contentType);
-		this.contentTypeHelper.saveSchemesByContentType(contentTypeSaved, workflows);
+		if (null != workflows) {
+			this.contentTypeHelper.saveSchemesByContentType(contentTypeSaved, workflows);
+		}
 
 		if (!isNew) {
 			this.handleFields(contentTypeSaved.id(), contentType.fieldMap(

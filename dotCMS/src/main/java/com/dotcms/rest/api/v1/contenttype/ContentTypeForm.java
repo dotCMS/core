@@ -61,6 +61,12 @@ public class ContentTypeForm  {
     public static final class ContentTypeFormDeserialize extends JsonDeserializer<ContentTypeForm> {
 
         public static final String WORKFLOW_ATTRIBUTE_NAME = "workflow";
+        /**
+         * The key GET responses use for the schemes: an array of scheme objects. Accepted on
+         * write when {@link #WORKFLOW_ATTRIBUTE_NAME} is absent, so sending back what GET
+         * returned keeps the schemes.
+         */
+        public static final String WORKFLOWS_ATTRIBUTE_NAME = "workflows";
         public static final String SYSTEM_ACTION_ATTRIBUTE_NAME = "systemActionMappings";
 
         private static final String WORKFLOW_SCHEME_ID_ATTRIBUTE = "id";
@@ -178,21 +184,25 @@ public class ContentTypeForm  {
         }
 
         /**
-         * Extracts the workflows from the json object found in the form
+         * Reads the workflow schemes of one content type from the request. They come from
+         * {@code workflow}, or from {@code workflows} (what GET returns) when {@code workflow} is
+         * absent. Each entry is a scheme id, or an object with an {@code id} or a
+         * {@code variableName}. A missing key or a {@code null} value gives an empty list.
          *
-         * @param fieldJsonObject the json object found in the form
-         * @return a list of workflow entries
+         * @param fieldJsonObject the content type's JSON object from the request
+         * @return the workflow entries, empty when none were sent
          * @throws JSONException if the json object is not well-formed
          */
-        private static List<WorkflowFormEntry> getWorkflows(JSONObject fieldJsonObject)
+        private static List<WorkflowFormEntry> getWorkflows(final JSONObject fieldJsonObject)
                 throws JSONException {
 
-            List<WorkflowFormEntry> workflowsArray = new ArrayList<>();
+            final List<WorkflowFormEntry> workflowsArray = new ArrayList<>();
 
-            if (fieldJsonObject.has(WORKFLOW_ATTRIBUTE_NAME)) {
+            final String attributeName = fieldJsonObject.has(WORKFLOW_ATTRIBUTE_NAME)
+                    ? WORKFLOW_ATTRIBUTE_NAME : WORKFLOWS_ATTRIBUTE_NAME;
+            final JSONArray workflowsJSONArray = fieldJsonObject.optJSONArray(attributeName);
 
-                final JSONArray workflowsJSONArray = (JSONArray) fieldJsonObject.get(
-                        WORKFLOW_ATTRIBUTE_NAME);
+            if (null != workflowsJSONArray) {
 
                 for (Object entry : workflowsJSONArray) {
 

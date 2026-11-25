@@ -9,6 +9,7 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rendering.velocity.viewtools.RestrictedViewToolAccess;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.rest.api.v1.contenttype.ContentTypeForm.ContentTypeFormDeserialize;
 import com.dotcms.rest.exception.BadRequestException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.contenttype.model.field.CustomField;
@@ -1143,6 +1144,19 @@ public class ContentTypeHelper implements Serializable {
                 .build();
         rebuilt.constructWithFields(fields);
         return rebuilt;
+    }
+
+    /**
+     * Returns {@code true} if the raw request JSON sends workflow schemes, under {@code workflow}
+     * or under {@code workflows} (the key GET returns). When it sends neither, an update leaves
+     * the content type's schemes as they are.
+     *
+     * @param requestJson the raw request body
+     * @return whether the body has a {@code workflow} or {@code workflows} key
+     */
+    public static boolean requestContainsWorkflows(final Object requestJson) {
+        return requestContainsKey(requestJson, ContentTypeFormDeserialize.WORKFLOW_ATTRIBUTE_NAME)
+                || requestContainsKey(requestJson, ContentTypeFormDeserialize.WORKFLOWS_ATTRIBUTE_NAME);
     }
 
     /**
