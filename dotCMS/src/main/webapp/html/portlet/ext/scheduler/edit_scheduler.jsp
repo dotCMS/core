@@ -49,10 +49,15 @@ function submitfm(form) {
 	// Keep every named parameter, including empty values and names such as __proto__; clearing the
 	// name removes a parameter
 	const properties = Object.create(null);
+	// A text area shows CR and CRLF as LF and control characters as spaces, so a value left as it
+	// was is sent from its saved copy, which keeps those characters
+	const savedValue = (valueField) => new TextDecoder().decode(
+		Uint8Array.from(atob(valueField.dataset.savedValue || ''), (ch) => ch.charCodeAt(0)));
 	for (const field of form.querySelectorAll('input[name^="propertyName"]')) {
 		const valueField = form[field.name.replace('propertyName', 'propertyValue')];
 		if (field.value) {
-			properties[field.value] = valueField ? valueField.value : '';
+			properties[field.value] = !valueField ? ''
+				: valueField.value === valueField.defaultValue ? savedValue(valueField) : valueField.value;
 		}
 	}
 	const jobName = valueOf('jobName');
@@ -410,8 +415,10 @@ function deleteSchedule(form) {
 			parameters.add(new java.util.AbstractMap.SimpleEntry<>("", ""));
 		}
 	}
-	// Values are edited in a text area so a value with line breaks is saved back unchanged; the HTML
-	// parser drops the line break right after the opening tag, so a value that starts with one keeps it
+	// Values are edited in a text area so line breaks survive editing; the HTML parser drops the line
+	// break right after the opening tag, so a value that starts with one keeps it. The text area shows
+	// CR and CRLF as LF and control characters as spaces, so each value is also kept in Base64 (UTF-8)
+	// in data-saved-value, and a value the user leaves as it was is saved back from that copy unchanged
 	boolean parameterShowed = false;
 	for (int i = 0; i < parameters.size(); i++) {
 		String key = parameters.get(i).getKey();
@@ -419,7 +426,7 @@ function deleteSchedule(form) {
 		if (editableParameters) {
 %>
 				<b><%= LanguageUtil.get(pageContext, "Parameter-Name") %>: </b><input type="text" dojoType="dijit.form.TextBox" name="propertyName<%= i %>" id="propertyName<%= i %>" value="<%= Xss.encodeForHTMLAttribute(key) %>">&nbsp;&nbsp;
-				<b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b><textarea rows="1" style="vertical-align: middle" name="propertyValue<%= i %>" id="propertyValue<%= i %>">
+				<b><%= LanguageUtil.get(pageContext, "Parameter-Value") %>: </b><textarea rows="1" style="vertical-align: middle" name="propertyValue<%= i %>" id="propertyValue<%= i %>" data-saved-value="<%= java.util.Base64.getEncoder().encodeToString((value == null ? "" : value).getBytes(java.nio.charset.StandardCharsets.UTF_8)) %>">
 <%= Xss.encodeForHTML(value) %></textarea>
 				<br>
 				<br>
