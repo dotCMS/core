@@ -36,6 +36,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityPaginatedDataView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.WebResource;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.PaginationUtil;
@@ -53,6 +54,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.tngtech.java.junit.dataprovider.DataProvider;
@@ -73,6 +75,9 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FieldVariableDataGen;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.datagen.WorkflowDataGen;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotmarketing.beans.Permission;
@@ -843,5 +848,281 @@ public class ContentTypeResourceTest {
 	private static void assertUnauthorized(final org.junit.function.ThrowingRunnable call) {
 		final SecurityException exception = assertThrows(SecurityException.class, call);
 		assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), exception.getResponse().getStatus());
+	}
+
+	/**
+	 * Given a Content Type assigned to a custom workflow scheme,
+	 * When the GET response is PUT back unchanged (it carries {@code workflows}, never {@code workflow}),
+	 * Then the Content Type keeps its schemes.
+	 */
+	@Test
+	public void updateType_getResponsePutBack_keepsSchemes() throws Exception {
+		final WorkflowScheme scheme = new WorkflowDataGen().nextPersisted();
+		final ContentType type = new ContentTypeDataGen().workflowId(scheme.getId()).nextPersisted();
+		try {
+			final Set<String> before = schemeIds(type);
+			assertTrue(before.contains(scheme.getId()));
+
+			RestUtilTest.verifySuccessResponse(putType(type.id(), getTypeAsJson(type.id())));
+
+			assertEquals(before, schemeIds(type));
+		} finally {
+			ContentTypeDataGen.remove(type);
+			WorkflowDataGen.remove(scheme);
+		}
+	}
+
+	/**
+	 * Given a Content Type assigned to a custom workflow scheme,
+	 * When it is PUT with neither {@code workflow} nor {@code workflows} in the body,
+	 * Then the Content Type keeps its schemes.
+	 */
+	@Test
+	public void updateType_withoutAnyWorkflowKey_keepsSchemes() throws Exception {
+		final WorkflowScheme scheme = new WorkflowDataGen().nextPersisted();
+		final ContentType type = new ContentTypeDataGen().workflowId(scheme.getId()).nextPersisted();
+		try {
+			final Set<String> before = schemeIds(type);
+
+			final Map<String, Object> body = getTypeAsJson(type.id());
+			body.remove("workflows");
+			RestUtilTest.verifySuccessResponse(putType(type.id(), body));
+
+			assertEquals(before, schemeIds(type));
+		} finally {
+			ContentTypeDataGen.remove(type);
+			WorkflowDataGen.remove(scheme);
+		}
+	}
+
+	/**
+	 * Given a Content Type assigned to the System Workflow and a custom scheme,
+	 * When it is PUT without {@code workflow} but with {@code workflows} (the read-only key GET
+	 * returns) listing another scheme,
+	 * Then the original schemes are kept, since {@code workflows} is ignored on write.
+	 */
+	@Test
+	public void updateType_withPluralWorkflowsObjects_keepsSchemes() throws Exception {
+		final WorkflowScheme oldScheme = new WorkflowDataGen().nextPersisted();
+		final WorkflowScheme newScheme = new WorkflowDataGen().name("newScheme" + System.nanoTime()).nextPersisted();
+		final ContentType type = new ContentTypeDataGen().workflowId(oldScheme.getId()).nextPersisted();
+		try {
+			final Set<String> originalSchemeIds = schemeIds(type);
+			assertTrue(originalSchemeIds.contains(oldScheme.getId()));
+
+			final Map<String, Object> body = getTypeAsJson(type.id());
+			body.put("workflows", List.of(Map.of("id", newScheme.getId(), "name", newScheme.getName())));
+			RestUtilTest.verifySuccessResponse(putType(type.id(), body));
+
+			assertEquals(originalSchemeIds, schemeIds(type));
+		} finally {
+			ContentTypeDataGen.remove(type);
+			WorkflowDataGen.remove(oldScheme);
+			WorkflowDataGen.remove(newScheme);
+		}
+	}
+
+	/**
+	 * Given a Content Type assigned to workflow schemes,
+	 * When it is PUT with an explicit empty {@code workflow} array,
+	 * Then every scheme is removed.
+	 */
+	@Test
+	public void updateType_withEmptyWorkflow_removesSchemes() throws Exception {
+		final WorkflowScheme scheme = new WorkflowDataGen().nextPersisted();
+		final ContentType type = new ContentTypeDataGen().workflowId(scheme.getId()).nextPersisted();
+		try {
+			final Map<String, Object> body = getTypeAsJson(type.id());
+			body.put("workflow", List.of());
+			RestUtilTest.verifySuccessResponse(putType(type.id(), body));
+
+			assertTrue(schemeIds(type).isEmpty());
+		} finally {
+			ContentTypeDataGen.remove(type);
+			WorkflowDataGen.remove(scheme);
+		}
+	}
+
+	/**
+	 * Given a Content Type assigned to the System Workflow and a custom scheme,
+	 * When it is PUT with {@code workflow} listing only the custom scheme's id,
+	 * Then the Content Type is assigned exactly that scheme.
+	 */
+	@Test
+	public void updateType_withWorkflowIds_replacesSchemes() throws Exception {
+		final WorkflowScheme scheme = new WorkflowDataGen().nextPersisted();
+		final ContentType type = new ContentTypeDataGen().workflowId(scheme.getId()).nextPersisted();
+		try {
+			final Map<String, Object> body = getTypeAsJson(type.id());
+			body.put("workflow", List.of(scheme.getId()));
+			RestUtilTest.verifySuccessResponse(putType(type.id(), body));
+
+			assertEquals(Set.of(scheme.getId()), schemeIds(type));
+		} finally {
+			ContentTypeDataGen.remove(type);
+			WorkflowDataGen.remove(scheme);
+		}
+	}
+
+	/**
+	 * Given a Content Type assigned to the System Workflow and a custom scheme,
+	 * When it is PUT with {@code workflow} set to a single scheme id string,
+	 * Then the Content Type is assigned exactly that scheme.
+	 */
+	@Test
+	public void updateType_withSingleWorkflowString_replacesSchemes() throws Exception {
+		final WorkflowScheme scheme = new WorkflowDataGen().nextPersisted();
+		final WorkflowScheme otherScheme = new WorkflowDataGen().name("otherScheme" + System.nanoTime()).nextPersisted();
+		final ContentType type = new ContentTypeDataGen().workflowId(scheme.getId()).nextPersisted();
+		try {
+			final Map<String, Object> body = getTypeAsJson(type.id());
+			body.put("workflow", otherScheme.getId());
+			RestUtilTest.verifySuccessResponse(putType(type.id(), body));
+
+			assertEquals(Set.of(otherScheme.getId()), schemeIds(type));
+		} finally {
+			ContentTypeDataGen.remove(type);
+			WorkflowDataGen.remove(scheme);
+			WorkflowDataGen.remove(otherScheme);
+		}
+	}
+
+	/**
+	 * Given a Content Type assigned to the System Workflow and a custom scheme,
+	 * When it is PUT with {@code workflow} set to a comma-separated string of two other scheme
+	 * ids, with spaces and an empty part,
+	 * Then the Content Type is assigned exactly those two schemes.
+	 */
+	@Test
+	public void updateType_withCommaSeparatedWorkflowString_replacesSchemes() throws Exception {
+		final WorkflowScheme scheme = new WorkflowDataGen().nextPersisted();
+		final WorkflowScheme first = new WorkflowDataGen().name("firstScheme" + System.nanoTime()).nextPersisted();
+		final WorkflowScheme second = new WorkflowDataGen().name("secondScheme" + System.nanoTime()).nextPersisted();
+		final ContentType type = new ContentTypeDataGen().workflowId(scheme.getId()).nextPersisted();
+		try {
+			final Map<String, Object> body = getTypeAsJson(type.id());
+			body.put("workflow", " " + first.getId() + " , ," + second.getId() + " ");
+			RestUtilTest.verifySuccessResponse(putType(type.id(), body));
+
+			assertEquals(Set.of(first.getId(), second.getId()), schemeIds(type));
+		} finally {
+			ContentTypeDataGen.remove(type);
+			WorkflowDataGen.remove(scheme);
+			WorkflowDataGen.remove(first);
+			WorkflowDataGen.remove(second);
+		}
+	}
+
+	/**
+	 * Given a Content Type assigned to workflow schemes,
+	 * When it is PUT with {@code "workflow": null},
+	 * Then every scheme is removed, the same as {@code "workflow": []}.
+	 */
+	@Test
+	public void updateType_withNullWorkflow_clearsSchemes() throws Exception {
+		final WorkflowScheme scheme = new WorkflowDataGen().nextPersisted();
+		final ContentType type = new ContentTypeDataGen().workflowId(scheme.getId()).nextPersisted();
+		try {
+			final ObjectMapper jsonMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+			final ObjectNode body = jsonMapper.valueToTree(getTypeAsJson(type.id()));
+			body.putNull("workflow");
+			RestUtilTest.verifySuccessResponse(putJson(type.id(), body.toString()));
+
+			assertTrue(schemeIds(type).isEmpty());
+		} finally {
+			ContentTypeDataGen.remove(type);
+			WorkflowDataGen.remove(scheme);
+		}
+	}
+
+	/**
+	 * Given a Content Type assigned to workflow schemes,
+	 * When it is PUT with {@code workflow} set to an object, and then to a number,
+	 * Then each request is rejected with a 400 and the schemes are unchanged.
+	 */
+	@Test
+	public void updateType_withObjectOrNumberWorkflow_returnsBadRequest() throws Exception {
+		final WorkflowScheme scheme = new WorkflowDataGen().nextPersisted();
+		final ContentType type = new ContentTypeDataGen().workflowId(scheme.getId()).nextPersisted();
+		try {
+			final Set<String> originalSchemeIds = schemeIds(type);
+			for (final Object invalidValue : List.of(Map.of("id", scheme.getId()), 42)) {
+				final Map<String, Object> body = getTypeAsJson(type.id());
+				body.put("workflow", invalidValue);
+
+				final BadRequestException e = assertThrows(BadRequestException.class,
+						() -> putType(type.id(), body));
+				assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), e.getResponse().getStatus());
+				assertEquals(originalSchemeIds, schemeIds(type));
+			}
+		} finally {
+			ContentTypeDataGen.remove(type);
+			WorkflowDataGen.remove(scheme);
+		}
+	}
+
+	/**
+	 * Given a Content Type assigned to the System Workflow and a custom scheme,
+	 * When it is PUT with a JSON array body whose single entry has {@code workflow} listing
+	 * another scheme,
+	 * Then the Content Type is assigned exactly that scheme.
+	 */
+	@Test
+	public void updateType_withArrayBodyAndWorkflow_replacesSchemes() throws Exception {
+		final WorkflowScheme scheme = new WorkflowDataGen().nextPersisted();
+		final WorkflowScheme otherScheme = new WorkflowDataGen().name("otherScheme" + System.nanoTime()).nextPersisted();
+		final ContentType type = new ContentTypeDataGen().workflowId(scheme.getId()).nextPersisted();
+		try {
+			final Map<String, Object> body = getTypeAsJson(type.id());
+			body.put("workflow", List.of(otherScheme.getId()));
+			final String json = DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
+					.writeValueAsString(List.of(body));
+			RestUtilTest.verifySuccessResponse(putJson(type.id(), json));
+
+			assertEquals(Set.of(otherScheme.getId()), schemeIds(type));
+		} finally {
+			ContentTypeDataGen.remove(type);
+			WorkflowDataGen.remove(scheme);
+			WorkflowDataGen.remove(otherScheme);
+		}
+	}
+
+	/**
+	 * Reads the Content Type through the resource and returns it as the JSON a client receives,
+	 * so a test can PUT it back the way the MCP server and the admin UI do.
+	 */
+	@SuppressWarnings("unchecked")
+	private static Map<String, Object> getTypeAsJson(final String id) throws Exception {
+		final Response response = new ContentTypeResource()
+				.getType(id, getHttpRequest(), new EmptyHttpResponse(), null, null);
+		final ObjectMapper jsonMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+		return jsonMapper.readValue(jsonMapper.writeValueAsString(
+				((ResponseEntityView<?>) response.getEntity()).getEntity()), Map.class);
+	}
+
+	/**
+	 * Sends the given body to {@link ContentTypeResource#updateType} as the request JSON.
+	 */
+	private static Response putType(final String id, final Map<String, Object> body) throws Exception {
+		return putJson(id, DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
+				.writeValueAsString(body));
+	}
+
+	/**
+	 * Sends the given raw JSON to {@link ContentTypeResource#updateType} as the request body.
+	 */
+	private static Response putJson(final String id, final String json) throws Exception {
+		return new ContentTypeResource().updateType(id,
+				new ContentTypeForm.ContentTypeFormDeserialize().buildForm(json),
+				getHttpRequest(), new EmptyHttpResponse());
+	}
+
+	/**
+	 * Returns the ids of the workflow schemes currently assigned to the Content Type.
+	 */
+	private static Set<String> schemeIds(final ContentType type) throws DotDataException {
+		return APILocator.getWorkflowAPI().findSchemesForContentType(type).stream()
+				.map(WorkflowScheme::getId)
+				.collect(Collectors.toSet());
 	}
 }
