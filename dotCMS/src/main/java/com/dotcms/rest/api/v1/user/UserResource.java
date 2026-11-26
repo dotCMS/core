@@ -36,6 +36,7 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -1262,10 +1263,10 @@ public class UserResource implements Serializable {
 		}
 
 		user.setPassword(new String(createUserForm.getPassword()));
-		// absent = the default UserAPI#createUser gives a new user; an explicit value wins over it
-		if (null != createUserForm.getMale()) {
-			user.setMale(createUserForm.getMale());
-		}
+		// On create there is no stored value to leave alone, so an absent flag keeps the value this
+		// endpoint has always stored — false — rather than the true UserAPI#createUser seeds a new
+		// user with. Only the update path reads absence as "do not touch".
+		user.setMale(Boolean.TRUE.equals(createUserForm.getMale()));
 		user.setCreateDate(new Date());
 
 		// absent = the status UserAPI#createUser gives a new user; an explicit value wins over it
@@ -1581,6 +1582,12 @@ public class UserResource implements Serializable {
      * working. Unlike the legacy entry, this one names the user whose status changed as well as the
      * user who changed it.
      *
+     * On the update path this runs from a commit listener, so it must not throw: an exception
+     * escaping a sync listener reaches the caller as a failure for a change that is already
+     * committed. A log that cannot be written is worth a warning, not a failed request, so the
+     * writes are guarded here. The activate and deactivate endpoints call it directly, after
+     * {@code UserAPI#save} has committed a transaction of its own.
+     *
      * @param modUser The user performing the request.
      * @param changed The user whose status changed, already carrying the new value.
      */
@@ -1590,8 +1597,15 @@ public class UserResource implements Serializable {
                 + changed.isActive() + " for User:" + changed.getUserId();
         final String detail = "Date: " + DateUtil.getCurrentDate() + "; User:" + modUser.getUserId();
 
-        ActivityLogger.logInfo(this.getClass(), message, detail);
-        AdminLogger.log(this.getClass(), message, detail);
+        try {
+
+            ActivityLogger.logInfo(this.getClass(), message, detail);
+            AdminLogger.log(this.getClass(), message, detail);
+        } catch (final Exception e) {
+
+            Logger.warn(this, "The status change of user " + changed.getUserId()
+                    + " could not be written to the audit log: " + e.getMessage(), e);
+        }
     }
 
 	/**
@@ -1732,10 +1746,14 @@ public class UserResource implements Serializable {
 					updateUserForm.getEmail() + "' has been updated.");
 
 			// only an actual change is worth an audit entry: resending the status the user already
-			// has is not one
+			// has is not one. Written from a commit listener because the role update below can still
+			// fail and roll this whole method back, and an inline write would leave the audit trail
+			// claiming a status change that never happened. Sync rather than async, so the entry is
+			// on disk before the caller gets its 200 — the same listener UserAPIImpl uses to end the
+			// sessions of a user it just deactivated.
 			if (userRecovery.isActive() != userToSave.isActive()) {
 
-				this.logStatusChange(modUser, userToSave);
+				HibernateUtil.addSyncCommitListener(() -> this.logStatusChange(modUser, userToSave));
 			}
 
             if (null != roleChanges) {

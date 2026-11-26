@@ -7,6 +7,7 @@ import {
 import { of } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
+import { signal } from '@angular/core';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -17,6 +18,7 @@ import {
     DotMessageService,
     DotRolesService
 } from '@dotcms/data-access';
+import { GlobalStore } from '@dotcms/store';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotUsersCreateComponent } from './dot-users-create.component';
@@ -29,6 +31,13 @@ const MOCK_USER_DETAIL = createFakeUserDetail();
 
 /** `p-tab` value of the Permissions tab. */
 const PERMISSIONS_TAB = 2;
+
+/**
+ * Stands in for `GlobalStore.loggedUser`. A real signal, so a test that
+ * sets it after the component exists still drives the effect that
+ * disables the Active toggle.
+ */
+const loggedUser = signal<{ userId: string } | null>(null);
 
 /** p-button doesn't forward clicks itself — reach the inner native button. */
 function saveButton(spectator: Spectator<DotUsersCreateComponent>): HTMLButtonElement {
@@ -88,8 +97,19 @@ describe('DotUsersCreateComponent', () => {
                 getRoots: vi.fn().mockReturnValue(of([])),
                 getById: vi.fn()
             }),
-            mockProvider(DotHttpErrorManagerService, { handle: vi.fn() })
+            mockProvider(DotHttpErrorManagerService, { handle: vi.fn() }),
+            mockProvider(GlobalStore, {
+                // A getter, so the component reads the live signal instead of a snapshot
+                // taken when the provider was built.
+                get loggedUser() {
+                    return loggedUser;
+                }
+            })
         ]
+    });
+
+    beforeEach(() => {
+        loggedUser.set(null);
     });
 
     describe('create mode', () => {
@@ -382,6 +402,23 @@ describe('DotUsersCreateComponent', () => {
                     payload: expect.objectContaining({ active: false })
                 })
             );
+        });
+
+        it('should disable the Active toggle on your own account', () => {
+            // PUT /v1/users refuses to deactivate the caller's own account, and
+            // this dialog closes on Save, so letting the toggle be moved would
+            // throw away every other edit when the request comes back rejected.
+            loggedUser.set({ userId: MOCK_USER.userId });
+            spectator.detectChanges();
+
+            expect(spectator.component.form.controls.account.controls.active.disabled).toBe(true);
+        });
+
+        it('should leave the Active toggle enabled on another user', () => {
+            loggedUser.set({ userId: 'someone-else' });
+            spectator.detectChanges();
+
+            expect(spectator.component.form.controls.account.controls.active.enabled).toBe(true);
         });
 
         it('should NOT mark password as required in edit mode', () => {

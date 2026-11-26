@@ -36,7 +36,7 @@ public final class UserForm extends Validated implements LanguageSupport  {
     @NotBlank
     private final String email;
     @Schema(description = "Whether the user is male. Absent = the stored value is left as it is "
-            + "on update, and a new user is created with the default. An explicit value sets it.",
+            + "on update, and a new user is created with false. An explicit value sets it.",
             nullable = true, example = "false")
     private final Boolean male;
     private final String  birthday;
@@ -115,11 +115,12 @@ public final class UserForm extends Validated implements LanguageSupport  {
 
     /**
      * The gender flag sent in the payload. {@code null} means the field was not sent at all, which
-     * leaves the stored value untouched — the same "absent means do not touch" rule
+     * on update leaves the stored value untouched — the same "absent means do not touch" rule
      * {@link #getActive()} and {@link #getRoles()} follow. This is why the field is a
      * {@link Boolean} and not a primitive: the clients that never send it, the Users (Beta) portlet
      * among them, would otherwise have every save read the omission as {@code false} and overwrite
-     * whatever was stored.
+     * whatever was stored. On create there is nothing to leave alone, so an absent field keeps
+     * storing {@code false}, which is what this endpoint has always done.
      *
      * @return {@code true} or {@code false} as sent, or {@code null} when the field was absent.
      */
@@ -224,7 +225,8 @@ public final class UserForm extends Validated implements LanguageSupport  {
 
         /**
          * Sets the gender flag. Leaving it {@code null}, which is the default, omits the field and
-         * so leaves the stored value untouched.
+         * so leaves the stored value untouched on update; on create the user is stored with
+         * {@code false}.
          *
          * @param male The flag to send, or {@code null} to omit it.
          *

@@ -42818,7 +42818,7 @@ components:
         male:
           type: boolean
           description: "Whether the user is male. Absent = the stored value is left\
-            \ as it is on update, and a new user is created with the default. An explicit\
+            \ as it is on update, and a new user is created with false. An explicit\
             \ value sets it."
           example: false
           nullable: true

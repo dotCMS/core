@@ -2308,4 +2308,43 @@ public class UserResourceIntegrationTest {
         usersToClean.add(created);
         assertTrue("a user created without the field must be active", created.isActive());
     }
+
+    /**
+     * Method to test: {@link UserResource#create(HttpServletRequest, HttpServletResponse, UserForm)}
+     * Given Scenario: A CMS Administrator creates a user with a payload that carries no
+     * {@code male} field.
+     * Expected Result: 200; the created user is not male. Making the field nullable so that an
+     * update can leave the stored value alone must not change what a create without the field
+     * stores, and {@code UserAPI#createUser} seeds a new user with {@code true}.
+     */
+    @Test
+    public void test_create_maleAbsent_storesFalse() throws Exception {
+        final String newUserId = "createnomale-" + uniq();
+
+        final Response resourceResponse = resource.create(mockRequest(), response,
+                createFormFor(newUserId).build());
+
+        assertEquals(Status.OK.getStatusCode(), resourceResponse.getStatus());
+        final User created = APILocator.getUserAPI().loadUserById(newUserId);
+        usersToClean.add(created);
+        assertFalse("a user created without the male field must not be male", created.isMale());
+    }
+
+    /**
+     * Method to test: {@link UserResource#create(HttpServletRequest, HttpServletResponse, UserForm)}
+     * Given Scenario: A CMS Administrator creates a user sending {@code male = true}.
+     * Expected Result: 200; the created user is male. The field is still honoured on create.
+     */
+    @Test
+    public void test_create_maleExplicit_appliesTheValue() throws Exception {
+        final String newUserId = "createmale-" + uniq();
+
+        final Response resourceResponse = resource.create(mockRequest(), response,
+                createFormFor(newUserId).male(true).build());
+
+        assertEquals(Status.OK.getStatusCode(), resourceResponse.getStatus());
+        final User created = APILocator.getUserAPI().loadUserById(newUserId);
+        usersToClean.add(created);
+        assertTrue("an explicit male=true must be applied on create", created.isMale());
+    }
 }
