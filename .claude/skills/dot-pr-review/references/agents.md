@@ -63,7 +63,7 @@ Launch each reviewer by its bare name (`dotcms-pr-code-reviewer`): the copy in t
 | `dotcms-pr-java-test-reviewer` | `java_test` non-empty and `STACK` is `backend` or `mixed` | its share of `java_test`, plus the production classes they cover | 1-6 → 1, 7+ → 2 (cap). A test class stays with its production class when both changed: adequacy cannot be judged without the code under test |
 | `dotcms-pr-java-api-reviewer` | `RUN_JAVA_API` | the resource classes, their Form/View objects and exception mappers | 1; 2 when endpoints span more than 6 resource classes |
 | `dotcms-pr-java-persistence-reviewer` | `RUN_JAVA_PERSISTENCE` | the query-bearing classes, the `sql` bucket and the upgrade tasks | 1; 2 when persistence changes span more than 8 factories/DAOs |
-| `dotcms-pr-java-security-reviewer` | `RUN_JAVA_SECURITY` | the **entire** `java` bucket, the `config` bucket and the `jsp` bucket, whatever triggered it | exactly 1, never split: authorization bugs live in the seam between two files |
+| `dotcms-pr-java-security-reviewer` | `RUN_JAVA_SECURITY` | the **entire** `java` bucket, every changed `*.properties` and the `jsp` bucket, whatever triggered it | exactly 1, never split: authorization bugs live in the seam between two files |
 | `dotcms-pr-historical-reviewer` | `RUN_HISTORICAL` (every run past the gate, any `STACK`) | the full file list | 1 |
 | `dotcms-pr-silent-failure-hunter` | `RUN_SILENT_FAILURE` | the `.ts` files of the `code` bucket (no `.spec.ts`, `.html`, `.scss`), plus the `java` bucket on `backend`/`mixed` (`classify.md`) | 1 |
 | `dotcms-pr-comment-analyzer` | `RUN_COMMENT_ANALYZER` | every file whose diff adds or modifies comment lines | 1 |
