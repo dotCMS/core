@@ -501,7 +501,7 @@ public class ContentTypeResource implements Serializable {
 														   "- `description` *(string)*\n" +
 														   "- `workflow` *(array of workflow scheme UUIDs)* — e.g. `[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]` for System Workflow. " +
 														   "GET responses return `workflows` (plural, array of scheme objects); that key is read-only and ignored " +
-														   "on write, so send `workflow` to set the schemes.\n" +
+														   "on write, so send `workflow` to set the schemes. Any other value, including `null`, is rejected with a 400.\n" +
 														   "- `fields` *(array of field objects)* — see field schema below (`ContentTypeFieldView`)\n" +
 														   "- `metadata` *(object)* — known keys: `CONTENT_EDITOR2_ENABLED` (boolean), `DOT_STYLE_EDITOR_SCHEMA` (JSON string)\n" +
 														   "- `systemActionMappings` *(object)* — maps system actions (`NEW`, `EDIT`, `PUBLISH`, `UNPUBLISH`, `ARCHIVE`, `UNARCHIVE`, `DELETE`, `DESTROY`) to workflow action UUIDs\n\n" +
@@ -579,6 +579,8 @@ public class ContentTypeResource implements Serializable {
 						.rejectWhenNoUser(true)
 						.init();
 		final User user = initData.getUser();
+		// Outside the try so the 400 is not turned into a 500 by the catch-all below.
+		ContentTypeHelper.checkWorkflowIsArray(null == form ? null : form.getRequestJson());
 		try {
 			checkNotNull(form, "The 'form' parameter is required");
 			Logger.debug(this, ()->String.format("Creating Content Type(s): %s", form.getRequestJson()));
@@ -664,7 +666,8 @@ public class ContentTypeResource implements Serializable {
 			"preserves the existing metadata unchanged. To explicitly clear all metadata, send `\"metadata\": null`.\n\n" +
 			"**Exception: workflow schemes** — only `workflow` (array of scheme UUIDs or scheme objects) sets them. " +
 			"If `workflow` is absent, the existing schemes are preserved unchanged; the `workflows` array GET returns is " +
-			"read-only and ignored on write. To remove every scheme, send `\"workflow\": []`.\n\n" +
+			"read-only and ignored on write. `workflow` must be an array: any other value, including `null`, is rejected " +
+			"with a 400. To remove every scheme, send `\"workflow\": []`.\n\n" +
 			"**Recommended update pattern:**\n" +
 			"1. `GET /api/v1/contenttype/id/{idOrVar}` to fetch the current object.\n" +
 			"2. Mutate the returned object in place. To change the schemes, send `workflow` (array of UUIDs); editing `workflows` has no effect.\n" +
@@ -744,7 +747,8 @@ public class ContentTypeResource implements Serializable {
 												"to workflow action identifiers (as values) for this content type.|\n" +
 												"| `workflow` | List of Strings | A list of identifiers of workflow " +
 												"schemes to be associated with the content type. When absent, the current " +
-												"schemes are kept; `workflows` (the scheme objects GET returns) is ignored.|",
+												"schemes are kept; `workflows` (the scheme objects GET returns) is ignored. " +
+												"A non-array value, including `null`, is rejected with a 400.|",
 										required = true,
 										content = @Content(
 												schema = @Schema(implementation = ContentTypeRequestView.class),
@@ -781,6 +785,8 @@ public class ContentTypeResource implements Serializable {
 						.init();
 		final User user = initData.getUser();
 		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, true);
+		// Outside the try so the 400 is not turned into a 500 by the catch-all below.
+		ContentTypeHelper.checkWorkflowIsArray(null == form ? null : form.getRequestJson());
 		try {
 			checkNotNull(form, "The 'form' parameter is required");
 			ContentType contentType = contentTypeHelper.evaluateContentTypeRequest(

@@ -36,6 +36,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityPaginatedDataView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.WebResource;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.PaginationUtil;
@@ -53,6 +54,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.tngtech.java.junit.dataprovider.DataProvider;
@@ -963,6 +965,84 @@ public class ContentTypeResourceTest {
 	}
 
 	/**
+	 * Given a Content Type assigned to workflow schemes,
+	 * When it is PUT with {@code workflow} set to a single scheme id string instead of an array,
+	 * Then the request is rejected with a 400 and the schemes are unchanged.
+	 */
+	@Test
+	public void updateType_withNonArrayWorkflow_returnsBadRequest() throws Exception {
+		final WorkflowScheme scheme = new WorkflowDataGen().nextPersisted();
+		final WorkflowScheme otherScheme = new WorkflowDataGen().name("otherScheme" + System.nanoTime()).nextPersisted();
+		final ContentType type = new ContentTypeDataGen().workflowId(scheme.getId()).nextPersisted();
+		try {
+			final Set<String> originalSchemeIds = schemeIds(type);
+			final Map<String, Object> body = getTypeAsJson(type.id());
+			body.put("workflow", otherScheme.getId());
+
+			final BadRequestException e = assertThrows(BadRequestException.class,
+					() -> putType(type.id(), body));
+			assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), e.getResponse().getStatus());
+			assertEquals(originalSchemeIds, schemeIds(type));
+		} finally {
+			ContentTypeDataGen.remove(type);
+			WorkflowDataGen.remove(scheme);
+			WorkflowDataGen.remove(otherScheme);
+		}
+	}
+
+	/**
+	 * Given a Content Type assigned to workflow schemes,
+	 * When it is PUT with {@code "workflow": null},
+	 * Then the request is rejected with a 400 and the schemes are unchanged
+	 * ({@code "workflow": []} is the way to clear them).
+	 */
+	@Test
+	public void updateType_withNullWorkflow_returnsBadRequest() throws Exception {
+		final WorkflowScheme scheme = new WorkflowDataGen().nextPersisted();
+		final ContentType type = new ContentTypeDataGen().workflowId(scheme.getId()).nextPersisted();
+		try {
+			final Set<String> originalSchemeIds = schemeIds(type);
+			final ObjectMapper jsonMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+			final ObjectNode body = jsonMapper.valueToTree(getTypeAsJson(type.id()));
+			body.putNull("workflow");
+
+			final BadRequestException e = assertThrows(BadRequestException.class,
+					() -> putJson(type.id(), body.toString()));
+			assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), e.getResponse().getStatus());
+			assertEquals(originalSchemeIds, schemeIds(type));
+		} finally {
+			ContentTypeDataGen.remove(type);
+			WorkflowDataGen.remove(scheme);
+		}
+	}
+
+	/**
+	 * Given a Content Type assigned to the System Workflow and a custom scheme,
+	 * When it is PUT with a JSON array body whose single entry has {@code workflow} listing
+	 * another scheme,
+	 * Then the Content Type is assigned exactly that scheme.
+	 */
+	@Test
+	public void updateType_withArrayBodyAndWorkflow_replacesSchemes() throws Exception {
+		final WorkflowScheme scheme = new WorkflowDataGen().nextPersisted();
+		final WorkflowScheme otherScheme = new WorkflowDataGen().name("otherScheme" + System.nanoTime()).nextPersisted();
+		final ContentType type = new ContentTypeDataGen().workflowId(scheme.getId()).nextPersisted();
+		try {
+			final Map<String, Object> body = getTypeAsJson(type.id());
+			body.put("workflow", List.of(otherScheme.getId()));
+			final String json = DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
+					.writeValueAsString(List.of(body));
+			RestUtilTest.verifySuccessResponse(putJson(type.id(), json));
+
+			assertEquals(Set.of(otherScheme.getId()), schemeIds(type));
+		} finally {
+			ContentTypeDataGen.remove(type);
+			WorkflowDataGen.remove(scheme);
+			WorkflowDataGen.remove(otherScheme);
+		}
+	}
+
+	/**
 	 * Reads the Content Type through the resource and returns it as the JSON a client receives,
 	 * so a test can PUT it back the way the MCP server and the admin UI do.
 	 */
@@ -979,8 +1059,14 @@ public class ContentTypeResourceTest {
 	 * Sends the given body to {@link ContentTypeResource#updateType} as the request JSON.
 	 */
 	private static Response putType(final String id, final Map<String, Object> body) throws Exception {
-		final String json = DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
-				.writeValueAsString(body);
+		return putJson(id, DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
+				.writeValueAsString(body));
+	}
+
+	/**
+	 * Sends the given raw JSON to {@link ContentTypeResource#updateType} as the request body.
+	 */
+	private static Response putJson(final String id, final String json) throws Exception {
 		return new ContentTypeResource().updateType(id,
 				new ContentTypeForm.ContentTypeFormDeserialize().buildForm(json),
 				getHttpRequest(), new EmptyHttpResponse());

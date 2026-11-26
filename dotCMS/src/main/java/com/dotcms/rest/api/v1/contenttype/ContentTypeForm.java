@@ -180,8 +180,9 @@ public class ContentTypeForm  {
         /**
          * Reads the workflow schemes of one content type from the request's {@code workflow} key.
          * Each entry is a scheme id, or an object with an {@code id} or a {@code variableName}.
-         * A missing key or a {@code null} value gives an empty list. The {@code workflows} key
-         * that GET returns is read-only and ignored here.
+         * A missing key gives an empty list. A non-array value (including {@code null}) also
+         * gives an empty list here, but the resource rejects such a request with a 400 before
+         * using it. The {@code workflows} key that GET returns is read-only and ignored here.
          *
          * @param fieldJsonObject the content type's JSON object from the request
          * @return the workflow entries, empty when none were sent
