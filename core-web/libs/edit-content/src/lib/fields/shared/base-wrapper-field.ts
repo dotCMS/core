@@ -112,6 +112,14 @@ export abstract class BaseWrapperField<
         return control.hasValidator(Validators.required);
     }
 
+    /**
+     * Whether the current user may only read the content (`isReadOnly` in the store). Use it,
+     * not `isDisabled`, for controls that live outside the FormGroup: the form is also disabled
+     * silently while every save runs, and `control.disabled` is not a signal, so an OnPush
+     * template would not reliably re-check it (#38724 R4). False outside the editor.
+     */
+    protected readonly $isReadOnly = computed(() => this.editContentStore?.isReadOnly?.() ?? false);
+
     get isDisabled(): boolean {
         const control = this.formControl;
         if (!control) {

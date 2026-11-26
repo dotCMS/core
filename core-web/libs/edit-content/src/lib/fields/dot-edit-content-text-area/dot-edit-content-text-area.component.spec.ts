@@ -73,8 +73,12 @@ describe('DotEditContentTextAreaComponent', () => {
         ]
     });
 
-    describe('disabled control (read-only form, R4 #38724)', () => {
-        beforeEach(() => {
+    describe('read-only user (R4 #38724)', () => {
+        /**
+         * Driven by the store's `isReadOnly`, not by the control's `disabled` flag: the form
+         * is also disabled (silently) during every save, which is not a read-only user.
+         */
+        const render = (isReadOnly: boolean, controlDisabled = false) => {
             spectator = createHost(
                 `<form [formGroup]="formGroup">
                     <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" />
@@ -84,23 +88,43 @@ describe('DotEditContentTextAreaComponent', () => {
                         formGroup: new FormGroup({
                             [TEXT_AREA_FIELD_MOCK.variable]: new FormControl({
                                 value: '',
-                                disabled: true
+                                disabled: controlDisabled
                             })
                         }),
                         field: TEXT_AREA_FIELD_MOCK,
                         contentlet: createFakeContentlet({ [TEXT_AREA_FIELD_MOCK.variable]: '' })
-                    }
+                    },
+                    providers: [
+                        {
+                            provide: DotEditContentStore,
+                            useValue: {
+                                isReadOnly: signal(isReadOnly),
+                                hasAttemptedSubmit: signal(false)
+                            }
+                        }
+                    ]
                 }
             );
             spectator.detectChanges();
-        });
+        };
 
         it('should disable the editor-mode dropdown so the user cannot switch to an editable editor', () => {
+            render(true);
+
             expect(spectator.query(Select)?.disabled()).toBe(true);
         });
 
         it('should hide the language-variable selector, which only inserts text', () => {
+            render(true);
+
             expect(spectator.query(DotLanguageVariableSelectorComponent)).toBeNull();
+        });
+
+        it('should keep both while an editable form is only disabled for a save (#38724 review)', () => {
+            render(false, true);
+
+            expect(spectator.query(Select)?.disabled()).toBe(false);
+            expect(spectator.query(DotLanguageVariableSelectorComponent)).toBeTruthy();
         });
     });
 
