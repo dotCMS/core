@@ -359,4 +359,25 @@ public class GraphqlCacheKeyTest extends UnitTestBase {
         }
         return params;
     }
+
+    /**
+     * Method to test: {@link GraphqlCacheKey#from(HttpServletRequest, String, Optional)}
+     * Given Scenario: the session the request exposes (as wrapped by the identity filter) holds the
+     * built-in account
+     * ExpectedResult: the key is the anonymous one, so the request is not served entries cached for that account
+     */
+    @Test
+    public void sessionHoldingTheBuiltInAccountKeysAsAnonymous() {
+        final com.liferay.portal.model.User system = new com.liferay.portal.model.User();
+        system.setUserId(com.dotmarketing.business.UserAPI.SYSTEM_USER_ID);
+        final HttpSession container = mock(HttpSession.class);
+        when(container.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(system);
+        when(container.getAttribute(com.liferay.portal.util.WebKeys.USER_ID))
+                .thenReturn(com.dotmarketing.business.UserAPI.SYSTEM_USER_ID);
+        final HttpServletRequest withSession = request();
+        when(withSession.getSession(false))
+                .thenReturn(com.dotcms.auth.InteractiveIdentityWrapper.wrap(container));
+
+        assertEquals(key(request()).value(), key(withSession).value());
+    }
 }

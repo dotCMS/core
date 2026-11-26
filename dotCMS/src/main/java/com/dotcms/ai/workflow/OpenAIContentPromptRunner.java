@@ -1,6 +1,8 @@
 package com.dotcms.ai.workflow;
 
 import com.dotcms.ai.app.AppKeys;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.auth.SystemUserScope;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.util.ContentToStringUtil;
 import com.dotcms.ai.util.VelocityContextFactory;
@@ -36,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * This class is responsible for running workflows that generate content prompts using OpenAI. It
@@ -141,13 +144,26 @@ public class OpenAIContentPromptRunner implements Runnable {
         throw new DotRuntimeException(e);
     }
 
+    /**
+     * Evaluates the configured prompt for the contentlet and sends it to the AI service, acting inside a
+     * system user scope when the runner's user is the built-in account.
+     */
     private String openAIRequest(final Contentlet workingContentlet) throws Exception {
 
-        final Context ctx = VelocityContextFactory.getMockContext(workingContentlet, user);
-        final String parsedPrompt = VelocityUtil.eval(prompt, ctx);
-        final JSONObject openAIResponse = APILocator.getDotAIAPI()
-                .getCompletionsAPI()
-                .raw(buildRequest(parsedPrompt, model, temperature), user.getUserId());
+        final JSONObject openAIResponse;
+        final HttpServletRequest previousRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        try (SystemUserScope ignored = SystemUserScope.openIfSystemUser(user)) {
+            final Context ctx = VelocityContextFactory.getMockContext(workingContentlet, user);
+            // Building the context may render an HTML page, which leaves its own server-built request bound to
+            // the thread; put back what was there so that request is not taken for the caller's.
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(previousRequest);
+            final String parsedPrompt = VelocityUtil.eval(prompt, ctx);
+            openAIResponse = APILocator.getDotAIAPI()
+                    .getCompletionsAPI()
+                    .raw(buildRequest(parsedPrompt, model, temperature), user.getUserId());
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(previousRequest);
+        }
 
         try {
             return openAIResponse

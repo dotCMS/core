@@ -1,5 +1,6 @@
 package com.dotcms.ai.api;
 
+import com.dotcms.auth.SystemUserScope;
 import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.client.AIProxyClient;
@@ -109,7 +110,10 @@ public class OpenAIImageAPIImpl implements ImageAPI {
             final String fileName = generateFileName(imageResponse.getString(AiKeys.ORIGINAL_PROMPT));
             imageResponse.put("tempFileName", fileName);
 
-            final DotTempFile file = tempFileApi.createTempFileFromUrl(fileName, getRequest(), new URL(url), 20);
+            final DotTempFile file;
+            try (SystemUserScope ignored = SystemUserScope.openIfSystemUser(user)) {
+                file = tempFileApi.createTempFileFromUrl(fileName, getRequest(), new URL(url), 20);
+            }
             imageResponse.put(AiKeys.RESPONSE, file.id);
             imageResponse.put("tempFile", file.file.getAbsolutePath());
 

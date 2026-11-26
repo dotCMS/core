@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
+import com.dotcms.auth.SystemUserScope;
 import com.dotcms.rendering.engine.ScriptEngine;
 import com.dotcms.rendering.engine.ScriptEngineFactory;
 import com.dotcms.rendering.util.ActionletUtil;
@@ -75,11 +76,14 @@ public class VelocityScriptActionlet extends WorkFlowActionlet {
             final String script       = scriptParameter.getValue();
             final String resultKey    = keyParameter.getValue();
             final Reader reader       = new StringReader(script);
-            final Object result       = engine.eval(request, response, reader,
-                    new HashMap<>(Map.of("workflow", processor,
-                            "user", processor.getUser(),
-                            "contentlet", processor.getContentlet(),
-                            "content", processor.getContentlet())));
+            final Object result;
+            try (SystemUserScope ignored = SystemUserScope.openIfSystemUser(processor.getUser())) {
+                result = engine.eval(request, response, reader,
+                        new HashMap<>(Map.of("workflow", processor,
+                                "user", processor.getUser(),
+                                "contentlet", processor.getContentlet(),
+                                "content", processor.getContentlet())));
+            }
 
             this.stop = processor.abort();
             if (null != result && null != resultKey) {

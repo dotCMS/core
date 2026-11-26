@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import com.dotcms.auth.InteractiveUserPolicy;
 import com.dotcms.auth.BasicAuthentication;
 import com.dotcms.auth.BasicAuthentication.Mode;
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
@@ -588,7 +589,9 @@ public  class WebResource {
             final String source = credentialSource;
             final String attemptedUsername = userPass.get().username;
             try {
-                user = authenticateUser(userPass.get().username, userPass.get().password, request, response, userAPI);
+                user = InteractiveUserPolicy.refuseIfNotEligible(
+                        authenticateUser(userPass.get().username, userPass.get().password, request, response, userAPI),
+                        request, null);
             } catch (SecurityException e) {
                 // The anonymous fallback only covers header-replayed credentials (BASIC/DOTAUTH).
                 // An explicit request-parameter login (?userid=&pwd=) must still fail hard so it is
@@ -609,7 +612,8 @@ public  class WebResource {
         }
 
         if(null == user) {
-            user = this.jsonWebTokenAuthCredentialProcessor.processAuthHeaderFromJWT(request);
+            user = InteractiveUserPolicy.refuseIfNotEligible(
+                    this.jsonWebTokenAuthCredentialProcessor.processAuthHeaderFromJWT(request), request, null);
         }
 
         /*
@@ -620,11 +624,13 @@ public  class WebResource {
 
 
         if(user == null ) {
-            user = getBackUserFromRequest(request, userWebAPI);
+            user = InteractiveUserPolicy.refuseIfNotEligible(
+                    getBackUserFromRequest(request, userWebAPI), request, null);
         }
 
         if(user == null) {
-            user = getFrontEndUserFromRequest(request, userWebAPI);
+            user = InteractiveUserPolicy.refuseIfNotEligible(
+                    getFrontEndUserFromRequest(request, userWebAPI), request, null);
         }
 
         if(user==null) {

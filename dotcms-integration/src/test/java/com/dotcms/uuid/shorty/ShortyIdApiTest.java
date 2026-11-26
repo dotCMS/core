@@ -55,6 +55,9 @@ import static org.junit.Assert.assertEquals;
  */
 public class ShortyIdApiTest {
 
+    @org.junit.Rule
+    public final com.dotcms.junit.SystemUserScopeRule systemUserScope = new com.dotcms.junit.SystemUserScopeRule();
+
     static List<String> fourOhFours = new ArrayList<>();
 
     /**

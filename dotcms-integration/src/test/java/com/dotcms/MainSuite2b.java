@@ -476,6 +476,7 @@ import com.dotcms.ai.rest.EmbeddingsResourceAuthTest;
         FileAssetAPIImplIntegrationTest.class,
         FileAssetFactoryIntegrationTest.class,
         UserResourceIntegrationTest.class,
+        com.dotcms.auth.LoginAsInteractiveUserIT.class,
         IntegrationResourceLinkTest.class,
         HashBuilderTest.class,
         LanguageUtilTest.class,

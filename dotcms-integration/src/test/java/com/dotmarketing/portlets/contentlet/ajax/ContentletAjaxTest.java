@@ -422,7 +422,7 @@ public class ContentletAjaxTest {
 
 		final HttpServletRequest httpServletRequest = mock(HttpServletRequest.class);
 		Mockito.when(httpServletRequest.getSession()).thenReturn(session);
-		Mockito.when(httpServletRequest.getAttribute(WebKeys.USER)).thenReturn(APILocator.systemUser());
+		Mockito.when(httpServletRequest.getAttribute(WebKeys.USER)).thenReturn(io.vavr.control.Try.of(com.dotcms.datagen.TestUserUtils::getAdminUser).get());
 
 		final WebContext webContext = mock(WebContext.class);
 		Mockito.when(webContext.getHttpServletRequest()).thenReturn(httpServletRequest);

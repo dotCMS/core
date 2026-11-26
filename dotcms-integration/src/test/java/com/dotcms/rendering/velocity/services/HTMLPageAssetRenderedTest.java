@@ -1916,7 +1916,7 @@ public class HTMLPageAssetRenderedTest {
         when(mockRequest.getRequestURI()).thenReturn(pageEnglishVersion.getURI());
         when(mockRequest.getParameter(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(
                 PageMode.EDIT_MODE.toString());
-        when(mockRequest.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(systemUser);
+        when(mockRequest.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(com.dotcms.datagen.TestUserUtils.getAdminUser());
         return mockRequest;
     }
 
@@ -2409,7 +2409,7 @@ public class HTMLPageAssetRenderedTest {
 
         when(mockRequest.getRequestURI()).thenReturn(pageEnglishVersion.getURI());
         when(mockRequest.getParameter("host_id")).thenReturn(host.getIdentifier());
-        mockRequest.setAttribute(com.liferay.portal.util.WebKeys.USER, systemUser);
+        mockRequest.setAttribute(com.liferay.portal.util.WebKeys.USER, com.dotcms.datagen.TestUserUtils.getAdminUser());
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
 
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
