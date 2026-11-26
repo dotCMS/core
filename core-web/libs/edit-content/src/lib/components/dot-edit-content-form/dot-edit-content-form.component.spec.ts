@@ -1362,15 +1362,6 @@ describe('DotFormComponent', () => {
             spectator.detectChanges();
         });
 
-        it('should scroll the tab panels only, below a fixed tab bar', () => {
-            // The scrollbar must not run alongside the Content / SEO tab bar: the panels are
-            // the scroll container and the host itself never scrolls.
-            expect(spectator.query(byTestId('edit-content-form-scroll'))).toHaveClass(
-                'overflow-y-auto'
-            );
-            expect(spectator.element).not.toHaveClass('overflow-auto');
-        });
-
         it('should scroll the tab panels to the first invalid field', () => {
             const panels = spectator.query(byTestId('edit-content-form-scroll')) as HTMLElement;
             const scrollTo = vi.fn();

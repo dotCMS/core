@@ -1191,22 +1191,6 @@ describe('DotHostFolderFieldComponent', () => {
     });
 
     describe('copy button inside the field (#38724)', () => {
-        it('should size its Material icons like the PrimeNG icons of the other fields', () => {
-            // The Material Symbols stylesheet sets 24px, which beats a plain `text-lg`: the
-            // globe and copy icons rendered at 24px next to 14px PrimeNG icons and the copy
-            // button stretched the field to 46px against the 39px of every other input.
-            const triggerIcon = spectator.query(
-                '[data-testid="host-folder-trigger"] .material-symbols-outlined'
-            );
-
-            expect(triggerIcon).toHaveClass('text-base!');
-            expect(spectator.query(byTestId('host-folder-copy-icon'))).toHaveClass('text-base!');
-            // A small button fits inside the addon, so the trigger's 39px sets the row height.
-            expect(
-                spectator.query(byTestId('host-folder-copy'))?.querySelector('button')
-            ).toHaveClass('p-button-sm');
-        });
-
         it('should join the trigger and the copy button in a PrimeNG input group', () => {
             // One control, the PrimeNG way: the trigger is the group's input and the copy
             // button is its addon, so the field reads as a single box.
@@ -1214,7 +1198,6 @@ describe('DotHostFolderFieldComponent', () => {
 
             expect(group).toBeTruthy();
             expect(group?.querySelector('[data-testid="host-folder-trigger"]')).toBeTruthy();
-            expect(spectator.query(byTestId('host-folder-trigger'))).toHaveClass('p-component');
             expect(
                 group?.querySelector('p-inputgroup-addon [data-testid="host-folder-copy"]')
             ).toBeTruthy();

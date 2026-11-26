@@ -5,6 +5,7 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { DotSidePanelContentDirective } from './dot-side-panel-content.directive';
 import { DotSidePanelComponent } from './dot-side-panel.component';
 
+import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 import { DotSidePanelService } from '../../services/dot-side-panel/dot-side-panel.service';
 
 /**
@@ -16,7 +17,7 @@ import { DotSidePanelService } from '../../services/dot-side-panel/dot-side-pane
  */
 @Component({
     selector: 'dot-side-panel-outlet',
-    imports: [DotSidePanelComponent, DotSidePanelContentDirective, ProgressSpinnerModule],
+    imports: [DotMessagePipe, DotSidePanelComponent, DotSidePanelContentDirective, ProgressSpinnerModule],
     templateUrl: './dot-side-panel-outlet.component.html'
 })
 export class DotSidePanelOutletComponent {

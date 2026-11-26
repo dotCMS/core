@@ -95,7 +95,6 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
 @Component({
     selector: 'dot-edit-content-form',
     templateUrl: './dot-edit-content-form.component.html',
-    styleUrl: './dot-edit-content-form.component.scss',
     imports: [
         ReactiveFormsModule,
         DotEditContentFieldComponent,
@@ -249,10 +248,9 @@ export class DotEditContentFormComponent implements OnInit {
             this.getInitialFieldValue({ field, contentlet, isManualTranslation })
         );
 
-        return `${contentlet.identifier}|${contentlet.inode}|${contentlet.modDate}|${JSON.stringify([
-            values,
-            contentlet.disabledWYSIWYG ?? []
-        ])}`;
+        return `${contentlet.identifier}|${contentlet.inode}|${contentlet.modDate}|${JSON.stringify(
+            [values, contentlet.disabledWYSIWYG ?? []]
+        )}`;
     }
 
     #flushTimeoutId: ReturnType<typeof setTimeout> | null = null;

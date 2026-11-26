@@ -19,7 +19,10 @@
         <div
             class="absolute inset-0 flex items-center justify-center rounded-(--p-inputtext-border-radius) border border-(--p-inputtext-border-color) bg-white/60 backdrop-blur-sm"
             data-testid="wysiwyg-tinymce-loading">
-            <p-progressSpinner styleClass="h-8! w-8!" strokeWidth="4" ariaLabel="Loading" />
+            <p-progressSpinner
+                styleClass="h-8! w-8!"
+                strokeWidth="4"
+                [ariaLabel]="'Loading' | dm" />
         </div>
     }
 </div>

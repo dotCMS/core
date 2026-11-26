@@ -17,6 +17,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotWysiwygTinymceService } from './service/dot-wysiwyg-tinymce.service';
 
@@ -26,7 +27,7 @@ import { DotWysiwygPluginService } from '../../dot-wysiwyg-plugin/dot-wysiwyg-pl
 
 @Component({
     selector: 'dot-wysiwyg-tinymce',
-    imports: [EditorComponent, ProgressSpinnerModule, ReactiveFormsModule],
+    imports: [DotMessagePipe, EditorComponent, ProgressSpinnerModule, ReactiveFormsModule],
     templateUrl: './dot-wysiwyg-tinymce.component.html',
     styleUrl: './dot-wysiwyg-tinymce.component.scss',
     viewProviders: [

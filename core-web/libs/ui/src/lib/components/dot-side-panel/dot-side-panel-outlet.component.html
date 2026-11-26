@@ -13,7 +13,7 @@
             <div
                 class="flex h-full flex-1 items-center justify-center p-8"
                 data-testid="side-panel-loading">
-                <p-progressSpinner styleClass="h-8! w-8!" strokeWidth="4" ariaLabel="Loading" />
+                <p-progressSpinner styleClass="h-8! w-8!" strokeWidth="4" [ariaLabel]="'Loading' | dm" />
             </div>
         }
     </dot-side-panel>

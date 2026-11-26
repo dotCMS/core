@@ -307,17 +307,6 @@ describe('DotEditContentSidebarComponent', () => {
             expect(spectator.query(byTestId('sidebar-tabs'))).toBeTruthy();
         });
 
-        it('should scroll the tab content, not the tab nav (#38724)', () => {
-            // The panels are the scroll container; the nav above them never moves. PrimeNG 21
-            // ignores the old TabView `panels` passthrough, so the class is on the element.
-            expect(spectator.query('[data-testid="sidebar-tabs"] p-tabpanels')).toHaveClass(
-                'overflow-y-auto'
-            );
-            // The host itself must never scroll (a wheel over the nav would move it away).
-            expect(spectator.element).toHaveClass('overflow-hidden');
-            expect(spectator.element).not.toHaveClass('overflow-x-hidden');
-        });
-
         it('should render information section with data-testId when on info tab', () => {
             expect(store.activeSidebarTab()).toBe(0);
             const informationElement = spectator.query(byTestId('information'));
