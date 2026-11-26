@@ -169,7 +169,7 @@ The Stage 6 filter (80 or more) is the gate. A line-not-in-diff failure is logge
 
 ## Stage 9: Code-Simplifier (Opt-In)
 
-Skipped under `AUTO_POST`. Otherwise, when **Quality**-severity findings (75-84) touch the same file twice or more, ask:
+Skipped under `AUTO_POST`. Otherwise, when **Quality**-severity findings touch the same file twice or more, ask:
 
 ```
 I noticed {N} Quality-level findings across {M} files. Want me to propose simplifications for those files?

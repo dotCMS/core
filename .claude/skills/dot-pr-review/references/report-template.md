@@ -4,6 +4,8 @@ Print the report with SHA-anchored GitHub links. Your own work writes the same r
 
 **Risk Level** goes up one step when `CI_GATE_EVIDENCE` shows a changed workflow that first runs after merge: no check of the PR proves it.
 
+Each finding sits under the severity its reviewer gave it (Critical, Important, Quality); its heading shows the reviewer confidence and the validator score, which grades whether the finding is true, not how much it matters.
+
 ```markdown
 # PR Review: #<N> - <TITLE>
 
@@ -63,7 +65,7 @@ Print the report with SHA-anchored GitHub links. Your own work writes the same r
 
 ---
 
-## Critical Issues (95-100)
+## Critical Issues
 
 ### 1. [Issue title] (Confidence: XX / Validator: YY) [Angular|TypeScript|Styling|Test|Historical|SilentFailure|Comment|Logic|CI|Maven|Docs] [ADDED-BY-THIS-PR|PRE-EXISTING]
 **File**: [`path/to/file.ts:LINE`](https://github.com/dotCMS/core/blob/<HEAD_SHA>/path/to/file.ts#L<LINE-1>-L<LINE+1>)
@@ -74,12 +76,12 @@ Print the report with SHA-anchored GitHub links. Your own work writes the same r
 
 ---
 
-## Important Issues (85-94)
+## Important Issues
 [Same format]
 
 ---
 
-## Quality Issues (75-84)
+## Quality Issues
 [Same format]
 
 ---
