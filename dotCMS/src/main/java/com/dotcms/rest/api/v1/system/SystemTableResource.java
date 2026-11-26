@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.system;
 
 import com.dotcms.business.SystemTable;
+import com.dotcms.config.SystemTableConfigSource;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource.InitBuilder;
@@ -149,6 +150,22 @@ public class SystemTableResource implements Serializable {
 	}
 
 	/**
+	 * Checks that the key may be stored: it is not blacklisted and it is not a provisioning key.
+	 *
+	 * @param key The key to check.
+	 *
+	 * @throws IllegalArgumentException If the key may not be stored.
+	 */
+	private void checkWriteAllowed(final String key) throws IllegalArgumentException {
+		this.checkBlackList(key);
+		if (SystemTableConfigSource.isProvisioningKey(key)) {
+			Logger.debug(this, ()-> "Key is read from the environment or the properties file only: " + key);
+			throw new IllegalArgumentException("Key not allowed: " + key
+					+ " is set in the environment or the properties file only");
+		}
+	}
+
+	/**
 	 * Saves or updates the value of a given key to the system table.
 	 *
 	 * @param request  The current instance of the {@link HttpServletRequest}.
@@ -157,7 +174,8 @@ public class SystemTableResource implements Serializable {
 	 *
 	 * @return The key that was saved.
 	 *
-	 * @throws IllegalArgumentException If the key is blacklisted.
+	 * @throws IllegalArgumentException If the key is blacklisted, or is read from the
+	 * 									environment or the properties file only.
 	 */
 	@POST
 	@JSONP
@@ -169,7 +187,7 @@ public class SystemTableResource implements Serializable {
 			final KeyValueForm form) throws IllegalAccessException {
 		checkNotNull(form, IllegalArgumentException.class, "KeyValueForm cannot be null");
 		this.init(request, response);
-		this.checkBlackList(form.getKey());
+		this.checkWriteAllowed(form.getKey());
 		Logger.debug(this, ()-> "Saving/updating system table value for key: " + form.getKey());
 		this.systemTable.set(form.getKey(), form.getValue());
 		
@@ -183,7 +201,8 @@ public class SystemTableResource implements Serializable {
 	 *
 	 * @return The key that was updated.
 	 *
-	 * @throws IllegalArgumentException If the key is blacklisted.
+	 * @throws IllegalArgumentException If the key is blacklisted, or is read from the
+	 * 									environment or the properties file only.
 	 */
 	@PUT
 	@JSONP
@@ -196,7 +215,7 @@ public class SystemTableResource implements Serializable {
 			final KeyValueForm form) throws IllegalAccessException {
 		checkNotNull(form, IllegalArgumentException.class, "KeyValueForm cannot be null");
 		this.init(request, response);
-		this.checkBlackList(form.getKey());
+		this.checkWriteAllowed(form.getKey());
 
 		final Optional<String> valueOpt = this.systemTable.get(form.getKey());
 		if (valueOpt.isEmpty()) {

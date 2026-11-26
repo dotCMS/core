@@ -14,6 +14,24 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.Serializable;
+import java.net.URISyntaxException;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.function.Function;
+import java.util.stream.Stream;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
+import javax.servlet.http.HttpServletResponse;
+import javax.validation.constraints.NotNull;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import net.jodah.failsafe.CircuitBreaker;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.FailsafeException;
@@ -31,25 +49,6 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-
-import javax.servlet.ServletOutputStream;
-import javax.servlet.WriteListener;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.constraints.NotNull;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.Serializable;
-import java.net.URISyntaxException;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.function.Function;
-import java.util.stream.Stream;
 
 /**
  * Defaults to GET requests with 2000 timeout
@@ -74,7 +73,7 @@ public class CircuitBreakerUrl {
     private static final Lazy<Integer> circuitBreakerMaxConnTotal =
             Lazy.of(() -> Config.getIntProperty("CIRCUIT_BREAKER_MAX_CONN_TOTAL", 100));
     private static final Lazy<Boolean> allowAccessToPrivateSubnets =
-            Lazy.of(() -> Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false));
+                Lazy.of(() -> Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false));
     private static final CircuitBreakerConnectionControl circuitBreakerConnectionControl =
             new CircuitBreakerConnectionControl(circuitBreakerMaxConnTotal.get());
 
@@ -90,6 +89,7 @@ public class CircuitBreakerUrl {
     private final boolean throwWhenError;
     private final Function<Integer, Exception> overrideException;
     private final boolean raiseFailsafe;
+    private final int maxResponseBytes;
 
     public static final Response<String> EMPTY_RESPONSE = new Response<>(StringPool.BLANK, 0, new Header[] {});
 
@@ -145,7 +145,7 @@ public class CircuitBreakerUrl {
                              final Map<String, String> headers,
                              final boolean verbose,
                              final String rawData) {
-        this(proxyUrl, timeoutMs, circuitBreaker, request, params, headers,  verbose, rawData, false, true, null, false);
+        this(proxyUrl, timeoutMs, circuitBreaker, request, params, headers,  verbose, rawData, false, true, null, false, -1);
     }
     
     @VisibleForTesting
@@ -161,6 +161,24 @@ public class CircuitBreakerUrl {
                              final boolean throwWhenError,
                              final Function<Integer, Exception> overrideException,
                              final boolean raiseFailsafe) {
+        this(proxyUrl, timeoutMs, circuitBreaker, request, params, headers, verbose, rawData,
+                allowRedirects, throwWhenError, overrideException, raiseFailsafe, -1);
+    }
+
+    @VisibleForTesting
+    public CircuitBreakerUrl(final String proxyUrl,
+                             final long timeoutMs,
+                             final CircuitBreaker circuitBreaker,
+                             final HttpRequestBase request,
+                             final Map<String, String> params,
+                             final Map<String, String> headers,
+                             final boolean verbose,
+                             final String rawData,
+                             final boolean allowRedirects,
+                             final boolean throwWhenError,
+                             final Function<Integer, Exception> overrideException,
+                             final boolean raiseFailsafe,
+                             final int maxResponseBytes) {
         this.proxyUrl = proxyUrl;
         this.timeoutMs = timeoutMs;
         this.circuitBreaker = circuitBreaker;
@@ -171,6 +189,7 @@ public class CircuitBreakerUrl {
         this.throwWhenError = throwWhenError;
         this.overrideException = this.throwWhenError ? overrideException : null;
         this.raiseFailsafe = raiseFailsafe;
+        this.maxResponseBytes = maxResponseBytes;
 
         for (final String head : headers.keySet()) {
             request.addHeader(head, headers.get(head));
@@ -199,6 +218,7 @@ public class CircuitBreakerUrl {
         }
     }
 
+
     public String doString() throws IOException {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             doOut(out);
@@ -214,6 +234,63 @@ public class CircuitBreakerUrl {
                         output));
             }
             return output;
+        }
+    }
+
+    /**
+     * Thrown when a response body exceeds the limit configured via
+     * {@link CircuitBreakerUrlBuilder#setMaxResponseBytes(int)}. Always propagated to the
+     * caller, regardless of the {@code raiseFailsafe} setting, so an over-limit response can
+     * never be mistaken for a successful (truncated) one.
+     */
+    public static class ResponseSizeLimitExceededException extends IOException {
+
+        private int statusCode = -1;
+
+        private ResponseSizeLimitExceededException(final int maxBytes) {
+            super("Response exceeded maximum size of " + maxBytes + " bytes");
+        }
+
+        /**
+         * The HTTP status the server answered with before its body went over the limit. The
+         * request's own status is reset when this exception is raised, so a caller that only
+         * wants to know whether the server answered, and how, reads it here.
+         *
+         * @return the status code, or {@code -1} when no response was received
+         */
+        public int getStatusCode() {
+            return statusCode;
+        }
+    }
+
+    private static class BoundedOutputStream extends OutputStream {
+        private final OutputStream delegate;
+        private final int maxBytes;
+        private int bytesWritten;
+
+        private BoundedOutputStream(final OutputStream delegate, final int maxBytes) {
+            this.delegate = delegate;
+            this.maxBytes = maxBytes;
+        }
+
+        @Override
+        public void write(final int b) throws IOException {
+            checkLimit(1);
+            delegate.write(b);
+            bytesWritten++;
+        }
+
+        @Override
+        public void write(final byte[] b, final int off, final int len) throws IOException {
+            checkLimit(len);
+            delegate.write(b, off, len);
+            bytesWritten += len;
+        }
+
+        private void checkLimit(final int bytesToWrite) throws IOException {
+            if (bytesWritten + bytesToWrite > maxBytes) {
+                throw new ResponseSizeLimitExceededException(maxBytes);
+            }
         }
     }
 
@@ -271,7 +348,9 @@ public class CircuitBreakerUrl {
                                 .setDefaultRequestConfig(config).build()) {
                             
                             if(IPUtils.isIpPrivateSubnet(this.request.getURI().getHost()) && !allowAccessToPrivateSubnets.get()){
-                                throw new DotRuntimeException("Remote HttpRequests cannot access private subnets.  Set ALLOW_ACCESS_TO_PRIVATE_SUBNETS=true to allow");
+                                throw new DotRuntimeException("Remote HttpRequests cannot reach this host: it resolves to a private or "
+                                        + "internal address, or to IPv6 addresses only. Add the range to REMOTE_CALL_SUBNET_ALLOWLIST "
+                                        + "or set REMOTE_CALL_ALLOW_IPV6=true; ALLOW_ACCESS_TO_PRIVATE_SUBNETS=true switches the address checks off");
                             }
 
                             try (final CloseableHttpResponse innerResponse = httpclient.execute(this.request)) {
@@ -282,7 +361,9 @@ public class CircuitBreakerUrl {
 
                                 this.response = innerResponse.getStatusLine().getStatusCode();
 
-                                IOUtils.copy(innerResponse.getEntity().getContent(), out);
+                                IOUtils.copy(
+                                    innerResponse.getEntity().getContent(),
+                                    maxResponseBytes < 0 ? out : new BoundedOutputStream(out, maxResponseBytes));
                             } catch (IOException ex) {
                                 Logger.error(
                                     this,
@@ -307,6 +388,18 @@ public class CircuitBreakerUrl {
         } catch (FailsafeException ee) {
 
             Logger.debug(this.getClass(), ee.getMessage() + " " + this);
+
+            if (ee.getCause() instanceof ResponseSizeLimitExceededException) {
+                final ResponseSizeLimitExceededException sizeLimit =
+                        (ResponseSizeLimitExceededException) ee.getCause();
+                // The status was recorded before the copy aborted; keep it on the exception for
+                // callers that only probe, and reset it here so the partial body can never read
+                // as a successful response. Fail regardless of raiseFailsafe: a truncated
+                // payload must not be returned silently.
+                sizeLimit.statusCode = this.response;
+                this.response = -1;
+                throw sizeLimit;
+            }
 
             if (raiseFailsafe) {
                 throw ee;
@@ -357,7 +450,9 @@ public class CircuitBreakerUrl {
                                 .setDefaultRequestConfig(config).build()) {
 
                             if(IPUtils.isIpPrivateSubnet(this.request.getURI().getHost()) && !allowAccessToPrivateSubnets.get()){
-                                throw new DotRuntimeException("Remote HttpRequests cannot access private subnets.  Set ALLOW_ACCESS_TO_PRIVATE_SUBNETS=true to allow");
+                                throw new DotRuntimeException("Remote HttpRequests cannot reach this host: it resolves to a private or "
+                                        + "internal address, or to IPv6 addresses only. Add the range to REMOTE_CALL_SUBNET_ALLOWLIST "
+                                        + "or set REMOTE_CALL_ALLOW_IPV6=true; ALLOW_ACCESS_TO_PRIVATE_SUBNETS=true switches the address checks off");
                             }
 
                             try (final CloseableHttpResponse innerResponse = httpclient.execute(this.request)) {
@@ -414,6 +509,10 @@ public class CircuitBreakerUrl {
     public Response<String> doResponse() {
         try {
             return new Response<>(this);
+        } catch (ResponseSizeLimitExceededException e) {
+            // Documented as always propagated — swallowing it to null here would surface
+            // as an NPE at the call site and mask the real cause (response over the cap).
+            throw new DotRuntimeException(e.getMessage(), e);
         } catch (IOException e) {
             Logger.error(this, e.getMessage(), e);
             return null;

@@ -189,3 +189,4 @@ Release-25.07.10 LTS
 183. https://github.com/dotCMS/private-issues/issues/837 : Enforce the XStream type allowlist (remove the allow-all permission); deprecate non-allowlisted classes in push-publish bundles #38402 #38516 #837
 184. https://github.com/dotCMS/private-issues/issues/1059 : Velocity Scripting Developer gate derives the author from the template name, which #parse lets the author choose: forgeable in four view tools, and broken outright in $xslttool and the $macro SQL path #38467 #1059
 185. https://github.com/dotCMS/private-issues/issues/988 : Velocity $crypt.decrypt: any template decrypts values stored with the company key, including push-publish auth keys #38568 #988
+186. https://github.com/dotCMS/private-issues/issues/831 : Managed-fleet config defeats the SSRF guard (redirects on, IPv4-only blacklist overrides #708 fix, anon-write tenants → unauthenticated SSRF) — Medium / P2 — internal #38577 #831

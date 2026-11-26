@@ -159,7 +159,7 @@ public class CircuitBreakerUrlTest {
                 new CircuitBreakerUrl(BAD_URL, timeout, breaker).doOut(nos);
             } catch (Exception e) {
                 assert (e instanceof DotRuntimeException);
-                assert (e.getMessage().contains("Remote HttpRequests cannot access private subnets"));
+                assert (e.getMessage().contains("Remote HttpRequests cannot reach this host"));
             }
     }
 

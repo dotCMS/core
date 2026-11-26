@@ -20,6 +20,7 @@ import com.dotcms.workflow.form.FireMultipleActionForm;
 import com.dotmarketing.beans.Request;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -248,7 +249,7 @@ public class TempFileResource {
             final boolean allowAnonToUseTempFiles = Config
                 .getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
 
-              new WebResource.InitBuilder(request, response)
+            final InitDataObject initData = new WebResource.InitBuilder(request, response)
                 .requiredAnonAccess(AnonymousAccess.WRITE)
                 .rejectWhenNoUser(!allowAnonToUseTempFiles)
                 .init();
@@ -259,13 +260,25 @@ public class TempFileResource {
             if(!UtilMethods.isSet(form.remoteUrl)){
                 throw new BadRequestException("No Url passed");
             }
+            // The permission, host and name rules run before any request leaves the server
+            if (!tempApi.isUrlDownloadPermitted(initData.getUser())) {
+                throw new DotSecurityException("Downloads by URL need a user, and an administrator when TEMP_RESOURCE_BY_URL_ADMIN_ONLY is on");
+            }
+            final URL remoteUrl = Try.of(() -> new URL(form.remoteUrl))
+                    .getOrElseThrow(e -> new BadRequestException("Invalid url attempted for tempFile"));
+            if (!tempApi.isAllowedRemoteUrl(remoteUrl)) {
+                throw new BadRequestException("Invalid url attempted for tempFile");
+            }
+            if (!tempApi.isAllowedDownloadName(tempApi.resolveDownloadFileName(form.fileName, remoteUrl))) {
+                throw new BadRequestException("The file name's extension is not allowed for downloads by URL");
+            }
             if (!tempApi.validUrl(form.remoteUrl)) {
                 throw new BadRequestException("Invalid url attempted for tempFile : " + form.remoteUrl);
             }
 
             final List<DotTempFile> tempFiles = new ArrayList<>();
             tempFiles.add(tempApi
-                    .createTempFileFromUrl(form.fileName, request, new URL(form.remoteUrl),
+                    .createTempFileFromUrl(form.fileName, request, remoteUrl,
                             form.urlTimeoutSeconds));
 
             return Response.ok(ImmutableMap.of("tempFiles", tempFiles)).build();
