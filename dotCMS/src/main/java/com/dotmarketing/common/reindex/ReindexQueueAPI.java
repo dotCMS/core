@@ -205,7 +205,16 @@ public interface ReindexQueueAPI {
      */
     ParkedRecordsRetry retryParkedRecords(User user) throws DotDataException;
 
-    // RED STUB (#37270): compile-only, replaced by the implementation after the Red gate.
+    /**
+     * Deletes the parked journal rows, the ones whose retries ran out, and logs who cleared them,
+     * how many and which identifiers. Rows still being retried are kept. This is the operator's
+     * clear (Maintenance and {@code DELETE /api/v1/esindex/failed}); a full reindex keeps using
+     * {@link #deleteFailedRecords()} (#37270).
+     *
+     * @param user the user who cleared, recorded in the log
+     * @return how many rows were deleted
+     * @throws DotDataException if the journal cannot be updated
+     */
     int clearParkedRecords(User user) throws DotDataException;
 
     /**

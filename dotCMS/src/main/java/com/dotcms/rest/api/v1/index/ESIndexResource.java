@@ -68,6 +68,10 @@ import com.google.common.collect.ImmutableMap.Builder;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 
@@ -242,6 +246,35 @@ public class ESIndexResource {
         return Response.ok(results).build();
     }
 
+    /**
+     * Clears the parked reindex records: the ones whose retries ran out. Records still being
+     * retried are kept, and who cleared, how many and which identifiers are logged, because the
+     * cleared content stays out of the index with nothing else pointing at it (#37270).
+     *
+     * @param request  the HTTP request
+     * @param response the HTTP response
+     * @return {@code {"cleared": true, "count": N}}
+     * @throws DotDataException if the journal cannot be updated
+     */
+    @Operation(
+            operationId = "clearParkedReindexRecords",
+            summary = "Clear parked reindex records",
+            description = "Deletes every parked reindex record (one whose retries ran out) and logs"
+                    + " who cleared, how many and the identifiers. Records still being retried are"
+                    + " kept. The cleared content stays out of the index until it is saved again or"
+                    + " a full reindex runs; to index it instead, use POST"
+                    + " /api/v1/index/failed/retry. The response entity is {\"cleared\": true,"
+                    + " \"count\": N}; before #37270 it was a bare true. Requires the CMS"
+                    + " Administrator role and access to the Maintenance portlet."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Parked records cleared",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = ResponseEntityClearedFailedRecordsView.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - not authenticated, or the"
+                    + " user lacks the CMS Administrator role or access to the Maintenance portlet",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON))
+    })
     @CloseDBIfOpened
     @DELETE
     @JSONP
@@ -251,8 +284,9 @@ public class ESIndexResource {
     public Response deleteFailedRecords(@Context final HttpServletRequest request, @Context final HttpServletResponse response)
                     throws DotDataException {
         final InitDataObject init = auth(request, response);
-        APILocator.getReindexQueueAPI().deleteFailedRecords();
-        return Response.ok(new ResponseEntityView(true)).build();
+        final int count = APILocator.getReindexQueueAPI().clearParkedRecords(init.getUser());
+        return Response.ok(new ResponseEntityClearedFailedRecordsView(
+                new ClearedFailedRecordsView(true, count))).build();
     }
 
     @CloseDBIfOpened

@@ -6,6 +6,7 @@ package com.dotmarketing.common.reindex;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.liferay.portal.model.User;
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -102,15 +103,41 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
     public long failedRecordCount() throws DotDataException {
         return reindexQueueFactory.failedRecordCount();
     }
-    // RED STUB (#37270): compile-only, replaced by the implementation after the Red gate.
+    /** Most identifiers per log line of a clear, so a large clear does not produce one huge line. */
+    private static final int CLEARED_IDENTIFIERS_PER_LINE = 500;
+
     @Override
-    public int clearParkedRecords(final User user) {
-        return 0;
+    @WrapInTransaction
+    public int clearParkedRecords(final User user) throws DotDataException {
+        final List<String> cleared = reindexQueueFactory.clearParkedRecords();
+        // The user id only: an email is personal data and does not belong in the log.
+        clearLogLines(user != null ? user.getUserId() : "unknown", cleared)
+                .forEach(line -> Logger.info(ReindexQueueAPIImpl.class, line));
+        return cleared.size();
     }
 
-    // RED STUB (#37270): compile-only, replaced by the implementation after the Red gate.
+    /**
+     * Builds the log of a clear: one line with who cleared and how many records, then the dropped
+     * identifiers in lines of at most {@value #CLEARED_IDENTIFIERS_PER_LINE}. The clear deletes
+     * the only record that this content is missing from the index, so the log is where an
+     * operator finds it afterwards.
+     *
+     * @param userId      the id of the user who cleared
+     * @param identifiers the identifiers of the deleted rows
+     * @return the lines to log, the summary first
+     */
     static List<String> clearLogLines(final String userId, final List<String> identifiers) {
-        return List.of();
+        final List<String> lines = new ArrayList<>();
+        lines.add(String.format("User '%s' cleared %d parked reindex record(s); their content is"
+                + " not in the index until it is saved again or a full reindex runs", userId,
+                identifiers.size()));
+        for (int from = 0; from < identifiers.size(); from += CLEARED_IDENTIFIERS_PER_LINE) {
+            final List<String> chunk = identifiers.subList(from,
+                    Math.min(identifiers.size(), from + CLEARED_IDENTIFIERS_PER_LINE));
+            lines.add("Cleared parked reindex records (" + (from + 1) + "-" + (from + chunk.size())
+                    + " of " + identifiers.size() + "): " + String.join(", ", chunk));
+        }
+        return lines;
     }
 
     @Override

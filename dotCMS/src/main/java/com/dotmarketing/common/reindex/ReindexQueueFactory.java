@@ -353,9 +353,26 @@ public class ReindexQueueFactory {
      * @return how many rows were requeued, and how many of them as deletes
      * @throws DotDataException if the journal cannot be updated
      */
-    // RED STUB (#37270): compile-only, replaced by the implementation after the Red gate.
+    /**
+     * Deletes the parked rows, the ones whose retries ran out, and returns their identifiers so the
+     * caller can record what was dropped (#37270). Rows still being retried are kept. A single
+     * {@code DELETE … RETURNING} makes the returned set exactly the deleted set: a row that parks
+     * between a separate read and the delete would otherwise be dropped without a trace.
+     *
+     * <p>Not used when a full reindex starts or the server boots without indices: those requeue
+     * every content right after and keep the wider {@link #deleteFailedRecords()}.</p>
+     *
+     * @return the identifiers of the deleted rows, one per row
+     * @throws DotDataException if the journal cannot be updated
+     */
     protected List<String> clearParkedRecords() throws DotDataException {
-        return List.of();
+        return new DotConnect()
+                .setSQL("DELETE FROM dist_reindex_journal WHERE priority >= ?"
+                        + " RETURNING ident_to_index")
+                .addParam(Priority.ERROR.dbValue())
+                .loadObjectResults().stream()
+                .map(row -> (String) row.get("ident_to_index"))
+                .collect(Collectors.toList());
     }
 
     protected ParkedRecordsRetry retryParkedRecords() throws DotDataException {
