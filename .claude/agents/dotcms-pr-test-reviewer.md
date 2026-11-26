@@ -61,10 +61,10 @@ For each new or changed `it(...)` in the diff, `Read` the production file it cov
 
 ### Phase 1: Patterns (MANDATORY)
 1. For each `.spec.ts` file in your list, review the diff for pattern violations:
-   - Spectator imports from `@ngneat/spectator/jest`
+   - Spectator imported from `@openng/spectator/vitest` (the Vitest build core uses), and mocks made with `vi.fn()`, not `jest.fn()`
    - `data-testid` usage for DOM queries (not CSS selectors)
    - `setInput()` for setting component inputs
-   - `mockProvider` from `@ngneat/spectator/jest`
+   - `mockProvider` from `@openng/spectator/vitest`
    - Correct `detectChanges` usage
 2. If context is insufficient, `Read` the full test file
 
