@@ -465,3 +465,79 @@ describe('createRuntime context freshness', () => {
         expect(context.sites.find((site) => site.identifier === 'site-200')?.live).toBe(false);
     });
 });
+
+describe('createRuntime context — rejected credentials', () => {
+    const fetchMock = vi.fn();
+
+    beforeEach(() => {
+        fetchMock.mockReset();
+        global.fetch = fetchMock as unknown as typeof fetch;
+    });
+
+    it('fails loudly when every context read is refused, instead of returning empty globals', async () => {
+        fetchMock.mockImplementation(async () =>
+            jsonResponse({ message: 'Invalid User' }, { ok: false, status: 401 })
+        );
+
+        const dotcms = createRuntime({ url: 'https://demo.dotcms.com', token: 'expired' });
+        const error = await dotcms.loadContext().catch((e) => e);
+
+        expect(error).toBeInstanceOf(HttpError);
+        expect(error.status).toBe(401);
+        expect(error.message).toMatch(/rejected the configured API token/);
+    });
+
+    it('surfaces the same failure from run(code) without executing against empty context', async () => {
+        fetchMock.mockImplementation(async () =>
+            jsonResponse({ message: 'Forbidden' }, { ok: false, status: 403 })
+        );
+
+        const result = await createRuntime({
+            url: 'https://demo.dotcms.com',
+            token: 'no-backend-access'
+        }).run('return sites.length');
+
+        expect(result.success).toBe(false);
+        expect(result.error?.message).toMatch(/rejected the configured API token/);
+    });
+
+    it('does not cache the failure: a later call with working credentials loads normally', async () => {
+        let refused = true;
+        fetchMock.mockImplementation(async () =>
+            refused ? jsonResponse({}, { ok: false, status: 401 }) : jsonResponse({ entity: [] })
+        );
+
+        const dotcms = createRuntime({ url: 'https://demo.dotcms.com', token: 't' });
+        await expect(dotcms.loadContext()).rejects.toBeInstanceOf(HttpError);
+
+        refused = false;
+        await expect(dotcms.loadContext()).resolves.toMatchObject({ sites: [] });
+    });
+
+    it('keeps degrading per loader when only some reads are refused', async () => {
+        fetchMock.mockImplementation(async (url: string) =>
+            new URL(url).pathname === '/api/v1/users/current'
+                ? jsonResponse({}, { ok: false, status: 403 })
+                : jsonResponse({ entity: [] })
+        );
+
+        const context = await createRuntime({
+            url: 'https://demo.dotcms.com',
+            token: 'limited'
+        }).loadContext();
+
+        expect(context.currentUser).toBeNull();
+        expect(context.sites).toEqual([]);
+    });
+
+    it('keeps degrading when every read fails for a reason other than credentials', async () => {
+        fetchMock.mockImplementation(async () => jsonResponse({}, { ok: false, status: 503 }));
+
+        const context = await createRuntime({
+            url: 'https://demo.dotcms.com',
+            token: 't'
+        }).loadContext();
+
+        expect(context).toEqual({ contentTypes: [], sites: [], languages: [], currentUser: null });
+    });
+});

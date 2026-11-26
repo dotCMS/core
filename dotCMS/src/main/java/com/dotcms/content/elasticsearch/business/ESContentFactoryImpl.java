@@ -287,7 +287,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
     private static final Set<String> REMOVABLE_KEY_SET = CollectionsUtils.set(WORKFLOW_ACTION_KEY,
             WORKFLOW_ASSIGN_KEY, WORKFLOW_COMMENTS_KEY, WORKFLOW_BULK_KEY,
             WORKFLOW_IN_PROGRESS, AUTO_ASSIGN_WORKFLOW, TITLE_IMAGE_KEY, "_use_mod_date",
-            Contentlet.STORY_BLOCK_CONVERSION_WARNINGS_KEY);
+            Contentlet.SAVE_WARNINGS_KEY);
 
     /**
 	 * Default factory constructor that initializes the connection with the

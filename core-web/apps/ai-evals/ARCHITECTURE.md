@@ -43,10 +43,12 @@ YAML task file
 ```
 executeRun(index, options)
   │
+  ├── setup script (optional)  →  vars for {{name}} in prompt, paths and scripts
+  │
   ├── makeTools(dotcmsUrl, authToken)
   │     └── returns { search, execute } — fresh tools per run
   │
-  ├── generateText({ model, prompt, tools, stopWhen: stepCountIs(10) })
+  ├── generateText({ model, prompt, tools, stopWhen: stepCountIs(max_steps ?? 10) })
   │     │
   │     └── model loop:
   │           step 1: model calls search({ code })
