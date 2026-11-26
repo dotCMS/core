@@ -57,6 +57,10 @@ import javax.servlet.http.PushBuilder;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.Inode;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.portal.model.CompanyModel;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.beanutils.BeanUtilsBean;
@@ -592,6 +596,78 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
     {
         return clazz != null && methodName != null && CompanyModel.class.isAssignableFrom(clazz)
                 && COMPANY_KEY_ACCESSORS.contains(methodName);
+    }
+
+    /**
+     * The model types whose objects the content, container, template, folder and identifier APIs hand out from their
+     * caches. Every caller of those APIs, a template included, gets the same instance, so template code may only read
+     * them; see {@link #isModelMutator(Class, String)}.
+     */
+    private static final Class<?>[] MODEL_TYPES = {
+            Contentlet.class, Inode.class, Identifier.class, Folder.class
+    };
+
+    /** Prefixes of the methods that read a model object. */
+    private static final String[] MODEL_READ_PREFIXES = {"get", "is", "has"};
+
+    /**
+     * Other methods on the model types that only read the object. The rest of their public methods that do not start
+     * with one of {@link #MODEL_READ_PREFIXES} change the object or the database: the setters, {@code copy},
+     * {@code delete}, {@code addChild}, {@code addParent}, {@code deleteChild}, {@code deleteParent},
+     * {@code addDateToIgnore}, {@code deleteDateToIgnore}, {@code addMetaData}, {@code cleanup}, {@code markAsDirty},
+     * {@code markAsReindexed} and {@code resetActionId}.
+     */
+    private static final Set<String> MODEL_READ_METHODS = Set.of(
+            "toString", "equals", "hashCode", "compareTo", "exists", "needsReindex", "validateMe",
+            "acceptedPermissions", "permissionDependencies", "id", "toContentlet"
+    );
+
+    /**
+     * Tells whether the class is one of the {@link #MODEL_TYPES} or a subclass of one.
+     *
+     * @param clazz the class of the object a template calls a method on
+     * @return {@code true} for content (including sites, files and pages), inodes (including containers, templates,
+     *         links and categories), identifiers and folders
+     */
+    public static boolean isModelType(final Class<?> clazz)
+    {
+        if (clazz == null)
+        {
+            return false;
+        }
+        for (final Class<?> type : MODEL_TYPES)
+        {
+            if (type.isAssignableFrom(clazz))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Tells whether a template calling this method would change a model object. Only methods that read are allowed:
+     * names starting with {@code get}, {@code is} or {@code has}, and the {@link #MODEL_READ_METHODS}. Allowing reads
+     * rather than listing changes covers the changing methods of every subclass without naming them.
+     *
+     * @param clazz      the class of the object the method is called on
+     * @param methodName the method name
+     * @return {@code true} if the class is a model type and the method is not a read
+     */
+    public static boolean isModelMutator(final Class<?> clazz, final String methodName)
+    {
+        if (methodName == null || !isModelType(clazz))
+        {
+            return false;
+        }
+        for (final String prefix : MODEL_READ_PREFIXES)
+        {
+            if (methodName.startsWith(prefix))
+            {
+                return false;
+            }
+        }
+        return !MODEL_READ_METHODS.contains(methodName);
     }
 
     /**

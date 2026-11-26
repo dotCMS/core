@@ -256,4 +256,16 @@ public interface FeatureFlagName {
      */
     String FEATURE_FLAG_CUSTOM_FIELD_VIEW_TOOL_PREVIEW_ENABLED =
             "FEATURE_FLAG_CUSTOM_FIELD_VIEW_TOOL_PREVIEW_ENABLED";
+
+    /**
+     * Lets template code change content, site, container, template, folder and identifier objects:
+     * call their setters and other changing methods, assign their properties with {@code #set}, and
+     * write into a content object's field map. Off by default: these objects are read-only in
+     * templates, the changing call is ignored and logged once, and the field map a template gets
+     * from a content object is its own copy. The content a workflow action is processing stays
+     * editable from the action's Velocity either way.
+     *
+     * @see org.apache.velocity.util.introspection.SecureUberspector
+     */
+    String FEATURE_FLAG_VELOCITY_ALLOW_MODEL_MUTATORS = "FEATURE_FLAG_VELOCITY_ALLOW_MODEL_MUTATORS";
 }

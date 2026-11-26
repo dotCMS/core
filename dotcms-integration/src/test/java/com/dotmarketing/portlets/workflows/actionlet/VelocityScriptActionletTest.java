@@ -288,6 +288,82 @@ public class VelocityScriptActionletTest extends BaseWorkflowIntegrationTest {
     }
 
     /**
+     * The script changes the content the action is processing, while a setter on another content item it looks up is
+     * ignored: that item keeps its saved title.
+     */
+    @Test
+    public void Test_Velocity_Script_Actionlet_Changes_Only_Processed_Content() throws Exception {
+
+        final User admin = APILocator.systemUser();
+        WorkflowScheme scheme = null;
+        ContentType type = null;
+        Contentlet other = null;
+        Contentlet checkedIn = null;
+
+        try {
+            type = createTestType(contentTypeAPI);
+            final Contentlet otherDraft = new Contentlet();
+            otherDraft.setContentType(type);
+            otherDraft.setProperty("title", "Other title");
+            other = contentletAPI.checkin(otherDraft, admin, false);
+
+            final CreateSchemeStepActionResult schemeResult = createSchemeStepActionActionlet(
+                    "ProcessedContentScheme" + UUIDGenerator.generateUuid(), "step1", "action1",
+                    VelocityScriptActionlet.class);
+            scheme = schemeResult.getScheme();
+
+            final String script =
+                    "#set($other = $contents.getContentByInode(\"" + other.getInode() + "\"))\n"
+                    + "$other.setProperty(\"title\", \"changed by the action\")\n"
+                    + "$content.setProperty(\"txt\", \"set by the action\")\n";
+            final WorkflowActionClass actionClass = schemeResult.getActionClass();
+            final List<WorkflowActionClassParameter> params = new ArrayList<>();
+            final WorkflowActionClassParameter scriptParam = new WorkflowActionClassParameter();
+            scriptParam.setActionClassId(actionClass.getId());
+            scriptParam.setKey("script");
+            scriptParam.setValue(script);
+            params.add(scriptParam);
+            final WorkflowActionClassParameter resultKeyParam = new WorkflowActionClassParameter();
+            resultKeyParam.setActionClassId(actionClass.getId());
+            resultKeyParam.setKey("resultKey");
+            resultKeyParam.setValue("result");
+            params.add(resultKeyParam);
+            workflowAPI.saveWorkflowActionClassParameters(params, admin);
+            workflowAPI.saveSchemesForStruct(new StructureTransformer(type).asStructure(), List.of(scheme));
+
+            final Contentlet draft = new Contentlet();
+            draft.setContentType(type);
+            draft.setProperty("title", "Processed title");
+            checkedIn = contentletAPI.checkin(draft, admin, false);
+
+            final Contentlet result = workflowAPI.fireContentWorkflow(checkedIn,
+                    new ContentletDependencies.Builder()
+                            .modUser(admin)
+                            .workflowActionId(schemeResult.getAction().getId())
+                            .build());
+
+            Assert.assertEquals("set by the action", result.getStringProperty("txt"));
+            Assert.assertEquals("Other title",
+                    contentletAPI.find(other.getInode(), admin, false).getStringProperty("title"));
+
+        } finally {
+            for (final Contentlet content : new Contentlet[] {checkedIn, other}) {
+                try {
+                    if (null != content) {
+                        contentletAPI.destroy(content, admin, false);
+                    }
+                } catch (Exception ignored) { /* best-effort */ }
+            }
+            if (null != scheme) {
+                cleanScheme(scheme);
+            }
+            if (null != type) {
+                contentTypeAPI.delete(type);
+            }
+        }
+    }
+
+    /**
      * Regression test for #35347. The mock request the actionlet builds for the script
      * engine had no {@code WebKeys.USER} attribute, so any viewtool resolving the user via
      * {@code PortalUtil.getUser(req)} — including {@code WorkflowTool.init()} — fell back

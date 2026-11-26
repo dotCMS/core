@@ -6,14 +6,29 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.UserDataGen;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.mock.request.MockAttributeRequest;
+import com.dotcms.rendering.velocity.util.TemplateEditableObject;
+import com.dotmarketing.util.Config;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.Company;
+import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -233,6 +248,189 @@ public class SecureIntrospectorRenderTest {
                 + "|#foreach($key in $request.getParameterMap().keySet())$key#end", ctx);
 
         assertEquals("dotcms|q", rendered.trim());
+    }
+
+    /**
+     * Template code that holds the content object the content API hands out cannot change it: not
+     * with a setter, a property assignment, the field map or a binary lookup. The next reader still
+     * sees the saved values.
+     */
+    @Test
+    public void template_cannot_change_a_content_object() throws Exception {
+        final Contentlet saved = newContent();
+        final Contentlet content = findContent(saved.getInode());
+        // The premise: the content API hands every caller the same instance.
+        assertSame(content, findContent(saved.getInode()));
+        final String modUser = content.getModUser();
+        final String title = content.getTitle();
+
+        final Context ctx = VelocityUtil.getBasicContext();
+        ctx.put("c", content);
+        VelocityUtil.eval("$c.setModUser('someone-else')"
+                + "#set($c.modUser = 'someone-else')"
+                + "$c.map.put('modUser', 'someone-else')"
+                + "$c.getMap().put('modUser', 'someone-else')"
+                + "$c.setProperty('title', 'changed-title')"
+                + "$c.setStringProperty('title', 'changed-title')"
+                + "$c.getMap().remove('title')"
+                + "$c.getBinary('title')"
+                + "$c.getBinary('modUser')", ctx);
+
+        final Contentlet reread = findContent(saved.getInode());
+        assertEquals(modUser, reread.getModUser());
+        assertEquals(title, reread.getStringProperty("title"));
+    }
+
+    /**
+     * Template code that holds the live container the versionable API hands out, as
+     * {@code $webapi.getLiveFileAsset} does, cannot change the code the container renders.
+     */
+    @Test
+    public void template_cannot_change_a_container_object() throws Exception {
+        final Container saved = new ContainerDataGen().preLoop("ORIGINAL-PRE").code("ORIGINAL-CODE")
+                .postLoop("ORIGINAL-POST").nextPersisted();
+        ContainerDataGen.publish(saved);
+        final Container container = (Container) findLive(saved.getIdentifier());
+        assertSame(container, findLive(saved.getIdentifier()));
+
+        final Context ctx = VelocityUtil.getBasicContext();
+        ctx.put("con", container);
+        VelocityUtil.eval("$con.setPreLoop('CHANGED')$con.setCode('CHANGED')$con.setPostLoop('CHANGED')"
+                + "#set($con.preLoop = 'CHANGED')$con.setModUser('someone-else')", ctx);
+
+        final Container reread = (Container) findLive(saved.getIdentifier());
+        assertEquals("ORIGINAL-PRE", reread.getPreLoop());
+        assertEquals("ORIGINAL-CODE", reread.getCode());
+        assertEquals("ORIGINAL-POST", reread.getPostLoop());
+        assertEquals(saved.getModUser(), reread.getModUser());
+    }
+
+    /**
+     * Template code that holds the live template object cannot change the body it renders.
+     */
+    @Test
+    public void template_cannot_change_a_template_object() throws Exception {
+        final Template saved = new TemplateDataGen().body("ORIGINAL-BODY").nextPersisted();
+        TemplateDataGen.publish(saved);
+        final Template template = (Template) findLive(saved.getIdentifier());
+        assertSame(template, findLive(saved.getIdentifier()));
+        final String drawedBody = template.getDrawedBody();
+        final String headCode = template.getHeadCode();
+
+        final Context ctx = VelocityUtil.getBasicContext();
+        ctx.put("t", template);
+        VelocityUtil.eval("$t.setBody('CHANGED')$t.setDrawedBody('CHANGED')$t.setHeadCode('CHANGED')"
+                + "#set($t.body = 'CHANGED')$t.setModUser('someone-else')", ctx);
+
+        final Template reread = (Template) findLive(saved.getIdentifier());
+        assertEquals("ORIGINAL-BODY", reread.getBody());
+        assertEquals(drawedBody, reread.getDrawedBody());
+        assertEquals(headCode, reread.getHeadCode());
+        assertEquals(saved.getModUser(), reread.getModUser());
+    }
+
+    /**
+     * Regression: a render for a back-end user without the Scripting Developer role still reads the
+     * content object's values, by property, by getter and through its field map.
+     */
+    @Test
+    public void template_still_reads_a_content_object() throws Exception {
+        final Contentlet saved = newContent();
+        final Contentlet content = findContent(saved.getInode());
+        final User viewer = new UserDataGen().nextPersisted();
+        final HttpServletRequest request = containerRequest();
+        request.setAttribute(WebKeys.USER, viewer);
+
+        final Context ctx = VelocityUtil.getWebContext(request, new MockHttpResponse());
+        ctx.put("c", content);
+        final String rendered = VelocityUtil.eval(
+                "[$c.title][$c.getTitle()][$c.map.title][$c.getMap().get('title')][$c.modUser]"
+                        + "#set($m = $c.map)#set($ignored = $m.put('note', 'local'))[$m.get('note')]", ctx);
+
+        final String title = content.getTitle();
+        assertEquals("[" + title + "][" + title + "][" + title + "][" + title + "]["
+                + content.getModUser() + "][local]", rendered.trim());
+        assertNull("a local change to the map stays local", findContent(saved.getInode()).get("note"));
+    }
+
+    /**
+     * With the switch on, template code changes model objects as it did before.
+     */
+    @Test
+    public void switch_lets_template_change_a_content_object() throws Exception {
+        final Contentlet content = new Contentlet();
+        content.setModUser("before");
+        final Context ctx = VelocityUtil.getBasicContext();
+        ctx.put("c", content);
+
+        Config.setProperty(FeatureFlagName.FEATURE_FLAG_VELOCITY_ALLOW_MODEL_MUTATORS, true);
+        try {
+            VelocityUtil.eval("$c.setModUser('after')$c.map.put('note', 'set')", ctx);
+        } finally {
+            Config.setProperty(FeatureFlagName.FEATURE_FLAG_VELOCITY_ALLOW_MODEL_MUTATORS, false);
+        }
+
+        assertEquals("after", content.getModUser());
+        assertEquals("set", content.get("note"));
+    }
+
+    /**
+     * Template code may change the one object an open {@link TemplateEditableObject} scope names, and only that
+     * instance; the innermost scope wins, closing it restores the one before, and no scope outlives its block, even
+     * when the block throws.
+     */
+    @Test
+    public void editable_scope_allows_only_the_named_object() throws Exception {
+        final Contentlet outer = new Contentlet();
+        final Contentlet inner = new Contentlet();
+        final Context ctx = VelocityUtil.getBasicContext();
+        ctx.put("outer", outer);
+        ctx.put("inner", inner);
+        final String change = "$outer.setModUser('changed')$inner.setModUser('changed')";
+
+        try (TemplateEditableObject ignored = TemplateEditableObject.open(() -> outer)) {
+            VelocityUtil.eval(change, ctx);
+            assertEquals("changed", outer.getModUser());
+            assertNull(inner.getModUser());
+
+            outer.setModUser("reset");
+            try (TemplateEditableObject nested = TemplateEditableObject.open(() -> inner)) {
+                VelocityUtil.eval(change + "$inner.map.put('note', 'set')", ctx);
+            }
+            assertEquals("the inner scope hides the outer one", "reset", outer.getModUser());
+            assertEquals("changed", inner.getModUser());
+            assertEquals("the named object's own map is handed out", "set", inner.get("note"));
+
+            assertTrue("closing the inner scope restores the outer one", TemplateEditableObject.isEditable(outer));
+        }
+        assertFalse(TemplateEditableObject.isEditable(outer));
+
+        try (TemplateEditableObject ignored = TemplateEditableObject.open(() -> outer)) {
+            throw new IllegalStateException("thrown inside the scope");
+        } catch (final IllegalStateException expected) {
+            assertFalse("a scope never outlives its block", TemplateEditableObject.isEditable(outer));
+        }
+    }
+
+    /**
+     * Saves a content item of a type without Story Block fields, which the content API hands out as the instance it
+     * holds in its cache.
+     */
+    private static Contentlet newContent() {
+        final Field title = new FieldDataGen().name("title").velocityVarName("title").next();
+        final ContentType type = new ContentTypeDataGen().field(title).nextPersisted();
+        return new ContentletDataGen(type).setProperty("title", "Original title").nextPersisted();
+    }
+
+    /** Looks a content item up the way the content view tools do. */
+    private static Contentlet findContent(final String inode) throws Exception {
+        return APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false);
+    }
+
+    /** Looks a live version up the way {@code $webapi.getLiveFileAsset} does. */
+    private static Object findLive(final String identifier) throws Exception {
+        return APILocator.getVersionableAPI().findLiveVersion(
+                APILocator.getIdentifierAPI().find(identifier), APILocator.systemUser(), false);
     }
 
     /**

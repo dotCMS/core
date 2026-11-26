@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.workflows.business;
 
 import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isHost;
 
+import com.dotcms.rendering.velocity.util.TemplateEditableObject;
 import com.dotcms.ai.workflow.DotEmbeddingsActionlet;
 import com.dotcms.ai.workflow.OpenAIAutoTagActionlet;
 import com.dotcms.ai.workflow.OpenAIContentPromptActionlet;
@@ -2304,6 +2305,15 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return fireWorkflowPreCheckin(contentlet, user, null);
 	}
 
+	/**
+	 * Runs the pre-checkin step of each actionlet of the action being fired. While an actionlet runs,
+	 * its Velocity may change the content the action is processing.
+	 *
+	 * @param contentlet the content the action is fired on
+	 * @param user the user firing the action
+	 * @param context values shared with the actionlets, may be {@code null}
+	 * @return the processor carrying the action's state
+	 */
 	private WorkflowProcessor fireWorkflowPreCheckin(final Contentlet contentlet, final User user, final ConcurrentMap<String,Object> context) throws DotDataException,DotWorkflowException, DotContentletValidationException{
 		WorkflowProcessor processor = new WorkflowProcessor(contentlet, user, context);
 		if(!processor.inProcess()){
@@ -2331,7 +2341,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
                                     new Object[]{actionlet.getName(), params});
 
 
-					actionlet.executePreAction(processor, params);
+					try (TemplateEditableObject ignored = TemplateEditableObject.open(processor::getContentlet)) {
+						actionlet.executePreAction(processor, params);
+					}
 					//if we should stop processing further actionlets
 					if(actionlet.stopProcessing()){
 						break;
@@ -2372,7 +2384,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 						batchable.preBatchAction(processor, actionClass, params);
 						//gather data to run in batch later
 					} else {
-						actionlet.executeAction(processor, params);
+						try (TemplateEditableObject ignored = TemplateEditableObject.open(processor::getContentlet)) {
+							actionlet.executeAction(processor, params);
+						}
 					}
 
 					//if we should stop processing further actionlets
