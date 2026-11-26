@@ -13,6 +13,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotcms.rendering.velocity.viewtools.RestrictedViewToolAccess;
 import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
@@ -170,15 +171,29 @@ public class WidgetRenderer {
             widgetExecuteCode.append(fval).append("\n");
         }
 
-        VelocityUtil.getEngine().evaluate(context, firstEval, "", widgetExecuteCode.toString());
-        final String firstPass = firstEval.toString();
-        if (!rendersFieldVelocity(widget)) {
-            return new Rendering(firstPass, fieldValuesHoldVelocity(widget));
-        }
+        // The code about to run belongs to the widget's content type (widgetPreexecute and
+        // widgetCode), not to the widget content, and the type does not record who last saved
+        // that code. The second pass also evaluates whatever the type's code printed. So the
+        // widget's last modifier cannot vouch for it: announcing that user would let someone who
+        // edits the type reach the restricted view tools (sql, dotsecrets, xslttool, macro SQL,
+        // crypt.decrypt) as soon as a Scripting Developer saves an ordinary widget of that type.
+        // Announcing no author keeps those tools closed while a widget renders, as they were
+        // before the author was announced; the viewer-role fallback some of them keep still applies.
+        final Object previousAuthor = RestrictedViewToolAccess.announceRenderingAuthor(request,
+                null);
+        try {
+            VelocityUtil.getEngine().evaluate(context, firstEval, "", widgetExecuteCode.toString());
+            final String firstPass = firstEval.toString();
+            if (!rendersFieldVelocity(widget)) {
+                return new Rendering(firstPass, fieldValuesHoldVelocity(widget));
+            }
 
-        final StringWriter secondEval = new StringWriter();
-        VelocityUtil.getEngine().evaluate(context, secondEval, "", firstPass);
-        return new Rendering(secondEval.toString(), false);
+            final StringWriter secondEval = new StringWriter();
+            VelocityUtil.getEngine().evaluate(context, secondEval, "", firstPass);
+            return new Rendering(secondEval.toString(), false);
+        } finally {
+            RestrictedViewToolAccess.restoreRenderingAuthor(request, previousAuthor);
+        }
     }
 
     /**

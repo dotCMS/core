@@ -187,3 +187,5 @@ Release-25.07.10 LTS
 181. https://github.com/dotCMS/private-issues/issues/959 : 2026 Pentest (Federal Home Loan Bank of Dallas): M4 Back-end JWT lifetime of 1 day #38526 #959
 182. https://github.com/dotCMS/private-issues/issues/902 : Session handling: deactivating a user does not end live sessions, and the Maintenance kill-session tools only reach one node and leave remember-me valid (6.4 Medium) #38469 #902
 183. https://github.com/dotCMS/private-issues/issues/837 : Enforce the XStream type allowlist (remove the allow-all permission); deprecate non-allowlisted classes in push-publish bundles #38402 #38516 #837
+184. https://github.com/dotCMS/private-issues/issues/1059 : Velocity Scripting Developer gate derives the author from the template name, which #parse lets the author choose: forgeable in four view tools, and broken outright in $xslttool and the $macro SQL path #38467 #1059
+185. https://github.com/dotCMS/private-issues/issues/988 : Velocity $crypt.decrypt: any template decrypts values stored with the company key, including push-publish auth keys #38568 #988
