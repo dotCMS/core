@@ -150,6 +150,13 @@ export function withContent() {
                     return false;
                 }
 
+                // An existing content is not fully loaded until the backend has said whether
+                // the user may edit it: showing the form earlier renders it enabled and flips
+                // it to read-only when `_canlock` answers (#38724 R4). New content has no lock.
+                if (store.contentlet()?.identifier && store.canLock() === null) {
+                    return false;
+                }
+
                 if (!store.uiState().isSidebarOpen || !store.contentlet()?.identifier) {
                     return true;
                 }
@@ -389,6 +396,16 @@ export function withContent() {
                                             schemes: parsedSchemes,
                                             currentContentActions: parsedCurrentActions,
                                             contentlet,
+                                            // Unknown until this content's own `_canlock`
+                                            // answers (the lock feature re-checks when the
+                                            // contentlet swaps); keeping the previous answer
+                                            // would render the new item with the previous
+                                            // item's permission (#38724 R4). Reset here, when
+                                            // the new content lands, not when the load starts:
+                                            // a failed load keeps the previous contentlet,
+                                            // which is never re-checked, so its answer must
+                                            // stay or the loader never settles.
+                                            canLock: null,
                                             state: ComponentStatus.LOADED,
                                             currentStep: step,
                                             lastTask: task,

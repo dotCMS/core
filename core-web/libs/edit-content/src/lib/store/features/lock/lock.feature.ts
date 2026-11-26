@@ -44,6 +44,48 @@ export function withLock() {
             }),
 
             /**
+             * Whether the current user may only read this content.
+             *
+             * Driven by the backend, not by a frontend permission guess: `_canlock` answers
+             * false and the EDITING action list is empty. That is the answer for a user with
+             * READ but no EDIT, and also for an EDIT user blocked by someone else's lock: the
+             * backend gives both the same response, and neither can save, so both get the
+             * disabled form. The layout then shows the lock banner instead of the
+             * no-permission message when someone else holds the lock. New content and an
+             * unanswered `_canlock` (`null`) are never read-only.
+             *
+             * @returns boolean - True when the form must render disabled.
+             */
+            isReadOnly: computed(() => {
+                const contentlet = store.contentlet();
+
+                if (!contentlet?.inode || store.initialContentletState() === 'new') {
+                    return false;
+                }
+
+                if (store.canLock() !== false) {
+                    return false;
+                }
+
+                return !Object.values(store.currentContentActions()).some(
+                    (actions) => actions.length > 0
+                );
+            }),
+
+            /**
+             * Whether the user's edit permission on the current content is known, i.e. the
+             * backend has answered `_canlock` (`canLock` is `null` until then). New content has
+             * no lock to check, so it counts as settled. The layout keeps its loading screen
+             * until this is true, so the form is never rendered enabled and then flipped to
+             * read-only on a slow network (#38724 R4).
+             *
+             * @returns boolean - True when the form can be rendered in its final state.
+             */
+            isPermissionsSettled: computed(
+                () => !store.contentlet()?.identifier || store.canLock() !== null
+            ),
+
+            /**
              * Determines if a lock/unlock request is currently in flight
              *
              * @returns boolean - True while the lock or unlock API call is pending
@@ -265,6 +307,14 @@ export function withLock() {
                             return dotContentletService.canLock(contentlet.inode).pipe(
                                 tapResponse({
                                     next: (response: DotContentletCanLock) => {
+                                        // A reply for a contentlet that has since been
+                                        // replaced (navigation to another item) must not
+                                        // settle the new one's permission; its own check
+                                        // follows.
+                                        if (store.contentlet()?.inode !== contentlet.inode) {
+                                            return;
+                                        }
+
                                         // Set the appropriate label based on lock status
                                         const lockSwitchLabel = response.locked
                                             ? 'edit.content.locked'
@@ -277,6 +327,10 @@ export function withLock() {
                                     },
                                     error: (error: HttpErrorResponse) => {
                                         dotHttpErrorManagerService.handle(error);
+                                        if (store.contentlet()?.inode !== contentlet.inode) {
+                                            return;
+                                        }
+
                                         patchState(store, { canLock: false });
                                     }
                                 })

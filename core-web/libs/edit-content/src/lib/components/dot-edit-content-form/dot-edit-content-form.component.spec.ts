@@ -1209,6 +1209,214 @@ describe('DotFormComponent', () => {
         });
     });
 
+    describe('Form repopulation after a workflow action (R3, #38724)', () => {
+        beforeEach(() => {
+            dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                of(MOCK_CONTENTTYPE_1_TAB)
+            );
+            workflowActionsService.getByInode.mockReturnValue(
+                of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
+            );
+            dotEditContentService.getContentById.mockReturnValue(of(MOCK_CONTENTLET_1_OR_2_TABS));
+            workflowActionsService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+            dotContentletService.canLock.mockReturnValue(
+                of({ canLock: true } as DotContentletCanLock)
+            );
+
+            store.initializeExistingContent({
+                inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                depth: DotContentletDepths.ONE
+            });
+            spectator.detectChanges();
+        });
+
+        /**
+         * Fires an action whose refetched contentlet keeps the SAME inode and modDate but
+         * carries different field values — what the Move sub-action does (it only updates
+         * the identifier's host/path).
+         */
+        const fireActionReturning = (refetched: DotCMSContentlet) => {
+            workflowActionsFireService.fireTo.mockReturnValue(of(MOCK_CONTENTLET_1_OR_2_TABS));
+            dotEditContentService.getContentById.mockReturnValue(of(refetched));
+
+            store.fireWorkflowAction({
+                actionId: '1',
+                inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                data: { contentlet: {} }
+            });
+            spectator.detectChanges();
+        };
+
+        it('should repopulate the form from the refetched contentlet even when inode and modDate are unchanged', () => {
+            expect(component.form.get('text1')?.value).toBe('content text 1');
+
+            fireActionReturning({
+                ...MOCK_CONTENTLET_1_OR_2_TABS,
+                folder: 'moved-folder-id',
+                text1: 'moved by the action'
+            });
+
+            expect(component.form.get('text1')?.value).toBe('moved by the action');
+        });
+
+        it('should still not rebuild the form when the refetched values are identical', () => {
+            const initFormSpy = vi.spyOn(
+                component as DotEditContentFormComponent & { initializeForm(): void },
+                'initializeForm'
+            );
+
+            // Publish-only / Unarchive: same inode, same modDate, same field values.
+            fireActionReturning({ ...MOCK_CONTENTLET_1_OR_2_TABS });
+
+            expect(initFormSpy).not.toHaveBeenCalled();
+        });
+
+        it('should not rebuild the form on a Publish-style refetch (#38724 review)', () => {
+            const initFormSpy = vi.spyOn(
+                component as DotEditContentFormComponent & { initializeForm(): void },
+                'initializeForm'
+            );
+
+            // Publish / Unpublish change the state, not the content: unsaved edits stay.
+            fireActionReturning({
+                ...MOCK_CONTENTLET_1_OR_2_TABS,
+                live: !MOCK_CONTENTLET_1_OR_2_TABS.live,
+                publishDate: '2026-11-26 12:00:00.0',
+                statusIcons: '<span class="live"></span>'
+            } as DotCMSContentlet);
+
+            expect(initFormSpy).not.toHaveBeenCalled();
+        });
+
+        it('should not rebuild the form when only values the form does not use change (#38724 review)', () => {
+            const initFormSpy = vi.spyOn(
+                component as DotEditContentFormComponent & { initializeForm(): void },
+                'initializeForm'
+            );
+
+            // Server-computed keys no field reads: a rebuild here would drop unsaved edits.
+            fireActionReturning({
+                ...MOCK_CONTENTLET_1_OR_2_TABS,
+                __icon__: 'a-different-icon',
+                titleImageVersion: '/dA/new-version-url'
+            } as DotCMSContentlet);
+
+            expect(initFormSpy).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('Read-only content (R4, #38724)', () => {
+        beforeEach(() => {
+            dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                of(MOCK_CONTENTTYPE_1_TAB)
+            );
+            dotEditContentService.getContentById.mockReturnValue(of(MOCK_CONTENTLET_1_OR_2_TABS));
+            workflowActionsService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+        });
+
+        it('should disable every field when the backend denies the lock and offers no actions', () => {
+            // READ without EDIT: `_canlock` answers false and the EDITING action list is empty.
+            workflowActionsService.getByInode.mockReturnValue(of([]));
+            dotContentletService.canLock.mockReturnValue(
+                of({ canLock: false } as DotContentletCanLock)
+            );
+
+            store.initializeExistingContent({
+                inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                depth: DotContentletDepths.ONE
+            });
+            spectator.detectChanges();
+
+            expect(component.form.disabled).toBe(true);
+            expect(component.form.get('text1')?.disabled).toBe(true);
+        });
+
+        it('should keep the form enabled when the user can lock and has actions', () => {
+            workflowActionsService.getByInode.mockReturnValue(
+                of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
+            );
+            dotContentletService.canLock.mockReturnValue(
+                of({ canLock: true } as DotContentletCanLock)
+            );
+
+            store.initializeExistingContent({
+                inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                depth: DotContentletDepths.ONE
+            });
+            spectator.detectChanges();
+
+            expect(component.form.enabled).toBe(true);
+        });
+    });
+
+    describe('Scroll container (#38724)', () => {
+        beforeEach(() => {
+            dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                of(MOCK_CONTENTTYPE_2_TABS)
+            );
+            workflowActionsService.getByInode.mockReturnValue(
+                of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
+            );
+            dotEditContentService.getContentById.mockReturnValue(of(MOCK_CONTENTLET_1_OR_2_TABS));
+            workflowActionsService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+            dotContentletService.canLock.mockReturnValue(
+                of({ canLock: true } as DotContentletCanLock)
+            );
+
+            store.initializeExistingContent({
+                inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                depth: DotContentletDepths.ONE
+            });
+            spectator.detectChanges();
+        });
+
+        it('should scroll the tab panels to the first invalid field', () => {
+            const panels = spectator.query(byTestId('edit-content-form-scroll')) as HTMLElement;
+            const scrollTo = vi.fn();
+            panels.scrollTo = scrollTo;
+            const marker = document.createElement('div');
+            marker.className = 'field-error-marker';
+            panels.appendChild(marker);
+
+            component.scrollToFirstError();
+
+            expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ behavior: 'smooth' }));
+        });
+
+        it('should scroll its own panels when another editor is in the page (#38724 review)', () => {
+            // The side-panel editor opens over the full-screen one: an error in this form
+            // must not scroll the editor behind it, which comes first in the document.
+            const background = document.createElement('div');
+            background.innerHTML =
+                '<div data-testid="edit-content-form-scroll"><div class="field-error-marker"></div></div>';
+            document.body.prepend(background);
+            const backgroundScroll = vi.fn();
+            (background.firstElementChild as HTMLElement).scrollTo = backgroundScroll;
+
+            const panels = spectator.query(byTestId('edit-content-form-scroll')) as HTMLElement;
+            const scrollTo = vi.fn();
+            panels.scrollTo = scrollTo;
+            const marker = document.createElement('div');
+            marker.className = 'field-error-marker';
+            panels.appendChild(marker);
+
+            component.scrollToFirstError();
+            background.remove();
+
+            expect(backgroundScroll).not.toHaveBeenCalled();
+            expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ behavior: 'smooth' }));
+        });
+    });
+
     describe('Lock functionality', () => {
         beforeEach(() => {
             dotContentTypeService.getContentTypeWithRender.mockReturnValue(

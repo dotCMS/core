@@ -17,19 +17,25 @@ export function focalPointFromMetadata(
 }
 
 /**
- * Resolves the focal point from a referenced asset contentlet.
+ * Resolves the focal point from a contentlet that carries binary metadata.
  *
  * The focal lives on the binary field's metadata, exposed by the backend as
- * `{fieldVar}MetaData`, where `fieldVar` is the asset's binary field (`asset` for a
- * dotAsset, `fileAsset` for a legacy FileAsset) — carried by the contentlet's
- * `titleImage`. This is the same `{fieldVar}MetaData.focalPoint` mechanism a Binary
- * field uses, applied uniformly.
+ * `{fieldVar}MetaData`. Which field that is depends on what the contentlet is:
  *
- * @param file - The referenced asset contentlet (dotAsset or FileAsset).
+ * - a referenced asset (dotAsset or legacy FileAsset): its own binary field (`asset` /
+ *   `fileAsset`), carried by the contentlet's `titleImage`;
+ * - the PARENT contentlet of an inline Binary field: the clicked field itself, passed as
+ *   `fieldVariable`. The parent's `titleImage` names its title image, which may be
+ *   another binary field of the same item, so it must not be used here.
+ *
+ * @param file - The contentlet holding the `{fieldVar}MetaData` entries.
+ * @param fieldVariable - The binary field to read; when omitted the contentlet's
+ * `titleImage` (default `asset`) is used.
  * @returns The focal point `"x,y"` string, or undefined when none is present.
  */
 export function focalPointFromContentlet(
-    file: DotCMSContentlet | null | undefined
+    file: DotCMSContentlet | null | undefined,
+    fieldVariable?: string
 ): string | undefined {
     if (!file) {
         return undefined;
@@ -37,7 +43,9 @@ export function focalPointFromContentlet(
 
     const raw = file as unknown as Record<string, DotFileMetadata | undefined>;
     const fieldVar =
-        ((file as unknown as Record<string, string>)['titleImage'] ?? 'asset') || 'asset';
+        fieldVariable ||
+        ((file as unknown as Record<string, string>)['titleImage'] ?? 'asset') ||
+        'asset';
 
     return focalPointFromMetadata(raw[`${fieldVar}MetaData`]);
 }

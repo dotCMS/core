@@ -45,6 +45,27 @@ import { EDIT_CONTENT_HOST } from '../../../../services/host/edit-content-host.m
 import { DotEditContentStore } from '../../../../store/edit-content.store';
 import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
 
+/**
+ * Revision of the contentlet data a relationship field initialises from: the version
+ * (`identifier|inode|languageId|modDate`) and the field's own related items. Lock,
+ * unlock and release lock replace the contentlet with the same values plus new lock
+ * fields (`lock.feature.ts`), so they yield the same revision; a new version, another
+ * item or a server-side change of the relationship yield a new one.
+ *
+ * @param contentlet - The contentlet the field renders; null while manually translating.
+ * @param variable - The relationship field variable.
+ * @returns A string that only changes when the field has to re-initialise.
+ */
+function relationshipRevisionOf(contentlet: DotCMSContentlet | null, variable: string): string {
+    if (!contentlet) {
+        return '';
+    }
+
+    const { identifier, inode, languageId, modDate } = contentlet;
+
+    return `${identifier}|${inode}|${languageId}|${modDate}|${JSON.stringify(contentlet[variable] ?? null)}`;
+}
+
 @Component({
     selector: 'dot-relationship-field',
     imports: [
@@ -212,13 +233,28 @@ export class DotRelationshipFieldComponent
             ? this.#editContentStore.currentLocale()
             : undefined;
 
+        // Track the contentlet through its revision, not its reference: a lock toggle hands
+        // down a new object with the same data, and re-initialising on it would restore the
+        // saved relationships over the user's unsaved edits (#38724 R5).
+        this.#contentletRevision();
+        const contentlet = untracked(() => this.$contentlet());
+
         return {
             field: this.$field(),
-            contentlet: this.$contentlet(),
+            contentlet,
             targetLanguageId: locale?.id,
             targetLanguage: locale
         };
     });
+
+    /**
+     * Revision of the contentlet data this field initialises from (see
+     * {@link relationshipRevisionOf}). Equal strings do not notify, so `$inputs` — and the
+     * store initialisation it drives — only re-run when that data changed.
+     */
+    readonly #contentletRevision = computed(() =>
+        relationshipRevisionOf(this.$contentlet(), this.$field().variable)
+    );
 
     /**
      * Computed signal that holds the total number of columns.
