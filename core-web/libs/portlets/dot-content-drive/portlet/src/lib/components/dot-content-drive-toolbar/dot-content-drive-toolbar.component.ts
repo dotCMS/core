@@ -20,7 +20,7 @@ import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import {
     DotFolderTreeNodeContentData,
     LOAD_MORE_NODE_TYPE
@@ -196,6 +196,15 @@ export class DotContentDriveToolbarComponent {
     readonly #store = inject(DotContentDriveStore);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #httpErrorManager = inject(DotHttpErrorManagerService);
+
+    /**
+     * Content Drive's own labels for base types in the content type filter. The server and the
+     * AssetPicker call the dotAsset base type "DotAsset"; Content Drive calls it "Asset", as its New
+     * menu and upload dialog do (#38379).
+     */
+    protected readonly BASE_TYPE_LABELS: Partial<Record<string, string>> = {
+        [DotCMSBaseTypesContentTypes.DOTASSET]: 'content-drive.base-type.dotasset'
+    };
 
     // Emits the click event so the shell can anchor the upload-type popover to the button.
     $upload = output<MouseEvent>({ alias: 'upload' });

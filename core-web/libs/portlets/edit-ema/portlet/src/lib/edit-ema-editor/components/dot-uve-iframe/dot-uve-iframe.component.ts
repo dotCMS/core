@@ -96,6 +96,15 @@ export class DotUveIframeComponent {
     private lastWrittenSrcRef: unknown = null;
 
     /**
+     * Where the user last scrolled a traditional page. Every save re-renders the page into a
+     * fresh document at the top, so the next load of the same page scrolls back here.
+     */
+    #lastScroll: { pageId: string | undefined; y: number } = { pageId: undefined, y: 0 };
+
+    /** The pending frame of `restoreScrollWhileParsing`, cancelled by a newer render. */
+    #scrollFrame = 0;
+
+    /**
      * Rendered HTML for traditional pages.
      * @type {Signal<string>}
      */
@@ -118,6 +127,10 @@ export class DotUveIframeComponent {
             this.insertPageContent(pageRender, enableInlineEdit);
         }
     });
+
+    constructor() {
+        this.destroyRef.onDestroy(() => cancelAnimationFrame(this.#scrollFrame));
+    }
 
     /**
      * The content window of the iframe, or null if not available.
@@ -147,9 +160,70 @@ export class DotUveIframeComponent {
         if (this.uveStore.pageType() !== PageType.HEADLESS) {
             this.insertPageContent(this.$pageRender(), this.$enableInlineEdit());
             this.setSeoData();
+            this.restoreScroll();
         }
 
         this.load.emit();
+    }
+
+    /**
+     * Scrolls a re-rendered page back to where the user left it, as after adding or moving a
+     * contentlet. A different page starts at the top, and forgets the previous page's offset.
+     * @returns {void}
+     */
+    private restoreScroll(): void {
+        const pageId = this.uveStore.pageAsset()?.page?.identifier;
+
+        if (this.#lastScroll.pageId !== pageId) {
+            this.#lastScroll = { pageId, y: 0 };
+
+            return;
+        }
+
+        // A fresh document already sits at the top.
+        if (this.#lastScroll.y > 0) {
+            this.contentWindow?.scrollTo({ top: this.#lastScroll.y, left: 0, behavior: 'instant' });
+        }
+    }
+
+    /**
+     * Scrolls a re-rendered page back to where the user left it while it is still being
+     * parsed, once a frame, so it is already in place when the browser first paints it.
+     * `load` waits for images, so restoring only there paints the page at the top first.
+     * Stops once the document is parsed; `restoreScroll` on load covers images that grow the
+     * page after that.
+     * @returns {void}
+     */
+    private restoreScrollWhileParsing(): void {
+        cancelAnimationFrame(this.#scrollFrame);
+
+        const { pageId, y } = this.#lastScroll;
+        const iframeElement = this.iframe?.nativeElement;
+
+        if (!iframeElement || y <= 0 || pageId !== this.uveStore.pageAsset()?.page?.identifier) {
+            return;
+        }
+
+        // The document showing now is the one being replaced.
+        const replacedDocument = iframeElement.contentDocument;
+
+        const step = () => {
+            const doc = iframeElement.contentDocument;
+
+            if (doc && doc !== replacedDocument && doc.body) {
+                if (doc.defaultView && doc.defaultView.scrollY !== y) {
+                    doc.defaultView.scrollTo({ top: y, left: 0, behavior: 'instant' });
+                }
+
+                if (doc.readyState !== 'loading') {
+                    return;
+                }
+            }
+
+            this.#scrollFrame = requestAnimationFrame(step);
+        };
+
+        this.#scrollFrame = requestAnimationFrame(step);
     }
 
     /**
@@ -178,6 +252,7 @@ export class DotUveIframeComponent {
             // run again — even across legitimate re-renders (e.g. preview → edit
             // mode returns different server-rendered HTML that still contains the
             // same let/const declarations).
+            this.restoreScrollWhileParsing();
             iframeElement.srcdoc = pageRender;
         }
 
@@ -398,6 +473,12 @@ export class DotUveIframeComponent {
                 this.internalNav.emit(e);
                 this.inlineEditing.emit(e);
             });
+
+        const pageId = this.uveStore.pageAsset()?.page?.identifier;
+
+        fromEvent(win, 'scroll')
+            .pipe(takeUntil(this.iframeClickListener$), takeUntilDestroyed(this.destroyRef))
+            .subscribe(() => (this.#lastScroll = { pageId, y: win.scrollY }));
 
         if (enableInlineEdit) {
             this.inlineEditingService.injectInlineEdit(this.iframe);

@@ -5,6 +5,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.util.StringPool;
@@ -250,10 +251,10 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
             try {
                 reader.setInput(inputStream, true, true);
                 if (sourceSize.getWidth() == width && sourceSize.getHeight() == height) {
-                    return reader.read(0);
+                    return StrictImageReader.read(reader, null, imageFile);
                 }
 
-                return this.resizeImage(reader.read(0), width, height, resampleOption);
+                return this.resizeImage(StrictImageReader.read(reader, null, imageFile), width, height, resampleOption);
 
             } finally {
                 reader.dispose();
@@ -292,9 +293,22 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
                             "subsample_hash", new String[] {hash},
                     FILTER, new String[] {"subsample"}
             );
-            incomingImage = new SubSampleImageFilter().runFilter(incomingImage, params);
+            final File subsample = new SubSampleImageFilter().runFilter(incomingImage, params);
+            try {
+                return this.resizeImage(subsample, width, height, resampleOption);
+            } catch (RuntimeException e) {
+                // the subsample is a cached rendition shared by every size of this image; if it no
+                // longer decodes every request would fail on it, so drop it and let the next request
+                // regenerate it. A failure that is not about the subsample (resampling) keeps it.
+                if (subsample.getName().startsWith(WebKeys.GENERATED_FILE)
+                        && Try.run(() -> StrictImageReader.read(subsample)).isFailure()
+                        && Try.of(() -> Files.deleteIfExists(subsample.toPath())).getOrElse(false)) {
+                    Logger.warn(this, "Discarded a cached subsample that failed to resize: " + subsample);
+                }
+                throw e;
+            }
         }
-        
+
         return this.resizeImage(incomingImage, width, height, resampleOption);
 
     }
@@ -327,7 +341,7 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
 
         imageReaderParams.setSourceSubsampling(subsampling, subsampling, 0, 0);
 
-        return reader.read(0, imageReaderParams);
+        return StrictImageReader.read(reader, imageReaderParams, inputStream);
 
     }
 

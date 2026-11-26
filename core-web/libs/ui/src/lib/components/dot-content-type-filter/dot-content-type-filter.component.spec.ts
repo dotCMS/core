@@ -127,7 +127,8 @@ describe('DotContentTypeFilterComponent', () => {
                     'content-drive.content-type-field.empty-state': 'No content types found',
                     'content-drive.chip-filter.overflow-label': '{0} and {1} more',
                     search: 'Search',
-                    'dot.common.remove': 'Remove'
+                    'dot.common.remove': 'Remove',
+                    'custom.base-type.file': 'My Files'
                 })
             },
             provideHttpClient()
@@ -377,6 +378,42 @@ describe('DotContentTypeFilterComponent', () => {
             spectator.component.$selectedBaseTypes.set(['CONTENT', 'HTMLPAGE']);
             spectator.component.$selectedContentTypes.set([CONTENT_TYPES[0]]);
             expect(spectator.component.$chipSelections()).toEqual(['Blog', 'Page (All)']);
+        });
+    });
+
+    // Content Drive calls the dotAsset base type "Asset", while the server and the AssetPicker
+    // call it "DotAsset" (#38379). The host names its own label for a base type, as a message key.
+    describe('Base type labels from the host', () => {
+        const baseTypeLabels = () =>
+            spectator
+                .queryAll('[data-testid="base-type-listbox"] dot-filter-list-item')
+                .map((item) => item.textContent?.trim());
+
+        beforeEach(() => {
+            spectator.setInput('baseTypeLabels', { FILEASSET: 'custom.base-type.file' });
+            spectator.detectChanges();
+        });
+
+        it('lists the base type under the label the host gives', () => {
+            openPopover();
+
+            expect(baseTypeLabels()).toContain('My Files');
+            expect(baseTypeLabels()).not.toContain('File');
+        });
+
+        it('names the base type in the chip with the label the host gives', () => {
+            spectator.setInput('selectedBaseTypes', ['FILEASSET']);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('content-type-filter-chip'))?.textContent).toContain(
+                'My Files (All)'
+            );
+        });
+
+        it('keeps the server label for the base types the host does not name', () => {
+            openPopover();
+
+            expect(baseTypeLabels()).toContain('Content');
         });
     });
 

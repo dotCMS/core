@@ -30,6 +30,7 @@ describe('DotUveIframeComponent', () => {
     let pageTypeSignal: WritableSignal<PageType>;
     let pageRenderSignal: WritableSignal<string>;
     let editorEnableInlineEditSignal: WritableSignal<boolean>;
+    let pageAssetSignal: WritableSignal<{ page: { identifier: string } }>;
 
     const mockPageRender = '<html><head></head><body>Test Content</body></html>';
     const mockSeoResults: SeoMetaTagsResult[] = [
@@ -68,6 +69,7 @@ describe('DotUveIframeComponent', () => {
                     $pageRender: pageRenderSignal,
                     editorEnableInlineEdit: editorEnableInlineEditSignal,
                     pageType: pageTypeSignal,
+                    pageAsset: pageAssetSignal,
                     setSeoData: vi.fn()
                 })
             }
@@ -78,6 +80,7 @@ describe('DotUveIframeComponent', () => {
         pageTypeSignal = signal(PageType.HEADLESS);
         pageRenderSignal = signal(mockPageRender);
         editorEnableInlineEditSignal = signal(false);
+        pageAssetSignal = signal({ page: { identifier: 'page-a' } });
 
         spectator = createComponent({
             props: {
@@ -236,6 +239,121 @@ describe('DotUveIframeComponent', () => {
             component.iframe = undefined as any;
             component.onIframeLoad();
             expect(mockIframe.srcdoc).toBe('');
+        });
+    });
+
+    describe('scroll position across re-renders', () => {
+        let mockWindow: EventTarget & { scrollY: number; scrollTo: Mock };
+        let currentDocument: Document;
+
+        // Scroll the page the way a user would: move it, then let it report the scroll.
+        const scrollPageTo = (y: number) => {
+            mockWindow.scrollY = y;
+            mockWindow.dispatchEvent(new Event('scroll'));
+        };
+
+        beforeEach(() => {
+            pageTypeSignal.set(PageType.TRADITIONAL);
+
+            const mockIframe = document.createElement('iframe');
+            mockWindow = Object.assign(new EventTarget(), { scrollY: 0, scrollTo: vi.fn() });
+
+            currentDocument = document.implementation.createHTMLDocument();
+
+            Object.defineProperty(mockIframe, 'contentDocument', { get: () => currentDocument });
+            Object.defineProperty(mockIframe, 'contentWindow', { value: mockWindow });
+
+            component.iframe = { nativeElement: mockIframe } as any;
+            component.onIframeLoad();
+        });
+
+        afterEach(() => vi.restoreAllMocks());
+
+        it('should scroll a re-rendered page back to where the user left it', () => {
+            scrollPageTo(640);
+            mockWindow.scrollTo.mockClear();
+
+            component.onIframeLoad();
+
+            expect(mockWindow.scrollTo).toHaveBeenCalledWith({
+                top: 640,
+                left: 0,
+                behavior: 'instant'
+            });
+        });
+
+        describe('while the new document is parsed', () => {
+            let frames: FrameRequestCallback[];
+            const runFrame = () => frames.shift()?.(0);
+
+            beforeEach(() => {
+                frames = [];
+                vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) =>
+                    frames.push(callback)
+                );
+            });
+
+            it('should scroll the new document into place before it paints, then stop', () => {
+                scrollPageTo(640);
+                pageRenderSignal.set('<html><body>After the move</body></html>');
+                component.onIframeLoad();
+
+                // The iframe still shows the replaced document: wait.
+                runFrame();
+                expect(frames).toHaveLength(1);
+
+                const parsing = {
+                    body: {},
+                    readyState: 'loading',
+                    defaultView: { scrollY: 0, scrollTo: vi.fn() }
+                };
+                currentDocument = parsing as unknown as Document;
+                runFrame();
+
+                expect(parsing.defaultView.scrollTo).toHaveBeenCalledWith({
+                    top: 640,
+                    left: 0,
+                    behavior: 'instant'
+                });
+
+                parsing.readyState = 'interactive';
+                parsing.defaultView.scrollY = 640;
+                runFrame();
+
+                expect(frames).toHaveLength(0);
+            });
+
+            it('should not wait on a different page', () => {
+                scrollPageTo(640);
+                pageAssetSignal.set({ page: { identifier: 'page-b' } });
+                pageRenderSignal.set('<html><body>Page B</body></html>');
+
+                component.onIframeLoad();
+
+                expect(frames).toHaveLength(0);
+            });
+        });
+
+        it('should open a different page at the top', () => {
+            scrollPageTo(640);
+            mockWindow.scrollTo.mockClear();
+            pageAssetSignal.set({ page: { identifier: 'page-b' } });
+
+            component.onIframeLoad();
+
+            expect(mockWindow.scrollTo).not.toHaveBeenCalled();
+        });
+
+        it('should not carry an offset back to a page after visiting another', () => {
+            scrollPageTo(640);
+            pageAssetSignal.set({ page: { identifier: 'page-b' } });
+            component.onIframeLoad();
+            pageAssetSignal.set({ page: { identifier: 'page-a' } });
+            mockWindow.scrollTo.mockClear();
+
+            component.onIframeLoad();
+
+            expect(mockWindow.scrollTo).not.toHaveBeenCalled();
         });
     });
 

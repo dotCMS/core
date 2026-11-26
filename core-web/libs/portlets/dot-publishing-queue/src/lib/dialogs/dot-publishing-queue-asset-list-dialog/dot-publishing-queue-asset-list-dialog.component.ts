@@ -133,7 +133,7 @@ export class DotPublishingQueueAssetListDialogComponent {
         // Every save and delete in a side panel, at any depth, reloads the asset list: content
         // saved from a relationship inside the panel a row opened may be in it (T174).
         inject(DotContentChangeService)
-            .changes$.pipe(takeUntilDestroyed(this.#destroyRef))
+            .edits$.pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe(() => this.store.loadAssets());
     }
 

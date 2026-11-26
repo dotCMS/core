@@ -1,11 +1,14 @@
 package com.dotmarketing.servlets.ajax;
 
 import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertFalse;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -24,6 +27,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.ConfigUtils;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
@@ -31,19 +35,26 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -286,5 +297,151 @@ public class AjaxDirectorServletIntegrationTest {
         } finally {
             APILocator.getBundleAPI().deleteBundle(bundle.getId());
         }
+    }
+
+    /**
+     * Given: an archive directly in the bundles directory under a plain id
+     * When: a back-end user with the publishing tool downloads it through the legacy download
+     * action, naming it in the URI path the way the audit-detail page does
+     * Then: the archive's bytes are streamed and no bundle directory is created
+     */
+    @Test
+    public void test_downloadBundle_plainId_streamsArchive() throws Exception {
+        final String bundleId = "download-plain-" + System.currentTimeMillis();
+        final File bundlesDir = new File(ConfigUtils.getBundlePath());
+        final File archive = new File(bundlesDir, bundleId + ".tar.gz");
+        final byte[] content = "archive".getBytes(StandardCharsets.UTF_8);
+        Files.write(archive.toPath(), content);
+
+        final ByteArrayOutputStream body = new ByteArrayOutputStream();
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        when(response.getOutputStream()).thenReturn(servletOutputStream(body));
+
+        try {
+            new AjaxDirectorServlet(downloadWebResource()).service(downloadRequest(
+                    "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadBundle/bid/"
+                            + bundleId, null), response);
+
+            verify(response, never()).sendError(anyInt());
+            verify(response, never()).sendError(anyInt(), any());
+            assertArrayEquals("The archive should be streamed as stored", content, body.toByteArray());
+            verify(response).setContentType("application/x-tgz");
+            verify(response).setHeader("Content-Disposition",
+                    "attachment; filename=" + bundleId + ".tar.gz");
+            verify(response).setContentLengthLong(content.length);
+            assertFalse("No bundle directory should be created",
+                    new File(bundlesDir, bundleId).exists());
+        } finally {
+            Files.deleteIfExists(archive.toPath());
+        }
+    }
+
+    /**
+     * Given: a plain bundle id with no archive in the bundles directory
+     * When: the legacy download action is asked for it
+     * Then: 404, nothing is streamed, and no bundle directory is created
+     */
+    @Test
+    public void test_downloadBundle_missingArchive_returns404() throws Exception {
+        final String bundleId = "download-missing-" + System.currentTimeMillis();
+        final File bundleDir = new File(ConfigUtils.getBundlePath(), bundleId);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        try {
+            new AjaxDirectorServlet(downloadWebResource()).service(downloadRequest(
+                    "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadBundle/bid/"
+                            + bundleId, null), response);
+
+            verify(response).sendError(HttpServletResponse.SC_NOT_FOUND, "No Bundle Found");
+            verify(response, never()).getOutputStream();
+            assertFalse("No bundle directory should be created", bundleDir.exists());
+        } finally {
+            Files.deleteIfExists(bundleDir.toPath());
+        }
+    }
+
+    /**
+     * Given: an archive two levels above the bundles directory
+     * When: the legacy download action gets a bundle id made of a parent segment and that
+     * archive's name
+     * Then: 404, nothing is streamed, and no directory is created for the id
+     */
+    @Test
+    public void test_downloadBundle_idWithParentSegment_returns404() throws Exception {
+        final String name = "download-parent-" + System.currentTimeMillis();
+        final File bundlesDir = new File(ConfigUtils.getBundlePath());
+        final File archive = new File(bundlesDir.getParentFile().getParentFile(), name + ".tar.gz");
+        Files.write(archive.toPath(), "archive".getBytes(StandardCharsets.UTF_8));
+        final File expectedNotCreated = new File(bundlesDir.getParentFile(), name);
+
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        try {
+            new AjaxDirectorServlet(downloadWebResource()).service(downloadRequest(
+                    "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadBundle",
+                    ".." + File.separator + name), response);
+
+            verify(response).sendError(HttpServletResponse.SC_NOT_FOUND, "No Bundle Found");
+            verify(response, never()).getOutputStream();
+            assertFalse("No directory should be created for the id", expectedNotCreated.exists());
+        } finally {
+            Files.deleteIfExists(archive.toPath());
+            Files.deleteIfExists(expectedNotCreated.toPath());
+        }
+    }
+
+    /**
+     * A {@link WebResource} that resolves every request to the admin user, who holds the
+     * publishing tool.
+     */
+    private static WebResource downloadWebResource() throws DotDataException {
+        final User admin = TestUserUtils.getAdminUser();
+        final WebResource webResource = mock(WebResource.class);
+        final InitDataObject dataObject = mock(InitDataObject.class);
+        when(dataObject.getUser()).thenReturn(admin);
+        when(webResource.init(nullable(String.class), anyBoolean(), any(HttpServletRequest.class),
+                anyBoolean(), any()))
+                .thenReturn(dataObject);
+        return webResource;
+    }
+
+    /**
+     * A request for the given URI; when {@code bid} is set it is also sent as a request parameter.
+     */
+    private static HttpServletRequest downloadRequest(final String uri, final String bid)
+            throws IOException {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getRequestURI()).thenReturn(uri);
+        when(request.getReader()).thenReturn(new BufferedReader(new StringReader("")));
+        when(request.getSession()).thenReturn(mock(HttpSession.class));
+        if (bid == null) {
+            when(request.getParameterNames()).thenReturn(Collections.emptyEnumeration());
+        } else {
+            when(request.getParameterNames()).thenReturn(Collections.enumeration(List.of("bid")));
+            when(request.getParameter("bid")).thenReturn(bid);
+        }
+        return request;
+    }
+
+    /**
+     * A {@link ServletOutputStream} that writes into the given buffer.
+     */
+    private static ServletOutputStream servletOutputStream(final ByteArrayOutputStream buffer) {
+        return new ServletOutputStream() {
+            @Override
+            public void write(final int b) {
+                buffer.write(b);
+            }
+
+            @Override
+            public boolean isReady() {
+                return true;
+            }
+
+            @Override
+            public void setWriteListener(final WriteListener writeListener) {
+                // not used
+            }
+        };
     }
 }
