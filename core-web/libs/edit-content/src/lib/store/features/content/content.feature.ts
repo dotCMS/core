@@ -286,11 +286,6 @@ export function withContent() {
                             patchState(store, {
                                 state: ComponentStatus.LOADING,
                                 hiddenFields: {},
-                                // Unknown until this content's own `_canlock` answers (the lock
-                                // feature re-checks when the contentlet swaps). Keeping the
-                                // previous answer would render the new item with the previous
-                                // item's permission for a moment (#38724 R4).
-                                canLock: null,
                                 // The full-screen editor now reuses its component across
                                 // content navigations, so the store persists. Clear the
                                 // previous content's volatile, content-scoped slices to
@@ -401,6 +396,16 @@ export function withContent() {
                                             schemes: parsedSchemes,
                                             currentContentActions: parsedCurrentActions,
                                             contentlet,
+                                            // Unknown until this content's own `_canlock`
+                                            // answers (the lock feature re-checks when the
+                                            // contentlet swaps); keeping the previous answer
+                                            // would render the new item with the previous
+                                            // item's permission (#38724 R4). Reset here, when
+                                            // the new content lands, not when the load starts:
+                                            // a failed load keeps the previous contentlet,
+                                            // which is never re-checked, so its answer must
+                                            // stay or the loader never settles.
+                                            canLock: null,
                                             state: ComponentStatus.LOADED,
                                             currentStep: step,
                                             lastTask: task,

@@ -291,6 +291,14 @@ export function withLock() {
                             return dotContentletService.canLock(contentlet.inode).pipe(
                                 tapResponse({
                                     next: (response: DotContentletCanLock) => {
+                                        // A reply for a contentlet that has since been
+                                        // replaced (navigation to another item) must not
+                                        // settle the new one's permission; its own check
+                                        // follows.
+                                        if (store.contentlet()?.inode !== contentlet.inode) {
+                                            return;
+                                        }
+
                                         // Set the appropriate label based on lock status
                                         const lockSwitchLabel = response.locked
                                             ? 'edit.content.locked'
@@ -303,6 +311,10 @@ export function withLock() {
                                     },
                                     error: (error: HttpErrorResponse) => {
                                         dotHttpErrorManagerService.handle(error);
+                                        if (store.contentlet()?.inode !== contentlet.inode) {
+                                            return;
+                                        }
+
                                         patchState(store, { canLock: false });
                                     }
                                 })

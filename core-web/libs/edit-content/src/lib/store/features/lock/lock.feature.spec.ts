@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { patchState, signalStore, signalStoreFeature, withMethods, withState } from '@ngrx/signals';
 import { createServiceFactory, SpectatorService, SpyObject } from '@openng/spectator/vitest';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { fakeAsync, tick } from '@angular/core/testing';
@@ -552,6 +552,23 @@ describe('LockFeature', () => {
 
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalled();
                 expect(store.canLock()).toBe(false);
+            }));
+
+            it('should ignore a reply that arrives after another contentlet replaced the one it asked about (#38724 review)', fakeAsync(() => {
+                // Item A's slow `_canlock` must not settle item B's permission.
+                const reply = new Subject<DotContentletCanLock>();
+                dotContentletService.canLock.mockReturnValue(reply);
+                patchState(store, { contentlet: { inode: 'inode-a' } as DotCMSContentlet });
+                store.checkCanLock();
+
+                patchState(store, {
+                    contentlet: { inode: 'inode-b' } as DotCMSContentlet,
+                    canLock: null
+                });
+                reply.next({ canLock: true, locked: false } as DotContentletCanLock);
+                tick();
+
+                expect(store.canLock()).toBeNull();
             }));
 
             it('should set canLock to false when no contentlet exists', fakeAsync(() => {
