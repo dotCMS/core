@@ -94,7 +94,7 @@ Read each stage's reference when you reach that stage, not before.
 | 6 | Validate | Haiku per finding, Sonnet for logic, CI, Maven and docs, MISSING and contested ACs, at most 20 at once; keep scores of 80 or more (every finding under `SELF_TRIAGE`) | every finding scored and filtered | `validation.md` |
 | 7 | Report | the structured report, SHA-anchored | report printed | `report-template.md` |
 | 7b | Verify | head and comments refetched, anchors re-checked, duplicates dropped, overlaps become replies; runs in every mode, nothing reaches GitHub without it | gate line printed | `anchors.md` |
-| 8 | Post | AC walk-through as actions, one table, one posting decision, the verdict asked apart | posted, or declined | `posting.md` |
+| 8 | Post | AC walk-through as actions; a card per finding with a recommendation, the table and one posting decision; the verdict asked apart | posted, or declined | `posting.md` |
 | 9 | Simplifier | optional proposals, never edits | answered or skipped | `posting.md` |
 | 10 | Summary | summary, PR head checkout removed | summary printed | `posting.md` |
 

@@ -244,4 +244,4 @@ On the author's own security fix nothing is posted, and a real defect that score
 
 ### Filter
 
-Keep findings whose validator score is 80 or more and drop the rest, except under `SELF_TRIAGE` (above; for your own work `SELF_TRIAGE` follows `PRIVATE_LINKED`). Zero survivors is a valid result: Stage 7 reports "no issues found" in its usual shape.
+Keep findings whose validator score is 80 or more; every finding keeps its score and its validator's REASON line, which Stage 8's cards show. The rest are set aside, not deleted: reviewing someone else's PR, Stage 8 lists them under Not posting. The exception is `SELF_TRIAGE` (above; for your own work `SELF_TRIAGE` follows `PRIVATE_LINKED`). Zero survivors is a valid result: Stage 7 reports "no issues found" in its usual shape.

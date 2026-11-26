@@ -87,7 +87,7 @@ Compare against the finding's `evidence` (whitespace-normalized, ignore leading 
 | Not found anywhere in the file | `ANCHOR_STALE` → **drop the finding** — the code it describes no longer exists |
 | Finding carries no `evidence` | `ANCHOR_UNVERIFIABLE` → drop. An unverifiable anchor is how comments land on innocent lines |
 
-A finding that cannot be anchored to code at the head is no longer about this PR, so dropping it is the expected result. A line past the end of its file (`PAST_EOF`) is a diff offset cited as a file line: it is re-anchored from its evidence or dropped, never posted on the cited number.
+A finding that cannot be anchored to code at the head is no longer about this PR, so dropping it is the expected result. Every finding this stage drops keeps its reason (stale, ambiguous, unverifiable, duplicate) for Stage 8's Not posting list. A line past the end of its file (`PAST_EOF`) is a diff offset cited as a file line: it is re-anchored from its evidence or dropped, never posted on the cited number.
 
 ## 7b.4 — Drop duplicates of comments that already exist
 
@@ -97,7 +97,7 @@ A surviving finding is a **duplicate** of an entry in `EXISTING_COMMENTS` when a
 - the existing comment's `line` (or `original_line`) is within **±3 lines** of the finding, and
 - the existing comment makes substantially the same claim — same defect, same asked-for change. Judge the meaning, not the wording: "this can be null" and "add a null guard here" are the same claim.
 
-Drop every duplicate and record it as `DUPLICATE — already raised by @<user>`, so the summary table shows the point is covered.
+Drop every duplicate and record it as `DUPLICATE — already raised by @<user> at <path>:<line>`, so the table shows the point is covered.
 
 **Overlap is not duplication.** When an existing comment raises the same defect but the finding adds something it lacks (a second place it happens, the reason it breaks, the concrete fix), post only that additive part, as a **reply** in that comment's thread (`posting.md`, "Reply to an existing thread"). A PR-level comment has no thread: post the additive part inline, opening with "Adding to @<user>'s point:". Record it as `REPLY — adds to @<user>`.
 

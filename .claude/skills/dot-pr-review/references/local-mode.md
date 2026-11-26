@@ -132,7 +132,7 @@ Local verification: <kept>/<total> findings anchored — <stale> stale anchors d
 
 No `AskUserQuestion`, and 8a does not run; the caller acts on the report.
 - Write the Stage 7 report to `REPORT_PATH`. Every finding carries its severity, `path:line`, its origin (ADDED-BY-THIS-PR or PRE-EXISTING), what is wrong, why it matters and the suggested fix, with the reviewer confidence and the validator score. The AC coverage and test design sections carry the gaps 8a would have walked.
-- Print the summary table of `posting.md`, headed `## Findings — <BRANCH> (HEAD <SHORT_SHA>)`, then the "Not in report" line (stale anchors, duplicates, below the confidence cut-off), the coverage gaps and `Report: <REPORT_PATH>`. Go to Stage 10.
+- Print the table of `posting.md` without its Recommendation column, headed `## Findings — <BRANCH> (HEAD <SHORT_SHA>)`, then the "Not in report" line (stale anchors, duplicates, below the confidence cut-off), the coverage gaps and `Report: <REPORT_PATH>`. Go to Stage 10.
 
 ## Stages 9 and 10
 
