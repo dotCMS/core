@@ -257,7 +257,7 @@ public class ESIndexResource {
      * @throws DotDataException if the journal cannot be updated
      */
     @Operation(
-            operationId = "clearParkedReindexRecords",
+            operationId = "deleteFailedRecords",
             summary = "Clear parked reindex records",
             description = "Deletes every parked reindex record (one whose retries ran out) and logs"
                     + " who cleared, how many and the identifiers. Records still being retried are"
