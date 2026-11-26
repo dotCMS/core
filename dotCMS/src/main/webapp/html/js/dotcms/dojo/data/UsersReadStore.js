@@ -69,13 +69,9 @@ dojo.declare("dotcms.dojo.data.UsersReadStore", dotcms.dojo.data.DWRReadStore, {
 	},
 
 	/**
-	 * Calls GET /api/v1/roles with the given path and query, passing the store's asset as
-	 * permissionable so a user who may edit that asset's permissions can read roles. Resolves to
-	 * the response entity.
+	 * Calls GET /api/v1/roles with the given path and query. Resolves to the response entity.
 	 */
 	_getRoles: function (path, query) {
-		if(this.assetInode)
-			query.permissionable = this.assetInode;
 		var url = '/api/v1/roles' + path + '?' + Object.keys(query).map(function (key) {
 			return encodeURIComponent(key) + '=' + encodeURIComponent(query[key]);
 		}).join('&');
@@ -92,8 +88,15 @@ dojo.declare("dotcms.dojo.data.UsersReadStore", dotcms.dojo.data.DWRReadStore, {
 		return { id: role.id, name: role.name, emailaddress: '', type: 'role' };
 	},
 
+	/**
+	 * Loads one role, passing the store's asset as permissionable so a user who may edit that
+	 * asset's permissions can read it. Listing roles (fetchRoles) takes the Roles or Users portlet.
+	 */
 	loadRole: function (roleId, options) {
-		this._getRoles('/' + encodeURIComponent(roleId), { loadChildrenRoles: false })
+		var query = { loadChildrenRoles: false };
+		if(this.assetInode)
+			query.permissionable = this.assetInode;
+		this._getRoles('/' + encodeURIComponent(roleId), query)
 			.then(dojo.hitch(this, function (role) {
 				options.callback.call(options.scope, this._toRoleItem(role));
 			}))

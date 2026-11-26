@@ -707,8 +707,8 @@ public class RoleHelper {
 
     /**
      * Whether the user may change the permissions of the asset with the given id. The id is the
-     * one the Permissions tab works with: a folder, site, contentlet, template or container id,
-     * a content type id or a category inode.
+     * one the Permissions tab works with: a folder, site, contentlet, template, container or menu
+     * link id, a content type id or a category inode.
      *
      * @param assetId the id of the asset
      * @param user    the user making the request
@@ -730,6 +730,11 @@ public class RoleHelper {
         if (null == asset) {
             asset = Try.of(() -> (Permissionable) APILocator.getCategoryAPI()
                     .find(assetId, systemUser, false)).getOrNull();
+        }
+        if (null == asset) {
+            asset = Try.of(() -> "links".equals(APILocator.getIdentifierAPI().find(assetId).getAssetType())
+                    ? APILocator.getMenuLinkAPI().findWorkingLinkById(assetId, systemUser, false)
+                    : null).getOrNull();
         }
         if (null == asset) {
             asset = Try.of(() -> new AssetPermissionHelper().resolveAsset(assetId)).getOrNull();

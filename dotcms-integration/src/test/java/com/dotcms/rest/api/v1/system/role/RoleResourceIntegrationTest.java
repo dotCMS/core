@@ -2024,7 +2024,7 @@ public class RoleResourceIntegrationTest {
                 () -> call(() -> resource.loadRoleByRoleId(requestFor(contentUser),
                         new MockHttpResponse().response(), role.getId(), false, null)),
                 () -> call(() -> resource.searchRoles(requestFor(contentUser),
-                        new MockHttpResponse().response(), "", "", "", 0, 20, true, false, null)),
+                        new MockHttpResponse().response(), "", "", "", 0, 20, true, false)),
                 () -> call(() -> legacyResource.loadChildren(requestFor(contentUser),
                         new MockHttpResponse().response(), "")),
                 () -> call(() -> legacyResource.loadById(requestFor(contentUser),
@@ -2068,11 +2068,12 @@ public class RoleResourceIntegrationTest {
     }
 
     /**
-     * Given Scenario: A back-end user with only the Content tool holds EDIT_PERMISSIONS on one
-     * folder and on one content type, as an editor using the Permissions tab does. They read the
-     * role tree naming each of those, then naming a folder they may only read.
-     * Expected Result: served for the folder and the content type they may edit permissions on,
-     * refused for the other folder.
+     * Given Scenario: A back-end user with only the Content tool holds EDIT_PERMISSIONS on a
+     * folder, a content type, a contentlet, a menu link and a site, as an editor using the
+     * Permissions tab does. They read the role tree naming each of those, then naming a folder
+     * they may only read, and they search roles.
+     * Expected Result: served for every asset they may edit permissions on; refused for the
+     * read-only folder; the role search is refused, since it takes the Roles or Users portlet.
      */
     @Test
     public void testReadRoles_namingAssetWithEditPermissions_allowedOnlyForThatAsset() throws Exception {
@@ -2080,29 +2081,39 @@ public class RoleResourceIntegrationTest {
         final User systemUser = APILocator.systemUser();
         final User editor = backendUserWithOnlyPortlet("content");
         final Role editorRole = roleAPI.getUserRole(editor);
+        final int editPermissions = PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT_PERMISSIONS;
 
         final Host site = new SiteDataGen().nextPersisted();
         createdSites.add(site);
+        final Host editableSite = new SiteDataGen().nextPersisted();
+        createdSites.add(editableSite);
         final com.dotmarketing.portlets.folders.model.Folder editable =
                 new com.dotcms.datagen.FolderDataGen().site(site).nextPersisted();
         final com.dotmarketing.portlets.folders.model.Folder readOnly =
                 new com.dotcms.datagen.FolderDataGen().site(site).nextPersisted();
         final com.dotcms.contenttype.model.type.ContentType contentType =
-                new com.dotcms.datagen.ContentTypeDataGen().host(site).nextPersisted();
+                new com.dotcms.datagen.ContentTypeDataGen().host(site).nextPersistedWithSampleFields();
+        final com.dotmarketing.portlets.contentlet.model.Contentlet contentlet =
+                new com.dotcms.datagen.ContentletDataGen(contentType).host(site)
+                        .nextPersistedWithSampleTextValues();
+        final com.dotmarketing.portlets.links.model.Link link =
+                new com.dotcms.datagen.LinkDataGen(editable).hostId(site.getIdentifier())
+                        .nextPersisted();
         try {
-            permissionAPI.save(new Permission(editable.getPermissionId(), editorRole.getId(),
-                    PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT_PERMISSIONS, true),
-                    editable, systemUser, false);
-            permissionAPI.save(new Permission(contentType.getPermissionId(), editorRole.getId(),
-                    PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT_PERMISSIONS, true),
-                    contentType, systemUser, false);
+            final List<com.dotmarketing.business.Permissionable> editableAssets =
+                    List.of(editable, contentType, contentlet, link, editableSite);
+            for (final com.dotmarketing.business.Permissionable asset : editableAssets) {
+                permissionAPI.save(new Permission(asset.getPermissionId(), editorRole.getId(),
+                        editPermissions, true), asset, systemUser, false);
+            }
             permissionAPI.save(new Permission(readOnly.getPermissionId(), editorRole.getId(),
                     PermissionAPI.PERMISSION_READ, true), readOnly, systemUser, false);
 
-            for (final String assetId : List.of(editable.getPermissionId(), contentType.id())) {
+            for (final com.dotmarketing.business.Permissionable asset : editableAssets) {
                 final Response roots = resource.loadRootRoles(requestFor(editor),
-                        new MockHttpResponse().response(), true, true, assetId);
-                assertEquals(assetId, Response.Status.OK.getStatusCode(), roots.getStatus());
+                        new MockHttpResponse().response(), true, true, asset.getPermissionId());
+                assertEquals(asset.getClass().getSimpleName(),
+                        Response.Status.OK.getStatusCode(), roots.getStatus());
             }
 
             try {
@@ -2112,7 +2123,16 @@ public class RoleResourceIntegrationTest {
             } catch (final ForbiddenException e) {
                 // expected
             }
+
+            try {
+                resource.searchRoles(requestFor(editor), new MockHttpResponse().response(),
+                        "", "", "", 0, 20, true, false);
+                fail("Searching roles takes the Roles or Users portlet");
+            } catch (final ForbiddenException e) {
+                // expected
+            }
         } finally {
+            com.dotcms.datagen.ContentletDataGen.remove(contentlet);
             com.dotcms.datagen.ContentTypeDataGen.remove(contentType);
         }
     }

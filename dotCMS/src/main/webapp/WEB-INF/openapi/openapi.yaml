@@ -16724,7 +16724,7 @@ paths:
     get:
       description: "Search and filter roles by name, key, or ID with pagination support.\
         \ Includes options to filter by workflow roles. Requires the Roles or Users\
-        \ portlet, or EDIT_PERMISSIONS on the asset named by permissionable."
+        \ portlet."
       operationId: searchRoles
       parameters:
       - description: Value to filter by role name
@@ -16771,13 +16771,6 @@ paths:
         schema:
           type: boolean
           default: false
-      - description: Id of an asset whose permissions the caller is editing. A caller
-          without the Roles or Users portlet may read roles when they hold EDIT_PERMISSIONS
-          on this asset
-        in: query
-        name: permissionable
-        schema:
-          type: string
       responses:
         "200":
           content:
@@ -16787,8 +16780,7 @@ paths:
         "403":
           content:
             application/json: {}
-          description: "Forbidden - backend user with the Roles or Users portlet,\
-            \ or EDIT_PERMISSIONS on the permissionable asset, required"
+          description: Forbidden - backend user with the Roles or Users portlet required
       summary: Search Roles
       tags:
       - Roles

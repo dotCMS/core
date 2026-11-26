@@ -1231,8 +1231,9 @@ public class RoleResource implements Serializable {
 	 * Want to include workflow roles (by default is false)
 	 * /api/v1/roles/_search?includeWorkflowRoles=true
 	 *
-	 * The caller needs the Roles or Users portlet, or EDIT_PERMISSIONS on the asset named by
-	 * {@code permissionable}.
+	 * The caller needs the Roles or Users portlet. The results include users' personal roles, so,
+	 * unlike the other role reads, naming an asset whose permissions the caller may edit is not
+	 * enough.
 	 *
 	 * @return list of {@link Role}
 	 * @throws DotDataException
@@ -1245,7 +1246,7 @@ public class RoleResource implements Serializable {
 		operationId = "searchRoles",
 		summary = "Search Roles",
 		description = "Search and filter roles by name, key, or ID with pagination support. Includes options to filter by workflow roles. "
-				+ "Requires the Roles or Users portlet, or EDIT_PERMISSIONS on the asset named by permissionable.",
+				+ "Requires the Roles or Users portlet.",
 		responses = {
 					@ApiResponse(
 							responseCode = "200",
@@ -1253,8 +1254,7 @@ public class RoleResource implements Serializable {
 									schema = @Schema(implementation = ResponseEntitySmallRoleView.class))),
 					@ApiResponse(
 							responseCode = "403",
-							description = "Forbidden - backend user with the Roles or Users portlet, or "
-									+ "EDIT_PERMISSIONS on the permissionable asset, required",
+							description = "Forbidden - backend user with the Roles or Users portlet required",
 							content = @Content(mediaType = "application/json"))})
 	public Response searchRoles(@Context final HttpServletRequest request,
 								@Context final HttpServletResponse response,
@@ -1271,15 +1271,13 @@ public class RoleResource implements Serializable {
 								@Parameter(name = "includeUserRoles", description = "Set false if do not want to include user rules")
 								@DefaultValue("true") @QueryParam("includeUserRoles")      final boolean includeUserRoles,
 								@Parameter(name = "includeWorkflowRoles", description = "Set to true if want to include the workflow roles")
-								@DefaultValue("false") @QueryParam("includeWorkflowRoles")  final boolean includeWorkflowRoles,
-								@Parameter(name = "permissionable", description = PERMISSIONABLE_DESCRIPTION)
-								@QueryParam("permissionable") final String permissionable)
+								@DefaultValue("false") @QueryParam("includeWorkflowRoles")  final boolean includeWorkflowRoles)
             throws DotDataException, DotSecurityException, LanguageException, IOException, InvocationTargetException, IllegalAccessException {
 
 		final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource).requiredBackendUser(true)
 				.requiredFrontendUser(false).requestAndResponse(request, response)
 				.rejectWhenNoUser(true).init();
-		this.checkCanReadRoles(initDataObject.getUser(), permissionable, "GET /v1/roles/_search");
+		this.checkCanReadRoles(initDataObject.getUser(), null, "GET /v1/roles/_search");
 
 		Logger.debug(this, ()-> "Searching role, searchName: " + searchName + ", searchKey: " + searchKey + ", roleId: " + roleId
 				+ ", start: " + startParam + ", count: " + count + ", includeUserRoles: " + includeUserRoles + ", includeWorkflowRoles: " + includeWorkflowRoles);
