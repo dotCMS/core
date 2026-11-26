@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.workflows.ajax;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.language.LanguageUtil;
@@ -89,6 +90,19 @@ abstract class WfBaseAction extends AjaxAction {
 	Method getMethod(String method,  Class<?>... parameterTypes ) throws NoSuchMethodException {
 		Logger.debug(this, "Trying to run method:" + method + " with parameters:" + parameterTypes);
 		return this.getClass().getMethod(method, parameterTypes);
+	}
+
+	/**
+	 * Refuses the request with a 403 and records the refusal once in the security log.
+	 *
+	 * @param response the response to refuse
+	 * @param resource short description of what was requested, for the log line
+	 * @throws IOException if the error cannot be sent
+	 */
+	protected void sendForbidden(final HttpServletResponse response, final String resource) throws IOException {
+		SecurityLogger.logInfo(this.getClass(), () -> String.format("User ID '%s' was refused the %s",
+				null != getUser() ? getUser().getUserId() : null, resource));
+		response.sendError(HttpServletResponse.SC_FORBIDDEN);
 	}
 
 	public void writeError(HttpServletResponse response, String error) throws IOException {

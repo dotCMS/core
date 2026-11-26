@@ -134,6 +134,7 @@ import org.junit.runners.Suite;
     com.dotmarketing.portlets.user.ajax.UserAjaxHasUserRolesIntegrationTest.class,
     com.dotcms.rest.api.v1.user.UserResourcePasswordIntegrationTest.class,
     com.dotmarketing.image.vips.VipsTruncatedImageIntegrationTest.class,
+    com.dotmarketing.portlets.workflows.ajax.WorkflowAjaxReadAccessIntegrationTest.class,
     com.dotmarketing.portlets.workflows.action.WorkflowTaskAccessTest.class,
     com.dotcms.rendering.velocity.viewtools.XsltToolTest.class,
     com.dotmarketing.portlets.htmlpageasset.business.render.page.PageViewSerializerRelatedContentTest.class,

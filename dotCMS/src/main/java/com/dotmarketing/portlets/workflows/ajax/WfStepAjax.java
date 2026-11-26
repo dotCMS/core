@@ -15,6 +15,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 
 import javax.servlet.ServletException;
@@ -30,6 +31,24 @@ public class WfStepAjax extends WfBaseAction {
 	private final WorkflowHelper workflowHelper = WorkflowHelper.getInstance();
 	private final UserWebAPI     userWebAPI     = WebAPILocator.getUserWebAPI();
 	private final WorkflowAPI    workflowAPI 	= APILocator.getWorkflowAPI();
+	private final WorkflowAjaxReadAccess readAccess;
+
+	/**
+	 * Creates the action as the ajax director does, with the default access check.
+	 */
+	public WfStepAjax() {
+		this(new WorkflowAjaxReadAccess());
+	}
+
+	/**
+	 * Creates the action with the given access check.
+	 *
+	 * @param readAccess decides who may read the step list
+	 */
+	@VisibleForTesting
+	WfStepAjax(final WorkflowAjaxReadAccess readAccess) {
+		this.readAccess = readAccess;
+	}
 
 	public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{};
 	
@@ -154,7 +173,22 @@ public class WfStepAjax extends WfBaseAction {
 	}
 
 	
+	/**
+	 * Writes the steps of the scheme in {@code schemeId} as the JSON store the Workflow Tasks step
+	 * filter reads. Only back-end users who can open the {@code workflow} or {@code workflow-schemes}
+	 * portlet may read it;
+	 * anyone else gets a 403. A request without a scheme id writes nothing.
+	 *
+	 * @param request  the request with the {@code schemeId}
+	 * @param response the response the JSON is written to
+	 * @throws ServletException if the request cannot be served
+	 * @throws IOException      if the response cannot be written
+	 */
 	public void listByScheme(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		if (!readAccess.canReadSteps(getUser())) {
+			sendForbidden(response, "step list");
+			return;
+		}
 		String schemeId = request.getParameter("schemeId");
 		if(schemeId ==null || schemeId.length() < 1){
 			return;
