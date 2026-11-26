@@ -41,13 +41,18 @@ public class BulkProcessorListener implements IndexBulkListener {
 
     final Map<String, ReindexEntry> workingRecords;
 
-    // RED STUB (#37270): compile-only, replaced by the implementation after the Red gate.
+    /**
+     * Identifiers with at least one document indexed in this batch. Concurrent: the processor may
+     * run several bulk requests of the batch at once, each reporting on its own thread.
+     */
     final Set<String> succeeded = ConcurrentHashMap.newKeySet();
 
-    // RED STUB (#37270): compile-only, replaced by the implementation after the Red gate.
-    List<ReindexEntry> entriesToAcknowledge() {
-        return List.of();
-    }
+    /**
+     * Identifiers with at least one document that failed in this batch, per document or because its
+     * whole request failed. An identifier enters once, which is what marks its entry failed only
+     * once per batch.
+     */
+    final Set<String> failed = ConcurrentHashMap.newKeySet();
 
     static final List<String> RESERVED_IDS = List.of(Host.SYSTEM_HOST);
 
@@ -177,13 +182,17 @@ public class BulkProcessorListener implements IndexBulkListener {
             }
             totalResponses++;
             if (result.failed()) {
-                handleFailure(idx, "bulk index failure:" + result.failureMessage());
+                failOnce(id, idx, "bulk index failure:" + result.failureMessage());
             } else {
                 successful.add(idx);
+                succeeded.add(id);
             }
         }
 
-        handleSuccess(successful);
+        // The entries are not deleted here: a sibling document of the same identifier may still
+        // fail in a response that has not come back yet (#37270). ReindexThread deletes
+        // entriesToAcknowledge() once every response of the batch has reported.
+        clearQueryCaches(successful);
         // 50% failure rate guard: log a warning so the failure is observable.
         // No explicit rebuild needed — ReindexThread creates a fresh processor per batch,
         // so the next batch will automatically start with a clean processor.
@@ -200,8 +209,9 @@ public class BulkProcessorListener implements IndexBulkListener {
      * Handles a bulk request that failed as a whole, before the engine returned per-document
      * results, so the document that caused it cannot be identified.
      *
-     * <p>Every tracked entry is marked failed. When the cause is a content problem — a JSON
-     * processing error anywhere in the cause chain — each entry is told it failed collaterally
+     * <p>Every tracked entry not already marked failed in this batch is marked failed. When the
+     * cause is a content problem — a JSON processing error anywhere in the cause chain — each
+     * entry is told it failed collaterally
      * and one ERROR line lists the identifiers of the request, so support does not inspect every
      * contentlet as if it were the culprit (#37269). Any other cause (connection, timeout,
      * authentication) keeps the exception's own message. Nothing is resent; each entry still
@@ -224,11 +234,11 @@ public class BulkProcessorListener implements IndexBulkListener {
                     + workingRecords.size() + " entries are marked failed collaterally: "
                     + workingRecords.keySet() + ". Cause: " + msg, failure);
             final String collateral = COLLATERAL_FAILURE_PREFIX + msg;
-            workingRecords.values().forEach(idx -> handleFailure(idx, collateral));
+            workingRecords.forEach((id, idx) -> failOnce(id, idx, collateral));
             return;
         }
         Logger.error(ReindexThread.class, "Bulk process failed entirely: " + msg, failure);
-        workingRecords.values().forEach(idx -> handleFailure(idx, msg));
+        workingRecords.forEach((id, idx) -> failOnce(id, idx, msg));
     }
 
     /**
@@ -412,16 +422,54 @@ public class BulkProcessorListener implements IndexBulkListener {
         return null;
     }
 
-    private void handleSuccess(final List<ReindexEntry> successful) {
-        try {
-            if (!successful.isEmpty()) {
-                APILocator.getReindexQueueAPI().deleteReindexEntry(successful);
-                CacheLocator.getESQueryCache().clearCache();
-                CacheLocator.getOSQueryCache().clearCache();
+    /**
+     * Returns the entries of this batch to delete from the journal: those with at least one
+     * document indexed and none failed. Called by {@link ReindexThread} after the bulk processor
+     * closed, when every response of the batch has reported, so a sibling's success can no longer
+     * erase a failure that reports later (#37270). An identifier withheld at mapping time is no
+     * longer tracked and is never returned. A shadow listener returns nothing: it never touches
+     * the journal.
+     *
+     * @return the entries to acknowledge; empty when there are none
+     */
+    List<ReindexEntry> entriesToAcknowledge() {
+        if (shadow) {
+            return List.of();
+        }
+        final List<ReindexEntry> acknowledged = new ArrayList<>();
+        workingRecords.forEach((identifier, entry) -> {
+            if (succeeded.contains(identifier) && !failed.contains(identifier)) {
+                acknowledged.add(entry);
             }
-        } catch (DotDataException e) {
-            Logger.warnAndDebug(this.getClass(),
-                    "unable to delete indexjournal: " + e.getMessage(), e);
+        });
+        return acknowledged;
+    }
+
+    /**
+     * Clears the query caches when a response indexed at least one document, so a search issued
+     * right after a save does not read a stale cached result while the rest of the batch finishes.
+     *
+     * @param successful the entries with a document indexed in this response
+     */
+    private void clearQueryCaches(final List<ReindexEntry> successful) {
+        if (!successful.isEmpty()) {
+            CacheLocator.getESQueryCache().clearCache();
+            CacheLocator.getOSQueryCache().clearCache();
+        }
+    }
+
+    /**
+     * Marks the entry failed the first time one of its documents fails in this batch, and ignores
+     * every later failure of the same identifier. Marking it twice would consume a second retry in
+     * one batch and, when the entry parks, notify the administrators twice.
+     *
+     * @param identifier the key of the entry in {@link #workingRecords}
+     * @param idx        the entry whose document failed
+     * @param cause      the failure reason to record
+     */
+    private void failOnce(final String identifier, final ReindexEntry idx, final String cause) {
+        if (failed.add(identifier)) {
+            handleFailure(idx, cause);
         }
     }
 
