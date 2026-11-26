@@ -1,16 +1,31 @@
 package com.dotmarketing.common.reindex;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
+import com.dotcms.content.index.domain.IndexBulkProcessor;
+import com.dotcms.contenttype.model.field.TextAreaField;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.ReindexQueueFactory.ReindexAction;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
+import com.liferay.portal.model.User;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +58,13 @@ import org.junit.Test;
  */
 public class FailedReindexRecordsTest {
 
+    /** One character over Jackson's default maximum string length (#37269). */
+    private static final int OVERSIZED_LENGTH = 20_000_001;
+
     private static ReindexQueueAPI reindexQueueAPI;
+    private static ContentletIndexAPI indexAPI;
+    private static ContentType contentType;
+    private static User systemUser;
 
     /** Identifier of every row a test inserted, removed after each test. */
     private final List<String> inserted = new ArrayList<>();
@@ -52,8 +73,13 @@ public class FailedReindexRecordsTest {
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
         reindexQueueAPI = APILocator.getReindexQueueAPI();
+        indexAPI = APILocator.getContentletIndexAPI();
+        systemUser = APILocator.systemUser();
         Config.setProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", true);
         ReindexThread.pause();
+        contentType = new ContentTypeDataGen()
+                .field(new FieldDataGen().type(TextAreaField.class).velocityVarName("body").next())
+                .nextPersisted();
     }
 
     @AfterClass
@@ -104,19 +130,225 @@ public class FailedReindexRecordsTest {
     }
 
     /**
+     * Given Scenario: Parked rows of existing content at 705 (reindex), 505 (save) and 401 (ASAP),
+     * left by another server long ago, and a row still being retried at 302.
+     * Expected Result: The retry moves each parked row back to its original band with a fresh
+     * budget (300, 100, 0), keeps its row id and action, clears its server and stamps it now, so
+     * the stale-row requeue does not take it for a stuck one; the retrying row is untouched
+     * (AC-001).
+     */
+    @Test
+    public void retryRequeuesAtOriginalBandWithFreshBudget() throws Exception {
+        final Date longAgo = new Date(0);
+        final long reindexRow = insertRow(newContentlet("a").getIdentifier(), 705, longAgo);
+        final long saveRow = insertRow(newContentlet("b").getIdentifier(), 505, longAgo);
+        final long asapRow = insertRow(newContentlet("c").getIdentifier(), 401, longAgo);
+        final long retryingRow = insertRow(newContentlet("d").getIdentifier(), 302, longAgo);
+        final Date beforeRetry = new Date(DbConnectionFactory.now().getTime() - 1_000);
+
+        final ParkedRecordsRetry retried = reindexQueueAPI.retryParkedRecords(systemUser);
+
+        assertTrue("at least the three parked rows are requeued: " + retried,
+                retried.requeued() >= 3);
+        assertRow(reindexRow, 300, beforeRetry);
+        assertRow(saveRow, 100, beforeRetry);
+        assertRow(asapRow, 0, beforeRetry);
+        final Map<String, Object> untouched = row(retryingRow);
+        assertEquals(302, ((Number) untouched.get("priority")).intValue());
+        assertEquals(longAgo.getTime(), ((Date) untouched.get("time_entered")).getTime());
+    }
+
+    /**
+     * Given Scenario: A parked reindex row whose content no longer exists, next to a parked row of
+     * existing content.
+     * Expected Result: The retry turns the first into a delete, so its stale document leaves the
+     * index instead of the row being dropped silently; the second stays a reindex (AC-001).
+     */
+    @Test
+    public void retryOfDeletedContentBecomesDelete() throws Exception {
+        final long goneRow = insertRow(UUIDGenerator.generateUuid(), 705, new Date());
+        final long existingRow = insertRow(newContentlet("e").getIdentifier(), 705, new Date());
+
+        final ParkedRecordsRetry retried = reindexQueueAPI.retryParkedRecords(systemUser);
+
+        assertTrue("the row of deleted content is requeued as a delete: " + retried,
+                retried.requeuedAsDelete() >= 1);
+        assertEquals(ReindexAction.DELETE.ordinal(),
+                ((Number) row(goneRow).get("dist_action")).intValue());
+        assertEquals(ReindexAction.REINDEX.ordinal(),
+                ((Number) row(existingRow).get("dist_action")).intValue());
+    }
+
+    /**
+     * Given Scenario: A saved content's journal row is parked (its cause has since been removed).
+     * Expected Result: After the retry the next reindex iteration claims it, the content is in
+     * the index and its rows leave the journal (AC-001).
+     */
+    @Test
+    public void retriedRowIsIndexedEndToEnd() throws Exception {
+        final Contentlet content = newContentlet("retried body");
+        final String identifier = content.getIdentifier();
+        inserted.add(identifier);
+        parkAllRowsOf(identifier, 505);
+
+        reindexQueueAPI.retryParkedRecords(systemUser);
+        runOneReindexIteration(claimEntries(identifier));
+
+        assertTrue("the retried content must be indexed: " + identifier,
+                awaitIndexed(identifier));
+        assertEquals("the retried rows must leave the journal", 0, rowsOf(identifier));
+    }
+
+    /**
+     * Given Scenario: A parked row whose cause is still there: an oversized document the mapping
+     * step withholds every time.
+     * Expected Result: After the retry it fails again, parks again once its budget runs out, and
+     * stays parked: nothing requeues it by itself (AC-002).
+     */
+    @Test
+    public void retriedRowParksAgainWhenCauseRemains() throws Exception {
+        final Contentlet content = newContentlet("x".repeat(OVERSIZED_LENGTH));
+        final String identifier = content.getIdentifier();
+        inserted.add(identifier);
+        parkAllRowsOf(identifier, 505);
+
+        reindexQueueAPI.retryParkedRecords(systemUser);
+        assertTrue("the retry must send the row back to the queue",
+                highestPriorityOf(identifier) < 400);
+        for (int attempt = 0; attempt <= ReindexQueueFactory.REINDEX_MAX_FAILURE_ATTEMPTS
+                && highestPriorityOf(identifier) < 400; attempt++) {
+            runOneReindexIteration(claimEntries(identifier));
+        }
+
+        assertTrue("the row must park again", highestPriorityOf(identifier) >= 400);
+        for (int poll = 0; poll < 3; poll++) {
+            reindexQueueAPI.findContentToReindex(1_000);
+        }
+        assertTrue("a parked row must not be requeued by itself",
+                highestPriorityOf(identifier) >= 400);
+    }
+
+    /**
      * Inserts one journal row with the given priority under a fresh identifier.
      *
      * @return the identifier of the row
      */
     private String insertRow(final int priority) throws DotDataException {
         final String identifier = UUIDGenerator.generateUuid();
-        new DotConnect().setSQL("INSERT INTO dist_reindex_journal"
-                        + " (inode_to_index, ident_to_index, priority, dist_action, time_entered)"
-                        + " VALUES (?, ?, ?, ?, ?)")
-                .addParam(identifier).addParam(identifier).addParam(priority)
-                .addParam(ReindexAction.REINDEX.ordinal()).addParam(DbConnectionFactory.now())
-                .loadResult();
-        inserted.add(identifier);
+        insertRow(identifier, priority, DbConnectionFactory.now());
         return identifier;
+    }
+
+    /**
+     * Inserts one reindex row for the identifier, owned by another server, and returns its id.
+     */
+    private long insertRow(final String identifier, final int priority, final Date timeEntered)
+            throws DotDataException {
+        inserted.add(identifier);
+        final List<Map<String, Object>> rows = new DotConnect().setSQL(
+                        "INSERT INTO dist_reindex_journal"
+                        + " (inode_to_index, ident_to_index, priority, dist_action, time_entered,"
+                        + " serverid) VALUES (?, ?, ?, ?, ?, ?) RETURNING id")
+                .addParam(identifier).addParam(identifier).addParam(priority)
+                .addParam(ReindexAction.REINDEX.ordinal()).addParam(timeEntered)
+                .addParam("another-server")
+                .loadObjectResults();
+        return ((Number) rows.get(0).get("id")).longValue();
+    }
+
+    /** Reads one journal row by id. */
+    private static Map<String, Object> row(final long id) throws DotDataException {
+        final List<Map<String, Object>> rows = new DotConnect().setSQL(
+                        "SELECT priority, serverid, dist_action, time_entered"
+                        + " FROM dist_reindex_journal WHERE id = ?")
+                .addParam(id).loadObjectResults();
+        assertEquals("row " + id + " must still exist", 1, rows.size());
+        return rows.get(0);
+    }
+
+    /** Asserts a requeued row: its band, no server, and stamped after {@code notBefore}. */
+    private static void assertRow(final long id, final int priority, final Date notBefore)
+            throws DotDataException {
+        final Map<String, Object> row = row(id);
+        assertEquals(priority, ((Number) row.get("priority")).intValue());
+        assertNull("the requeued row must not keep its old server", row.get("serverid"));
+        assertEquals(ReindexAction.REINDEX.ordinal(), ((Number) row.get("dist_action")).intValue());
+        assertTrue("the requeued row must be stamped now",
+                !((Date) row.get("time_entered")).before(notBefore));
+    }
+
+    /** Parks every journal row of the identifier at the given priority. */
+    private static void parkAllRowsOf(final String identifier, final int priority)
+            throws DotDataException {
+        new DotConnect().setSQL("UPDATE dist_reindex_journal SET priority = ?"
+                        + " WHERE ident_to_index = ?")
+                .addParam(priority).addParam(identifier).loadResult();
+        assertTrue("the content must have a journal row to park", rowsOf(identifier) > 0);
+    }
+
+    private static int rowsOf(final String identifier) throws DotDataException {
+        return new DotConnect().setSQL("SELECT count(*) AS count FROM dist_reindex_journal"
+                + " WHERE ident_to_index = ?").addParam(identifier).getInt("count");
+    }
+
+    private static int highestPriorityOf(final String identifier) throws DotDataException {
+        return new DotConnect().setSQL("SELECT coalesce(max(priority), -1) AS count"
+                + " FROM dist_reindex_journal WHERE ident_to_index = ?")
+                .addParam(identifier).getInt("count");
+    }
+
+    private static Contentlet newContentlet(final String body) {
+        return new ContentletDataGen(contentType)
+                .setProperty("body", body)
+                .setPolicy(IndexPolicy.DEFER)
+                .nextPersisted();
+    }
+
+    /**
+     * Claims the identifier's journal entries. The queue serves claims from an in-memory buffer
+     * that may hold stale entries from earlier tests, so this polls until the row comes back.
+     */
+    private static Map<String, ReindexEntry> claimEntries(final String identifier)
+            throws Exception {
+        ReindexQueueFactory.resetLastIdReindexed();
+        final Map<String, ReindexEntry> entries = new HashMap<>();
+        for (int i = 0; i < 20 && entries.isEmpty(); i++) {
+            reindexQueueAPI.findContentToReindex(1_000).forEach((id, entry) -> {
+                if (identifier.equals(id)) {
+                    entries.put(id, entry);
+                }
+            });
+        }
+        assertEquals("the entry must be claimed from the queue",
+                new HashSet<>(List.of(identifier)), entries.keySet());
+        return entries;
+    }
+
+    /** Runs one iteration the way {@code ReindexThread.runReindexLoop} does, ack included. */
+    private static void runOneReindexIteration(final Map<String, ReindexEntry> entries)
+            throws Exception {
+        final BulkProcessorListener listener = new BulkProcessorListener();
+        listener.workingRecords.putAll(entries);
+        try (final IndexBulkProcessor processor = indexAPI.createBulkProcessor(listener)) {
+            indexAPI.appendToBulkProcessor(processor, entries.values());
+        }
+        final List<ReindexEntry> acknowledged = listener.entriesToAcknowledge();
+        if (!acknowledged.isEmpty()) {
+            reindexQueueAPI.deleteReindexEntry(acknowledged);
+        }
+    }
+
+    /** Waits for the index to refresh and tells whether the identifier is searchable. */
+    private static boolean awaitIndexed(final String identifier) throws Exception {
+        for (int i = 0; i < 20; i++) {
+            CacheLocator.getESQueryCache().clearCache();
+            CacheLocator.getOSQueryCache().clearCache();
+            if (APILocator.getContentletAPI().indexCount("+identifier_dotraw:" + identifier,
+                    systemUser, false) > 0) {
+                return true;
+            }
+            Thread.sleep(500);
+        }
+        return false;
     }
 }

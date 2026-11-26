@@ -101,6 +101,12 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
     public long failedRecordCount() throws DotDataException {
         return reindexQueueFactory.failedRecordCount();
     }
+    // RED STUB (#37270): compile-only, replaced by the implementation after the Red gate.
+    @Override
+    public ParkedRecordsRetry retryParkedRecords(final com.liferay.portal.model.User user) {
+        return new ParkedRecordsRetry(0, 0);
+    }
+
     @Override
     @CloseDBIfOpened
     public long parkedRecordCount() throws DotDataException {

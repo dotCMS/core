@@ -191,6 +191,9 @@ public interface ReindexQueueAPI {
      */
     long parkedRecordCount() throws DotDataException;
 
+    // RED STUB (#37270): compile-only, replaced by the implementation after the Red gate.
+    ParkedRecordsRetry retryParkedRecords(com.liferay.portal.model.User user) throws DotDataException;
+
     /**
      * Lists the journal rows that failed at least once, parked or still being retried, whatever
      * band they were queued at. Describes the same rows as {@link #failedRecordCount()} (#37270).
