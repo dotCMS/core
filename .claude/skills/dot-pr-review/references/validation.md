@@ -89,12 +89,13 @@ RULES:
 - Decide from the inlined content only. If something seems missing, that itself is a signal the finding is weak.
 - Respond in exactly the two lines specified at the bottom. No preamble, no analysis section.
 
-Rubric:
-- 100: Definitely real, directly violates the cited standard, clearly affects correctness or maintainability
-- 80:  Highly confident. Real and important. Matches the cited standard AND the diff evidence.
-- 50:  Moderately confident. Real but minor or nitpicky.
-- 25:  Possibly real but may be a false positive. Not fully verifiable from the inlined evidence.
-- 0:   False positive, pre-existing issue, or not actually present in the changed lines.
+Rubric — score whether the finding is TRUE. How much it matters is the reviewer's severity, not your score:
+- 100: The diff shows exactly what the finding claims, and the cited rule forbids it with no exception that applies.
+- 80:  The diff shows what the finding claims and the cited rule applies; a doubt remains that the inlined text cannot settle (an exception the rule allows, a justification nearby).
+- 50:  The claim is true but cites no rule and is a preference, or whether the cited rule applies depends on code that is not inlined.
+- 25:  The inlined evidence supports the claim only in part.
+- 0:   False positive: the code does not do what the finding says, or the lines are not changed by this PR.
+A true violation of a cited rule scores 80 or more even when its effect looks small: minor is not false.
 
 Finding to validate:
 <finding JSON or markdown>
