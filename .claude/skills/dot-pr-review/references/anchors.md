@@ -1,0 +1,116 @@
+# Stage 7b: Pre-Post Verification (MUST run before any comment is posted)
+
+Local mode runs its own version of this stage, in `local-mode.md`.
+
+Everything up to here was computed from a snapshot taken in Stage 2. Between then and now the PR may have moved, and other reviewers — human or bot — may have said what you are about to say. Posting against a stale snapshot produces comments anchored to the wrong line, and posting a duplicate is worse than saying nothing.
+
+This stage runs **unconditionally** before Stage 8, in both interactive and auto mode. It is the last gate: nothing reaches GitHub without passing it.
+
+## 7b.1 — Refetch the head SHA and every existing comment
+
+```bash
+gh api repos/dotCMS/core/pulls/<N> --jq '.head.sha'
+```
+
+```bash
+gh api --paginate repos/dotCMS/core/pulls/<N>/comments --jq '.[] | {id, path, line, original_line, side, user: .user.login, body}'
+```
+
+```bash
+gh api --paginate repos/dotCMS/core/pulls/<N>/reviews --jq '.[] | select(.body != "") | {user: .user.login, state, body}'
+```
+
+```bash
+gh api --paginate repos/dotCMS/core/issues/<N>/comments --jq '.[] | {id, user: .user.login, body}'
+```
+
+Store the SHA as `CURRENT_SHA` and the comments as `EXISTING_COMMENTS`. Include **bot** comments (sonar, codecov, copilot, dotcms bots) — a duplicate of a bot's finding is still a duplicate and still noise for the author. This is a second fetch on purpose: the Stage 2 digest is minutes old, and a bot such as `claude[bot]` edits its "working..." comment into a full review after it posts it.
+
+## 7b.2 — If the SHA moved, re-slice the diff from local git
+
+```
+SHA_CHANGED = (CURRENT_SHA != HEAD_SHA)
+```
+
+When `SHA_CHANGED` is true, the Stage 2 diff is stale. **Do not re-run `gh pr diff` to fix it.** `gh pr diff` returns one concatenated blob, and when a file does not end in a trailing newline the next file's `diff --git` header is glued onto that file's last line. Every line number after that point is off, which is exactly the bug that puts comments on the wrong line.
+
+Re-slice **per file, from the local clone** instead:
+
+First make sure the commit is local — and **skip the fetch when it already is**, because a merged PR's head is usually reachable from `main` already and `fetch origin pull/<N>/head` can fail on a clone whose remote refspec does not cover PR refs:
+
+```bash
+git -C <CORE_REPO> cat-file -e <CURRENT_SHA>^{commit}
+```
+
+Only if that errors:
+
+```bash
+git -C <CORE_REPO> fetch origin pull/<N>/head
+```
+
+Take the base from the **API**, not from a local branch:
+
+```bash
+gh api repos/dotCMS/core/pulls/<N> --jq '.base.sha'
+```
+
+Do **not** compute the base with `git merge-base origin/<BASE_REF> <CURRENT_SHA>`. Once the PR is merged, its head is an ancestor of `main`, so `merge-base` returns the head SHA itself and the diff comes back empty — the anchors then all appear stale and every finding gets dropped. `.base.sha` is stable whether the PR is open or merged.
+
+```bash
+git -C <CORE_REPO> diff --unified=0 <BASE_SHA> <CURRENT_SHA> -- <path>
+```
+
+One invocation **per file path** — that is the point. A per-file diff cannot bleed into its neighbour, so hunk headers stay trustworthy. Rebuild the changed-line ranges for each file from these per-file diffs and replace the Stage 2 ranges. `diff-slices.sh --git <BASE_SHA> --head <CURRENT_SHA> --root <CORE_REPO>` does exactly this for a list of paths, and `verify-anchors.sh` (7b.3) takes the ranges the same way.
+
+Then set `HEAD_SHA = CURRENT_SHA` — every link in the Stage 7 report and every `commit_id` in Stage 8 must use the new SHA. Re-verify **every** finding's anchor in 7b.3, not just the ones in files that changed.
+
+If the local clone is missing, unreadable, or `fetch` fails, **do not fall back to `gh pr diff`**. Abort posting, keep the report, and tell the user the anchors could not be re-verified.
+
+## 7b.3 — Verify every anchor by grepping its evidence at the head version
+
+For each surviving finding, confirm the code it describes is actually at `file:line` **right now**. `verify-anchors.sh` runs the whole table below for every finding in one call, against the head version and its per-file diff:
+
+```bash
+bash <SKILL_DIR>/scripts/verify-anchors.sh --findings <RUN_DIR>/merged/anchored.jsonl --base <BASE_SHA> --rev <HEAD_SHA> --root <CORE_REPO> --out <RUN_DIR>/merged/postable.jsonl
+```
+
+Its `anchor.status` maps onto the table: `OK` is `ANCHOR_OK`, `REANCHORED` is a re-anchor (use `anchor.line`), `AMBIGUOUS`, `STALE` and `UNVERIFIABLE` are the drops below, and `NO_FILE` is stale. By hand, for one finding, the check is:
+
+```bash
+git -C <CORE_REPO> show <HEAD_SHA>:<path> | sed -n '<line>p'
+```
+
+Compare against the finding's `evidence` (whitespace-normalized, ignore leading indentation):
+
+| Result | Action |
+|---|---|
+| Evidence matches the line | `ANCHOR_OK` — keep as-is |
+| No match at `<line>` | Search the file for it: `git -C <CORE_REPO> show <HEAD_SHA>:<path> \| grep -n -F '<evidence>'` |
+| Found at exactly one other line | **Re-anchor** the finding to that line, note the shift |
+| Found at several lines | Pick the one inside a changed-line range; if none, `ANCHOR_AMBIGUOUS` → drop |
+| Not found anywhere in the file | `ANCHOR_STALE` → **drop the finding** — the code it describes no longer exists |
+| Finding carries no `evidence` | `ANCHOR_UNVERIFIABLE` → drop. An unverifiable anchor is how comments land on innocent lines |
+
+Dropping here is correct and expected. A finding that cannot be anchored to code that exists at HEAD is not a finding about this PR any more. A line past the end of its file (`PAST_EOF`) is a diff offset an agent cited as a file line: it is re-anchored from its evidence or dropped like any other stale anchor, never posted on the cited number.
+
+## 7b.4 — Drop duplicates of comments that already exist
+
+For each finding that survived 7b.3, compare against `EXISTING_COMMENTS`. Treat it as a **duplicate** when all of these hold:
+
+- same `path`, and
+- the existing comment's `line` (or `original_line`) is within **±3 lines** of the finding, and
+- the existing comment makes substantially the same claim — same defect, same asked-for change. Judge the meaning, not the wording: "this can be null" and "add a null guard here" are the same claim.
+
+Drop every duplicate. Record it as `DUPLICATE — already raised by @<user>` so the summary table can show it; the user should see that the point is covered, not that it vanished.
+
+**Overlap is not duplication.** When an existing comment raises the same defect but the finding adds something it lacks (a second place it happens, the reason it breaks, the concrete fix), keep only that additive part and post it as a **reply** in that comment's thread (`posting.md`, "Reply to an existing thread"), not as a new comment. On a PR-level comment, which has no thread, post the additive part inline and open it with "Adding to @<user>'s point:". Record it as `REPLY — adds to @<user>`.
+
+Also drop a finding whose claim the PR author already answered in a review body from 7b.1 (e.g. "known, tracked in #12345"). Re-litigating a settled point is noise.
+
+## 7b.5 — Report the gate
+
+Print one line before Stage 8:
+
+```
+Pre-post verification: <kept>/<total> findings postable — <stale> stale anchors dropped, <reanchored> re-anchored, <dupes> duplicates of existing comments, <replies> replies to existing threads, SHA <unchanged|moved 1a2b3c4 → 5d6e7f8>.
+```
