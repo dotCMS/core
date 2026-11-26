@@ -54,6 +54,18 @@ public class JsonFieldTransformerErrorMessagesTest extends UnitTestBase {
                 "Unknown field class 'com.dotcms.contenttype.model.field.ImmutableNumericField'"));
     }
 
+    /** A field without {@code clazz} used to get "Unknown field class 'null'". */
+    @Test
+    public void test_field_without_clazz_says_clazz_is_needed() {
+        final String fromObject = messageOf(() -> new JsonFieldTransformer(
+                "{\"name\":\"Count\",\"variable\":\"count\"}"));
+        assertEquals(JsonFieldTransformer.MISSING_FIELD_CLASS_MESSAGE, fromObject);
+
+        final String fromArray = messageOf(() -> new JsonFieldTransformer(
+                "[{\"name\":\"Count\",\"variable\":\"count\"}]"));
+        assertEquals(JsonFieldTransformer.MISSING_FIELD_CLASS_MESSAGE, fromArray);
+    }
+
     /**
      * A relationship field without {@code relationType} (for instance sent as
      * {@code relationshipType}) used to fail with a NullPointerException message.

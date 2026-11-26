@@ -1147,10 +1147,12 @@ public class MapToContentletPopulator  {
      *     <li>each identifier in {@code filter} that was not related, without telling apart
      *     content that does not exist from content the caller cannot read;</li>
      *     <li>each related contentlet resolved from another language, which is how
-     *     {@link RelationshipUtil#filterContentlet} relates an item with no version in the
-     *     language being saved. Reads in that language may return this content without it.</li>
+     *     {@link RelationshipUtil#filterContentlet} relates an identifier with no version in the
+     *     language being saved. Reads in that language may return this content without it. Only
+     *     reported when the filter has identifiers only: a Lucene query does not prefer the
+     *     saved language, so another language there does not mean a version is missing.</li>
      * </ul>
-     * Lucene queries in the filter are not checked; identifiers in it are.
+     * Lucene queries in the filter are not checked for unrelated items; identifiers in it are.
      */
     @VisibleForTesting
     static List<String> relationshipResultWarnings(final String fieldName, final String filter,
@@ -1159,10 +1161,13 @@ public class MapToContentletPopulator  {
                                                    final LongFunction<String> languageLabel) {
         final List<String> warnings = new ArrayList<>();
         final Set<String> requested = new LinkedHashSet<>();
+        boolean hasLuceneQuery = false;
         for (final String element : filter.split(COMMA)) {
             final String id = element.trim();
             if (UUIDUtil.isUUID(id)) {
                 requested.add(id);
+            } else if (UtilMethods.isSet(id)) {
+                hasLuceneQuery = true;
             }
         }
         // Identifiers are stored with or without dashes; compare them in one form, ignoring case.
@@ -1175,7 +1180,11 @@ public class MapToContentletPopulator  {
                 String.format("Relationship field '%s': '%s' was not related: no content with "
                         + "that identifier exists, or you do not have permission to read it.",
                         fieldName, id)));
-        if (languageId > 0) {
+        // Only identifiers named in the filter are looked up in the saved language first, so only
+        // for them does another language mean there is no version in this one. A Lucene query
+        // keeps whichever version it finds first, and it can also resolve an identifier named
+        // after it, so a filter with a query gets no language warnings.
+        if (languageId > 0 && !hasLuceneQuery) {
             related.forEach((id, relatedLanguageId) -> {
                 if (null != relatedLanguageId && relatedLanguageId != languageId) {
                     warnings.add(String.format("Relationship field '%s': related content '%s' "

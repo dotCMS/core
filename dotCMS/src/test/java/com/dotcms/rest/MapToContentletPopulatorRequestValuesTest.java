@@ -117,6 +117,18 @@ public class MapToContentletPopulatorRequestValuesTest extends UnitTestBase {
         assertTrue(warnings.get(0), warnings.get(0).contains("save '" + ONE + "' with languageId 2"));
     }
 
+    /**
+     * A Lucene query keeps the first version it finds, in any language, so a related item in
+     * another language does not mean it has no version in the saved one: no language warning.
+     */
+    @Test
+    public void test_no_language_warning_when_the_filter_has_a_lucene_query() {
+        assertTrue(MapToContentletPopulator.relationshipResultWarnings("authors",
+                "+contentType:Author", related(ONE, 1L), 2L, LABEL).isEmpty());
+        assertTrue(MapToContentletPopulator.relationshipResultWarnings("authors",
+                "+contentType:Author," + ONE, related(ONE, 1L), 2L, LABEL).isEmpty());
+    }
+
     /** Lucene queries are not checked; identifiers mixed with them still are. */
     @Test
     public void test_lucene_query_elements_are_not_reported() {

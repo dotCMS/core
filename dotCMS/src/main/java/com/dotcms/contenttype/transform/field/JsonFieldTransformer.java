@@ -141,11 +141,17 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
       }
       return field;
     } catch (final InvalidTypeIdException e) {
-      throw new DotStateException(unknownFieldClassMessage(null != clazz ? clazz : e.getTypeId()), e);
+      final String typeId = UtilMethods.isSet(clazz) ? clazz : e.getTypeId();
+      throw new DotStateException(UtilMethods.isSet(typeId)
+              ? unknownFieldClassMessage(typeId) : MISSING_FIELD_CLASS_MESSAGE, e);
     } catch (final Exception e) {
       throw new DotStateException(e);
     }
   }
+
+  /** The message for field JSON without a `clazz`, instead of "Unknown field class 'null'". */
+  static final String MISSING_FIELD_CLASS_MESSAGE = "Field JSON needs a 'clazz': a field type name "
+          + "such as TEXT, or a class name such as 'TextField'.";
 
   /**
    * The message for a `clazz` that is not a field class: names the value and lists the accepted
