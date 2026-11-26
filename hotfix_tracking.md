@@ -191,3 +191,4 @@ Release-25.07.10 LTS
 185. https://github.com/dotCMS/private-issues/issues/988 : Velocity $crypt.decrypt: any template decrypts values stored with the company key, including push-publish auth keys #38568 #988
 186. https://github.com/dotCMS/private-issues/issues/831 : Managed-fleet config defeats the SSRF guard (redirects on, IPv4-only blacklist overrides #708 fix, anon-write tenants → unauthenticated SSRF) — Medium / P2 — internal #38577 #831
 187. https://github.com/dotCMS/private-issues/issues/1070 : Refuse the built-in system user as the identity of a client request (sub-item of #1050) #38566 #1070
+188. https://github.com/dotCMS/private-issues/issues/757 : [GLM AI Scanner] WebDAV authentication accepts any valid API-token JWT as password substitute; every token decision is now audited in the security log #38477 #757
