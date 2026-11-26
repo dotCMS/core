@@ -181,6 +181,9 @@ public interface ReindexQueueAPI {
      */
     void markAsFailed(ReindexEntry idx, String cause) throws DotDataException;
 
+    // RED STUB (#37270): compile-only, replaced by the implementation after the Red gate.
+    long parkedRecordCount() throws DotDataException;
+
     /**
      * returns the list of all failed reindex records
      * 

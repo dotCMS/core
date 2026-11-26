@@ -151,6 +151,7 @@ import org.junit.runners.Suite;
         RoleResourceIntegrationTest.class,
     com.dotmarketing.portlets.workflows.action.EditWorkflowTaskActionTest.class,
     com.dotcms.auth.FailedLoginRecordingTest.class,
+    com.dotmarketing.common.reindex.FailedReindexRecordsTest.class,
         FileAssetContainerPermissionInheritanceTest.class,
 
         // System event delivery in a cluster (issue #36827). The migration runs first so the

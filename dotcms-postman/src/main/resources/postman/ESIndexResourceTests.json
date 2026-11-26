@@ -206,10 +206,11 @@
 									"",
 									"pm.test(\"Records identify the content without its values\", function () {",
 									"    const keys = ['identifier', 'inode', 'title', 'contentTypeVariable', 'languageId', 'archived', 'operation',",
-									"        'failedAttempts', 'priority', 'failureReason', 'violation'];",
+									"        'failedAttempts', 'priority', 'failureReason', 'violation', 'state'];",
 									"    pm.response.json().entity.failedRecords.forEach(function (record) {",
 									"        pm.expect(Object.keys(record)).to.have.members(keys);",
 									"        pm.expect(record).to.not.have.property('contentlet');",
+									"        pm.expect(['parked', 'retrying']).to.include(record.state);",
 									"    });",
 									"});",
 									""

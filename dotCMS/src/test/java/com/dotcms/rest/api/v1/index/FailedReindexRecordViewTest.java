@@ -350,4 +350,35 @@ public class FailedReindexRecordViewTest {
         }
         return keys;
     }
+
+    /**
+     * Given Scenario: A save whose retries ran out (priority 505 = ERROR 400 + 105).
+     * Expected Result: The record says it is parked: only a retry or a new save brings it back
+     * (#37270, AC-006).
+     */
+    @Test
+    public void stateIsParkedForPriority505() throws Exception {
+        final ReindexEntry row = ReindexEntry.builder().id(9L).identToIndex("id-1").priority(505)
+                .build();
+
+        final JsonNode node = MAPPER.readTree(MAPPER.writeValueAsString(
+                FailedReindexRecordView.from(row, null)));
+
+        assertEquals("parked", node.path("state").asText());
+    }
+
+    /**
+     * Given Scenario: A save that failed once and will be tried again (priority 101).
+     * Expected Result: The record says it is still retrying (#37270, AC-006).
+     */
+    @Test
+    public void stateIsRetryingForPriority101() throws Exception {
+        final ReindexEntry row = ReindexEntry.builder().id(10L).identToIndex("id-1").priority(101)
+                .build();
+
+        final JsonNode node = MAPPER.readTree(MAPPER.writeValueAsString(
+                FailedReindexRecordView.from(row, null)));
+
+        assertEquals("retrying", node.path("state").asText());
+    }
 }
