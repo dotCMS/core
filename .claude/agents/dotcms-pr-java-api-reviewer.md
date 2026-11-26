@@ -3,15 +3,7 @@ name: dotcms-pr-java-api-reviewer
 description: "Reviews changed REST/JAX-RS endpoints: context init, versioning, annotations, ResponseEntityView, Form/View objects, exception mapping, OpenAPI/@Schema, openapi.yaml sync and contract compatibility. Launched by dot-pr-review when the diff touches JAX-RS code."
 model: sonnet
 color: cyan
-allowed-tools:
-  - Read(dotCMS/**)
-  - Read(dotcms-integration/**)
-  - Read(docs/backend/**)
-  - Read(docs/core/**)
-  - Grep(*.java)
-  - Grep(*.yaml)
-  - Glob(dotCMS/**)
-  - Bash(echo:*)
+tools: Read, Grep, Glob, Bash
 maxTurns: 24
 ---
 

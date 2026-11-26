@@ -3,17 +3,7 @@ name: dotcms-pr-java-security-reviewer
 description: "Reviews changed Java, JSPs and properties for authentication, permission and admin checks, injection, output encoding, safe logging, secure configuration and error disclosure. Launched by dot-pr-review on auth, permission, user or config changes and on every new endpoint."
 model: opus
 color: red
-allowed-tools:
-  - Read(dotCMS/**)
-  - Read(dotcms-integration/**)
-  - Read(docs/backend/**)
-  - Read(docs/core/**)
-  - Grep(*.java)
-  - Grep(*.properties)
-  - Grep(*.xml)
-  - Grep(*.jsp)
-  - Glob(dotCMS/**)
-  - Bash(echo:*)
+tools: Read, Grep, Glob, Bash
 maxTurns: 28
 ---
 

@@ -3,11 +3,7 @@ name: dotcms-pr-docs-reviewer
 description: "Checks every claim a changed doc makes about the code (docs/, CLAUDE.md, AGENTS.md, Copilot instructions and prompts, READMEs next to changed code) against the PR head. Launched by dot-pr-review when a PR changes one."
 model: sonnet
 color: cyan
-allowed-tools:
-  - Read(**)
-  - Grep(*)
-  - Glob(**)
-  - Bash(echo:*)
+tools: Read, Grep, Glob, Bash
 maxTurns: 24
 ---
 

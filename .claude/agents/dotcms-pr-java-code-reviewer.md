@@ -3,18 +3,7 @@ name: dotcms-pr-java-code-reviewer
 description: "Reviews changed production Java against the dotCMS Java standards (modern syntax, APILocator, Config, Logger, CDI scopes, banned legacy patterns); REST, persistence, security and tests have their own reviewers. Launched by dot-pr-review for the java and jsp buckets."
 model: sonnet
 color: blue
-allowed-tools:
-  - Read(dotCMS/**)
-  - Read(dotcms-integration/**)
-  - Read(docs/backend/**)
-  - Read(docs/core/**)
-  - Read(parent/**)
-  - Read(bom/**)
-  - Grep(*.java)
-  - Grep(*.properties)
-  - Grep(*.xml)
-  - Glob(dotCMS/**)
-  - Bash(echo:*)
+tools: Read, Grep, Glob, Bash
 maxTurns: 32
 ---
 

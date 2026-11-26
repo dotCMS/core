@@ -3,11 +3,7 @@ name: dotcms-pr-test-case-designer
 description: "Designs the test cases a PR's acceptance criteria call for (equivalence partitions, boundaries, TC-###) and maps each to the existing tests, surfacing the cases nobody tests and the behavior no AC specifies. Returns a test plan, not test code. Launched by dot-pr-review when the PR has a linked issue with ACs, Spikes excepted."
 model: sonnet
 color: green
-tools:
-  - Read(**)
-  - Grep(*)
-  - Glob(**)
-  - Bash(echo:*)
+tools: Read, Grep, Glob, Bash
 maxTurns: 40
 ---
 

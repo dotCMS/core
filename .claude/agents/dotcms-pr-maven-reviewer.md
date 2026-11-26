@@ -3,11 +3,7 @@ name: dotcms-pr-maven-reviewer
 description: "Reviews changed pom.xml files, .mvn/ and the Maven wrapper against the effective POM, base against head. Launched by dot-pr-review when a PR changes a POM or a Maven file."
 model: sonnet
 color: yellow
-allowed-tools:
-  - Read(**)
-  - Grep(*)
-  - Glob(**)
-  - Bash(echo:*)
+tools: Read, Grep, Glob, Bash, WebFetch
 maxTurns: 24
 ---
 

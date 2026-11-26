@@ -3,12 +3,7 @@ name: dotcms-pr-ac-validator
 description: Checks, AC by AC, whether the linked issue's acceptance criteria are implemented (COVERED / PARTIAL / MISSING / UNTESTABLE) and lists the changes tied to no AC. Returns a coverage report, not line findings. Launched by dot-pr-review when the PR has a linked issue.
 model: sonnet
 color: green
-memory: project
-tools:
-  - Read(**)
-  - Grep(*)
-  - Glob(**)
-  - Bash(echo:*)
+tools: Read, Grep, Glob, Bash
 maxTurns: 48
 ---
 

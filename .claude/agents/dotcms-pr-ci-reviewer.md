@@ -3,11 +3,7 @@ name: dotcms-pr-ci-reviewer
 description: "Reviews changed GitHub Actions workflows, composite actions and the scripts, tests and READMEs under .github/, with every caller of a changed reusable workflow. Launched by dot-pr-review when a PR changes .github/workflows, .github/actions or .github/scripts."
 model: opus
 color: orange
-allowed-tools:
-  - Read(**)
-  - Grep(*)
-  - Glob(**)
-  - Bash(echo:*)
+tools: Read, Grep, Glob, Bash
 maxTurns: 36
 ---
 

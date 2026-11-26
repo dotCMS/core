@@ -3,20 +3,7 @@ name: dotcms-pr-java-test-reviewer
 description: "Reviews changed Java and API tests (unit, integration, Karate, Postman): MainSuite registration, whether each is the right test (fails with the change reverted) or a tautology, the right level, assertions, data and coverage of the change. Launched by dot-pr-review for the java_test bucket."
 model: sonnet
 color: pink
-allowed-tools:
-  - Read(dotCMS/**)
-  - Read(dotcms-integration/**)
-  - Read(docs/testing/**)
-  - Read(dotcms-postman/**)
-  - Read(test-karate/**)
-  - Grep(*.java)
-  - Grep(*.feature)
-  - Grep(*.json)
-  - Glob(dotCMS/**)
-  - Glob(dotcms-integration/**)
-  - Glob(dotcms-postman/**)
-  - Glob(test-karate/**)
-  - Bash(echo:*)
+tools: Read, Grep, Glob, Bash
 maxTurns: 28
 ---
 

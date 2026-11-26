@@ -3,13 +3,7 @@ name: dotcms-pr-test-reviewer
 description: Reviews changed .spec.ts tests, first for whether each is the right test (fails with the change reverted) or a tautology, then for Spectator patterns and coverage. Launched by dot-pr-review for the test bucket.
 model: sonnet
 color: pink
-allowed-tools:
-  - Read(core-web/**)
-  - Read(docs/frontend/**)
-  - Grep(*.spec.ts)
-  - Grep(*.test.ts)
-  - Glob(core-web/**/*.spec.ts)
-  - Glob(core-web/**/*.test.ts)
+tools: Read, Grep, Glob, Bash
 maxTurns: 24
 ---
 

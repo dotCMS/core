@@ -3,10 +3,7 @@ name: dotcms-pr-silent-failure-hunter
 description: Audits error handling the PR adds or changes (try/catch, .catch, subscribe error paths, catchError, fallbacks) for swallowed errors, empty catches and missing user feedback. Launched by dot-pr-review when the diff touches error handling.
 model: sonnet
 color: yellow
-allowed-tools:
-  - Read(core-web/**)
-  - Grep(*.ts)
-  - Glob(core-web/**)
+tools: Read, Grep, Glob, Bash
 maxTurns: 16
 ---
 

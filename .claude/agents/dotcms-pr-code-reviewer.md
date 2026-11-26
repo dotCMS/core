@@ -3,13 +3,7 @@ name: dotcms-pr-code-reviewer
 description: "Reviews changed Angular/TypeScript production code (not tests) for Angular patterns, type safety, Tailwind/SCSS styling and the global form classes. Launched by dot-pr-review for the code bucket."
 model: sonnet
 color: blue
-allowed-tools:
-  - Read(core-web/**)
-  - Read(docs/frontend/**)
-  - Grep(*.ts)
-  - Grep(*.html)
-  - Grep(*.scss)
-  - Glob(core-web/**)
+tools: Read, Grep, Glob, Bash
 maxTurns: 28
 ---
 
@@ -115,7 +109,7 @@ Flag violations of:
   - The global selector is a **direct child** (`>`), so the label must be an immediate child of `.field` — never wrapped in an extra `<div>`/`<span>`. **Critical**.
   - Non-typographic, behavioral classes on checkbox/radio labels (e.g. `cursor-pointer`) are acceptable; only styling classes are violations.
   - `for` must reference the control's `id`. Missing `for`/`id` pairing is **Important** (accessibility).
-- **Required controls must use the `dotFieldRequired` directive on the label** — if the control's `FormControl` declares `Validators.required` and its label lacks `dotFieldRequired`, that is **Critical**. Verify by reading the component `.ts` (`Read(core-web/**)`) and inspecting the `FormGroup` / `FormControl` validators for the matching `formControlName`.
+- **Required controls must use the `dotFieldRequired` directive on the label** — if the control's `FormControl` declares `Validators.required` and its label lacks `dotFieldRequired`, that is **Critical**. Verify by reading the component `.ts` and inspecting the `FormGroup` / `FormControl` validators for the matching `formControlName`.
   - Never hand-write `class="p-label-input-required"` — that class is the directive's private output (`libs/ui/src/lib/dot-field-required/dot-field-required.directive.ts`). **Critical**.
   - Never hardcode the asterisk in the label text or a sibling `<span>*</span>` — the `::after` pseudo-element owns it. **Critical**.
   - When the required state is conditional, pair the directive with `[checkIsRequiredControl]="'controlName'"` so the asterisk clears itself when the validator is removed. Missing this on a control whose validators are set dynamically is **Important**.

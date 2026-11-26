@@ -3,14 +3,7 @@ name: dotcms-pr-java-persistence-reviewer
 description: "Reviews changed data-layer code: DotConnect, parameter binding, LocalTransaction, pagination, batching, result mapping, cache consistency and upgrade tasks. Launched by dot-pr-review when the diff touches SQL, DAOs, factories or upgrade tasks."
 model: sonnet
 color: yellow
-allowed-tools:
-  - Read(dotCMS/**)
-  - Read(dotcms-integration/**)
-  - Read(docs/backend/**)
-  - Grep(*.java)
-  - Grep(*.sql)
-  - Glob(dotCMS/**)
-  - Bash(echo:*)
+tools: Read, Grep, Glob, Bash
 maxTurns: 24
 ---
 

@@ -3,11 +3,7 @@ name: dotcms-pr-comment-analyzer
 description: Checks comments the PR adds or changes (line, block, JSDoc, HTML) against the code they describe, flagging wrong, stale, redundant or misleading ones. Launched by dot-pr-review when the diff adds or edits comments.
 model: sonnet
 color: orange
-allowed-tools:
-  - Read(core-web/**)
-  - Grep(*.ts)
-  - Grep(*.html)
-  - Glob(core-web/**)
+tools: Read, Grep, Glob, Bash
 maxTurns: 14
 ---
 

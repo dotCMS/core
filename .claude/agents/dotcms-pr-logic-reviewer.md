@@ -3,11 +3,7 @@ name: dotcms-pr-logic-reviewer
 description: "Traces changed logic (stores, components, services, utils, mappers, guards, resolvers, interceptors, pipes; Java logic on backend PRs) end to end against the issue's acceptance criteria, then probes it with hostile inputs. Launched by dot-pr-review when the diff adds non-trivial logic."
 model: sonnet
 color: cyan
-allowed-tools:
-  - Read(core-web/**)
-  - Grep(*.ts)
-  - Grep(*.html)
-  - Glob(core-web/**)
+tools: Read, Grep, Glob, Bash
 maxTurns: 28
 ---
 

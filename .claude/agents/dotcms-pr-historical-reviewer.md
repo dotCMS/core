@@ -3,19 +3,7 @@ name: dotcms-pr-historical-reviewer
 description: Uses git blame, git log and past PRs on the changed lines to flag regressions, recurrences of fixed bugs, reopened decisions and churn hotspots. Launched by dot-pr-review on every review.
 model: sonnet
 color: purple
-allowed-tools:
-  - Read(core-web/**)
-  - Grep(*.ts)
-  - Grep(*.html)
-  - Grep(*.scss)
-  - Glob(core-web/**)
-  - Bash(git blame:*)
-  - Bash(git log:*)
-  - Bash(gh pr list:*)
-  - Bash(gh pr view:*)
-  - Bash(gh search issues:*)
-  - Bash(gh search prs:*)
-  - Bash(gh api:*)
+tools: Read, Grep, Glob, Bash
 maxTurns: 22
 ---
 
