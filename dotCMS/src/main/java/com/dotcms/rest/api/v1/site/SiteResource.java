@@ -231,16 +231,25 @@ public class SiteResource implements Serializable {
     }
 
     /**
-     * Return the list of sites paginated
-     * @param httpServletRequest
-     * @param httpServletResponse
-     * @param filterParam
-     * @param showArchived
-     * @param showLive
-     * @param showSystem
-     * @param page
-     * @param perPage
-     * @return
+     * Returns one page of the sites the logged-in user can read. With neither {@code archive} nor
+     * {@code live} set, the page holds live sites only; unpublished (stopped) sites need
+     * {@code archive=false}.
+     *
+     * @param httpServletRequest  the current request, used to authenticate the user
+     * @param httpServletResponse the current response
+     * @param filterParam         part of the site name to match; a trailing {@code *} is ignored,
+     *                            and {@code all} or no value matches every site
+     * @param showArchived        {@code null} returns live sites only, {@code false} returns every
+     *                            site that is not archived (live and unpublished), {@code true}
+     *                            returns archived sites only
+     * @param showLive            {@code true} returns live sites only, {@code false} returns live
+     *                            and unpublished sites (not unpublished alone). With
+     *                            {@code archive=true}, {@code false} returns archived sites and
+     *                            {@code true} returns none
+     * @param showSystem          {@code true} to include the System Host in the results
+     * @param page                the page to return
+     * @param perPage             the number of sites per page
+     * @return the paginated list of {@link com.dotmarketing.beans.Host} sites
      */
     @GET
     @JSONP
@@ -249,7 +258,9 @@ public class SiteResource implements Serializable {
     @Operation(operationId = "getSites",
             summary = "List sites with pagination",
             description = "Returns a paginated list of sites that the currently logged-in user has access to. " +
-                    "Supports filtering by name, archived status, live status, and system site inclusion.")
+                    "Supports filtering by name, archived status, live status, and system site inclusion. " +
+                    "Without archive or live, the list holds live sites only; send archive=false to include " +
+                    "unpublished (stopped) sites.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Paginated list of sites retrieved successfully",
                     content = @Content(mediaType = "application/json",
@@ -262,9 +273,13 @@ public class SiteResource implements Serializable {
             @Context final HttpServletResponse httpServletResponse,
             @Parameter(description = "Filter string for site names. Use '*' suffix for wildcard matching, or 'all' to return all sites")
             @QueryParam(PaginationUtil.FILTER)   final String filterParam,
-            @Parameter(description = "Include archived sites in the results")
+            @Parameter(description = "Filters by archive status; it does not add archived sites to the list. " +
+                    "Omitted: live sites only. false: every site that is not archived, live and unpublished " +
+                    "(stopped). true: archived sites only.")
             @QueryParam(SitePaginator.ARCHIVED_PARAMETER_NAME) final Boolean showArchived,
-            @Parameter(description = "Filter to show only live sites")
+            @Parameter(description = "Filters by live status. true: live sites only. false: live and unpublished " +
+                    "(stopped) sites, not unpublished sites alone. With archive=false it behaves the same; " +
+                    "with archive=true, live=false returns archived sites and live=true returns none.")
             @QueryParam(SitePaginator.LIVE_PARAMETER_NAME) final Boolean showLive,
             @Parameter(description = "Include the system site in the results")
             @QueryParam(SitePaginator.SYSTEM_PARAMETER_NAME) final Boolean showSystem,

@@ -17397,7 +17397,8 @@ paths:
     get:
       description: "Returns a paginated list of sites that the currently logged-in\
         \ user has access to. Supports filtering by name, archived status, live status,\
-        \ and system site inclusion."
+        \ and system site inclusion. Without archive or live, the list holds live\
+        \ sites only; send archive=false to include unpublished (stopped) sites."
       operationId: getSites
       parameters:
       - description: "Filter string for site names. Use '*' suffix for wildcard matching,\
@@ -17406,12 +17407,17 @@ paths:
         name: filter
         schema:
           type: string
-      - description: Include archived sites in the results
+      - description: "Filters by archive status; it does not add archived sites to\
+          \ the list. Omitted: live sites only. false: every site that is not archived,\
+          \ live and unpublished (stopped). true: archived sites only."
         in: query
         name: archive
         schema:
           type: boolean
-      - description: Filter to show only live sites
+      - description: "Filters by live status. true: live sites only. false: live and\
+          \ unpublished (stopped) sites, not unpublished sites alone. With archive=false\
+          \ it behaves the same; with archive=true, live=false returns archived sites\
+          \ and live=true returns none."
         in: query
         name: live
         schema:
