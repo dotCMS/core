@@ -16,7 +16,7 @@ If `headRefOid` still equals `HEAD_SHA`, go on. If it moved: fetch the new head,
 
 ### AC coverage stays out of the finding stream
 
-Store the `dotcms-pr-ac-validator` report as `AC_COVERAGE` (coverage table, evidence, out-of-scope list, regression risks, verdict); Stage 7 renders it in its own section, and it skips the dedupe and sort below. Only the **MISSING** and the **contested** ACs cross into Stage 6.
+Store the `dotcms-pr-ac-validator` report as `AC_COVERAGE` (coverage table, evidence, out-of-scope list, regression risks, verdict); Stage 7 renders it in its own section, and it skips the dedupe and sort below. Only the **MISSING** and the **contested** ACs cross into Stage 6. Its "Test?" column comes from `TEST_DESIGN` (below), per AC: ✅ when a case of that AC is COVERED, ⚠ when its best case is PARTIAL, ❌ when its cases are all NOT COVERED or UNSPECIFIED, and n/a when the test designer did not run (a Spike) or came back empty.
 
 **Its table is an upper bound**: the ac-validator marks an AC COVERED when a named test and the code exist, without checking that the test can fail. Reconcile it with the other reviewers before building the AC table:
 - An AC whose only backing tests the test reviewer or java-test reviewer flagged as tautological is at most PARTIAL.

@@ -247,7 +247,7 @@ PR diff (to know what changed): <slice>
 Verify coverage in BOTH directions and return your standard AC Coverage Report:
 - AC → code: for each AC assign COVERED / PARTIAL / MISSING / UNTESTABLE with cited evidence. Before declaring MISSING, Grep/Glob beyond the changed files to confirm the behavior does not already live elsewhere.
 - code → AC: classify every meaningful change that maps to no AC as ENABLER / SCOPE_CREEP / HIDDEN_REQUIREMENT / RISK.
-Also flag AC regressions and per-AC test presence (⚠ NO_TEST). Do NOT emit style/type/test-quality findings — other agents own that.
+Also flag AC regressions. Do NOT emit style/type/test-quality findings — other agents own that.
 ```
 
 **dotcms-pr-test-case-designer** (only when `RUN_TEST_DESIGNER` is true):

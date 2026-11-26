@@ -37,7 +37,7 @@ You will receive:
 
 ### 1. Index the acceptance criteria
 
-Parse the AC block into structured entries. If the block is free-form prose (no explicit checklist), decompose it into the discrete, testable requirements it implies and number them.
+Use the AC index your prompt names as given (`AC1`, `AC2`, ...: the test-case designer uses the same ids). Launched without one, number the ACs yourself, splitting free-form prose into the discrete, testable requirements it implies. For each AC, note:
 
 ```
 AC<N>: "<verbatim or distilled text>"
@@ -95,10 +95,6 @@ Scan the changed files for behavior that an **existing** AC (or the issue's base
 - Changed function signatures that could break callers not in the diff
 - Altered defaults/guards that flip an AC's expected outcome
 
-### 6. Note test presence per COVERED AC
-
-For each AC marked COVERED, check whether a corresponding test exists in the changed files (`.spec.ts`, `*Test.java`, `*IT.java`). If an AC is implemented but has no test, mark it `⚠ NO_TEST`. (You are not judging test quality — only presence.)
-
 ## Sidecar and budget
 
 Your sidecar is the file your prompt names; launched without one, use `/tmp/review/dotcms-pr-ac-validator.jsonl` and say so in your final message. It is the record of your review: a row on disk survives a turn-limit kill, a crash or a truncated final message.
@@ -124,11 +120,11 @@ Return exactly this structure. This is your return value — raw data for the or
 
 ### Coverage Summary
 
-| AC | Text (truncated) | Status | Test? | Notes |
-|----|------------------|--------|-------|-------|
-| AC1 | "User can save..." | COVERED | ✅ | — |
-| AC2 | "Error shows within 3s" | PARTIAL | ❌ | Timeout path not handled |
-| AC3 | "Admin sees audit log" | MISSING | — | No code found |
+| AC | Text (truncated) | Status | Notes |
+|----|------------------|--------|-------|
+| AC1 | "User can save..." | COVERED | — |
+| AC2 | "Error shows within 3s" | PARTIAL | Timeout path not handled |
+| AC3 | "Admin sees audit log" | MISSING | No code found |
 
 **Totals:** COVERED <x> · PARTIAL <y> · MISSING <z> · UNTESTABLE <w>
 

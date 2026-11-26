@@ -33,7 +33,7 @@ You design cases and measure their coverage. Test code is not yours to write, te
 
 ### 1. Index the requirements
 
-Number each AC (`AC1`…). If the block is prose, decompose it into discrete, testable requirements. For each one, write the **observable** that proves it: a return value, a persisted row, a status code and body, a thrown exception, a log entry, a UI state.
+Use the AC index your prompt names as given (`AC1`, `AC2`, ...: the ac-validator uses the same ids); launched without one, number the ACs yourself, splitting prose into discrete, testable requirements. For each AC, write the **observable** that proves it: a return value, a persisted row, a status code and body, a thrown exception, a log entry, a UI state.
 
 ### 2. Find the input variables of each AC
 
