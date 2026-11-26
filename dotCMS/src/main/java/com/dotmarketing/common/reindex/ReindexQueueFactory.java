@@ -188,6 +188,13 @@ public class ReindexQueueFactory {
         return !dc.loadResults().isEmpty();
     }
 
+    /**
+     * Deletes every row above the REINDEX band, without logging: used where every content is
+     * requeued right after (full reindex start, boot without indices). See
+     * {@link #clearParkedRecords()} for the operator's clear (#37270).
+     *
+     * @throws DotDataException if the journal cannot be updated
+     */
     protected void deleteFailedRecords() throws DotDataException {
         DotConnect dc = new DotConnect();
         dc.setSQL("DELETE From dist_reindex_journal where priority > ?");

@@ -874,6 +874,16 @@ so a future change of the literal — or its removal — does not require touchi
 - A worker picks up a unit of work and writes/deletes from the index
 - **Writes always happen after a DB commit** to guarantee DB ↔ index consistency
 
+### Failures
+- One journal row stands for every document of an identifier (each language, working and live,
+  each engine in Phase 2). It is deleted only after the whole batch reported back and **every**
+  document of it succeeded, so a sibling's success never erases a failure (#37270)
+- Each failure adds 1 to the row's priority; when `RETRY_FAILED_INDEX_TIMES` runs out the row is
+  **parked** at `ERROR (400)` + its priority and the worker stops reading it
+- A parked row comes back only through `POST /api/v1/index/failed/retry` (Maintenance → Index →
+  *Retry skipped Reindex Records*), a new save of the content, or a full reindex.
+  `GET /api/v1/index/failed` lists every row that failed at least once, `parked` or `retrying`
+
 ### Write triggers
 | Trigger                    | Live            | Working         |
 |----------------------------|-----------------|-----------------|

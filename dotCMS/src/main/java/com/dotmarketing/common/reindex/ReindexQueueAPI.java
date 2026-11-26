@@ -90,8 +90,13 @@ public interface ReindexQueueAPI {
     public void deleteReindexAndFailedRecords() throws DotDataException;
 
     /**
-     * Deletes from dist_reindex_journal all failed records
-     * @throws DotDataException
+     * Deletes every journal row above the REINDEX band: parked rows of any band and reindex rows
+     * still being retried. Save and structure rows still being retried are kept. Meant for the
+     * start of a full reindex and a boot without indices, which requeue every content right after,
+     * so nothing is lost. An operator's clear must use {@link #clearParkedRecords(User)}, which
+     * deletes parked rows only and logs what it dropped (#37270).
+     *
+     * @throws DotDataException if the journal cannot be updated
      */
     void deleteFailedRecords() throws DotDataException;
 
