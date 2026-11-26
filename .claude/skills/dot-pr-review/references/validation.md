@@ -39,7 +39,7 @@ Merge the `dotcms-pr-test-case-designer` sidecar rows with its text report (the 
 1. **Collect** from the **union of the sidecars and the final reports**; the sidecars are the system of record. `merge-sidecars.sh` already wrote `<RUN_DIR>/merged/findings.jsonl` at the end of Stage 4 (exact duplicates and invalid lines dropped, each counted); run it again if Stage 4b added rows:
 
 ```bash
-bash <SKILL_DIR>/scripts/merge-sidecars.sh --dir <SIDECAR_DIR> --out <RUN_DIR>/merged --roster <RUN_DIR>/roster.txt
+bash .claude/skills/dot-pr-review/scripts/merge-sidecars.sh --dir <SIDECAR_DIR> --out <RUN_DIR>/merged --roster <RUN_DIR>/roster.txt
 ```
 
    A finding in only one of an instance's sidecar and text report is still a finding; when both hold the same `file:line` and claim, the sidecar row wins (the text report may be truncated). A high invalid-line count means an agent ignored the row shape.
@@ -47,7 +47,7 @@ bash <SKILL_DIR>/scripts/merge-sidecars.sh --dir <SIDECAR_DIR> --out <RUN_DIR>/m
 2. **Re-derive every anchor before the report.** Agents cite diff offsets as file lines (line 1348 of a 185-line file), so no line number is trusted as written:
 
 ```bash
-bash <SKILL_DIR>/scripts/verify-anchors.sh --findings <RUN_DIR>/merged/findings.jsonl --base <BASE_SHA> --rev <HEAD_SHA> --root <CORE_REPO> --out <RUN_DIR>/merged/anchored.jsonl
+bash .claude/skills/dot-pr-review/scripts/verify-anchors.sh --findings <RUN_DIR>/merged/findings.jsonl --base <BASE_SHA> --rev <HEAD_SHA> --root <CORE_REPO> --out <RUN_DIR>/merged/anchored.jsonl
 ```
 
    (local mode: `--worktree` instead of `--rev <HEAD_SHA>`). Use each finding's `anchor.line` from here on. `REANCHORED` moves the finding to the line its evidence is on. `PAST_EOF` with no match, `STALE` or `NO_FILE` means the cited code is not there: the finding goes to Stage 6 marked as unanchored, its validator re-checks it from the claim, and it is postable only if that check re-anchors it. `UNVERIFIABLE` (no evidence) stays in the report and is never posted. Then check:

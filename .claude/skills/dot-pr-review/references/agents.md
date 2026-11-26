@@ -8,12 +8,12 @@ Each reviewer gets its standards, its diff slice, the existing-feedback digest a
 
 ```
 <RUN_DIR>/bundles/frontend-standards.md     = docs/frontend/ANGULAR_STANDARDS.md + TYPESCRIPT_STANDARDS.md + STYLING_STANDARDS.md   # code bucket non-empty
-<RUN_DIR>/bundles/testing-rules.md          = docs/frontend/TESTING_REVIEW_RULES.md + <SKILL_DIR>/references/right-test.md       # test bucket non-empty
+<RUN_DIR>/bundles/testing-rules.md          = docs/frontend/TESTING_REVIEW_RULES.md + .claude/skills/dot-pr-review/references/right-test.md       # test bucket non-empty
 <RUN_DIR>/bundles/java-code-standards.md    = docs/backend/JAVA_STANDARDS.md + CONFIGURATION_PATTERNS.md + VIRTUAL_THREADS.md + docs/core/PROGRESSIVE_ENHANCEMENT.md   # java or jsp bucket non-empty
 <RUN_DIR>/bundles/java-api-standards.md     = docs/backend/REST_API_PATTERNS.md + dotCMS/src/main/java/com/dotcms/rest/README.md + dotCMS/src/main/java/com/dotcms/rest/CLAUDE.md   # only if RUN_JAVA_API
 <RUN_DIR>/bundles/java-persistence-standards.md = docs/backend/DATABASE_PATTERNS.md                                                # only if RUN_JAVA_PERSISTENCE
 <RUN_DIR>/bundles/java-security-standards.md    = docs/backend/SECURITY_BACKEND.md + docs/core/SECURITY_PRINCIPLES.md                 # only if RUN_JAVA_SECURITY
-<RUN_DIR>/bundles/java-test-standards.md    = docs/testing/BACKEND_UNIT_TESTS.md + docs/testing/INTEGRATION_TESTS.md + <SKILL_DIR>/references/right-test.md   # java_test bucket non-empty
+<RUN_DIR>/bundles/java-test-standards.md    = docs/testing/BACKEND_UNIT_TESTS.md + docs/testing/INTEGRATION_TESTS.md + .claude/skills/dot-pr-review/references/right-test.md   # java_test bucket non-empty
 <RUN_DIR>/bundles/ci-standards.md           = docs/core/CICD_PIPELINE.md + .github/workflows/README.md, both at BASE_SHA            # only if RUN_CI
 <RUN_DIR>/bundles/maven-standards.md        = docs/backend/MAVEN_BUILD_SYSTEM.md at BASE_SHA                                       # only if RUN_MAVEN
 <RUN_DIR>/bundles/effective-pom.diff        = "Effective POM" below                                                             # only if RUN_MAVEN
@@ -30,7 +30,7 @@ Two more bundles come from Stage 2: `existing-feedback.md` (PR mode) and `accept
 The maven reviewer judges inherited configuration by what Maven resolves (the script's `--help` says what it skips and prints):
 
 ```bash
-bash <SKILL_DIR>/scripts/effective-pom.sh --root <CORE_REPO> --head <HEAD_DIR> --base-sha <BASE_SHA> --run-dir <RUN_DIR> --modules <modules> --changed <RUN_DIR>/changed-files.txt --out <RUN_DIR>/bundles/effective-pom.diff
+bash .claude/skills/dot-pr-review/scripts/effective-pom.sh --root <CORE_REPO> --head <HEAD_DIR> --base-sha <BASE_SHA> --run-dir <RUN_DIR> --modules <modules> --changed <RUN_DIR>/changed-files.txt --out <RUN_DIR>/bundles/effective-pom.diff
 ```
 
 - **Modules**: the directory of every changed `pom.xml` (`.` for the root one), plus `dotCMS` and `dotcms-integration` when `parent/pom.xml` or `bom/application/pom.xml` changed, since most inherited settings reach the build there. A PR with no changed `pom.xml` (only `mvnw` or `.mvn/`) has no modules: leave `--modules` out, and the script reports `NOT_COMPUTED`.
@@ -44,7 +44,7 @@ In local mode `HEAD_DIR` is the working tree. Stage 10 removes the base worktree
 Write one path list per reviewer instance, `<RUN_DIR>/slices/<agent>-<i>.txt`, one repo-relative path per line, from the roster below. Then cut every slice in one call and let the script prove nothing was dropped:
 
 ```bash
-bash <SKILL_DIR>/scripts/diff-slices.sh --out <RUN_DIR>/slices --expect <RUN_DIR>/changed-files.txt --diff <RUN_DIR>/pr.diff <RUN_DIR>/slices/*.txt
+bash .claude/skills/dot-pr-review/scripts/diff-slices.sh --out <RUN_DIR>/slices --expect <RUN_DIR>/changed-files.txt --diff <RUN_DIR>/pr.diff <RUN_DIR>/slices/*.txt
 ```
 
 For a diff too large for `gh pr diff`, replace `--diff <RUN_DIR>/pr.diff` with `--git <BASE_SHA> --head <HEAD_SHA> --root <CORE_REPO>`; in local mode use `--git <BASE_SHA>` with no `--head`. The historical reviewer's list holds every changed path, so an `UNSLICED` line means a list is wrong.

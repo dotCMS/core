@@ -44,7 +44,7 @@ Three row shapes come back, and `merge-sidecars.sh --help` lists them: the findi
 Check the sidecars before anything else (Stage 4b reads the result):
 
 ```bash
-bash <SKILL_DIR>/scripts/merge-sidecars.sh --dir <SIDECAR_DIR> --out <RUN_DIR>/merged --roster <RUN_DIR>/roster.txt
+bash .claude/skills/dot-pr-review/scripts/merge-sidecars.sh --dir <SIDECAR_DIR> --out <RUN_DIR>/merged --roster <RUN_DIR>/roster.txt
 ```
 
 It prints the rows and invalid lines per sidecar, `MISSING` for a launched agent with no sidecar and `EMPTY` for one with no valid row. An `EMPTY` or `MISSING` sidecar from an agent whose final message lists findings means that message is the only copy of them: Stage 4b turns it into rows before anything is merged.

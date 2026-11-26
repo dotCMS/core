@@ -112,7 +112,7 @@ Nothing is posted, but every anchor is still checked.
 2. **Anchors**, with the 7b.3 table, against the working tree and the per-file local diff:
 
    ```bash
-   bash <SKILL_DIR>/scripts/verify-anchors.sh --findings <RUN_DIR>/merged/anchored.jsonl --base <BASE_SHA> --worktree --root <CORE_REPO> --out <RUN_DIR>/merged/postable.jsonl
+   bash .claude/skills/dot-pr-review/scripts/verify-anchors.sh --findings <RUN_DIR>/merged/anchored.jsonl --base <BASE_SHA> --worktree --root <CORE_REPO> --out <RUN_DIR>/merged/postable.jsonl
    ```
 
    It reads each file from the working tree and takes the changed ranges from `git diff --unified=0 <BASE_SHA> -- <path>`, one call per path; every line of an untracked file is changed. By hand: `sed -n '<line>p' <path>`, then `grep -n -F -- '<evidence>' <path>` when the line does not match.

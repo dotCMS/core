@@ -67,7 +67,7 @@ If the local clone is missing or unreadable, or the fetch fails, abort posting, 
 `verify-anchors.sh` checks every surviving finding against the head version and its per-file diff in one call:
 
 ```bash
-bash <SKILL_DIR>/scripts/verify-anchors.sh --findings <RUN_DIR>/merged/anchored.jsonl --base <BASE_SHA> --rev <HEAD_SHA> --root <CORE_REPO> --out <RUN_DIR>/merged/postable.jsonl
+bash .claude/skills/dot-pr-review/scripts/verify-anchors.sh --findings <RUN_DIR>/merged/anchored.jsonl --base <BASE_SHA> --rev <HEAD_SHA> --root <CORE_REPO> --out <RUN_DIR>/merged/postable.jsonl
 ```
 
 Its `anchor.status` maps onto the table: `OK` is `ANCHOR_OK`, `REANCHORED` is a re-anchor (use `anchor.line`), `AMBIGUOUS`, `STALE` and `UNVERIFIABLE` are the drops below, and `NO_FILE` is stale. By hand, for one finding, the check is:
