@@ -22,6 +22,7 @@ import {
 } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSContentlet, DotContentletCanLock } from '@dotcms/dotcms-models';
 
+import { EDIT_CONTENT_HOST } from '../../../services/host/edit-content-host.model';
 import { escapeHtml, resolveLocker } from '../../../utils/functions.util';
 import { EditContentState } from '../../edit-content.store';
 
@@ -125,7 +126,8 @@ export function withLock() {
             (
                 store,
                 dotContentletService = inject(DotContentletService),
-                dotHttpErrorManagerService = inject(DotHttpErrorManagerService)
+                dotHttpErrorManagerService = inject(DotHttpErrorManagerService),
+                host = inject(EDIT_CONTENT_HOST)
             ) => ({
                 /**
                  * Locks the current content
@@ -145,23 +147,30 @@ export function withLock() {
                             dotContentletService.lockContent(store.contentlet()?.inode).pipe(
                                 tapResponse({
                                     next: (updated: DotCMSContentlet) => {
+                                        // Not a save, but an opener listing it shows the lock.
+                                        // The answer is about the version asked for, which the
+                                        // editor may have left (another language) meanwhile.
+                                        host.reportLockChanged(updated);
+
                                         const current = store.contentlet();
-                                        if (!current) {
+                                        if (!current || current.inode !== updated.inode) {
                                             patchState(store, {
                                                 lockStatus: ComponentStatus.LOADED
                                             });
 
                                             return;
                                         }
+                                        const contentlet = {
+                                            ...current,
+                                            locked: updated.locked,
+                                            lockedBy: updated.lockedBy,
+                                            lockedByName: updated.lockedByName,
+                                            lockedOn: updated['lockedOn']
+                                        };
+
                                         patchState(store, {
                                             lockStatus: ComponentStatus.LOADED,
-                                            contentlet: {
-                                                ...current,
-                                                locked: updated.locked,
-                                                lockedBy: updated.lockedBy,
-                                                lockedByName: updated.lockedByName,
-                                                lockedOn: updated.lockedOn
-                                            }
+                                            contentlet
                                         });
                                     },
                                     error: (error: HttpErrorResponse) => {
@@ -195,23 +204,30 @@ export function withLock() {
                             dotContentletService.unlockContent(store.contentlet()?.inode).pipe(
                                 tapResponse({
                                     next: (updated: DotCMSContentlet) => {
+                                        // Not a save, but an opener listing it shows the lock.
+                                        // The answer is about the version asked for, which the
+                                        // editor may have left (another language) meanwhile.
+                                        host.reportLockChanged(updated);
+
                                         const current = store.contentlet();
-                                        if (!current) {
+                                        if (!current || current.inode !== updated.inode) {
                                             patchState(store, {
                                                 lockStatus: ComponentStatus.LOADED
                                             });
 
                                             return;
                                         }
+                                        const contentlet = {
+                                            ...current,
+                                            locked: updated.locked,
+                                            lockedBy: updated.lockedBy,
+                                            lockedByName: updated.lockedByName,
+                                            lockedOn: updated['lockedOn']
+                                        };
+
                                         patchState(store, {
                                             lockStatus: ComponentStatus.LOADED,
-                                            contentlet: {
-                                                ...current,
-                                                locked: updated.locked,
-                                                lockedBy: updated.lockedBy,
-                                                lockedByName: updated.lockedByName,
-                                                lockedOn: updated.lockedOn
-                                            }
+                                            contentlet
                                         });
                                     },
                                     error: (error: HttpErrorResponse) => {

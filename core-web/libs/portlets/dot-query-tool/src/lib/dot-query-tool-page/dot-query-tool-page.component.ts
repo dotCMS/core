@@ -1,23 +1,19 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
-import { EMPTY } from 'rxjs';
 
 import { DOCUMENT, Location } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
-    computed,
-    DestroyRef,
     effect,
     inject,
-    Injector,
     OnInit,
     signal,
     untracked,
     viewChild
 } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Params, UrlSerializer, UrlTree } from '@angular/router';
 
 import { MenuItem, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -33,17 +29,22 @@ import { TableModule } from 'primeng/table';
 import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { catchError, filter, switchMap, take } from 'rxjs/operators';
+import { take } from 'rxjs/operators';
 
 import {
+    DotContentChangeService,
     DotContentletEditUrlService,
-    DotContentSearchService,
     DotCurrentUserService,
     DotGlobalMessageService,
     DotMessageService
 } from '@dotcms/data-access';
-import { ComponentStatus, DotCMSContentlet, FeaturedFlags } from '@dotcms/dotcms-models';
-import { EditContentDialogData, loadDotEditContentSidePanel } from '@dotcms/edit-content';
+import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
+import {
+    DotEditContentRequest,
+    DotPanelUrlStateService,
+    injectEditContentPanel,
+    readPanelUrlIntent
+} from '@dotcms/edit-content';
 import {
     DOT_MONACO_BASE_OPTIONS,
     DOT_MONACO_RAW_OPTIONS,
@@ -52,7 +53,6 @@ import {
     DotMessagePipe,
     DotMonacoRunShortcutEditor,
     getDotMonacoRunShortcutLabel,
-    injectSidePanel,
     PrincipalConfiguration,
     registerDotMonacoRunShortcut
 } from '@dotcms/ui';
@@ -109,95 +109,55 @@ export class DotQueryToolPageComponent implements OnInit {
     readonly #globalMessage = inject(DotGlobalMessageService);
     readonly #clipboard = inject(DotClipboardUtil);
     readonly #document = inject(DOCUMENT);
-    readonly #router = inject(Router);
     readonly #route = inject(ActivatedRoute);
     readonly #location = inject(Location);
+    readonly #urlSerializer = inject(UrlSerializer);
     readonly #editUrlResolver = inject(DotContentletEditUrlService);
-    readonly #contentSearch = inject(DotContentSearchService);
-    readonly #destroyRef = inject(DestroyRef);
-    readonly #injector = inject(Injector);
+    readonly #panelUrl = inject(DotPanelUrlStateService);
 
     /** Keyboard shortcut shown in the Run button tooltip (`⌘ + Enter` / `Ctrl + Enter`). */
     readonly runShortcutLabel = getDotMonacoRunShortcutLabel(this.#document.defaultView?.navigator);
 
-    #lastSyncedUrl: string | null = null;
-
-    /**
-     * Feature flag gating the side panel. When off, editing a result opens the editor in a new
-     * browser tab (the previous behavior); when on, results that resolve to the new content editor
-     * open in the in-page side panel instead. Read from the store's `withFlags` slice (batch-fetched
-     * once on init, degrades to `false` on a failed config read) — defaults to `false` until it
-     * resolves, so the safe/previous new-tab behavior is used meanwhile.
-     */
-    readonly $sidePanelEnabled = computed(
-        () => this.store.flags()[FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] ?? false
-    );
-
-    /** Content shown in the Edit Content side panel, or `null` when it is closed. */
-    readonly $editPanelRequest = signal<EditContentDialogData | null>(null);
-
-    /**
-     * The Edit Content side panel, open while {@link $editPanelRequest} is set (new-editor results,
-     * with the feature flag on; legacy and page results still open in a new tab). Reloads the
-     * results on save. Loaded on its first open, so the editor stays out of this portlet's chunk.
-     */
-    readonly #editPanel = injectSidePanel(this.$editPanelRequest, {
-        component: loadDotEditContentSidePanel,
-        heading: (data) => data.title ?? '',
-        inputs: (data) => ({ data }),
-        outputs: { saved: () => this.onEditPanelSaved() },
-        closed: () => this.onEditPanelClosed()
-    });
-
-    /**
-     * Whether the last `editContent` URL write reflected an open panel — so a close writes with
-     * replaceState instead of a history push whose Back would resurrect the just-removed param.
-     */
-    #editContentUrlWasSet = false;
-
-    /**
-     * Reflects the open edit panel in the URL (`?editContent=<identifier>`) so it is shareable,
-     * refresh-safe, and dismissible with browser Back (see the popstate listener in ngOnInit).
-     * Written with `Location.go` (a history push) — NOT `replaceState` like the search-param sync
-     * above — precisely so Back has an entry to pop. `merge` preserves the query-tool params.
-     */
-    // eslint-disable-next-line no-unused-private-class-members -- effect() runs for its side effects
-    readonly #editContentUrlEffect = effect(() => {
-        const request = this.$editPanelRequest();
-
-        untracked(() =>
-            this.#syncEditContentParam(
-                request?.mode === 'edit' ? (request.identifier ?? null) : null
-            )
-        );
-    });
+    /** The content open in the side panel, or `null` when it is closed. */
+    readonly $editRequest = signal<DotEditContentRequest | null>(null);
 
     // Mirrors store state into the address bar via Location.replaceState, but only
     // once the search settles (LOADED or ERROR). Tying the sync to `status` instead
     // of the inputs means typing in the param fields never touches the URL — only
     // an actually-executed search updates the shareable address bar — and the
     // user's browser back stack is never polluted (replaceState, not pushState).
+    //
+    // Built from the URL the address bar holds (`Location`), not the router's tree, and changing
+    // only the search's own params: the open side panel's params are written with `Location` too,
+    // the router never sees them, and a save reruns the search while the panel stays open
+    // (#38303, FR-044). Content Drive's URL effect does the same.
     readonly updateQueryParamsEffect = effect(() => {
         const status = this.store.status();
         if (status !== ComponentStatus.LOADED && status !== ComponentStatus.ERROR) return;
         // Read inputs untracked so this effect re-runs only on status transitions.
         untracked(() => {
-            const queryParams: Record<string, string | number | null> = {
+            const owned: Record<string, string | null> = {
                 q: this.store.query() || null,
-                offset: this.store.offset() !== DEFAULT_OFFSET ? this.store.offset() : null,
-                limit: this.store.limit() !== DEFAULT_LIMIT ? this.store.limit() : null,
+                offset: this.store.offset() !== DEFAULT_OFFSET ? String(this.store.offset()) : null,
+                limit: this.store.limit() !== DEFAULT_LIMIT ? String(this.store.limit()) : null,
                 sort: this.store.sort() || null,
                 userId: this.store.userId() || null
             };
-            const url = this.#router
-                .createUrlTree([], {
-                    relativeTo: this.#route,
-                    queryParams,
-                    queryParamsHandling: 'merge'
-                })
-                .toString();
-            if (url === this.#lastSyncedUrl || url === this.#router.url) return;
-            this.#lastSyncedUrl = url;
+            const current = this.#urlSerializer.parse(this.#location.path(true));
+            const queryParams: Params = { ...current.queryParams };
+
+            for (const [key, value] of Object.entries(owned)) {
+                if (value === null) {
+                    delete queryParams[key];
+                } else {
+                    queryParams[key] = value;
+                }
+            }
+
+            const url = this.#urlSerializer.serialize(
+                new UrlTree(current.root, queryParams, current.fragment)
+            );
+            if (url === this.#urlSerializer.serialize(current)) return;
             this.#location.replaceState(url);
         });
     });
@@ -263,6 +223,24 @@ export class DotQueryToolPageComponent implements OnInit {
         }
     ];
 
+    constructor() {
+        // The side panel, open while `$editRequest` is set, in whichever editor the content's type
+        // uses (#38303). A close reruns the search and clears the request. The opener writes the
+        // open panel to this page's URL (`editContent`, `editContentLang`) and routes browser Back
+        // through the editor's guard (FR-044 to FR-047). Called rather than assigned: nothing here
+        // reads the panel back.
+        injectEditContentPanel(this.$editRequest, {
+            closed: () => this.onEditPanelClosed(),
+            url: {}
+        });
+
+        // Every save and delete in a side panel, at any depth, reruns the search: content saved
+        // from a relationship inside the panel a row opened is in the results too (T174).
+        inject(DotContentChangeService)
+            .edits$.pipe(takeUntilDestroyed())
+            .subscribe(() => this.onContentChanged());
+    }
+
     ngOnInit(): void {
         const params = this.#route.snapshot.queryParamMap;
         const query = params.get('q') ?? '';
@@ -292,37 +270,7 @@ export class DotQueryToolPageComponent implements OnInit {
             this.store.runSearch();
         }
 
-        // Shareable deep-link: `?editContent=<identifier>` reopens the edit panel on load. No flag
-        // gate — the param is only ever written while the side panel is active (flag on), so its
-        // presence already implies a panel context (and the flag may not have resolved yet).
-        const editContent = params.get('editContent');
-        if (editContent) {
-            this.#resolveAndOpenByIdentifier(editContent);
-        }
-
-        // Browser Back/Forward: nothing else reacts to the `editContent` param (written via
-        // Location.go, not the router). When Back removes/changes it while the panel is open, route
-        // the close through the panel's unsaved-changes guard — a direct clear would tear the editor
-        // down and discard unsaved edits silently.
-        const locationSubscription = this.#location.subscribe((event) => {
-            const backParams = new URLSearchParams(event.url?.split('?')[1] ?? '');
-            const editContentParam = backParams.get('editContent');
-            const request = this.$editPanelRequest();
-
-            if (request?.mode === 'edit' && request.identifier !== editContentParam) {
-                // Restore the param so the URL matches the still-open panel while the guard decides.
-                const restored = this.#router
-                    .createUrlTree([], {
-                        relativeTo: this.#route,
-                        queryParams: { editContent: request.identifier },
-                        queryParamsHandling: 'merge'
-                    })
-                    .toString();
-                this.#location.replaceState(restored);
-                this.#editPanel.requestClose();
-            }
-        });
-        this.#destroyRef.onDestroy(() => locationSubscription.unsubscribe());
+        this.#openFromUrl();
     }
 
     onQueryChange(value: string): void {
@@ -355,142 +303,85 @@ export class DotQueryToolPageComponent implements OnInit {
         });
     }
 
+    /**
+     * Opens a result for editing (#38303, R13). A page opens the page editor in a new tab, as
+     * before; any other result opens in the side panel over the results, in whichever editor its
+     * type uses, which the opener decides. A page without `url` or `urlMap` names no page editor
+     * URL, and the tab must open inside the click, where a server round trip would let the popup
+     * blocker stop it, so it opens in the side panel too.
+     *
+     * @param contentlet The result whose title was clicked.
+     * @param event The click, whose default navigation is cancelled.
+     */
     onResultClick(contentlet: DotCMSContentlet, event: MouseEvent): void {
         event.preventDefault();
 
-        // Side panel enabled: resolve first (no intermediate tab). New-editor content opens in
-        // the in-page panel; legacy-editor and HTMLPAGE content still open in a new tab. For a
-        // cached content type the resolver answers synchronously, so the fallback `window.open`
-        // stays within the click gesture and the popup blocker accepts it.
-        if (this.$sidePanelEnabled()) {
+        if (contentlet.baseType === 'HTMLPAGE' && (contentlet['urlMap'] || contentlet.url)) {
             this.#editUrlResolver
                 .resolveEditUrl(contentlet)
                 .pipe(take(1))
                 .subscribe({
-                    next: (url) => {
-                        if (this.#isNewEditorUrl(url)) {
-                            this.$editPanelRequest.set({
-                                mode: 'edit',
-                                contentletInode: contentlet.inode,
-                                identifier: contentlet.identifier,
-                                title: contentlet.title
-                            });
-
-                            return;
-                        }
-
-                        window.open(url, '_blank');
-                    },
+                    next: (url) => window.open(url, '_blank'),
                     error: () => this.#globalMessage.error()
                 });
 
             return;
         }
 
-        // Side panel disabled: open the placeholder synchronously so the popup blocker accepts it,
-        // then assign the resolved URL once DotContentletEditUrlService returns. The resolver may
-        // answer synchronously (HTMLPAGE / cached content type) — that's fine, subscribe still
-        // delivers on the same tick.
-        const placeholder = window.open('about:blank', '_blank');
-        if (!placeholder) return;
-        this.#editUrlResolver
-            .resolveEditUrl(contentlet)
-            .pipe(take(1))
-            .subscribe({
-                next: (url) => (placeholder.location.href = url),
-                error: () => {
-                    placeholder.close();
-                    this.#globalMessage.error();
-                }
-            });
+        this.$editRequest.set(toEditRequest(contentlet));
     }
 
-    /** Re-runs the search after a save so the results table reflects the edited content. */
-    onEditPanelSaved(): void {
-        this.store.runSearch();
+    /**
+     * Re-runs the search after a save or delete in any side panel so the results table reflects
+     * the change. Nothing runs when there is no query: a link opens a panel over a page that ran no
+     * search.
+     */
+    onContentChanged(): void {
+        this.#rerunSearch();
     }
 
-    /** Clears the side panel request, closing the panel. */
+    /**
+     * The panel closed itself: rerun the search, since a move or a translation saved inside the
+     * legacy editor reports no save (FR-017), and clear the request.
+     */
     onEditPanelClosed(): void {
-        this.$editPanelRequest.set(null);
+        this.#rerunSearch();
+        this.$editRequest.set(null);
     }
 
-    /**
-     * True when `url` targets the new content editor (`/dotAdmin/#/content/<inode>`). The legacy
-     * editor (`/c/content/`) and the page editor (`/edit-page/`) resolve to different prefixes, so
-     * only the new editor is eligible for the in-page side panel.
-     */
-    #isNewEditorUrl(url: string): boolean {
-        return url.startsWith('/dotAdmin/#/content/');
-    }
-
-    /**
-     * Writes/clears `editContent` (merged with the query-tool params). Pushes when opening the
-     * panel (so browser Back can pop it) but replaces when closing — a push on close would leave a
-     * phantom history entry whose Back puts the removed param back with no panel rendered.
-     */
-    #syncEditContentParam(identifier: string | null): void {
-        const url = this.#router
-            .createUrlTree([], {
-                relativeTo: this.#route,
-                queryParams: { editContent: identifier },
-                queryParamsHandling: 'merge'
-            })
-            .toString();
-
-        if (url !== this.#location.path(true)) {
-            if (identifier === null && this.#editContentUrlWasSet) {
-                this.#location.replaceState(url);
-            } else {
-                this.#location.go(url);
-            }
+    /** Reruns what is shown, with the guard {@link onRun} applies: an empty query runs nothing. */
+    #rerunSearch(): void {
+        if (this.store.query().trim()) {
+            this.store.runSearch();
         }
-
-        this.#editContentUrlWasSet = identifier !== null;
     }
 
     /**
-     * Resolves a shared `?editContent=` identifier to its working contentlet and opens the panel.
-     * Gated on the side-panel flag (via `$sidePanelEnabled`, the store's `withFlags` slice, awaited
-     * through `toObservable` + `filter(Boolean)`): with the flag off there is no in-page editor in
-     * Query Tool — editing opens a new tab, which needs a user gesture and can't be triggered on
-     * load — so the deep link is ignored (AC15) and the content search never fires. The param can
-     * outlive the flag being on (shared link / bookmark / staging→prod), hence the gate.
+     * Reopens the panel a shared link names, once, on load (#38303, FR-049): an edit, or a create
+     * that was stacked over a result's panel when the link was copied, since a link names only the
+     * front panel. A link the author cannot have meant (a panel param of the wrong shape, or more
+     * than one panel) opens nothing, shows the standard error and loses the panel params.
+     * Edit Source never opens from here.
      *
-     * Waiting on the flag (rather than checking it after firing the search) avoids two problems: a
-     * wasted content search on every deep-link load while the flag is off, and a race between the
-     * flag's config fetch and this search where the search could resolve first and silently drop a
-     * valid deep link. `filter(Boolean)` never emits while the flag is `false`, so `takeUntilDestroyed`
-     * is required to stop waiting if the component is destroyed first.
+     * An edit is asked for by identifier and language: the opener finds the working version, falls
+     * back to any language, and shows the standard error for content that cannot be opened, which
+     * also takes the panel params out of the URL (FR-050).
      */
-    #resolveAndOpenByIdentifier(identifier: string): void {
-        toObservable(this.$sidePanelEnabled, { injector: this.#injector })
-            .pipe(
-                filter(Boolean),
-                take(1),
-                switchMap(() =>
-                    this.#contentSearch
-                        .get<{ jsonObjectView: { contentlets: DotCMSContentlet[] } }>({
-                            query: `+identifier:${identifier} +working:true`,
-                            limit: 1
-                        })
-                        .pipe(catchError(() => EMPTY))
-                ),
-                takeUntilDestroyed(this.#destroyRef)
-            )
-            .subscribe((entity) => {
-                const contentlet = entity?.jsonObjectView?.contentlets?.[0];
-                if (!contentlet?.inode) {
-                    return;
-                }
+    #openFromUrl(): void {
+        const intent = readPanelUrlIntent(this.#route.snapshot.queryParams);
 
-                this.$editPanelRequest.set({
-                    mode: 'edit',
-                    contentletInode: contentlet.inode,
-                    identifier,
-                    title: contentlet.title
-                });
+        if (intent.kind === 'edit') {
+            const { identifier, languageId } = intent;
+            this.$editRequest.set({
+                mode: 'edit',
+                identifier,
+                ...(languageId ? { languageId } : {})
             });
+        } else if (intent.kind === 'create') {
+            this.$editRequest.set({ mode: 'new', contentType: intent.contentType });
+        } else if (intent.kind === 'refused') {
+            this.#panelUrl.refuse();
+        }
     }
 
     useExample(query: string): void {
@@ -539,4 +430,20 @@ export class DotQueryToolPageComponent implements OnInit {
         const n = Number.parseInt(value, 10);
         return Number.isFinite(n) ? n : fallback;
     }
+}
+
+/**
+ * The edit request for a search result. The content type is the result's own variable, so the
+ * opener picks the editor without fetching the contentlet first.
+ *
+ * @param contentlet The result to edit.
+ */
+function toEditRequest({
+    inode,
+    identifier,
+    contentType,
+    languageId,
+    title
+}: DotCMSContentlet): DotEditContentRequest {
+    return { mode: 'edit', inode, identifier, contentType, languageId, title };
 }

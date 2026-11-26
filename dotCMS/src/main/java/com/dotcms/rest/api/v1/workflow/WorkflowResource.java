@@ -5278,7 +5278,7 @@ public class WorkflowResource {
         }
 
         final Contentlet contentlet = this.contentHelper.populateContentletFromMap
-                (contentletInput, fireActionForm.getContentletFormData());
+                (contentletInput, fireActionForm.getContentletFormData(), user);
 
         final Supplier<String> errorMessageSupplier = () -> {
 

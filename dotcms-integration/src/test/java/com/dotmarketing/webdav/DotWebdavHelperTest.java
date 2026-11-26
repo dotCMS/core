@@ -3,6 +3,7 @@ package com.dotmarketing.webdav;
 import static com.dotcms.unittest.TestUtil.upperCaseRandom;
 import static org.mockito.Mockito.when;
 
+import com.bradmcevoy.http.Auth;
 import com.bradmcevoy.http.FileResource;
 import com.bradmcevoy.http.FolderResource;
 import com.bradmcevoy.http.HttpManager;
@@ -11,6 +12,7 @@ import com.bradmcevoy.http.Resource;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
@@ -18,13 +20,18 @@ import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.DotCMSMockRequest;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -70,6 +77,7 @@ public class DotWebdavHelperTest {
 
     private static final List<User> createdUsers = new ArrayList<>();
     private static final List<ApiToken> createdTokens = new ArrayList<>();
+    private static final List<Host> createdSites = new ArrayList<>();
 
     /** Removes the tokens and users the authentication tests created. */
     @AfterClass
@@ -81,7 +89,21 @@ public class DotWebdavHelperTest {
         } finally {
             createdUsers.forEach(UserDataGen::remove);
             createdUsers.clear();
+            removeCreatedSites();
         }
+    }
+
+    /** Archives and deletes the sites the listing tests created, with their folders and files. */
+    private static void removeCreatedSites() {
+        for (final Host site : createdSites) {
+            try {
+                APILocator.getHostAPI().archive(site, APILocator.systemUser(), false);
+                APILocator.getHostAPI().delete(site, APILocator.systemUser(), false);
+            } catch (final Exception e) {
+                Logger.warn(DotWebdavHelperTest.class, "Unable to delete test site: " + e.getMessage());
+            }
+        }
+        createdSites.clear();
     }
 
     private static User newUserWithPassword(final String password) {
@@ -567,6 +589,147 @@ public class DotWebdavHelperTest {
 
     private static List<String> messages(final List<AuditEntry> entries) {
         return entries.stream().map(entry -> entry.level + " " + entry.message).collect(Collectors.toList());
+    }
+
+    // ---- Listings for a back-end user: READ is checked without front-end roles ----------------
+
+    /**
+     * Method to test: {@link HostResourceImpl#getChildren()}
+     * <p>
+     * Given Scenario: A back-end user can read a site and its files; one published file at the root
+     * of the site is readable by CMS Anonymous only.
+     * <p>
+     * ExpectedResult: The root listing shows the file the user can read and leaves out the one only
+     * CMS Anonymous can read, in both trees.
+     */
+    @Test
+    public void Test_site_root_listing_shows_only_files_the_user_can_read() throws Exception {
+        final Host site = newSite();
+        final User user = newBackendUserWithReadOn(site);
+        final Contentlet readable = ContentletDataGen.publish(newFileAsset(site, "readable-root-file.txt"));
+        final Contentlet anonymousOnly = ContentletDataGen.publish(newFileAsset(site, "anonymous-root-file.txt"));
+        readableByAnonymousOnly(anonymousOnly);
+
+        try (MockedStatic<HttpManager> mocked = mockRequest(Request.Method.PROPFIND, user)) {
+            for (final String tree : new String[] {"live", "working"}) {
+                final List<String> names = resourceNames(siteRoot(site, tree).getChildren());
+                Assert.assertTrue(tree + " " + names, names.contains(fileName(readable)));
+                Assert.assertFalse(tree + " " + names, names.contains(fileName(anonymousOnly)));
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link DotWebdavHelper#getChildrenOfFolder(Folder, User, boolean, long)}
+     * <p>
+     * Given Scenario: A back-end user can read a site and its files; one published file in a folder
+     * is readable by CMS Anonymous only.
+     * <p>
+     * ExpectedResult: The folder listing shows the file the user can read and leaves out the other.
+     */
+    @Test
+    public void Test_folder_listing_shows_only_files_the_user_can_read() throws Exception {
+        final Host site = newSite();
+        final User user = newBackendUserWithReadOn(site);
+        final Folder folder = new FolderDataGen().site(site).nextPersisted();
+        final Contentlet readable = ContentletDataGen.publish(newFileAsset(folder, "readable-file.txt"));
+        final Contentlet anonymousOnly = ContentletDataGen.publish(newFileAsset(folder, "anonymous-file.txt"));
+        readableByAnonymousOnly(anonymousOnly);
+
+        try (MockedStatic<HttpManager> mocked = mockRequest(Request.Method.PROPFIND, user)) {
+            final List<String> names = resourceNames(
+                    helper.getChildrenOfFolder(folder, user, true, defaultLanguageId()));
+            Assert.assertTrue(names.toString(), names.contains(fileName(readable)));
+            Assert.assertFalse(names.toString(), names.contains(fileName(anonymousOnly)));
+        }
+    }
+
+    /** Creates a site that is removed after the class runs. */
+    private static Host newSite() {
+        final Host site = new SiteDataGen().nextPersisted();
+        createdSites.add(site);
+        return site;
+    }
+
+    /**
+     * Creates a back-end user whose own role can read the site and, by inheritance, its folders and
+     * files. The user is removed after the class runs.
+     */
+    private static User newBackendUserWithReadOn(final Host site) throws Exception {
+        final User user = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole())
+                .nextPersisted();
+        createdUsers.add(user);
+        final String roleId = APILocator.getRoleAPI().getUserRole(user).getId();
+        APILocator.getPermissionAPI().save(List.of(
+                new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, site.getPermissionId(), roleId,
+                        PermissionAPI.PERMISSION_READ, true),
+                new Permission(Folder.class.getCanonicalName(), site.getPermissionId(), roleId,
+                        PermissionAPI.PERMISSION_READ, true),
+                new Permission(Contentlet.class.getCanonicalName(), site.getPermissionId(), roleId,
+                        PermissionAPI.PERMISSION_READ, true)),
+                site, APILocator.systemUser(), false);
+        return user;
+    }
+
+    /** Leaves CMS Anonymous as the only role that can read the file. */
+    private static void readableByAnonymousOnly(final Contentlet file) throws Exception {
+        final Role anonymous = APILocator.getRoleAPI().loadCMSAnonymousRole();
+        APILocator.getPermissionAPI().assignPermissions(List.of(new Permission(file.getPermissionId(),
+                anonymous.getId(), PermissionAPI.PERMISSION_READ, true)), file, APILocator.systemUser(), false);
+    }
+
+    /** Saves (without publishing) a small text file asset in the given folder. */
+    private static Contentlet newFileAsset(final Folder folder, final String name) throws Exception {
+        return new FileAssetDataGen(folder, tempFile(name)).nextPersisted();
+    }
+
+    /** Saves (without publishing) a small text file asset at the root of the given site. */
+    private static Contentlet newFileAsset(final Host site, final String name) throws Exception {
+        return new FileAssetDataGen(site, tempFile(name)).nextPersisted();
+    }
+
+    /** Creates a temporary file whose name is unique per call and ends with the given name. */
+    private static java.io.File tempFile(final String name) throws IOException {
+        final java.io.File dir = java.nio.file.Files.createTempDirectory("webdav-listing").toFile();
+        dir.deleteOnExit();
+        final java.io.File file = new java.io.File(dir, System.nanoTime() + "-" + name);
+        FileUtil.write(file, "content of " + name);
+        file.deleteOnExit();
+        return file;
+    }
+
+    /** The file name WebDAV shows for a file asset. */
+    private static String fileName(final Contentlet fileAsset) {
+        return APILocator.getFileAssetAPI().fromContentlet(fileAsset).getFileName();
+    }
+
+    /** The site-root resource of the given tree ({@code live} or {@code working}). */
+    private static HostResourceImpl siteRoot(final Host site, final String tree) {
+        final HostResourceImpl root = new HostResourceImpl(String.format("/webdav/%s/%d/%s/",
+                tree, defaultLanguageId(), site.getHostname()));
+        root.setHost(site);
+        return root;
+    }
+
+    /** Makes the current WebDAV request use the given method and user. Close the returned mock when done. */
+    private static MockedStatic<HttpManager> mockRequest(final Request.Method method, final User user) {
+        final MockedStatic<HttpManager> mocked = Mockito.mockStatic(HttpManager.class);
+        final Request request = Mockito.mock(Request.class);
+        final Auth auth = Mockito.mock(Auth.class);
+        when(auth.getTag()).thenReturn(user);
+        when(request.getAuthorization()).thenReturn(auth);
+        when(request.getMethod()).thenReturn(method);
+        mocked.when(HttpManager::request).thenReturn(request);
+        return mocked;
+    }
+
+    private static long defaultLanguageId() {
+        return APILocator.getLanguageAPI().getDefaultLanguage().getId();
+    }
+
+    private static List<String> resourceNames(final List<? extends Resource> resources) {
+        return resources.stream().map(Resource::getName).collect(Collectors.toList());
     }
 
 }

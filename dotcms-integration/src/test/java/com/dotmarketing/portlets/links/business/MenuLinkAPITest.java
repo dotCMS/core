@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.links.business;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.datagen.LinkDataGen;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -210,4 +211,25 @@ public class MenuLinkAPITest extends IntegrationTestBase {
         assertEquals(menuLink.getUrl(), link.getUrl());
     }
 
+    /**
+     * Method to test: {@link MenuLinkAPI#copy(Link, Folder, User, boolean)}
+     * Given: a menu link owned by a user
+     * Expected: the copy has the same owner, so permissions given to the CMS Owner role, which are
+     * copied with it, still apply to that user
+     */
+    @Test
+    public void copy_keepsTheOwner() throws Exception {
+        final User owner = new UserDataGen().nextPersisted();
+        final Folder source = fAPI.createFolders("/owned-source" + System.currentTimeMillis(),
+                site, user, false);
+        final Folder destination = fAPI.createFolders(
+                "/owned-destination" + System.currentTimeMillis(), site, user, false);
+        final Link link = new LinkDataGen(source).hostId(site.getIdentifier()).owner(owner)
+                .nextPersisted();
+        assertEquals(owner.getUserId(), mAPI.find(link.getInode(), user, false).getOwner());
+
+        final Link copy = mAPI.copy(link, destination, user, false);
+
+        assertEquals(owner.getUserId(), mAPI.find(copy.getInode(), user, false).getOwner());
+    }
 }

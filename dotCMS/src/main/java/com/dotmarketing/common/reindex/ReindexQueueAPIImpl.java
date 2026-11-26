@@ -9,6 +9,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.content.index.IndexDocumentViolation;
+import io.vavr.Lazy;
+import java.util.function.Supplier;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.google.common.annotations.VisibleForTesting;
@@ -32,6 +35,7 @@ import com.google.common.collect.ImmutableList;
 public class ReindexQueueAPIImpl implements ReindexQueueAPI {
 
     private final ReindexQueueFactory reindexQueueFactory;
+    private final Supplier<FailedIndexingNotifier> notifier;
 
     public ReindexQueueAPIImpl() {
         this(FactoryLocator.getReindexQueueFactory());
@@ -39,7 +43,15 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
 
     @VisibleForTesting
     public ReindexQueueAPIImpl(final ReindexQueueFactory reindexQueueFactory) {
+        // Created on use: the notifier is not needed until a saved content is withheld.
+        this(reindexQueueFactory, Lazy.of(FailedIndexingNotifier::new)::get);
+    }
+
+    @VisibleForTesting
+    ReindexQueueAPIImpl(final ReindexQueueFactory reindexQueueFactory,
+            final Supplier<FailedIndexingNotifier> notifier) {
         this.reindexQueueFactory = reindexQueueFactory;
+        this.notifier = notifier;
     }
 
     @Override
@@ -240,7 +252,38 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
     @Override
     @WrapInTransaction
     public void markAsFailed(final ReindexEntry idx, final String cause) throws DotDataException {
-        reindexQueueFactory.markAsFailed(idx, UtilMethods.shortenString(cause, 300));
+        final String recorded = UtilMethods.shortenString(cause, 300);
+        reindexQueueFactory.markAsFailed(idx, recorded);
+        notifyIfSavedContentWithheld(idx, recorded);
+    }
+
+    /**
+     * Reports, through {@link FailedIndexingNotifier}, a saved content that will not appear in
+     * searches because its index document was withheld (#37269).
+     *
+     * <p>A save with the DEFER policy has already reported success when the reindex thread
+     * withholds its document, so nothing else tells the editor. The notification is sent once,
+     * when this failure parks the entry, and only for entries queued by a save: a full reindex
+     * reports its failures in one summary when it finishes, and other causes (an unreachable
+     * engine) would otherwise send one notification per saved content. A save can queue more
+     * than one row for the same identifier, so the content is notified only by the first row
+     * that parks. Never fails the caller.</p>
+     */
+    private void notifyIfSavedContentWithheld(final ReindexEntry idx, final String reason) {
+        final boolean parks = idx.errorCount() >= ReindexQueueFactory.REINDEX_MAX_FAILURE_ATTEMPTS;
+        final boolean queuedBySave = idx.getPriority() < Priority.REINDEX.dbValue();
+        if (!parks || !queuedBySave || IndexDocumentViolation.violationOf(reason).isEmpty()) {
+            return;
+        }
+        try {
+            if (reindexQueueFactory.hasOtherParkedEntry(idx.getIdentToIndex(), idx.getId())) {
+                return;
+            }
+            notifier.get().savedContentWithheld(idx.getIdentToIndex(), reason);
+        } catch (final Exception e) {
+            Logger.warnAndDebug(ReindexQueueAPIImpl.class, "Could not notify that the index"
+                    + " document of '" + idx.getIdentToIndex() + "' was withheld", e);
+        }
     }
 
 }

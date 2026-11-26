@@ -101,8 +101,10 @@ public class ContentletIndexAPIImplBootstrapTest {
      *         the store.
      * When  : createContentIndex() runs during bootstrap.
      * Then  : the orphan is reused in place, untouched — it is NOT deleted, NOT recreated, and its
-     *         mapping is NOT re-applied (a dotCMS-created index already carries the full mapping).
-     *         Discarding it would force a costly full reindex. The method returns true.
+     *         mapping is NOT re-applied. A putMapping-only re-assert against an index not created
+     *         with dotCMS settings is rejected and leaves it half-mapped
+     *         (<a href="https://github.com/dotCMS/core/issues/36353">#36353</a>), and discarding it
+     *         would force a costly full reindex. The method returns true.
      */
     @Test
     public void test_populatedOrphan_reusedInPlace_notDeletedNotRemapped() throws IOException {

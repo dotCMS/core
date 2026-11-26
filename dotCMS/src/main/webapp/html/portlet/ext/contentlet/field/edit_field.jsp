@@ -1,6 +1,7 @@
 <%@page import="com.dotmarketing.image.focalpoint.FocalPoint"%>
 <%@page import="java.util.Optional"%>
 <%@page import="com.dotmarketing.image.focalpoint.FocalPointAPIImpl"%>
+<%@page import="com.dotcms.rendering.velocity.viewtools.RestrictedViewToolAccess"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@page import="com.dotmarketing.util.Config"%>
@@ -1490,7 +1491,16 @@
                     velocityContext.put(field.getVelocityVarName(), defaultValue);
                 }
             }
-            HTMLString = new VelocityUtil().parseVelocity(textValue,velocityContext);
+            // The field's code is about to run as a preview for this user alone, so name them:
+            // the restricted view tools it calls answer to their role, and nothing else on this
+            // path names anybody.
+            final Object previousAuthor =
+                    RestrictedViewToolAccess.announceFieldPreviewAuthor(request, structure, user);
+            try {
+                HTMLString = new VelocityUtil().parseVelocity(textValue,velocityContext);
+            } finally {
+                RestrictedViewToolAccess.restoreRenderingAuthor(request, previousAuthor);
+            }
         }
 
     %>
@@ -1610,6 +1620,13 @@
                 return value.replaceAll('\"','&#34;').replaceAll(/\\/g, '&#92;');
             }
 
+            // Tabs and line breaks must be escaped or the hidden input holds invalid JSON
+            function escapeControlChars(value) {
+                return value.replace(/[\u0000-\u001f]/g, function (c) {
+                    return '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0');
+                });
+            }
+
             function formatToJsonData(value) {
                 var removedBrackets = value.trim().substring(1, value.length-1);
                 var preformatted = removedBrackets.replaceAll(/:/g, '":"').replaceAll(/,/g, '","');
@@ -1618,7 +1635,7 @@
 
             // Escape chars and set value to hidden input
             var dotKeyValueHiddenIput = document.getElementById('<%=field.getVelocityVarName()%>');
-            dotKeyValueHiddenIput.value = formatToJsonData(escapeQuoteAndBackSlash("<%=Xss.encodeForJavaScript(keyValueDataRaw.toString())%>"));
+            dotKeyValueHiddenIput.value = formatToJsonData(escapeControlChars(escapeQuoteAndBackSlash("<%=Xss.encodeForJavaScript(keyValueDataRaw.toString())%>")));
 
             var dotKeyValue = document.querySelector('#<%=field.getVelocityVarName()%>KeyValue');
             dotKeyValue.uniqueKeys = "true";

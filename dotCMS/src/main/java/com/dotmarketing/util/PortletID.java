@@ -37,6 +37,11 @@ public enum PortletID {
     MY_ACCOUNT,
     PERSONAS,
     PUBLISHING_QUEUE,
+    /**
+     * The Angular Publishing Queue portlet while it ships as a beta. When it is promoted, update the
+     * portlets accepted by {@code PublishingResource}.
+     */
+    PUBLISHING_QUEUE_BETA("publishing-queue-beta"),
     PUBLISHING_QUEUE_LEGACY("publishing-queue-legacy"),
     QUERY_TOOL,
     TAGS,

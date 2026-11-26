@@ -1,14 +1,23 @@
 package com.dotcms.config;
 
 import com.dotcms.business.SystemTable;
+import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.WhiteBlackList;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import io.vavr.Lazy;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
+import io.vavr.control.Try;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 
 /**
  * Encapsulates the configuration based on the system table
@@ -35,6 +44,12 @@ public class SystemTableConfigSource {
             "REMOTE_CALL_ALLOW_IPV6",
             "TEMP_RESOURCE_BY_URL_ADMIN_ONLY",
             "TEMP_RESOURCE_BY_URL_ALLOWED_EXTENSIONS");
+
+    private static final String[] DEFAULT_BLACKLISTED_PROPS = {"DOTCMS_CLUSTER_ID", "DOTCMS_CLUSTER_SALT"};
+    /** The blacklist built for the last value read of {@code SYSTEM_TABLE_BLACKLISTED_KEYS}, rebuilt when it changes. */
+    private static final AtomicReference<Tuple2<List<String>, WhiteBlackList>> REFUSED_KEYS = new AtomicReference<>();
+    /** Refuses every key while the configured blacklist pattern does not compile. */
+    private static final WhiteBlackList REFUSE_ALL = new WhiteBlackList.Builder().addBlackPatterns(".*").build();
 
     private static final String ENV_PREFIX = "DOT_";
     private final Lazy<SystemTable> systemTable = Lazy.of(()->APILocator.getSystemAPI().getSystemTable());
@@ -100,6 +115,55 @@ public class SystemTableConfigSource {
         }
         final String lowerPropertyName = propertyName.toLowerCase(Locale.ROOT);
         return SKIP_KEYS_LOWER_SET.stream().noneMatch(lowerPropertyName::contains);
+    }
+
+    /**
+     * Builds the system table access rules from the caller's allowlist and the configured blacklist.
+     * An invalid blacklist is rejected instead of allowing access.
+     */
+    public static WhiteBlackList tableAccessRules(final String[] allowedPatterns) {
+        return new WhiteBlackList.Builder().addWhitePatterns(allowedPatterns)
+                .addBlackPatterns(blacklistedKeys()).build();
+    }
+
+    /**
+     * Returns a check for keys blocked by the system table access rules:
+     * {@code DOTCMS_CLUSTER_ID}, {@code DOTCMS_CLUSTER_SALT} and the patterns in {@code SYSTEM_TABLE_BLACKLISTED_KEYS}.
+     * The blacklist is read when this method is called, so callers that check many keys in a row read it once. Callers
+     * use it to hide those keys in configuration and audit output. If the blacklist has an invalid pattern,
+     * every key is treated as refused and a warning is logged.
+     *
+     * @return a predicate that is {@code true} for a key on the blacklist
+     */
+    public static Predicate<String> refusedKeys() {
+        final WhiteBlackList refused = refusedKeyList();
+        return key -> UtilMethods.isSet(key) && !refused.isAllowed(key);
+    }
+
+    /**
+     * Returns the blacklist for the current value of {@code SYSTEM_TABLE_BLACKLISTED_KEYS}, built again only when that
+     * value changes.
+     */
+    private static WhiteBlackList refusedKeyList() {
+        final List<String> patterns = List.of(blacklistedKeys());
+        Tuple2<List<String>, WhiteBlackList> refused = REFUSED_KEYS.get();
+        if (refused == null || !refused._1().equals(patterns)) {
+            final WhiteBlackList list = Try.of(() -> new WhiteBlackList.Builder().addBlackPatterns(patterns).build())
+                    .onFailure(e -> Logger.warn(SystemTableConfigSource.class, "SYSTEM_TABLE_BLACKLISTED_KEYS holds an "
+                            + "invalid pattern, every key is treated as blacklisted: " + e.getMessage()))
+                    .getOrElse(REFUSE_ALL);
+            refused = Tuple.of(patterns, list);
+            REFUSED_KEYS.set(refused);
+        }
+        return refused._2();
+    }
+
+    /**
+     * Returns the blacklisted key patterns: {@code SYSTEM_TABLE_BLACKLISTED_KEYS} plus the default ones.
+     */
+    private static String[] blacklistedKeys() {
+        return CollectionsUtils.concat(Config.getStringArrayProperty(
+                "SYSTEM_TABLE_BLACKLISTED_KEYS", new String[]{}), DEFAULT_BLACKLISTED_PROPS);
     }
 
     public String put(final String propertyName, final String value) {

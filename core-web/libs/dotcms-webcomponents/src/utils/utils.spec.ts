@@ -159,6 +159,36 @@ describe('getJsonStringFromDotKeyArray', () => {
             ])
         ).toBe('{"some1":"val1","some45":"val99"}');
     });
+
+    it('should escape control chars so the result is valid JSON', () => {
+        const result = getJsonStringFromDotKeyArray([
+            {
+                key: 'tab\tkey',
+                value: 'hello\tworld\t'
+            },
+            {
+                key: 'lines',
+                value: 'a\nb\rc'
+            }
+        ]);
+
+        expect(result).toBe('{"tab\\tkey":"hello\\tworld\\t","lines":"a\\nb\\rc"}');
+        expect(JSON.parse(result)).toEqual({
+            'tab\tkey': 'hello\tworld\t',
+            lines: 'a\nb\rc'
+        });
+    });
+
+    it('should keep encoding quotes, backslashes, colons and commas', () => {
+        expect(
+            getJsonStringFromDotKeyArray([
+                {
+                    key: 'k:1',
+                    value: 'say "hi", \\o/'
+                }
+            ])
+        ).toBe('{"k&#58;1":"say &#34;hi&#34;&#44; &#92;o/"}');
+    });
 });
 
 describe('getTagError', () => {
