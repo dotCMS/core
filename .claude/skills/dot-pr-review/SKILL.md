@@ -20,7 +20,7 @@ Decide first which one the request is. `local` is your own work. A PR number or 
 | Use | Invocation | Reviews | Output |
 |---|---|---|---|
 | **Someone else's PR** | `/dot-pr-review <PR number or URL> [auto \| dry-run \| force]` | the PR head, checked out from GitHub, against the PR base | findings posted on the PR after one approval (`auto` posts without asking, `dry-run` posts nothing), then an optional verdict |
-| **Your own work** | `/dot-pr-review local [base=<ref>] [issue=<ref>] [out=<dir>]` | the working tree of the current branch against its base, uncommitted changes included | a report and a test plan on disk; nothing posted, nothing asked. After fixing, rerun with `base=<the HEAD the report names>` to review only the fix |
+| **Your own work** | `/dot-pr-review local [base=<ref>] [issue=<ref>] [out=<dir>]` | the working tree of the current branch against its base, uncommitted changes included | a report and a test plan on disk, leaving out points already raised on the branch's open PR, if any; nothing posted, nothing asked. After fixing, rerun with `base=<the HEAD the report names>` to review only the fix |
 | **Your own work, PR already open** | `/dot-pr-review <your PR number or URL> [out=<dir>]` | the PR head, checked out from GitHub, against the PR base, with the PR's existing comments | the same report and test plan, in the same place, as `local`; nothing posted, nothing asked |
 
 All three run the same reviewers, standards, validation and anchor checks; `references/local-mode.md` says what changes for your own work, including your own open PR.

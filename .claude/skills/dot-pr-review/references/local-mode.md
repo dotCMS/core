@@ -6,7 +6,7 @@ The "your own work" use, entered two ways:
 
 Both run the same reviewers, standards and validation as a PR review, and write the report to disk. Read this file once, right after parsing; it lists everything that differs from reviewing someone else's PR, stage by stage, and the stage references apply wherever it does not replace them.
 
-- **Read-only on GitHub:** nothing is commented, reviewed, labeled or edited, and nothing is asked. The `gh` calls are reads: the PR's data and comments (`OWN_PR`), `gh issue view` for the issue, and the historical reviewer's searches of past PRs.
+- **Read-only on GitHub:** nothing is commented, reviewed, labeled or edited, and nothing is asked. The `gh` calls are reads: the PR's data, comments and reviews (`OWN_PR`, or the branch's open PR under `LOCAL`), `gh issue view` for the issue, and the historical reviewer's searches of past PRs.
 - With a private issue (`dotCMS/private-issues#N`), the private-issue rules of this skill hold: the report stays local, and nothing describing the defect leaves the machine.
 - `SELF_TRIAGE = PRIVATE_LINKED`: the code under review is always the caller's own, so with a private issue the "Own PR on a private issue" rules of `validation.md` apply; otherwise validation and the filter run as for someone else's PR.
 
@@ -14,12 +14,12 @@ Both run the same reviewers, standards and validation as a PR review, and write 
 |---|---|---|
 | Preflight | unchanged | unchanged |
 | 1 Eligibility | skipped | skipped: a draft or a PR you already reviewed is still worth reviewing for yourself |
-| 2 Fetch | "Local Stage 2" below: branch, base, HEAD, files and diff from local git, the issue from `issue=` | `pr-data.md` Stage 2 and `issue-and-ac.md` as written (PR head checked out as `HEAD_DIR`, existing-feedback digest, linked issue), then "Output paths" below |
+| 2 Fetch | "Local Stage 2" below: branch, base, HEAD, files and diff from local git, the issue from `issue=`, and the existing-feedback digest when the branch has an open PR | `pr-data.md` Stage 2 and `issue-and-ac.md` as written (PR head checked out as `HEAD_DIR`, existing-feedback digest, linked issue), then "Output paths" below |
 | 3 Classify | on the local file list and diff; `CI_GATE_EVIDENCE` lists the triggers only (no run yet) | unchanged |
 | 4, 4b Reviewers, recovery | same agents, bundles, sidecars and recovery; slices and prompts as "Stage 4" below | unchanged |
 | 5, 6 Consolidate, validate | head check and anchors on the working tree ("Stages 5 and 6" below) | unchanged |
 | 7 Report | the local report shape ("Stage 7" below) | the local report shape |
-| 7b Verification | anchors on the working tree; repeats of the previous local report | `anchors.md` 7b.1 to 7b.4, then repeats of the previous local report ("Stage 7b" below) |
+| 7b Verification | anchors on the working tree; duplicates of the open PR's comments dropped; repeats of the previous local report | `anchors.md` 7b.1 to 7b.4, then repeats of the previous local report ("Stage 7b" below) |
 | 8 Posting | writes the report to `REPORT_PATH`, prints the summary table, posts nothing, asks nothing | same |
 | 9 Simplifier | skipped: the caller decides the fixes | skipped |
 | 10 Summary | the report path instead of the posting counts; the effective-POM base checkout is removed, the working tree never | the same summary; `HEAD_DIR` and the base checkout are removed as in `posting.md` |
@@ -37,6 +37,14 @@ Both run the same reviewers, standards and validation as a PR review, and write 
    ```
 
    Store `HEAD_SHA`, `SHORT_SHA` and `BRANCH` (`detached` when the last one prints nothing). `BRANCH_SLUG` is `BRANCH` with every character outside `A-Za-z0-9._-` replaced by `-`.
+
+   **An open PR for the branch.** Reviewers may already have commented on it, and the review must not re-raise their points:
+
+   ```bash
+   gh pr list --repo dotCMS/core --head <BRANCH> --state open --json number --jq '.[].number'
+   ```
+
+   When it prints exactly one number, store it as `LOCAL_PR`, and right after step 4 write `<RUN_DIR>/bundles/existing-feedback.md` from that PR as "Existing feedback digest" in `pr-data.md` describes, adding one line per non-empty review body (`@user (<state>): <first 300 characters>`) from `gh api --paginate repos/dotCMS/core/pulls/<LOCAL_PR>/reviews --jq '.[] | select(.body != "") | {user: .user.login, state, body}'`. No number (or several): no digest.
 
 2. **Base.** With `base=<ref>`, `git rev-parse --verify '<ref>^{commit}'`. Without it:
 
@@ -77,7 +85,7 @@ Then write and print the brief as `issue-and-ac.md` describes, headed `## What t
 ## Stage 4: slices and prompts (`LOCAL`)
 
 - Build the slices from local git, never from a saved diff: `diff-slices.sh --out <RUN_DIR>/slices --expect <RUN_DIR>/changed-files.txt --git <BASE_SHA> <RUN_DIR>/slices/*.txt` (no `--head`: the working tree, untracked files included).
-- There is no existing-feedback digest; drop that line from the Inputs block.
+- Without `LOCAL_PR` there is no existing-feedback digest; drop that line from the Inputs block.
 - In every template, read `PR #<N> '<TITLE>'` as `the local branch <BRANCH> '<TITLE>'`, `PR diff` as `Local diff`, and `linked issue #<ISSUE_NUMBER>` as `issue <ISSUE_REPO>#<ISSUE_NUMBER>`, and add one line: "This is a local review before any PR: the code under review is the working tree; there is no PR to look up."
 
 ## Stages 5 and 6 (`LOCAL`)
@@ -108,6 +116,7 @@ Nothing is posted, but every anchor is still checked.
    ```
 
    It reads each file from the working tree and takes the changed ranges from `git diff --unified=0 <BASE_SHA> -- <path>`, one call per path; every line of an untracked file is changed. By hand: `sed -n '<line>p' <path>`, then `grep -n -F -- '<evidence>' <path>` when the line does not match.
+3. **Duplicates, with `LOCAL_PR`.** Refetch its inline comments, review bodies and PR-level comments with the three `gh api` calls of `anchors.md` 7b.1 (on `LOCAL_PR`), and drop the findings 7b.4 calls duplicates. The comments' lines refer to the PR head, which may trail the working tree, so judge by the claim and the code around it more than by the line number. An overlap stays in the report with its additive part, marked "adds to @<user>".
 
 **`OWN_PR`**: 7b.1 to 7b.4 of `anchors.md` as written (head and comments refetched, anchors re-checked at the head, duplicates of existing comments dropped). An overlap stays in the report with its additive part, marked "adds to @<user>", since nothing is replied.
 
