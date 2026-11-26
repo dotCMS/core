@@ -1,13 +1,10 @@
 # Local mode
 
-Reviews the local branch before any PR exists. Nothing goes up for human review that we have not reviewed ourselves, so this is the mode `/solve-issue` (Phase 5) and `/dot-security-issue` (step 5) call before the PR, and again on every fix of a finding. It runs the same reviewers, standards and validation as a PR review, then writes a report to disk.
+The "your own work" use: reviews the local branch, before or after its PR exists, with the same reviewers, standards and validation as a PR review, and writes the report to disk. Read this file once, right after parsing `local`; it lists everything that differs from PR mode, stage by stage, and the stage references apply wherever it does not replace them.
 
-Read this file once, right after parsing `local`; it lists everything that differs from PR mode, stage by stage. The stage references still apply wherever this file does not replace them.
-
-- Run it from the root of a `dotCMS/core` checkout or worktree; the Preflight applies unchanged.
-- **No GitHub writes, ever:** no comments, reviews, labels or edits, and no prompt to post. The only `gh` calls are reads: `gh issue view` for `issue=`, and the historical reviewer's searches of past PRs.
+- **Read-only on GitHub:** the only `gh` calls are `gh issue view` for `issue=` and the historical reviewer's searches of past PRs. Nothing is commented, reviewed, labeled or edited, and nothing is asked.
 - With a private issue (`dotCMS/private-issues#N`), the private-issue rules of this skill hold: the report stays local, and nothing describing the defect leaves the machine.
-- `HEAD_DIR` is `CORE_REPO` itself: the working tree is what is reviewed, so no PR head is checked out and Stage 10 removes nothing. `RUN_DIR` is `<scratchpad>/review-local-<BRANCH_SLUG>` (with `-2`, `-3` when it exists).
+- `HEAD_DIR` is `CORE_REPO` itself: the working tree is what is reviewed, so no PR head is checked out or removed. `RUN_DIR` is `<scratchpad>/review-local-<BRANCH_SLUG>` (with `-2`, `-3` when it exists).
 
 | Stage | In local mode |
 |---|---|
@@ -24,8 +21,6 @@ Read this file once, right after parsing `local`; it lists everything that diffe
 | 10 Summary | the report path instead of the posting counts; the effective-POM base checkout is removed, the working tree never |
 
 ## Local Stage 2: branch, diff and issue
-
-One command per Bash call, run in place; the Bash Command Rules in SKILL.md apply.
 
 1. **HEAD and branch.**
 
@@ -115,10 +110,9 @@ Local verification: <kept>/<total> findings anchored — <stale> stale anchors d
 
 ## Stage 8: write the report, post nothing
 
-No posting, no `AskUserQuestion`, and 8a does not run; the caller acts on the report.
+No `AskUserQuestion`, and 8a does not run; the caller acts on the report.
 - Write the Stage 7 report to `REPORT_PATH`. Every finding carries its severity, `path:line`, its origin (ADDED-BY-THIS-PR or PRE-EXISTING), what is wrong, why it matters and the suggested fix, with the reviewer confidence and the validator score. The AC coverage and test design sections carry the gaps 8a would have walked.
 - Print the summary table of `posting.md`, headed `## Findings — local branch <BRANCH> (HEAD <SHORT_SHA>)`, then the "Not in report" line (stale anchors, below the confidence cut-off), the coverage gaps and `Report: <REPORT_PATH>`. Go to Stage 10.
-- Never call `gh api ... -X POST`, `gh pr comment`, `gh pr review`, `gh pr edit`, `gh issue comment` or `gh issue edit`.
 
 ## Stages 9 and 10
 

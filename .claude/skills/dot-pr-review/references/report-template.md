@@ -1,6 +1,6 @@
 # Stage 7: Structured Output (SHA-Anchored Links)
 
-Present the report with clickable GitHub links using `HEAD_SHA` from Stage 2. Local mode writes the same report to a file, with the changes listed in `local-mode.md`.
+Print the report with SHA-anchored GitHub links. Local mode writes the same report to a file, with the changes listed in `local-mode.md`.
 
 **Risk Level** goes up one step when `CI_GATE_EVIDENCE` shows a changed workflow that first runs after merge: no check of the PR proves it.
 
@@ -117,17 +117,12 @@ Present the report with clickable GitHub links using `HEAD_SHA` from Stage 2. Lo
 
 ## SHA-Anchored Link Format
 
-Every `file:line` reference must be a clickable GitHub link using the `HEAD_SHA` (PR mode; local mode uses plain `path:line`):
+Every `file:line` is a GitHub link on the finding's `**File**:` row (local mode: plain `path:line`), with the **full** `HEAD_SHA` (an abbreviated one may not render a preview) and at least one line of context on each side:
 
 ```
-https://github.com/dotCMS/core/blob/<HEAD_SHA>/<file-path>#L<start>-L<end>
+https://github.com/dotCMS/core/blob/<HEAD_SHA>/<file-path>#L<line-1>-L<line+1>
 ```
-
-Rules:
-- Use **the full SHA** (`HEAD_SHA` from Stage 2, not abbreviated) — abbreviated SHAs sometimes don't render preview
-- Provide at least 1 line of context before and after the target line (`L<line-1>-L<line+1>`)
-- Place the link on the finding's `**File**:` row
 
 ## Finding origin
 
-Every finding states its origin, from `anchor.in_diff` (Stage 5): **ADDED-BY-THIS-PR** when the line is inside the PR's changed ranges, **PRE-EXISTING** when it is not (**PRE-EXISTING UPSTREAM** on an unchanged line of a vendored import). The author fixes the first kind; the second is context, and Stage 8 says so when it is posted.
+Each finding's heading carries the origin Stage 5 recorded (`validation.md`, step 2): the author fixes an ADDED-BY-THIS-PR finding, and a PRE-EXISTING one is context.

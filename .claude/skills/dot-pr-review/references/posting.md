@@ -4,30 +4,23 @@ Local mode never posts: its Stage 8 writes the report instead (`local-mode.md`),
 
 ## Stage 8: Comment Posting
 
-Behavior depends on the `AUTO_POST` flag parsed from the arguments:
+- **`DRY_RUN`** → print the summary table and `DRY RUN — no comments posted.`, post nothing, ask nothing, go to Stage 10. This overrides everything below.
+- **`AUTO_POST` false** (default) → 8a, then the summary table and one approval.
+- **`AUTO_POST` true** → skip 8a and post non-interactively (**Auto-Post Mode**, at the end of this stage).
 
-- **`DRY_RUN = true`** → print the summary table, post nothing, ask nothing (overrides everything below)
-- **`AUTO_POST = false`** (default) → summary table + one approval (this section)
-- **`AUTO_POST = true`**  → non-interactive batch post (see **Auto-Post Mode** at the end of this stage)
+Only findings that passed Stage 7b are posted.
 
-Stage 7b must have run. Never post a finding that did not pass its anchor and duplicate gate.
-
-**Private linked issue (`PRIVATE_LINKED = true`):** `dotCMS/core` is public and the linked issue is
-a security report, so findings must not describe the defect on the PR. `auto` is ignored and 8a is
-not posted.
+**Private linked issue (`PRIVATE_LINKED = true`):** `dotCMS/core` is public and the linked issue is a security report, so the PR carries nothing that describes the defect. `auto` is ignored and 8a is not posted.
 - Write the full report to `local/security/<ISSUE_N>/code-review.md` (gitignored), not to the PR.
-- The summary table is a local report; the default answer is "Post nothing". The question also offers "Post the neutral drafts": every postable finding rewritten as below, grepped, and shown in full before anything is sent.
-- A finding the user chooses to post is first rewritten as a neutral WHAT-question or suggestion
-  ("should this also reject X?"), with no defect class, exploit wording or private reference, and
-  grepped for the banned words in the `dot-security-issue` skill's `references/disclosure.md`. Show
-  each rewritten comment and post only with the user's OK.
+- The summary table is a local report and the default answer is "Post nothing". The question also offers "Post the neutral drafts": every postable finding rewritten as below, grepped, and shown in full before anything is sent.
+- A finding the user chooses to post is first rewritten as a neutral WHAT-question or suggestion ("should this also reject X?"), with no defect class, exploit wording or private reference, and grepped for the banned words in the `dot-security-issue` skill's `references/disclosure.md`. Show each rewritten comment and post only with the user's OK.
 - Findings that need the full context go to the private issue, as a comment the user approves.
 
-### Stage 8a — AC coverage walk-through (before findings; no posting)
+### Stage 8a — AC coverage walk-through (before findings; posts nothing itself)
 
-Run this block first, only when `RUN_AC_VALIDATOR` was true and `AUTO_POST = false`. Its purpose is to settle completeness and scope with the user — **it posts nothing itself**: an action queued here is sent only with the findings, under their one posting decision. If `AUTO_POST = true`, skip 8a entirely; auto mode only posts line-level findings.
+Runs only when `RUN_AC_VALIDATOR` was true and `AUTO_POST` is false. It settles completeness and scope with the user; an action queued here is sent with the findings, under their one posting decision.
 
-Walk through, one item at a time via `AskUserQuestion`, in the order below. **Every item is an action, never a question for the user to classify a gap.** Before showing an item, decide what happens if nobody acts, who has to act, and draft that action: a comment to the author written as a question, an edit to the issue, or a follow-up issue. Gaps with one cause are one item (three ACs missing because one endpoint is missing is one item). A gap with no action anyone could take stays in the report and is not walked.
+Walk the items one at a time with `AskUserQuestion`, in the order below. **Every item is a drafted action**, never a question asking the user to classify a gap: before showing it, decide what happens if nobody acts, who has to act, and draft that action (a comment to the author written as a question, an edit to the issue, or a follow-up issue). Gaps with one cause are one item (three ACs missing because one endpoint is missing is one item). A gap no one could act on stays in the report and is not walked.
 
 Every item uses this shape:
 
@@ -50,24 +43,19 @@ In order:
 
 1. **Every `MISSING` (CONFIRMED_MISSING) AC**, then **every `PARTIAL` AC**: kind `AC`, status `MISSING|PARTIAL`, where `issue #<ISSUE_NUMBER>`. The consequence names the behavior that ships without it; the gap cites where you looked or the partial evidence.
 
-2. **Every out-of-scope item bucketed `SCOPE_CREEP`, `HIDDEN_REQUIREMENT`, or `RISK`** (skip `ENABLER` — it needs no decision): kind `Out-of-scope`, where `{file}:{location}`. The drafted action follows the bucket: SCOPE_CREEP → a question asking the author to confirm intent or split the PR; HIDDEN_REQUIREMENT → the AC to add to the issue; RISK → the test to add, or the removal.
+2. **Every out-of-scope item bucketed `SCOPE_CREEP`, `HIDDEN_REQUIREMENT`, or `RISK`** (`ENABLER` needs no decision): kind `Out-of-scope`, where `{file}:{location}`. The drafted action follows the bucket: SCOPE_CREEP → a question asking the author to confirm intent or split the PR; HIDDEN_REQUIREMENT → the AC to add to the issue; RISK → the test to add, or the removal.
 
-3. **Every test-design gap with Risk `Critical` or `High`** (NOT COVERED or PARTIAL), then **every UNSPECIFIED case**, only when `RUN_TEST_DESIGNER` was true. Medium/Low gaps are not walked; they stay in the report and the plan file. Kind `Test case {TC-###}`, status `{NOT COVERED|PARTIAL|UNSPECIFIED} {Risk} · {Level}`; the consequence is what breaks unnoticed if the case regresses, and an UNSPECIFIED case drafts the question the ACs leave open.
+3. **Every test-design gap with Risk `Critical` or `High`** (NOT COVERED or PARTIAL), then **every UNSPECIFIED case**, only when `RUN_TEST_DESIGNER` was true. Medium/Low gaps stay in the report and the plan file. Kind `Test case {TC-###}`, status `{NOT COVERED|PARTIAL|UNSPECIFIED} {Risk} · {Level}`; the consequence is what breaks unnoticed if the case regresses, and an UNSPECIFIED case drafts the question the ACs leave open.
 
 **Rules for 8a:**
-- One item, then stop and wait for the answer — same one-by-one discipline as the findings loop.
-- **Never call the `gh api ... /comments` POST** in this block, and no issue edit either. A queued action joins the findings table below as one more row and is sent only under its one posting decision; record every answer for the Stage 10 summary.
-- If the user answers that an AC is in fact covered (and where) or out of scope for this PR, update `AC_COVERAGE` (or `TEST_DESIGN`, and the plan file) and recompute the Stage 7 recommendation gate before moving on.
-- After 8a completes, proceed to the line-level findings loop below.
-- If there were 0 MISSING/PARTIAL ACs, 0 actionable out-of-scope items, and 0 Critical/High test gaps or UNSPECIFIED cases, print "AC coverage: all criteria satisfied, no scope concerns, no critical test gaps." and skip straight to the findings loop.
+- One item, then wait for the answer.
+- 8a sends nothing: no `gh api ... /comments` POST, no issue edit. A queued action joins the findings table below as one more row. Record every answer for the Stage 10 summary.
+- When the user answers that an AC is covered (and where) or out of scope for this PR, update `AC_COVERAGE` (or `TEST_DESIGN` and the plan file) and recompute the Stage 7 recommendation gate before the next item.
+- With 0 MISSING/PARTIAL ACs, 0 actionable out-of-scope items, and 0 Critical/High test gaps or UNSPECIFIED cases, print "AC coverage: all criteria satisfied, no scope concerns, no critical test gaps." and go to the findings.
 
 ### Summary table + one approval (default)
 
-This is the default whenever `AUTO_POST` is false. The old per-finding interrogation is gone: asking N times for N findings turns a 12-finding review into 12 prompts, and the user loses the shape of the review while answering them.
-
-Instead, present **everything at once, then ask exactly once.**
-
-Print the full table of postable findings (post-Stage 7b):
+Present every postable finding at once, then ask exactly once: asking per finding turns a 12-finding review into 12 prompts, and the user loses the shape of the review.
 
 ```markdown
 ## Findings ready to post — PR #<N> (HEAD `<SHORT_SHA>`)
@@ -96,17 +84,16 @@ Options:
 ```
 
 Rules:
-- **Ask once.** Do not re-prompt per finding, do not ask for confirmation after the answer. The table gave the user everything needed to decide. When the user has already said to post (in the request, or in answer to this table), that is the one confirmation: post every surviving finding and every queued 8a action, without asking again.
-- A PRE-EXISTING finding is posted with its origin in the first words ("Not introduced here, but ..."), so the author knows it is context, not a request against this change.
+- **Ask once.** When the user has already said to post (in the request, or in answer to this table), that is the one confirmation: post every surviving finding and every queued 8a action without asking again.
+- A PRE-EXISTING finding opens with its origin ("Not introduced here, but ..."), so the author reads it as context, not as a request against this change.
 - Option 2 → the user replies with numbers (`1,3,7`); post exactly those, in one parallel batch.
-- Option 3 → fall back to the legacy one-at-a-time loop (**Per-finding walk-through** below) for users who want it. This is now opt-in, never the default.
+- Option 3 → the **Per-finding walk-through** below.
 - Option 4 → post nothing, keep the report, go to Stage 10.
-- If there are 0 postable findings, print the table's "Not posting" line, say so, and skip to Stage 10 without asking anything.
-- **`DRY_RUN = true`** → print the table, print `DRY RUN — no comments posted.`, and skip straight to Stage 10. Never call `AskUserQuestion`, never POST.
+- With 0 postable findings, print the table's "Not posting" line, say so, and go to Stage 10 without asking.
 
 ### The formal verdict (asked separately)
 
-After the posting answer (also when nothing was posted), ask **one more** `AskUserQuestion`, never folded into the posting question:
+After the posting answer (also when nothing was posted), ask **one more** `AskUserQuestion`, separate from the posting question:
 
 ```
 Submit a review verdict on PR #<N>? (Stage 7 recommends: <recommendation>)
@@ -120,9 +107,9 @@ Options:
 
 Send it with `gh api repos/dotCMS/core/pulls/<N>/reviews -X POST -f commit_id="<HEAD_SHA>" -f event="APPROVE|REQUEST_CHANGES|COMMENT" -f body="<two or three sentences: the recommendation and its main reason>"`. On a PR that fixes a private issue the body is neutral, like every other comment there. `auto` and `dry-run` never submit a verdict, and neither does a review of your own PR (the author is the current user): GitHub does not accept a verdict from a PR's author.
 
-### Per-finding walk-through (opt-in — only when the user picks option 3)
+### Per-finding walk-through (only when the user picks option 3)
 
-Present findings strictly one at a time, highest severity first. For **each**:
+One finding at a time, highest severity first; wait for the answer before the next. Each shows all four parts:
 
 ```
 Finding {N}/{total} — [{Severity}] `{file}:{line}` [{Domain}]
@@ -142,12 +129,11 @@ Options:
   3. Skip this finding
 ```
 
-- Present **one** finding, then **stop and wait**. Do NOT advance until answered.
-- Every finding shows all four parts: issue, **Why it matters**, **Solution**, **Suggested PR comment**.
+Option 1 posts it (below); option 2 asks for the edited text with `AskUserQuestion`, then posts it the same way; option 3 moves to the next finding.
 
-### Option 1 — Post comment
+### Posting a comment
 
-Post an inline review comment using the GitHub API. Use `HEAD_SHA` for `commit_id`:
+An inline review comment, with `HEAD_SHA` as `commit_id`:
 
 ```bash
 gh api repos/dotCMS/core/pulls/<N>/comments -X POST \
@@ -158,10 +144,9 @@ gh api repos/dotCMS/core/pulls/<N>/comments -X POST \
   -f side="RIGHT"
 ```
 
-Rules:
-- `side` is `"RIGHT"` for additions/modifications, `"LEFT"` for deletions
-- `line` must be a line number that appears as **added or modified** in the diff (`+` lines). If the finding targets an unchanged line, use the nearest changed line above and mention the target line in the comment body
-- On failure, show the error and offer retry or skip
+- `side` is `"RIGHT"` for additions/modifications, `"LEFT"` for deletions.
+- `line` must be an **added or modified** line of the diff (`+` lines). For a finding on an unchanged line, use the nearest changed line above and name the target line in the body.
+- On failure, show the error and offer to retry or skip.
 
 ### Reply to an existing thread
 
@@ -171,40 +156,20 @@ A finding Stage 7b marked `REPLY — adds to @<user>` is posted in that comment'
 gh api repos/dotCMS/core/pulls/<N>/comments/<comment_id>/replies -X POST -f body="<the additive part>"
 ```
 
-### Option 2 — Edit before posting
-
-1. Ask the user for the edited comment text via `AskUserQuestion`
-2. Post using the same API call as Option 1
-
-### Option 3 — Skip
-
-Move to the next finding.
-
 ### Auto-Post Mode (`AUTO_POST = true`)
 
-When the skill was invoked with the `auto` token, Stage 8 becomes non-interactive:
+1. No `AskUserQuestion`.
+2. One `gh api repos/dotCMS/core/pulls/<N>/comments` POST per surviving finding, with the parameters of **Posting a comment** above.
+3. **All POSTs in parallel**: every `gh api ...` call as a separate `Bash` tool call in a single message.
+4. Collect each result: success → `posted_count`; failure → record the error with the finding index, no retry, the run continues.
+5. Then print `Auto-post summary: posted <X>/<total> — <Y> failed.` with each failure's reason, and go to Stage 10 (Stage 9 is skipped).
+6. `edited_count` is 0; `skipped_count` is 0 unless POSTs failed.
 
-1. **Do NOT call `AskUserQuestion`** — no per-finding prompts.
-2. Build one `gh api repos/dotCMS/core/pulls/<N>/comments` POST call per surviving finding, using the same parameters documented in **Option 1 — Post comment** above (`HEAD_SHA` as `commit_id`, `RIGHT`/`LEFT` side, `line` on a changed line).
-3. **Fire all POSTs in parallel** — emit every `gh api ...` call as a separate `Bash` tool call in a single message.
-4. Collect each result:
-   - Success → increment `posted_count`
-   - Failure → record the error with the finding index; do NOT retry. The run continues.
-5. After all POSTs complete, emit a one-line `Auto-post summary: posted <X>/<total> — <Y> failed.` and list any failures with their reason. Then proceed to Stage 9 (which is itself opt-in; in auto mode, skip straight to Stage 10).
-6. `edited_count` is always 0 in auto mode; `skipped_count` is 0 unless POSTs failed.
-
-Rules that still apply in auto mode:
-- The Stage 6 confidence filter (≥ 80, Haiku or Sonnet) is the gate — only those findings reach here.
-- Line-not-in-diff failures are logged as failures (no "nearest line" fallback in auto mode — that would require human judgement).
-- If `HEAD_SHA` fell back to `main` in Stage 2, **abort before posting**: print a warning and ask the user to re-run interactively. Anchored comments with a stale SHA are worse than no comments.
+The Stage 6 filter (80 or more) is the gate. A line-not-in-diff failure is logged as a failure, with no "nearest line" fallback (that takes human judgement). If `HEAD_SHA` fell back to `main` in Stage 2, **abort before posting** and ask the user to re-run interactively: comments anchored to a stale SHA are worse than none.
 
 ## Stage 9: Code-Simplifier (Opt-In)
 
-**Only runs if the user explicitly opts in.**
-
-If `AUTO_POST = true`, skip this stage entirely and proceed directly to Stage 10 — auto mode is a hands-off run and must not prompt the user.
-
-After all comments are processed (Stage 8), if there are any findings with **Quality severity** (75-84) that touched the same file twice or more, ask:
+Skipped under `AUTO_POST`. Otherwise, when **Quality**-severity findings (75-84) touch the same file twice or more, ask:
 
 ```
 I noticed {N} Quality-level findings across {M} files. Want me to propose simplifications for those files?
@@ -216,12 +181,7 @@ Options:
   2. No, skip
 ```
 
-### If the user says yes
-
-For each file with 2+ Quality findings, run an **inline analysis** (no agent spawn):
-
-1. Read the file
-2. Write a block with proposed simplifications following this format:
+On yes, for each file with 2+ Quality findings, read it and write proposals inline (no agent), in this shape:
 
     ## Simplification Proposal — `<file>`
 
@@ -231,17 +191,9 @@ For each file with 2+ Quality findings, run an **inline analysis** (no agent spa
     **Proposed**: <code fence with the simplified version>
     **Why**: One-line rationale tied to a project standard (ANGULAR_STANDARDS / TYPESCRIPT_STANDARDS / STYLING_STANDARDS / FORM_STRUCTURE).
 
-### Rules for Stage 9
-
-- **Never edit code directly** — always proposals
-- **Preserve functionality** — simplifications must not change behavior
-- **Cite a standard** — every proposal references a specific rule from the standards docs
-- **No speculation** — if you can't cite a standard, don't propose
-- **Skip if the user says no** — don't nag
+Proposals only, never edits; each keeps behavior the same and cites a specific rule from the standards docs, and a change no rule backs is not proposed. On no, move on.
 
 ## Stage 10: Summary
-
-After all findings and (optional) simplifications are processed:
 
 ```markdown
 ## Review Summary
@@ -273,4 +225,4 @@ After all findings and (optional) simplifications are processed:
 {If any comments were posted: "Comments are live on PR #<N> at commit <SHORT_SHA>."}
 ```
 
-Then remove the PR head checkout, also when the run stopped early: `git -C <CORE_REPO> worktree remove --force <HEAD_DIR>` (never in local mode, where `HEAD_DIR` is the checkout itself). When `<RUN_DIR>/base` exists, remove it too, in both modes: `git -C <CORE_REPO> worktree remove --force <RUN_DIR>/base`. The run directory stays; it is in the session scratchpad.
+Then remove the PR head checkout, also when the run stopped early: `git -C <CORE_REPO> worktree remove --force <HEAD_DIR>` (never in local mode, where `HEAD_DIR` is the checkout itself). When `<RUN_DIR>/base` exists, remove it too, in both modes: `git -C <CORE_REPO> worktree remove --force <RUN_DIR>/base`. The run directory stays in the session scratchpad.

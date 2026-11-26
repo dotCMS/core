@@ -4,8 +4,6 @@ Read after Stage 4b. Local mode runs both stages as written here; `local-mode.md
 
 ## Stage 5: Consolidate Findings
 
-When all agents complete:
-
 ### 0. Head check before consolidating
 
 The PR can move while the agents run. Before merging anything, re-read the head:
@@ -14,80 +12,72 @@ The PR can move while the agents run. Before merging anything, re-read the head:
 gh pr view <N> --repo dotCMS/core --json headRefOid,changedFiles
 ```
 
-If `headRefOid` still equals `HEAD_SHA`, go on. If it moved: fetch the new head, move `HEAD_DIR` to it (`git -C <HEAD_DIR> checkout --detach <new sha>`), rebuild `changed-files.txt` and the slices with `diff-slices.sh --git <BASE_SHA> --head <new sha>`, and set `HEAD_SHA` to the new sha. Re-baseline the findings against it in step 2 below: a finding whose evidence is gone from the new head (`STALE`) was fixed by the new commits and is dropped. Files the new head added or changed that no reviewer saw go into `COVERAGE_GAPS`, and the user is told the review covers the older head for those files.
+If `headRefOid` still equals `HEAD_SHA`, go on. If it moved: fetch the new head, move `HEAD_DIR` to it (`git -C <HEAD_DIR> checkout --detach <new sha>`), rebuild `changed-files.txt` and the slices with `diff-slices.sh --git <BASE_SHA> --head <new sha>`, and set `HEAD_SHA` to the new sha. Step 2 below re-baselines the findings against it: a finding whose evidence is gone from the new head (`STALE`) was fixed by the new commits and is dropped. Files the new head added or changed that no reviewer saw go into `COVERAGE_GAPS`, and the user is told the review covers the older head for those files.
 
-### AC coverage is handled separately
+### AC coverage stays out of the finding stream
 
-The `dotcms-pr-ac-validator` output is **not a finding stream** — do not flatten its rows into the severity-sorted list. Store its report as `AC_COVERAGE` (the coverage table, detailed evidence, out-of-scope list, regression risks, and verdict). It bypasses the normal dedupe/sort below and is rendered in its own Stage 7 section. The pieces that cross over into Stage 6 are the **MISSING ACs**, which get an adversarial re-check, and the contested ACs below (see Stage 6).
+Store the `dotcms-pr-ac-validator` report as `AC_COVERAGE` (coverage table, evidence, out-of-scope list, regression risks, verdict); Stage 7 renders it in its own section, and it skips the dedupe and sort below. Only the **MISSING** and the **contested** ACs cross into Stage 6.
 
-**Its table is an upper bound.** The ac-validator marks an AC COVERED when a named test and the code both exist, without checking that the test can fail (an assertion of empty against empty, a fixture that is the only source of the expected value). Before building the AC table, reconcile it with the other reviewers:
+**Its table is an upper bound**: the ac-validator marks an AC COVERED when a named test and the code exist, without checking that the test can fail. Reconcile it with the other reviewers before building the AC table:
 - An AC whose only backing tests the test reviewer or java-test reviewer flagged as tautological is at most PARTIAL.
 - An AC on whose path the logic reviewer found a defect is at most PARTIAL.
-- An AC the ac-validator calls COVERED while another reviewer's finding says it is not met is **contested**: send all contested ACs to one Sonnet validator (Stage 6, "Contested ACs"). Several agents agreeing is not evidence; the code and the tests are.
+- An AC the ac-validator calls COVERED while another reviewer's finding says it is not met is **contested**: all contested ACs go to one Sonnet validator (Stage 6, "Contested ACs"), which decides from the code and the tests, not from how many agents agree.
 
-### Test design is handled separately too
+### Test design stays out of it too
 
-The `dotcms-pr-test-case-designer` output is also **not a finding stream**. Merge its sidecar rows with its text report (sidecar wins per `TC-###`) and store the result as `TEST_DESIGN`: partitions, cases, gaps, unspecified-behavior questions, totals. Then write the full plan to disk so it outlives the session (the run directory is a scratch directory):
-
-Pick `TEST_PLAN_PATH` by the linked issue, so the plan sits with that issue's other files:
+Merge the `dotcms-pr-test-case-designer` sidecar rows with its text report (the sidecar wins per `TC-###`) and store the result as `TEST_DESIGN`: partitions, cases, gaps, unspecified-behavior questions, totals. Write it as markdown to `TEST_PLAN_PATH`, so the complete plan (every partition, every TC block) outlives the session; Stage 7 renders only the gaps.
 
 | Linked issue | `TEST_PLAN_PATH` |
 |---|---|
-| In this repo (`ISSUE_NUMBER`) | `local/agents/<ISSUE_NUMBER>/pr-<N>-test-plan.md`, the issue's work folder in the main core checkout. Resolve it first with `bash <skill-dir>/../solve-issue/scripts/agents-dir.sh <ISSUE_NUMBER>` (the skill's base directory is given when it loads); from a worktree it links `local/agents` to the main checkout's. If it exits non-zero, use the last row. |
+| In this repo (`ISSUE_NUMBER`) | `local/agents/<ISSUE_NUMBER>/pr-<N>-test-plan.md` (`mkdir -p` its folder), the issue's work folder |
 | In `dotCMS/private-issues` (`PRIVATE_LINKED`) | `local/security/<ISSUE_NUMBER>/pr-<N>-test-plan.md` |
 | None resolved | `local/code-review/pr-<N>-test-plan.md` (`mkdir -p local/code-review`) |
 | Local mode, any issue | `<OUT_DIR>/local-<BRANCH_SLUG>-<SHORT_SHA>-test-plan.md`, next to the report |
 
-Write `TEST_DESIGN` as markdown to `TEST_PLAN_PATH`. It is the complete plan (every partition and every TC block). Stage 7 renders only the gaps.
+### Line-level findings (every other agent)
 
-The steps below apply to the line-level findings from all the *other* agents:
-
-1. **Collect** raw findings from the **union of the sidecars and the final reports** — the sidecars are the system of record. The merged sidecars are already on disk from Stage 4 (`<RUN_DIR>/merged/findings.jsonl`, written by `merge-sidecars.sh`, which drops exact duplicates and invalid lines and prints the count of each); run it again if Stage 4b added rows:
+1. **Collect** from the **union of the sidecars and the final reports**; the sidecars are the system of record. `merge-sidecars.sh` already wrote `<RUN_DIR>/merged/findings.jsonl` at the end of Stage 4 (exact duplicates and invalid lines dropped, each counted); run it again if Stage 4b added rows:
 
 ```bash
 bash <SKILL_DIR>/scripts/merge-sidecars.sh --dir <SIDECAR_DIR> --out <RUN_DIR>/merged --roster <RUN_DIR>/roster.txt
 ```
 
-   For each instance, merge its sidecar rows with its text report: a finding present in only one of the two is still a finding. When the same `file:line` + claim appears in both, **the sidecar row wins** (the text report is a summary and may have been truncated mid-write). Note how many invalid lines the script dropped — a high count means an agent was ignoring the schema.
+   A finding in only one of an instance's sidecar and text report is still a finding; when both hold the same `file:line` and claim, the sidecar row wins (the text report may be truncated). A high invalid-line count means an agent ignored the row shape.
 
-2. **Validate structurally, and re-derive every anchor before the report.** Agents cite diff offsets as file lines (line 1348 of a 185-line file), so no line number is trusted as written:
+2. **Re-derive every anchor before the report.** Agents cite diff offsets as file lines (line 1348 of a 185-line file), so no line number is trusted as written:
 
 ```bash
 bash <SKILL_DIR>/scripts/verify-anchors.sh --findings <RUN_DIR>/merged/findings.jsonl --base <BASE_SHA> --rev <HEAD_SHA> --root <CORE_REPO> --out <RUN_DIR>/merged/anchored.jsonl
 ```
 
-   (local mode: `--worktree` instead of `--rev <HEAD_SHA>`). Use each finding's `anchor.line` from here on. `REANCHORED` moves the finding to the line its evidence is on. `PAST_EOF` with no match, `STALE` or `NO_FILE` means the cited code is not there: the finding goes to Stage 6 marked as unanchored, so its validator re-checks it from the claim, and it cannot be posted unless that check re-anchors it. `UNVERIFIABLE` (no evidence) stays in the report but is never posted.
-   - Every file mentioned exists in the PR diff (local mode: in the Local Stage 2 file list)
-   - `anchor.in_diff` true means the line is inside the changed ranges: the finding is **ADDED-BY-THIS-PR**. False means **PRE-EXISTING** (or **PRE-EXISTING UPSTREAM** on an unchanged vendored line). Record it on every finding; the report and the posting table show it
-   - No malformed entries missing required fields
-3. **Dedupe**: if two agents flagged the same `file:line` with similar issue titles, keep the highest-confidence one and note which agents agreed (`merge-sidecars.sh` prints `OVERLAP` for every line flagged with different claims). Also **fold** a finding that exists only because of another (a missing test for a branch another finding says should not exist; a log line inside a catch another finding removes) into that finding, as one more point of it. Every duplicate merged here is one validator fewer in Stage 6
-4. **Resolve contradictions**: if one agent says "add null check" and another says "this can't be null", keep both as separate findings — let the Haiku validator and user decide
-5. **Flatten** into a single list, sorted by severity (Critical → Important → Quality) then by confidence within each tier
-6. **Carry `COVERAGE_GAPS` forward** from Stage 4b untouched — it is reported, not filtered
+   (local mode: `--worktree` instead of `--rev <HEAD_SHA>`). Use each finding's `anchor.line` from here on. `REANCHORED` moves the finding to the line its evidence is on. `PAST_EOF` with no match, `STALE` or `NO_FILE` means the cited code is not there: the finding goes to Stage 6 marked as unanchored, its validator re-checks it from the claim, and it is postable only if that check re-anchors it. `UNVERIFIABLE` (no evidence) stays in the report and is never posted. Then check:
+   - Every file mentioned exists in the PR diff (local mode: in the Local Stage 2 file list).
+   - `anchor.in_diff` true means the line is inside the changed ranges: **ADDED-BY-THIS-PR**. False means **PRE-EXISTING** (or **PRE-EXISTING UPSTREAM** on an unchanged vendored line). Record the origin on every finding; the report and the posting table show it.
+   - Every entry carries the required fields.
+3. **Dedupe**: when two agents flag the same `file:line` with similar claims, keep the highest-confidence one and note which agents agreed (`merge-sidecars.sh` prints `OVERLAP` for every line flagged with different claims). **Fold** a finding that exists only because of another (a missing test for a branch another finding says should not exist; a log line inside a catch another finding removes) into that finding, as one more point of it. Each merge saves a Stage 6 validator.
+4. **Contradictions** stay as separate findings ("add a null check" next to "this can't be null"): the validator and the user decide.
+5. **Flatten** into one list, sorted by severity (Critical → Important → Quality), then by confidence.
+6. **Carry `COVERAGE_GAPS`** from Stage 4b untouched: it is reported, not filtered.
 
-Do NOT filter yet. Stage 6 does the filtering.
-
-Every finding keeps its `evidence` string all the way through Stages 6-8. Stage 7b cannot verify an anchor without it, and a finding that loses its evidence becomes unpostable.
+Filtering waits for Stage 6. Every finding keeps its `evidence` through Stages 6-8: Stage 7b cannot verify an anchor without it.
 
 ## Stage 6: Confidence Validation
 
-Validation is **routed by domain**:
+Validation is **routed by domain**, and every route keeps scores of 80 or more:
 
-- **`domain == Logic`** → the **Sonnet** validator (see *Logic findings → Sonnet validation* before the Filter). A multi-hop data-flow trace needs real reasoning to confirm; Haiku would produce false rejections.
-- **`domain` is `CI`, `Maven` or `Docs`** (findings of the ci, maven and docs reviewers) → a **Sonnet** validator with its own template, *CI, Maven and Docs findings* below. These findings rest on a second file the diff does not show: the caller of a removed input, the parent a module overrides, the code a doc describes. A tool-free Haiku scores that premise without seeing it. Many of them are not a broken data-flow path (a test no workflow runs, a comment claiming an invariant the code lacks), so the Logic rubric scores them as no defect.
-- **Every other domain** (code, test, styling, silent-failure, comment and historical findings) → the Haiku flow below (fast, tool-free, ≥80 cutoff).
+- **`domain == Logic`** → a **Sonnet** validator (*Logic findings*, below): a multi-hop trace needs real reasoning, and Haiku rejects true ones.
+- **`domain` is `CI`, `Maven` or `Docs`** → a **Sonnet** validator with its own template (*CI, Maven and Docs findings*, below). These findings rest on a second file the diff does not show (the caller of a removed input, the parent a module overrides, the code a doc describes), and many are no broken data-flow path, so the Logic rubric would score them as no defect.
+- **Every other domain** (code, test, styling, silent-failure, comment, historical) → one tool-free Haiku per finding (below).
 
-All paths share the same `≥ 80` cutoff and feed the same Stage 7 report.
+**At most 20 subagents run at once**; calls past 20 are rejected, not queued. Send the validators in order of value: the Sonnet validators for Logic, CI, Maven and Docs findings and MISSING or contested ACs first, then the Haiku validators for the strongest findings (Critical, then Important, by reviewer confidence), and the rest as slots free up. A finding whose validator times out or never ran scores 50 (below the cut-off), never dropped silently.
 
-**At most 20 subagents run at once**; calls past 20 are rejected, not queued. Send the validators in order of value: the Sonnet validators for Logic, CI, Maven and Docs findings and MISSING or contested ACs first, then the Haiku validators for the strongest findings (Critical, then Important, by reviewer confidence). Send at most 20, and send the rest as slots free up. A finding whose validator times out or never ran scores 50 (below the cut-off), never dropped silently.
+### Haiku findings
 
-For every finding outside the Sonnet domains (Logic, CI, Maven, Docs), launch a **Haiku agent in parallel** (one Haiku per finding). Each Haiku must be able to decide purely from the prompt — **it must NOT call any tools** (no `Read`, no `Grep`, no `Bash`). Tool use here defeats the speed and cost benefit of Haiku and re-reads files the reviewer already analyzed.
-
-Each Haiku receives, inlined in its prompt:
-- The **finding** (file, line, issue, suggested fix, domain, reviewer confidence)
-- The **relevant diff chunk** — the ± lines the finding references, with a few lines of surrounding context
-- The **cited standard snippet** — only the rule the finding cites (3–10 lines), NOT the full standards doc. The orchestrator extracts this from the preloaded `ANGULAR_STANDARDS` / `TYPESCRIPT_STANDARDS` / `STYLING_STANDARDS` / `TESTING_REVIEW_RULES` content. If the finding does not cite a standard, omit this section. Findings citing `FORM_STRUCTURE` have no standards doc to extract from — the rule text lives in the code-reviewer agent definition, so quote the cited rule from the finding itself.
-- The **file excerpt** — if the finding references a line outside the diff window (e.g., a helper two methods away), include ~10 lines of the file around that line. Otherwise skip.
+Launch one **Haiku** agent per finding, in parallel. It decides from its prompt alone and calls no tool: everything it needs is inlined, and re-reading files would cost the speed it is there for. Inline:
+- The **finding** (file, line, issue, suggested fix, domain, reviewer confidence).
+- The **diff chunk** the finding references, with a few lines of surrounding context.
+- The **cited standard snippet**: only the rule the finding cites (3–10 lines), extracted from the standards bundles; omit it when no standard is cited. A `FORM_STRUCTURE` finding has no standards doc (its rules live in `.claude/agents/dotcms-pr-code-reviewer.md`), so quote the rule from the finding.
+- A **file excerpt** of ~10 lines, only when the finding references a line outside the diff window.
 
 **Haiku prompt template**:
 
@@ -125,10 +115,7 @@ REASON: <one line>
 
 ### Logic findings → Sonnet validation
 
-For every finding with `domain == Logic`, launch a **Sonnet** agent in parallel (one per finding) instead of a Haiku. It MAY use `Read(core-web/**)` to confirm a hop, because verifying a multi-hop trace can require seeing a line the finding references. Each Sonnet validator receives:
-- The **finding** (file, line, traced path, AC reference, broken-behavior description, suggested fix, reviewer confidence)
-- The **referenced AC** text (or "none" for a Pass-2 defect)
-- The **relevant diff chunk(s)** for the hops in the path
+One **Sonnet** agent per `domain == Logic` finding, in parallel. It may `Read(core-web/**)` to confirm a hop. Inline the **finding** (file, line, traced path, AC reference, broken-behavior description, suggested fix, reviewer confidence), the **referenced AC** text (or "none" for a Pass-2 defect), and the **diff chunks** for the hops in the path.
 
 **Sonnet validator prompt template**:
 
@@ -160,7 +147,7 @@ REASON: <one line>
 
 ### CI, Maven and Docs findings → Sonnet validation
 
-One Sonnet agent per finding, with the template below. It MAY `Read`/`Grep` the whole head, `<HEAD_DIR>/**`. Fill it with:
+One Sonnet agent per finding, with the template below. It may `Read`/`Grep` the whole head, `<HEAD_DIR>/**`. Fill it with:
 - the **finding** with its Stage 5 origin (ADDED-BY-THIS-PR or PRE-EXISTING);
 - the **rules**: the `## Rules` table of the reviewer that raised it, copied from `.claude/agents/dotcms-pr-<ci|maven|docs>-reviewer.md`;
 - the **intent**: the PR title and body from Stage 2 (local mode: the commit messages, `git log --format='%s%n%b' <BASE_SHA>..<HEAD_SHA>`);
@@ -204,7 +191,7 @@ REASON: <one line: the premise as checked, and the line you took>
 
 ### MISSING ACs → Sonnet re-check
 
-A `MISSING` verdict from the ac-validator is high-stakes: it drives the Stage 7 recommendation to **Request Changes**. Before trusting it, launch **one Sonnet agent per MISSING AC** (in parallel with the finding validators). Each is prompted to *disprove* the MISSING claim — it MAY `Read(core-web/**)`/`Grep`/`Glob` to find the behavior anywhere in the repo, not just the changed files.
+A `MISSING` verdict drives the Stage 7 recommendation to **Request Changes**, so each one gets **one Sonnet agent** (in parallel with the finding validators) that tries to disprove it. It may `Read(core-web/**)`, `Grep` and `Glob` the whole repo, not only the changed files.
 
 **Sonnet MISSING-AC re-check prompt template**:
 
@@ -226,11 +213,11 @@ VERDICT: CONFIRMED_MISSING | FALSE_MISSING
 REASON: <one line, cite file:line if FALSE_MISSING>
 ```
 
-Downgrade any `FALSE_MISSING` AC to COVERED (note "pre-existing/overlooked") in `AC_COVERAGE`. Keep only `CONFIRMED_MISSING` as MISSING. PARTIAL / UNTESTABLE / out-of-scope rows are NOT re-checked — they never block.
+Downgrade each `FALSE_MISSING` AC to COVERED ("pre-existing/overlooked") in `AC_COVERAGE`; only `CONFIRMED_MISSING` stays MISSING. PARTIAL, UNTESTABLE and out-of-scope rows are not re-checked: they never block.
 
 ### Contested ACs → one Sonnet validator
 
-The ACs Stage 5 marked contested (the ac-validator says COVERED; a test, java-test or logic reviewer finding says otherwise) go to **one** Sonnet agent together, in parallel with the other validators. It MAY `Read`/`Grep` the changed files and their tests.
+The ACs Stage 5 marked contested go to **one** Sonnet agent together, in parallel with the other validators. It may `Read`/`Grep` the changed files and their tests.
 
 ```
 The AC-coverage validator claims these acceptance criteria are COVERED in PR #<N>. Other reviewers disagree. For each one, decide from the code and the tests, not from who agrees with whom.
@@ -244,19 +231,16 @@ Respond with one line per AC:
 AC<n>: COVERED | PARTIAL | MISSING — <one line, cite file:line>
 ```
 
-Replace each contested row in `AC_COVERAGE` with its verdict. A MISSING verdict here drives the Stage 7 recommendation like a CONFIRMED_MISSING one.
+Replace each contested row in `AC_COVERAGE` with its verdict. A MISSING verdict here drives the recommendation like a CONFIRMED_MISSING one.
 
 ### Own PR on a private issue (`SELF_TRIAGE = true`)
 
-The `≥ 80` cutoff decides what is worth posting on someone else's PR. On the author's own security fix nothing is posted, and a real defect that scores 30 still has to be fixed before merge. So the validation and the filter change:
+On the author's own security fix nothing is posted, and a real defect that scores 30 still has to be fixed before merge. So:
 
-- **Validate every finding with a Sonnet agent that can read the repo**, not with the tool-free Haiku. Use the Logic validator prompt above for every domain, with "frontend" removed from its first line. Allow `Read`/`Grep` on `dotCMS/**`, `dotcms-integration/**` and `core-web/**`, and add: "Check each premise of the finding against the code before you score it." A tool-free validator scores premises it cannot check. On a past self-review a Haiku gave 35 to a real finding because it assumed `FieldBuilder.builder(field)` loses the concrete field type, which it does not.
-- **Drop nothing.** Keep every finding with its validator score and its one-line reason. Stage 7 adds an "All findings (local triage)" table after the severity sections.
-- **Read the reviewers' facts, not only their claims.** When a finding says another call already does the work (for example "`FieldAPIImpl#save` already clears the content type cache"), the line it points at may be redundant even if the finding argued something else. List it for triage.
+- **Every finding gets a Sonnet validator that can read the repo**, never the tool-free Haiku: the Logic prompt above for every domain, with "frontend" removed from its first line, `Read`/`Grep` on `dotCMS/**`, `dotcms-integration/**` and `core-web/**`, and the added line "Check each premise of the finding against the code before you score it." A tool-free validator scores premises it cannot check (a past self-review saw a Haiku give 35 to a real finding on an assumption about `FieldBuilder.builder(field)` that the code disproves).
+- **Every finding is kept**, with its validator score and one-line reason; Stage 7 adds an "All findings (local triage)" table after the severity sections.
+- **The reviewers' facts count, not only their claims.** When a finding says another call already does the work ("`FieldAPIImpl#save` already clears the content type cache"), the line it points at may be redundant even though the finding argued something else: list it for triage.
 
 ### Filter
 
-Keep findings where the validator score (Haiku, or Sonnet for the Logic, CI, Maven and Docs domains) is `≥ 80`. Drop the rest silently, except when `SELF_TRIAGE` is true (see above; in local mode `SELF_TRIAGE` follows `PRIVATE_LINKED`, see `local-mode.md`).
-
-If 0 findings survive, proceed to Stage 7 with an empty findings list. Do NOT abort — Stage 7 still reports "no issues found" in the expected format.
-
+Keep findings whose validator score is 80 or more and drop the rest, except under `SELF_TRIAGE` (above; in local mode `SELF_TRIAGE` follows `PRIVATE_LINKED`). Zero survivors is a valid result: Stage 7 reports "no issues found" in its usual shape.
