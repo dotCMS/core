@@ -12,8 +12,9 @@ Only findings that passed Stage 7b are posted.
 
 **Private linked issue (`PRIVATE_LINKED = true`):** `dotCMS/core` is public and the linked issue is a security report, so the PR carries nothing that describes the defect. `auto` is ignored and 8a is not posted.
 - Write the full report to `local/security/<ISSUE_N>/code-review.md` (gitignored), not to the PR.
-- The summary table is a local report and the default answer is "Post nothing". The question also offers "Post the neutral drafts": every postable finding rewritten as below, grepped, and shown in full before anything is sent.
-- A finding the user chooses to post is first rewritten as a neutral WHAT-question or suggestion ("should this also reject X?"), with no defect class, exploit wording or private reference, and grepped for the banned words in the `dot-security-issue` skill's `references/disclosure.md`. Show each rewritten comment and post only with the user's OK.
+- The neutral drafts need the banned-word list in the `dot-security-issue` plugin skill's `references/disclosure.md`. Core has no copy of it: find the installed plugin's file and read it. When it cannot be read, offer no neutral drafts and post nothing, and the report says the drafts were withheld because the banned-word list was unreachable.
+- The summary table is a local report and the default answer is "Post nothing". With the list read, the question also offers "Post the neutral drafts": every postable finding rewritten as below, grepped, and shown in full before anything is sent.
+- A finding the user chooses to post is first rewritten as a neutral WHAT-question or suggestion ("should this also reject X?"), with no defect class, exploit wording or private reference, and grepped for every word of that list. Show each rewritten comment and post only with the user's OK.
 - Findings that need the full context go to the private issue, as a comment the user approves.
 
 ### Stage 8a — AC coverage walk-through (before findings; posts nothing itself)
