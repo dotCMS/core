@@ -1,0 +1,114 @@
+# dotReviewer settings for dotCMS/core.
+# Contract: dotCMS/dotreviewer docs/contracts/repo-config.md. dotReviewer reads this file from
+# the default branch only, and it can only add restrictions to the central approval policy.
+# A PR that edits this file always needs a human approval, and its change applies from the
+# first review after it merges.
+
+narrow:
+  # Code with little or no end-to-end (Playwright) coverage. dotReviewer still reviews a PR
+  # that changes any of these paths and posts its findings, but it never approves it: a person
+  # has to, because no E2E test would catch a regression in the user flow.
+  #
+  # The features come from the E2E test inventory of core-web/apps/dotcms-ui-e2e taken at
+  # f9d0244a73 on 2026-11-24 (test counts are collected Playwright cases; fix counts are `fix`
+  # commits in the six months before). The list targets each feature's UI code, which only E2E
+  # tests exercise, plus the back-end classes named below. Remove a feature once its E2E suite
+  # covers the main flows.
+  #
+  # Globs use Python's PurePosixPath.full_match, not CODEOWNERS syntax: they match the whole
+  # path from the repo root, `*` stays inside one folder, and `dir/**` covers everything below.
+  human_only_paths:
+    # Indexing: the background thread that drains the reindex queue into the search index.
+    - "dotCMS/src/main/java/com/dotmarketing/common/reindex/ReindexThread.java"
+
+    # UVE page editor: 6 E2E tests, 112 fixes. Untested: moving or removing content, edit,
+    # preview and live modes, devices, personas, lock, publishing, headless pages.
+    - "core-web/libs/portlets/edit-ema/**"
+
+    # Roles and Users: no E2E tests, 67 fixes. The Angular portlets and the legacy JSP admin.
+    - "core-web/libs/portlets/dot-roles/**"
+    - "core-web/libs/portlets/dot-users/**"
+    - "dotCMS/src/main/webapp/html/portlet/ext/roleadmin/**"
+    - "dotCMS/src/main/webapp/html/portlet/ext/useradmin/**"
+    - "dotCMS/src/main/java/com/dotmarketing/business/ajax/RoleAjax.java"
+    - "dotCMS/src/main/java/com/dotmarketing/portlets/user/ajax/UserAjax.java"
+
+    # Permissions as a non-admin: no E2E tests; every test signs in as admin. The permission
+    # engine and the permissions tab.
+    - "dotCMS/src/main/java/com/dotmarketing/business/PermissionAPI.java"
+    - "dotCMS/src/main/java/com/dotmarketing/business/PermissionBitAPIImpl.java"
+    - "dotCMS/src/main/java/com/dotmarketing/business/PermissionBitFactoryImpl.java"
+    - "dotCMS/src/main/java/com/dotmarketing/business/PermissionFactory.java"
+    - "dotCMS/src/main/java/com/dotmarketing/business/PermissionCache*.java"
+    - "dotCMS/src/main/java/com/dotmarketing/business/PermissionableObjectDWR.java"
+    - "dotCMS/src/main/webapp/html/portlet/ext/common/edit_permissions_*"
+    - "dotCMS/src/main/webapp/html/portlet/ext/contentlet/permissions.jsp"
+    - "dotCMS/src/main/webapp/html/portlet/ext/contentlet/edit_permissions_tab_inc_wrapper.jsp"
+    - "core-web/libs/data-access/src/lib/dot-permissions/**"
+
+    # Experiments: 2 E2E tests plus 4 placeholders, 64 fixes. Only the flag-off case is tested.
+    - "core-web/libs/portlets/dot-experiments/**"
+
+    # Block Editor: 5 E2E tests, 43 fixes. All five insert an image; typing, formatting, the
+    # slash menu, tables, links and embedded content are untested.
+    - "core-web/libs/block-editor/**"
+    - "core-web/libs/new-block-editor/**"
+    - "core-web/apps/dotcms-block-editor/**"
+
+    # Legacy JSP content editor: 2 direct E2E tests, 35 fixes. Saving, workflow actions and
+    # most field types are untested.
+    - "dotCMS/src/main/webapp/html/portlet/ext/contentlet/edit_contentlet*.jsp"
+    - "dotCMS/src/main/webapp/html/portlet/ext/contentlet/contentlet_actions_*.jsp"
+    - "dotCMS/src/main/webapp/html/portlet/ext/contentlet/contentlet_versions_inc.jsp"
+    - "dotCMS/src/main/webapp/html/portlet/ext/contentlet/field/**"
+    - "dotCMS/src/main/java/com/dotmarketing/portlets/contentlet/action/EditContentletAction.java"
+    - "dotCMS/src/main/java/com/dotmarketing/portlets/contentlet/ajax/ContentletAjax.java"
+    - "dotCMS/src/main/java/com/dotmarketing/portlets/contentlet/business/web/ContentletWebAPIImpl.java"
+
+    # dotAI portlet: no E2E tests, 26 fixes.
+    - "core-web/libs/portlets/dot-ai/**"
+    - "dotCMS/src/main/webapp/WEB-INF/jsp/dotai/**"
+    - "dotCMS/src/main/webapp/html/portlet/ext/dotai/**"
+
+    # Publishing Queue: 7 E2E tests, all on the Pending tab; pushing a bundle is untested.
+    - "core-web/libs/portlets/dot-publishing-queue/**"
+    - "dotCMS/src/main/webapp/html/portlet/ext/contentlet/publishing/**"
+
+    # Query Tool: 1 E2E test, which only opens a result; running queries is untested.
+    - "core-web/libs/portlets/dot-query-tool/**"
+
+    # Templates: 1 E2E test touches the layout builder; creating and editing templates is
+    # untested.
+    - "core-web/apps/dotcms-ui/src/app/portlets/dot-templates/**"
+    - "core-web/libs/template-builder/**"
+
+    # Portlets with no E2E tests and recent fixes.
+    - "core-web/libs/portlets/dot-tags/**"                           # Tags
+    - "dotCMS/src/main/webapp/WEB-INF/jsp/tag_manager/**"
+    - "core-web/libs/portlets/dot-velocity-playground/**"            # Velocity Playground
+    - "dotCMS/src/main/webapp/WEB-INF/jsp/velocity_playground/**"
+    - "core-web/libs/portlets/dot-es-search/**"                      # ES Search
+    - "dotCMS/src/main/webapp/WEB-INF/jsp/es-search/**"
+    - "core-web/libs/portlets/dot-categories/**"                     # Categories
+    - "dotCMS/src/main/webapp/html/portlet/ext/categories/**"
+    - "core-web/libs/portlets/dot-plugins/**"                        # Plugins
+    - "dotCMS/src/main/webapp/html/portlet/ext/osgi/**"
+    - "core-web/libs/portlets/dot-tools/**"                          # Tools and Maintenance
+    - "dotCMS/src/main/webapp/html/portlet/ext/cmsmaintenance/**"
+    - "core-web/libs/portlets/dot-locales/**"                        # Locales
+    - "dotCMS/src/main/webapp/html/portlet/ext/languagesmanager/**"
+    - "core-web/libs/dot-rules/**"                                   # Rules
+    - "dotCMS/src/main/webapp/WEB-INF/jsp/rules/**"
+    - "core-web/apps/dotcms-ui/src/app/portlets/dot-containers/**"   # Containers
+
+    # Legacy portlets with no E2E tests and almost no recent fixes.
+    - "dotCMS/src/main/webapp/html/portlet/ext/hostadmin/**"         # Sites
+    - "dotCMS/src/main/webapp/html/portlet/ext/workflows/schemes/**" # Workflow schemes
+    - "dotCMS/src/main/java/com/dotcms/vanityurl/**"                 # Vanity URLs (no UI of its own)
+
+  # Jest unit tests sit beside the code they test, so the globs above catch them too. A PR
+  # whose changes in these folders are only Jest test files can be approved by dotReviewer; a
+  # PR that also changes the code they test still needs a human. This covers adding, editing
+  # and deleting test files alike, since dotReviewer sees only which files changed.
+  except_paths:
+    - "core-web/**/*.spec.ts"
