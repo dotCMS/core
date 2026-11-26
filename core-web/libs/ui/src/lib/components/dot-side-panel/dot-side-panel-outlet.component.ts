@@ -17,7 +17,12 @@ import { DotSidePanelService } from '../../services/dot-side-panel/dot-side-pane
  */
 @Component({
     selector: 'dot-side-panel-outlet',
-    imports: [DotMessagePipe, DotSidePanelComponent, DotSidePanelContentDirective, ProgressSpinnerModule],
+    imports: [
+        DotMessagePipe,
+        DotSidePanelComponent,
+        DotSidePanelContentDirective,
+        ProgressSpinnerModule
+    ],
     templateUrl: './dot-side-panel-outlet.component.html'
 })
 export class DotSidePanelOutletComponent {
