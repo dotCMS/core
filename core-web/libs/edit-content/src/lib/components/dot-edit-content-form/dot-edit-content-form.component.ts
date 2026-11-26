@@ -93,12 +93,6 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
  * <dot-edit-content-form></dot-edit-content-form>
  * ```
  */
-/**
- * Contentlet fields that lock/unlock change (`lock.feature.ts`). They are volatile state, not
- * content, so they are left out of the form's revision key.
- */
-const LOCK_ONLY_FIELDS = new Set(['locked', 'lockedBy', 'lockedByName', 'lockedOn']);
-
 @Component({
     selector: 'dot-edit-content-form',
     templateUrl: './dot-edit-content-form.component.html',
@@ -245,17 +239,22 @@ export class DotEditContentFormComponent implements OnInit {
      * `identifier|inode|modDate` alone is not enough: a workflow action such as Move changes
      * the contentlet's data (host, folder, path) without a new inode or modDate, so the
      * refetched contentlet never rebuilt the form and the Site or Folder field kept its old
-     * value until a manual reload (#38724 R3). The key therefore also carries the contentlet's
-     * values. The lock fields are left out on purpose: lock/unlock replace the contentlet with
-     * the same values plus a new lock state (`lock.feature.ts`), and that must not rebuild the
-     * form (#35388) — rebuilding races with async child components and wipes in-flight state.
+     * value until a manual reload (#38724 R3). The key therefore also carries the value each
+     * form field starts from, resolved exactly as {@link createFormControl} does, and nothing
+     * else: lock fields (lock/unlock must not rebuild the form, #35388) and server-computed
+     * keys no field reads (`*Version` URLs, `__icon__`, metadata) stay out, so a refetch that
+     * only changes those does not drop the user's unsaved edits.
      */
     #revisionKeyOf(contentlet: DotCMSContentlet): string {
-        const values = Object.fromEntries(
-            Object.entries(contentlet).filter(([key]) => !LOCK_ONLY_FIELDS.has(key))
+        const isManualTranslation = this.$store.isManualTranslation();
+        const values = this.$formFields().map((field) =>
+            this.getInitialFieldValue({ field, contentlet, isManualTranslation })
         );
 
-        return `${contentlet.identifier}|${contentlet.inode}|${contentlet.modDate}|${JSON.stringify(values)}`;
+        return `${contentlet.identifier}|${contentlet.inode}|${contentlet.modDate}|${JSON.stringify([
+            values,
+            contentlet.disabledWYSIWYG ?? []
+        ])}`;
     }
 
     #flushTimeoutId: ReturnType<typeof setTimeout> | null = null;

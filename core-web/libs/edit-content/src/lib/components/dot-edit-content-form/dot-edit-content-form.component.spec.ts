@@ -1273,6 +1273,22 @@ describe('DotFormComponent', () => {
 
             expect(initFormSpy).not.toHaveBeenCalled();
         });
+
+        it('should not rebuild the form when only values the form does not use change (#38724 review)', () => {
+            const initFormSpy = vi.spyOn(
+                component as DotEditContentFormComponent & { initializeForm(): void },
+                'initializeForm'
+            );
+
+            // Server-computed keys no field reads: a rebuild here would drop unsaved edits.
+            fireActionReturning({
+                ...MOCK_CONTENTLET_1_OR_2_TABS,
+                __icon__: 'a-different-icon',
+                titleImageVersion: '/dA/new-version-url'
+            } as DotCMSContentlet);
+
+            expect(initFormSpy).not.toHaveBeenCalled();
+        });
     });
 
     describe('Read-only content (R4, #38724)', () => {
