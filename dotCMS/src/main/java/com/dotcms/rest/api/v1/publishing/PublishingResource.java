@@ -762,7 +762,7 @@ public class PublishingResource {
             ),
             @ApiResponse(
                     responseCode = "403",
-                    description = "Forbidden - the user is neither the bundle owner nor a CMS Administrator",
+                    description = "Forbidden - the user is neither the bundle owner nor a CMS Administrator, or has no permission to use any of the specified environments",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON)
             ),
             @ApiResponse(

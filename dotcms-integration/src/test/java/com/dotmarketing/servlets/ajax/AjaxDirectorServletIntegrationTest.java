@@ -1,8 +1,7 @@
 package com.dotmarketing.servlets.ajax;
 
 import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.ArgumentMatchers.any;
@@ -38,7 +37,6 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -56,8 +54,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -303,93 +299,27 @@ public class AjaxDirectorServletIntegrationTest {
     }
 
     /**
-     * Given: an archive directly in the bundles directory under a plain id
-     * When: a back-end user with the publishing tool downloads it through the legacy download
-     * action, naming it in the URI path the way the audit-detail page does
-     * Then: the archive's bytes are streamed and no bundle directory is created
+     * Given: a generated archive directly in the bundles directory under a plain id
+     * When: a CMS Administrator asks the legacy download action for it, the way the audit-detail
+     * page used to before it moved to /api/bundle/_download
+     * Then: nothing is streamed, because the action no longer offers a download
      */
     @Test
-    public void test_downloadBundle_plainId_streamsArchive() throws Exception {
-        final String bundleId = "download-plain-" + System.currentTimeMillis();
-        final File bundlesDir = new File(ConfigUtils.getBundlePath());
-        final File archive = new File(bundlesDir, bundleId + ".tar.gz");
-        final byte[] content = "archive".getBytes(StandardCharsets.UTF_8);
-        Files.write(archive.toPath(), content);
-
-        final ByteArrayOutputStream body = new ByteArrayOutputStream();
-        final HttpServletResponse response = mock(HttpServletResponse.class);
-        when(response.getOutputStream()).thenReturn(servletOutputStream(body));
-
-        try {
-            new AjaxDirectorServlet(downloadWebResource()).service(downloadRequest(
-                    "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadBundle/bid/"
-                            + bundleId, null), response);
-
-            verify(response, never()).sendError(anyInt());
-            verify(response, never()).sendError(anyInt(), any());
-            assertArrayEquals("The archive should be streamed as stored", content, body.toByteArray());
-            verify(response).setContentType("application/x-tgz");
-            verify(response).setHeader("Content-Disposition",
-                    "attachment; filename=" + bundleId + ".tar.gz");
-            verify(response).setContentLengthLong(content.length);
-            assertFalse("No bundle directory should be created",
-                    new File(bundlesDir, bundleId).exists());
-        } finally {
-            Files.deleteIfExists(archive.toPath());
-        }
-    }
-
-    /**
-     * Given: a plain bundle id with no archive in the bundles directory
-     * When: the legacy download action is asked for it
-     * Then: 404, nothing is streamed, and no bundle directory is created
-     */
-    @Test
-    public void test_downloadBundle_missingArchive_returns404() throws Exception {
-        final String bundleId = "download-missing-" + System.currentTimeMillis();
-        final File bundleDir = new File(ConfigUtils.getBundlePath(), bundleId);
-        final HttpServletResponse response = mock(HttpServletResponse.class);
-
-        try {
-            new AjaxDirectorServlet(downloadWebResource()).service(downloadRequest(
-                    "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadBundle/bid/"
-                            + bundleId, null), response);
-
-            verify(response).sendError(HttpServletResponse.SC_NOT_FOUND, "No Bundle Found");
-            verify(response, never()).getOutputStream();
-            assertFalse("No bundle directory should be created", bundleDir.exists());
-        } finally {
-            Files.deleteIfExists(bundleDir.toPath());
-        }
-    }
-
-    /**
-     * Given: an archive two levels above the bundles directory
-     * When: the legacy download action gets a bundle id made of a parent segment and that
-     * archive's name
-     * Then: 404, nothing is streamed, and no directory is created for the id
-     */
-    @Test
-    public void test_downloadBundle_idWithParentSegment_returns404() throws Exception {
-        final String name = "download-parent-" + System.currentTimeMillis();
-        final File bundlesDir = new File(ConfigUtils.getBundlePath());
-        final File archive = new File(bundlesDir.getParentFile().getParentFile(), name + ".tar.gz");
+    public void test_downloadBundle_legacyActionNoLongerStreams() throws Exception {
+        final String bundleId = "download-legacy-" + System.currentTimeMillis();
+        final File archive = new File(ConfigUtils.getBundlePath(), bundleId + ".tar.gz");
         Files.write(archive.toPath(), "archive".getBytes(StandardCharsets.UTF_8));
-        final File expectedNotCreated = new File(bundlesDir.getParentFile(), name);
-
         final HttpServletResponse response = mock(HttpServletResponse.class);
 
         try {
             new AjaxDirectorServlet(downloadWebResource()).service(downloadRequest(
-                    "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadBundle",
-                    ".." + File.separator + name), response);
+                    "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadBundle/bid/"
+                            + bundleId, null), response);
 
-            verify(response).sendError(HttpServletResponse.SC_NOT_FOUND, "No Bundle Found");
             verify(response, never()).getOutputStream();
-            assertFalse("No directory should be created for the id", expectedNotCreated.exists());
+            verify(response, never()).setContentType("application/x-tgz");
         } finally {
             Files.deleteIfExists(archive.toPath());
-            Files.deleteIfExists(expectedNotCreated.toPath());
         }
     }
 
@@ -427,28 +357,6 @@ public class AjaxDirectorServletIntegrationTest {
     }
 
     /**
-     * A {@link ServletOutputStream} that writes into the given buffer.
-     */
-    private static ServletOutputStream servletOutputStream(final ByteArrayOutputStream buffer) {
-        return new ServletOutputStream() {
-            @Override
-            public void write(final int b) {
-                buffer.write(b);
-            }
-
-            @Override
-            public boolean isReady() {
-                return true;
-            }
-
-            @Override
-            public void setWriteListener(final WriteListener writeListener) {
-                // not used
-            }
-        };
-    }
-
-    /**
      * Given: a bundle owned by one back-end user, and an environment a second back-end user may use
      * When: the second user, who is not a CMS Administrator, pushes the bundle through the
      * push-bundle action
@@ -468,35 +376,91 @@ public class AjaxDirectorServletIntegrationTest {
                         PermissionAPI.PERMISSION_USE, true),
                 environment, APILocator.systemUser(), false);
 
-        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletRequest request = pushBundleRequest(bundle.getId(), environment.getId());
         final HttpServletResponse response = mock(HttpServletResponse.class);
-        final WebResource webResource = mock(WebResource.class);
-        final InitDataObject dataObject = mock(InitDataObject.class);
-        when(dataObject.getUser()).thenReturn(otherUser);
-        when(webResource.init(nullable(String.class), anyBoolean(), any(HttpServletRequest.class),
-                anyBoolean(), any()))
-                .thenReturn(dataObject);
-        when(request.getReader()).thenReturn(new BufferedReader(new StringReader("{\n"
-                + "    \"assetIdentifier\": \"" + bundle.getId() + "\",\n"
-                + "    \"remotePublishDate\": \"2030-01-01\",\n"
-                + "    \"remotePublishTime\": \"10-00\",\n"
-                + "    \"iWantTo\": \"publish\",\n"
-                + "    \"whoToSend\": \"" + environment.getId() + "\"\n"
-                + "}")));
-        when(request.getRequestURI()).thenReturn(
-                "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/pushBundle");
-        when(request.getSession()).thenReturn(mock(HttpSession.class));
         when(response.getWriter()).thenReturn(mock(PrintWriter.class));
 
         try {
-            new AjaxDirectorServlet(webResource).service(request, response);
+            new AjaxDirectorServlet(webResourceFor(otherUser)).service(request, response);
 
             verify(response).sendError(HttpServletResponse.SC_FORBIDDEN);
             assertTrue("No environment should be saved on the bundle", APILocator.getEnvironmentAPI()
                     .findEnvironmentsByBundleId(bundle.getId()).isEmpty());
         } finally {
-            APILocator.getBundleAPI().deleteBundle(bundle.getId());
+            APILocator.getBundleAPI().deleteBundleAndDependencies(bundle.getId(), APILocator.systemUser());
             APILocator.getEnvironmentAPI().deleteEnvironment(environment.getId());
+            UserDataGen.remove(owner);
+            UserDataGen.remove(otherUser);
         }
+    }
+
+    /**
+     * Given: a bundle owned by a back-end user who is not a CMS Administrator, and an environment
+     * that user may use
+     * When: the owner pushes the bundle through the push-bundle action
+     * Then: no error, and the environment is saved on the bundle
+     */
+    @Test
+    public void test_pushBundle_owner_savesEnvironment() throws Exception {
+        final User owner = new UserDataGen().roles(TestUserUtils.getBackendRole()).nextPersisted();
+        final Bundle bundle = new Bundle("push-bundle-owner-" + System.currentTimeMillis(),
+                null, null, owner.getUserId());
+        APILocator.getBundleAPI().saveBundle(bundle);
+        final Environment environment = new EnvironmentDataGen().nextPersisted();
+        APILocator.getPermissionAPI().save(
+                new Permission(environment.getPermissionId(),
+                        APILocator.getRoleAPI().getUserRole(owner).getId(),
+                        PermissionAPI.PERMISSION_USE, true),
+                environment, APILocator.systemUser(), false);
+
+        final HttpServletRequest request = pushBundleRequest(bundle.getId(), environment.getId());
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        when(response.getWriter()).thenReturn(mock(PrintWriter.class));
+
+        try {
+            new AjaxDirectorServlet(webResourceFor(owner)).service(request, response);
+
+            verify(response, never()).sendError(anyInt());
+            verify(response, never()).sendError(anyInt(), any());
+            assertEquals(List.of(environment.getId()), APILocator.getEnvironmentAPI()
+                    .findEnvironmentsByBundleId(bundle.getId()).stream()
+                    .map(Environment::getId).collect(Collectors.toList()));
+        } finally {
+            APILocator.getBundleAPI().deleteBundleAndDependencies(bundle.getId(), APILocator.systemUser());
+            APILocator.getEnvironmentAPI().deleteEnvironment(environment.getId());
+            UserDataGen.remove(owner);
+        }
+    }
+
+    /**
+     * A {@link WebResource} that resolves every request to the given user.
+     */
+    private static WebResource webResourceFor(final User user) {
+        final WebResource webResource = mock(WebResource.class);
+        final InitDataObject dataObject = mock(InitDataObject.class);
+        when(dataObject.getUser()).thenReturn(user);
+        when(webResource.init(nullable(String.class), anyBoolean(), any(HttpServletRequest.class),
+                anyBoolean(), any()))
+                .thenReturn(dataObject);
+        return webResource;
+    }
+
+    /**
+     * A push-bundle request for the given bundle and environment, publishing in 2030.
+     */
+    private static HttpServletRequest pushBundleRequest(final String bundleId,
+            final String environmentId) throws IOException {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getReader()).thenReturn(new BufferedReader(new StringReader("{\n"
+                + "    \"assetIdentifier\": \"" + bundleId + "\",\n"
+                + "    \"remotePublishDate\": \"2030-01-01\",\n"
+                + "    \"remotePublishTime\": \"10-00\",\n"
+                + "    \"iWantTo\": \"publish\",\n"
+                + "    \"whoToSend\": \"" + environmentId + "\"\n"
+                + "}")));
+        when(request.getRequestURI()).thenReturn(
+                "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/pushBundle");
+        when(request.getSession()).thenReturn(mock(HttpSession.class));
+        return request;
     }
 }

@@ -16184,8 +16184,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - the user is neither the bundle owner nor a CMS
-            Administrator
+          description: "Forbidden - the user is neither the bundle owner nor a CMS\
+            \ Administrator, or has no permission to use any of the specified environments"
         "404":
           content:
             application/json: {}

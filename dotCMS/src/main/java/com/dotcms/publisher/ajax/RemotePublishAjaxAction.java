@@ -72,7 +72,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
-import java.nio.file.Files;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -476,45 +475,6 @@ public class RemotePublishAjaxAction extends AjaxAction {
             }
         }
         response.getWriter().println( responseMessage.toString() );
-    }
-
-    /**
-     * Downloads the compressed file of the bundle named by the {@code bid} URI parameter. The id
-     * must be a plain bundle id; when it is not, or there is no archive for it in the bundles
-     * directory, the response is a 404.
-     *
-     * @param request  HttpRequest
-     * @param response HttpResponse
-     * @throws IOException If fails sending back to the user response information
-     */
-    public void downloadBundle ( HttpServletRequest request, HttpServletResponse response ) throws IOException {
-    	try {
-			if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("publishing-queue", getUser())){
-				response.sendError(401);
-				return;
-			}
-		} catch (DotDataException e1) {
-			Logger.error(RemotePublishAjaxAction.class,e1.getMessage(),e1);
-			response.sendError(401);
-			return;
-		}
-        final Map<String, String> map = getURIParams();
-        final String bid = map.get( "bid" );
-
-        final Optional<File> bundle = BundlerUtil.findBundleArchive( bid );
-        if ( bundle.isEmpty() ) {
-            response.sendError( HttpServletResponse.SC_NOT_FOUND, "No Bundle Found" );
-            return;
-        }
-
-        response.setContentType( "application/x-tgz" );
-        response.setHeader( "Content-Disposition", "attachment; filename=" + bundle.get().getName().replaceAll( "[^\\w.-]", "_" ) );
-        response.setContentLengthLong( bundle.get().length() );
-        try {
-            Files.copy( bundle.get().toPath(), response.getOutputStream() );
-        } catch ( Exception e ) {
-            Logger.warn( this.getClass(), "Error Downloading Bundle.", e );
-        }
     }
 
     /**

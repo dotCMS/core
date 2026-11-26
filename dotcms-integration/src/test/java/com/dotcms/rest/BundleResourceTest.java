@@ -744,6 +744,30 @@ public class BundleResourceTest {
     }
 
     /**
+     * Given: a generated bundle that has not been sent, owned by a back-end user with the
+     *        Publishing Queue
+     * When:  the owner downloads it
+     * Then:  200
+     */
+    @Test
+    public void test_downloadBundle_ownUnsentBundle_isAllowed() throws Exception {
+        final User owner = newPublishingQueueUser();
+        final Bundle bundle = newUnsentBundle(owner);
+        createFilter();
+        try {
+            bundle.setOperation(PushPublisherConfig.Operation.PUBLISH.ordinal());
+            APILocator.getBundleAPI().generateTarGzipBundleFile(bundle);
+        } finally {
+            PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).clearFilterDescriptorList();
+        }
+
+        final Response resp = bundleResource.downloadBundle(mockRequestFor(owner), response,
+                bundle.getId());
+
+        assertEquals(Status.OK.getStatusCode(), resp.getStatus());
+    }
+
+    /**
      * Given: a bundle that has not been sent, owned by one user
      * When:  another back-end user with the Publishing Queue downloads its manifest
      * Then:  403
