@@ -1,6 +1,7 @@
 package com.dotmarketing.common.reindex;
 
 import com.dotcms.contenttype.model.type.ContentType;
+import com.liferay.portal.model.User;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.exception.DotDataException;
@@ -191,8 +192,18 @@ public interface ReindexQueueAPI {
      */
     long parkedRecordCount() throws DotDataException;
 
-    // RED STUB (#37270): compile-only, replaced by the implementation after the Red gate.
-    ParkedRecordsRetry retryParkedRecords(com.liferay.portal.model.User user) throws DotDataException;
+    /**
+     * Sends every parked journal row back to the queue, at the priority it was originally queued
+     * at and with a fresh retry budget, so content that gave up is indexed again once the cause
+     * has been fixed. A row whose content no longer exists comes back as a removal of its
+     * documents. Callers must not run it during a full reindex: requeued reindex rows would land
+     * in the band the reindex waits on before switching over (#37270).
+     *
+     * @param user the user who asked for the retry, recorded in the log
+     * @return how many rows were requeued, and how many of them as removals
+     * @throws DotDataException if the journal cannot be updated
+     */
+    ParkedRecordsRetry retryParkedRecords(User user) throws DotDataException;
 
     /**
      * Lists the journal rows that failed at least once, parked or still being retried, whatever

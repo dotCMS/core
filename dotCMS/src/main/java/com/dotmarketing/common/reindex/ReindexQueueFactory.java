@@ -340,6 +340,36 @@ public class ReindexQueueFactory {
                 .loadObjectResults().isEmpty();
     }
 
+    /**
+     * Sends every parked row back to the queue (#37270). Each row returns to the band it was
+     * queued at, with a fresh retry budget: the parked value minus {@code ERROR}, rounded down to
+     * the hundred (705 → 300, 505 → 100). It keeps its row id, so a newer row for the same
+     * identifier still supersedes it. A parked reindex row whose content no longer exists comes
+     * back as a delete, so its stale document leaves the index instead of the row being dropped
+     * when the content cannot be loaded. The server is cleared and the row is stamped now:
+     * left with an old timestamp, the stale-row requeue would take it for a stuck one as soon as
+     * it is picked up. Must run inside a transaction so both statements apply together.
+     *
+     * @return how many rows were requeued, and how many of them as deletes
+     * @throws DotDataException if the journal cannot be updated
+     */
+    protected ParkedRecordsRetry retryParkedRecords() throws DotDataException {
+        final int asDelete = new DotConnect().executeUpdate(
+                "UPDATE dist_reindex_journal SET dist_action = ?"
+                        + " WHERE priority >= ? AND dist_action = ?"
+                        + " AND NOT EXISTS (SELECT 1 FROM contentlet_version_info cvi"
+                        + " WHERE cvi.identifier = dist_reindex_journal.ident_to_index)",
+                ReindexAction.DELETE.ordinal(), Priority.ERROR.dbValue(),
+                ReindexAction.REINDEX.ordinal());
+        final int requeued = new DotConnect().executeUpdate(
+                "UPDATE dist_reindex_journal SET priority = ((priority - ?) / 100) * 100,"
+                        + " serverid = NULL, time_entered = ? WHERE priority >= ?",
+                Priority.ERROR.dbValue(), DbConnectionFactory.now(), Priority.ERROR.dbValue());
+        resetLastIdReindexed();
+        unpauseReindexingServers();
+        return new ParkedRecordsRetry(requeued, asDelete);
+    }
+
     protected void markAsFailed(ReindexEntry idx, String cause) throws DotDataException {
         final int newPriority =
                 (idx.errorCount() >= REINDEX_MAX_FAILURE_ATTEMPTS) ? Priority.ERROR.dbValue()

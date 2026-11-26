@@ -4,6 +4,7 @@
 package com.dotmarketing.common.reindex;
 
 import com.dotcms.contenttype.model.type.ContentType;
+import com.liferay.portal.model.User;
 import java.sql.Connection;
 import java.util.Collection;
 import java.util.List;
@@ -101,10 +102,15 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
     public long failedRecordCount() throws DotDataException {
         return reindexQueueFactory.failedRecordCount();
     }
-    // RED STUB (#37270): compile-only, replaced by the implementation after the Red gate.
     @Override
-    public ParkedRecordsRetry retryParkedRecords(final com.liferay.portal.model.User user) {
-        return new ParkedRecordsRetry(0, 0);
+    @WrapInTransaction
+    public ParkedRecordsRetry retryParkedRecords(final User user) throws DotDataException {
+        final ParkedRecordsRetry retried = reindexQueueFactory.retryParkedRecords();
+        Logger.info(this, String.format("User '%s' retried %d parked reindex record(s), %d of them"
+                        + " as removals because their content no longer exists",
+                user != null ? user.getUserId() : "unknown", retried.requeued(),
+                retried.requeuedAsDelete()));
+        return retried;
     }
 
     @Override

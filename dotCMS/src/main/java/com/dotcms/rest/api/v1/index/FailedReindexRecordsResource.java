@@ -2,12 +2,15 @@ package com.dotcms.rest.api.v1.index;
 
 import com.dotcms.content.index.IndexDocumentConstraints;
 import com.dotcms.content.index.IndexDocumentViolation;
+import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;
+import com.dotcms.rest.exception.ConflictException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotmarketing.common.reindex.ParkedRecordsRetry;
 import com.dotmarketing.common.reindex.ReindexEntry;
 import com.dotmarketing.common.reindex.ReindexQueueFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -25,6 +28,7 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
@@ -114,5 +118,60 @@ public class FailedReindexRecordsResource {
         return new ResponseEntityFailedReindexRecordsView(FailedReindexRecordsView.of(records,
                 DOCUMENT_CONSTRAINTS.maxStringLength(), DOCUMENT_CONSTRAINTS.maxNestingDepth(),
                 ReindexQueueFactory.REINDEX_MAX_FAILURE_ATTEMPTS));
+    }
+
+    /**
+     * Sends the parked reindex records back to the queue, so content that gave up is indexed again
+     * once the cause has been fixed (#37270). Refused while a full reindex runs: requeued reindex
+     * records would land in the band the reindex waits on before switching over, and "Stop
+     * Reindex" deletes that band. Every retry is refused then, not only the reindex ones, so the
+     * rule is the same whatever was parked.
+     *
+     * @param request  the HTTP request
+     * @param response the HTTP response
+     * @return how many records were requeued, and how many of them as removals
+     * @throws DotDataException if the journal cannot be updated
+     */
+    @Operation(
+            operationId = "retryFailedReindexRecords",
+            summary = "Retry parked reindex records",
+            description = "Sends every parked reindex record (one whose retries ran out) back to the"
+                    + " queue at the priority it was originally queued at, with a fresh retry"
+                    + " budget. A record whose content no longer exists is requeued as a removal,"
+                    + " so its stale documents leave the index. Records still being retried are"
+                    + " not touched. Refused with 409 while a full reindex is running. Requires"
+                    + " the CMS Administrator role and access to the Maintenance portlet."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Parked records requeued",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = ResponseEntityRetriedFailedRecordsView.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - not authenticated, or the"
+                    + " user lacks the CMS Administrator role or access to the Maintenance portlet",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)),
+            @ApiResponse(responseCode = "409", description = "A full reindex is running; nothing"
+                    + " was requeued", content = @Content(mediaType = MediaType.APPLICATION_JSON))
+    })
+    @CloseDBIfOpened
+    @POST
+    @Path("/retry")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public ResponseEntityRetriedFailedRecordsView retryFailedRecords(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response)
+            throws DotDataException {
+        final InitDataObject init = new WebResource.InitBuilder(request, response)
+                .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
+                .requiredPortlet("maintenance")
+                .init();
+        if (APILocator.getContentletIndexAPI().isInFullReindex()) {
+            throw new ConflictException(
+                    "A full reindex is running; retry failed records after it finishes");
+        }
+        final ParkedRecordsRetry retried =
+                APILocator.getReindexQueueAPI().retryParkedRecords(init.getUser());
+        return new ResponseEntityRetriedFailedRecordsView(RetriedFailedRecordsView.of(retried));
     }
 }

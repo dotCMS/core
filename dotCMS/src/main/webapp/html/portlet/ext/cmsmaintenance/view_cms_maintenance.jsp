@@ -131,6 +131,26 @@ function checkReindexation () {
     .then(data =>checkReindexationCallback(data));
 
 }
+/** Sends the skipped (parked) records back to the reindex queue (#37270). Refused with 409
+    while a full reindex is running. */
+function retryFailedRecords () {
+    fetch('/api/v1/index/failed/retry', {method:'POST', cache:'no-cache'})
+    .then(response => {
+        if (response.status === 409) {
+            alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"Retry-Failed-Reindex-Records-Refused")) %>');
+            return null;
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data && data.entity) {
+            alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"Retry-Failed-Reindex-Records-Done")) %>'
+                .replace('{0}', data.entity.requeued));
+        }
+        checkReindexation();
+    });
+}
+
 function deleteFailedRecords () {
 
     fetch('/api/v1/esindex/failed', {method:'DELETE',cache: 'no-cache'} )
@@ -1618,6 +1638,10 @@ dd.leftdl {
 
                    <button dojoType="dijit.form.Button"  onClick="downloadFailedAsJson();">
                        <%= LanguageUtil.get(pageContext,"Download-Failed-Records-As-JSON") %>
+                   </button>
+                    &nbsp; &nbsp;
+                   <button dojoType="dijit.form.Button"  onClick="retryFailedRecords();">
+                       <%= LanguageUtil.get(pageContext,"Retry-Failed-Reindex-Records") %>
                    </button>
                     &nbsp; &nbsp;
                    <button dojoType="dijit.form.Button"  onClick="deleteFailedRecords();">
