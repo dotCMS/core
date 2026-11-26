@@ -159,6 +159,10 @@ export class DotEditContentSidePanelComponent implements DotSidePanelContent, On
         afterNextRender(() => {
             const host = this.#injector.get(OverlayEditContentHost);
 
+            // The panel header draws the chip; the editor reports its status to the overlay host and
+            // the panel's ref follows that signal.
+            this.#panel.bindTitleStatus(host.titleStatus);
+
             host.saved$
                 .pipe(takeUntilDestroyed(this.#destroyRef))
                 .subscribe((contentlet) => this.saved.emit(contentlet));

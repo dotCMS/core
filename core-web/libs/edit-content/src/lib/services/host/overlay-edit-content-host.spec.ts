@@ -297,6 +297,34 @@ describe('OverlayEditContentHost', () => {
         });
     });
 
+    describe('title status chip', () => {
+        it('starts with no status, so no chip shows before the editor has loaded', () => {
+            expect(host.titleStatus()).toBeNull();
+        });
+
+        it('keeps the status it is given for the dialog or panel header to read', () => {
+            const status = { state: { live: true, working: true, hasLiveVersion: true } };
+
+            host.setTitleStatus(status);
+
+            expect(host.titleStatus()).toEqual(status);
+        });
+
+        it('keeps "New" (a null state) for content that has not been saved', () => {
+            host.setTitleStatus({ state: null });
+
+            expect(host.titleStatus()).toEqual({ state: null });
+        });
+
+        it('hides the chip when the status is set back to null', () => {
+            host.setTitleStatus({ state: null });
+
+            host.setTitleStatus(null);
+
+            expect(host.titleStatus()).toBeNull();
+        });
+    });
+
     /**
      * A field asks the panel's host to open other content (#38303, R8). Inside a panel, a related
      * item the Relationship field names replaces the panel's content in place, with a breadcrumb;

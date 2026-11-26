@@ -40,17 +40,15 @@ import {
     DotWorkflowEventHandlerService
 } from '@dotcms/data-access';
 import {
-    DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
     DotCMSContentTypeField,
     DotCMSFieldType,
     DotCMSFieldTypes,
     DotCMSWorkflowAction,
-    DotContentState,
     DotWorkflowPayload
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
-import { DotContentletStatusBadgeComponent, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 
 import { DotEditContentCommandBarActionsComponent } from './components/dot-edit-content-command-bar-actions/dot-edit-content-command-bar-actions.component';
 import { resolveFieldValue } from './dot-edit-content-form-resolutions';
@@ -62,8 +60,6 @@ import { FormValues } from '../../models/dot-edit-content-form.interface';
 import { DotWorkflowActionParams } from '../../models/dot-edit-content.model';
 import { DotEditContentStore } from '../../store/edit-content.store';
 import {
-    generatePageEditUrl,
-    generatePreviewUrl,
     isFilteredType,
     isSingleColumnLayout,
     processFieldValue
@@ -102,7 +98,6 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
         DotEditContentFieldComponent,
         ButtonModule,
         TabsModule,
-        DotContentletStatusBadgeComponent,
         TabViewInsertDirective,
         DotMessagePipe,
         DotRelativeDatePipe,
@@ -159,23 +154,6 @@ export class DotEditContentFormComponent implements OnInit {
     );
 
     /**
-     * Computed property that determines if the preview link should be shown.
-     *
-     * Shown for existing content that is either an HTML page or has a URL map.
-     *
-     * @memberof DotEditContentFormComponent
-     */
-    $showPreviewLink = computed(() => {
-        const contentlet = this.$store.contentlet();
-
-        return (
-            !this.$store.isNew() &&
-            (contentlet?.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE ||
-                !!contentlet?.URL_MAP_FOR_CONTENT)
-        );
-    });
-
-    /**
      * Computed property that returns true when the contentlet has at least one page reference.
      *
      * @memberof DotEditContentFormComponent
@@ -185,17 +163,6 @@ export class DotEditContentFormComponent implements OnInit {
 
         return !!relatedContent && relatedContent !== '0';
     });
-
-    /**
-     * Publish state passed to the shared status badge in the command bar. A brand-new
-     * contentlet has no state yet, so it resolves to `null` and the badge renders the
-     * translated "New" label; otherwise the current contentlet drives the badge.
-     *
-     * @memberof DotEditContentFormComponent
-     */
-    $statusState = computed<DotContentState | null>(() =>
-        this.$store.isNew() ? null : this.$store.contentlet()
-    );
 
     /**
      * FormGroup instance that contains the form controls for the fields in the content type
@@ -269,15 +236,12 @@ export class DotEditContentFormComponent implements OnInit {
         return {
             $store: this.$store,
             showSidebar: this.$store.isSidebarOpen(),
-            $showPreviewLink: this.$showPreviewLink,
             $isPage: this.$store.isPage,
             $hasReferences: this.$hasReferences,
             contentlet: this.$store.contentlet(),
             contentType: this.$store.contentType(),
             currentLocaleId: currentLocale ? currentLocale.id.toString() : '',
-            currentIdentifier: this.$store.currentIdentifier(),
-            $statusState: this.$statusState,
-            showPreview: () => this.showPreview()
+            currentIdentifier: this.$store.currentIdentifier()
         };
     });
 
@@ -801,39 +765,6 @@ export class DotEditContentFormComponent implements OnInit {
         this.#router.navigate([CONTENT_SEARCH_ROUTE], {
             queryParams: { filter: contentTypeVariable }
         });
-    }
-
-    /**
-     * Opens the content preview in a new browser tab.
-     *
-     * For HTML pages the edit-page URL is generated from the contentlet's `url`,
-     * otherwise the preview URL is generated from `URL_MAP_FOR_CONTENT`.
-     * Opens the resulting URL in a new tab. Logs a warning if the URL cannot be generated.
-     *
-     * @memberof DotEditContentFormComponent
-     */
-    showPreview(): void {
-        const contentlet = this.$store.contentlet();
-        // Guard against a contentlet cleared by a concurrent state change between the button
-        // rendering and the click — the URL generators dereference the contentlet directly.
-        if (!contentlet) {
-            return;
-        }
-
-        const realUrl =
-            contentlet.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE
-                ? generatePageEditUrl(contentlet)
-                : generatePreviewUrl(contentlet);
-
-        if (!realUrl) {
-            console.warn(
-                'Preview URL could not be generated due to missing contentlet attributes.'
-            );
-
-            return;
-        }
-
-        window.open(realUrl, '_blank');
     }
 
     /**

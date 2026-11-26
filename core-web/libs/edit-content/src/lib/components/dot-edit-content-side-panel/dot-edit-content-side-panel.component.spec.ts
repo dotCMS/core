@@ -1,14 +1,14 @@
 import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
 import { Subject } from 'rxjs';
-import { Mock, vi } from 'vitest';
+import { vi } from 'vitest';
 
-import { reflectComponentType, signal } from '@angular/core';
+import { Signal, WritableSignal, computed, reflectComponentType, signal } from '@angular/core';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotTitleStatus } from '@dotcms/dotcms-models';
 import { DotSidePanelRef } from '@dotcms/ui';
 import { createFakeContentlet } from '@dotcms/utils-testing';
 
@@ -62,12 +62,21 @@ vi.mock('@dotcms/edit-content-bridge', async (importOriginal) => ({
     popFormBridge: formBridge.pop
 }));
 
-/** The panel's ref, reduced to what the content uses. */
-const panelRef = () => ({
-    close: vi.fn(),
-    contentStyleClass: signal('p-0!'),
-    closed: new Subject<void>()
-});
+/**
+ * The panel's ref, reduced to what the content uses. `titleStatus` follows whatever source the content
+ * bound, as the real ref does.
+ */
+const panelRef = () => {
+    const source = signal<Signal<DotTitleStatus> | null>(null);
+
+    return {
+        close: vi.fn(),
+        contentStyleClass: signal('p-0!'),
+        closed: new Subject<void>(),
+        bindTitleStatus: vi.fn((bound: Signal<DotTitleStatus>) => source.set(bound)),
+        titleStatus: computed<DotTitleStatus>(() => source()?.() ?? null)
+    };
+};
 
 describe('DotEditContentSidePanelComponent', () => {
     let spectator: Spectator<DotEditContentSidePanelComponent>;
@@ -76,7 +85,8 @@ describe('DotEditContentSidePanelComponent', () => {
     let languageChanged$: Subject<number>;
     let lockChanged$: Subject<DotCMSContentlet>;
     let openContent$: Subject<DotOpenContentEvent>;
-    let panel: { close: Mock; closed: Subject<void> };
+    let panel: ReturnType<typeof panelRef>;
+    let hostTitleStatus: WritableSignal<DotTitleStatus>;
 
     const EDIT_REQUEST: DotEditContentRequest = {
         mode: 'edit',
@@ -111,6 +121,7 @@ describe('DotEditContentSidePanelComponent', () => {
         lockChanged$ = new Subject<DotCMSContentlet>();
         openContent$ = new Subject<DotOpenContentEvent>();
         panel = panelRef();
+        hostTitleStatus = signal<DotTitleStatus>(null);
 
         spectator = createComponent({
             providers: [
@@ -121,7 +132,8 @@ describe('DotEditContentSidePanelComponent', () => {
                         left$: left$.asObservable(),
                         languageChanged$: languageChanged$.asObservable(),
                         lockChanged$: lockChanged$.asObservable(),
-                        openContent$: openContent$.asObservable()
+                        openContent$: openContent$.asObservable(),
+                        titleStatus: hostTitleStatus.asReadonly()
                     }
                 },
                 { provide: DotSidePanelRef, useValue: panel }
@@ -334,6 +346,57 @@ describe('DotEditContentSidePanelComponent', () => {
             saved$.next(createFakeContentlet({ inode: 'inode-2' }));
 
             expect(panel.close).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('title status chip', () => {
+        it('should hand the panel the host status signal itself, not a copy of its value', async () => {
+            await openRequest();
+
+            expect(panel.bindTitleStatus).toHaveBeenCalledTimes(1);
+            expect(panel.bindTitleStatus).toHaveBeenCalledWith(expect.any(Function));
+        });
+
+        it('should leave the panel header without a chip until the editor reports a status', async () => {
+            await openRequest();
+
+            expect(panel.titleStatus()).toBeNull();
+        });
+
+        it('should show "New" in the panel header for content that has not been saved', async () => {
+            await openRequest();
+
+            hostTitleStatus.set({ state: null });
+            spectator.detectChanges();
+
+            expect(panel.titleStatus()).toEqual({ state: null });
+        });
+
+        it('should follow the editor when a workflow action changes the content state', async () => {
+            await openRequest();
+            const published = { state: { live: true, working: true, hasLiveVersion: true } };
+            const unpublished = { state: { live: false, working: true, hasLiveVersion: false } };
+
+            hostTitleStatus.set(published);
+            spectator.detectChanges();
+            expect(panel.titleStatus()).toEqual(published);
+
+            hostTitleStatus.set(unpublished);
+            spectator.detectChanges();
+
+            expect(panel.titleStatus()).toEqual(unpublished);
+        });
+
+        it('should hide the chip when the editor hides it, for example on a historical version', async () => {
+            await openRequest();
+            hostTitleStatus.set({ state: null });
+            spectator.detectChanges();
+            expect(panel.titleStatus()).toEqual({ state: null });
+
+            hostTitleStatus.set(null);
+            spectator.detectChanges();
+
+            expect(panel.titleStatus()).toBeNull();
         });
     });
 });
