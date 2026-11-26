@@ -93,7 +93,7 @@ Scan the raw diff (stdout of `gh pr diff <N>`) with literal matching on **added 
 - `catch (` with `{}` or `{ return null` or `{ return;`
 - `?? null` or `?? undefined` or `|| null` on a call result
 
-**Comment-analyzer trigger** — activate if any of these patterns appear as additions:
+**Comment-analyzer trigger** — activate if any of these patterns appear as additions in a file other than `*.spec.ts` (spec comments follow their own conventions, and the analyzer leaves them out):
 - Lines matching `^\+\s*//` (line comments)
 - Lines matching `^\+\s*/\*` or `^\+\s*\*` (block comments / JSDoc continuation)
 - Lines matching `^\+.*@param\s` or `^\+.*@returns?\s` (JSDoc tags)
