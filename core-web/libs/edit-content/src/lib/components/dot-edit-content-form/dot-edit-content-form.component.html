@@ -43,7 +43,7 @@
                  source of content padding, so the panel doesn't double-pad. -->
             <p-tabpanels
                 class="min-h-0 flex-1 overflow-y-auto [&_.p-tabpanel]:p-0!"
-                data-testId="edit-content-form-scroll">
+                data-testid="edit-content-form-scroll">
                 @for (tab of tabs; track tab; let i = $index) {
                     <p-tabpanel [value]="i">
                         <ng-container *ngTemplateOutlet="tabPanelTemplate; context: { tab: tab }" />

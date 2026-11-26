@@ -9,7 +9,6 @@ import {
     Component,
     computed,
     DestroyRef,
-    DOCUMENT,
     effect,
     ElementRef,
     inject,
@@ -135,7 +134,6 @@ export class DotEditContentFormComponent implements OnInit {
     readonly #dotWorkflowEventHandlerService = inject(DotWorkflowEventHandlerService);
     readonly #dotWizardService = inject(DotWizardService);
     readonly #dotMessageService = inject(DotMessageService);
-    readonly #document = inject(DOCUMENT);
     readonly #appRef = inject(ApplicationRef);
 
     /**
@@ -984,8 +982,16 @@ export class DotEditContentFormComponent implements OnInit {
      * Uses smooth scrolling with proper offset calculation and fallback mechanisms.
      */
     scrollToFirstError(): void {
-        const errorElements =
-            this.#document.querySelectorAll<HTMLDivElement>('.field-error-marker');
+        // Searched from this form's own element, not the document: the side-panel editor
+        // opens over the full-screen one, and the first match in the document would belong
+        // to the editor behind it.
+        const host = this.#elementRef.nativeElement as HTMLElement;
+        // Called from a timeout: the editor may have closed in the meantime.
+        if (!host.isConnected) {
+            return;
+        }
+
+        const errorElements = host.querySelectorAll<HTMLDivElement>('.field-error-marker');
 
         if (errorElements.length === 0) {
             return;
@@ -999,8 +1005,8 @@ export class DotEditContentFormComponent implements OnInit {
         // The tab panels are the scroll container (see the template); the body cell is kept
         // as a fallback for a host that renders the form without them.
         const scrollContainer =
-            this.#document.querySelector<HTMLElement>('[data-testid="edit-content-form-scroll"]') ??
-            this.#document.querySelector<HTMLElement>('.edit-content-layout__body');
+            host.querySelector<HTMLElement>('[data-testid="edit-content-form-scroll"]') ??
+            host.closest<HTMLElement>('.edit-content-layout__body');
         if (!scrollContainer) {
             return;
         }

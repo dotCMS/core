@@ -1383,6 +1383,30 @@ describe('DotFormComponent', () => {
 
             expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ behavior: 'smooth' }));
         });
+
+        it('should scroll its own panels when another editor is in the page (#38724 review)', () => {
+            // The side-panel editor opens over the full-screen one: an error in this form
+            // must not scroll the editor behind it, which comes first in the document.
+            const background = document.createElement('div');
+            background.innerHTML =
+                '<div data-testid="edit-content-form-scroll"><div class="field-error-marker"></div></div>';
+            document.body.prepend(background);
+            const backgroundScroll = vi.fn();
+            (background.firstElementChild as HTMLElement).scrollTo = backgroundScroll;
+
+            const panels = spectator.query(byTestId('edit-content-form-scroll')) as HTMLElement;
+            const scrollTo = vi.fn();
+            panels.scrollTo = scrollTo;
+            const marker = document.createElement('div');
+            marker.className = 'field-error-marker';
+            panels.appendChild(marker);
+
+            component.scrollToFirstError();
+            background.remove();
+
+            expect(backgroundScroll).not.toHaveBeenCalled();
+            expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ behavior: 'smooth' }));
+        });
     });
 
     describe('Lock functionality', () => {
