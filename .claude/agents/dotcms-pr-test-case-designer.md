@@ -113,7 +113,7 @@ Your sidecar is the file your prompt names. No sidecar path in your prompt means
 {"tc":"TC-004","ac":"AC1","partitions":["EP1.3"],"scenario":"Negative","risk":"Critical","level":"Integration","coverage":"NOT COVERED","covered_by":"","title":"Users-portlet non-admin calls saveRolePermission","expected":"Rejected; SecurityLogger entry"}
 ```
 
-Append with `echo '<json>' >> <sidecar>`, one row per append. `echo` is the only writer: a hook can reject an interpreter or heredoc call, and an agent whose write was rejected tends to stop writing. The sidecar is the only file you write.
+Append with `echo '<json>' >> <sidecar>`, where `<sidecar>` is the full path your prompt names, written out exactly (a bare file name lands in the repo root, where no one reads it), one row per append. `echo` is the only writer: a hook can reject an interpreter or heredoc call, and an agent whose write was rejected tends to stop writing. The sidecar is the only file you write.
 
 **Budget.** You have 40 turns and no turn counter, so pace by order: write each case row as soon as its coverage is settled, and make at most ~5 lookups in a row without writing a row. Around turn 28 (70%), stop searching. Resumed with "write what you have", send the final message at once, with a last line `UNREVIEWED: <TC ids whose coverage you never checked>`.
 

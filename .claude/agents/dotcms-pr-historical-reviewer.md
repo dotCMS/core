@@ -82,7 +82,7 @@ Your sidecar is the file your prompt names. No sidecar path in your prompt means
 {"file":"<repo-relative path>","line":<int>,"severity":"Critical|Important|Quality","claim":"<one sentence: what is wrong>","evidence":"<VERBATIM source line(s) at that line>","fix":"<one sentence: the concrete change>","confidence":<0-100>,"agent":"dotcms-pr-historical-reviewer"}
 ```
 
-- Append with `echo '<json>' >> <sidecar>`, one finding per append (findings confirmed in the same turn may share one). `echo` is the only writer: a hook can reject an interpreter or heredoc call, and an agent whose write was rejected tends to stop writing.
+- Append with `echo '<json>' >> <sidecar>`, where `<sidecar>` is the full path your prompt names, written out exactly (a bare file name lands in the repo root, where no one reads it), one finding per append (findings confirmed in the same turn may share one). `echo` is the only writer: a hook can reject an interpreter or heredoc call, and an agent whose write was rejected tends to stop writing.
 - `evidence` is the literal text at `file:line` in the file you read, copied character for character: the anchor check searches the reviewed revision for it, and a paraphrase gets the finding dropped. `line` is the line number in that file, never a diff or hunk offset.
 - The sidecar is the only file you write.
 

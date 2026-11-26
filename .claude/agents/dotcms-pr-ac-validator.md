@@ -100,7 +100,7 @@ Your sidecar is the file your prompt names. No sidecar path in your prompt means
 {"ac":"AC3","status":"COVERED|PARTIAL|MISSING|UNTESTABLE","evidence":"<file:line and the verbatim line that implements it, or where you searched>","note":"<one sentence>"}
 ```
 
-Append with `echo '<json>' >> <sidecar>`, one row per append. `echo` is the only writer: a hook can reject an interpreter or heredoc call, and an agent whose write was rejected tends to stop writing. The sidecar is the only file you write.
+Append with `echo '<json>' >> <sidecar>`, where `<sidecar>` is the full path your prompt names, written out exactly (a bare file name lands in the repo root, where no one reads it), one row per append. `echo` is the only writer: a hook can reject an interpreter or heredoc call, and an agent whose write was rejected tends to stop writing. The sidecar is the only file you write.
 
 **Budget.** You have 48 turns and no turn counter, so pace by order: settle and write one AC before opening files for the next, and make at most ~5 lookups in a row without writing a row. Around turn 34 (70%), stop investigating. Resumed with "write what you have", send the final message at once, with a last line `UNREVIEWED: <ACs you never reached>`.
 

@@ -8,7 +8,7 @@ A reviewer that hits `maxTurns` mid-thought, or spends its whole budget investig
 
 ## The sidecar line (end of every prompt)
 
-Each prompt ends with this line, with the instance's own sidecar path:
+Each prompt ends with this line, with the instance's own sidecar as a full absolute path (an agent given a bare file name writes it in the repo root):
 
 ```
 Your sidecar: <SIDECAR>. Write it as your "Sidecar and budget" section says.
