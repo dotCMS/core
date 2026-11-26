@@ -18,7 +18,7 @@ import {
     signal,
     viewChild
 } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ControlContainer, FormControl, ReactiveFormsModule, Validator } from '@angular/forms';
 
 import { PaginatorModule } from 'primeng/paginator';
@@ -151,12 +151,19 @@ export class DotEditContentMonacoEditorControlComponent implements OnInit, OnDes
             return;
         }
 
-        // Initial state, then every status change; `ngx-monaco-editor` applies the updated
-        // `options` through `editor.updateOptions`.
+        // Initial state, then every disable/enable; `ngx-monaco-editor` applies the updated
+        // `options` through `editor.updateOptions`. Not `statusChanges`: the edit-content form
+        // toggles with `{ emitEvent: false }`, which emits no status change, while disabled-change
+        // callbacks always run. Forms has no public way to unregister one, so the callback is
+        // muted once this component is destroyed.
         this.$isDisabled.set(control.disabled);
-        control.statusChanges
-            .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe(() => this.$isDisabled.set(control.disabled));
+        let destroyed = false;
+        this.#destroyRef.onDestroy(() => (destroyed = true));
+        control.registerOnDisabledChange((isDisabled) => {
+            if (!destroyed) {
+                this.$isDisabled.set(isDisabled);
+            }
+        });
     }
 
     /**

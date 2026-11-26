@@ -209,6 +209,24 @@ describe('DotEditContentMonacoEditorControlComponent', () => {
             expect(component.$monacoOptions().readOnly).toBe(false);
         });
 
+        it('should follow a silent disable and enable of the form after it rendered (#38724 review)', () => {
+            // The edit-content form toggles with `{ emitEvent: false }`, which fires no
+            // statusChanges: e.g. the permission of an item opened in place arrives after the
+            // form was built enabled.
+            spectator.detectChanges();
+            expect(component.$monacoOptions().readOnly).toBe(false);
+
+            spectator.hostComponent.formGroup.disable({ emitEvent: false });
+            spectator.detectChanges();
+
+            expect(component.$monacoOptions().readOnly).toBe(true);
+
+            spectator.hostComponent.formGroup.enable({ emitEvent: false });
+            spectator.detectChanges();
+
+            expect(component.$monacoOptions().readOnly).toBe(false);
+        });
+
         it('should start read-only when the control is already disabled', () => {
             control()?.disable({ emitEvent: false });
             spectator.detectChanges();
