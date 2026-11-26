@@ -15,16 +15,15 @@ status: experimental
 
 ## Two uses
 
-Decide first which one the request is. The first token decides, and nothing else does: `local` is your own work, a PR number or URL is someone else's PR.
+Decide first which one the request is. `local` is your own work. A PR number or URL is your own work when you opened the PR, and someone else's PR otherwise: compare `gh pr view <N> --repo dotCMS/core --json author --jq .author.login` with `gh api user --jq .login` right after parsing, and stop with the error if either lookup fails.
 
 | Use | Invocation | Reviews | Output |
 |---|---|---|---|
 | **Someone else's PR** | `/dot-pr-review <PR number or URL> [auto \| dry-run \| force]` | the PR head, checked out from GitHub, against the PR base | findings posted on the PR after one approval (`auto` posts without asking, `dry-run` posts nothing), then an optional verdict |
 | **Your own work** | `/dot-pr-review local [base=<ref>] [issue=<ref>] [out=<dir>]` | the working tree of the current branch against its base, uncommitted changes included | a report and a test plan on disk; nothing posted, nothing asked. After fixing, rerun with `base=<the HEAD the report names>` to review only the fix |
+| **Your own work, PR already open** | `/dot-pr-review <your PR number or URL> [out=<dir>]` | the PR head, checked out from GitHub, against the PR base, with the PR's existing comments | the same report and test plan, in the same place, as `local`; nothing posted, nothing asked |
 
-Both run the same reviewers, standards, validation and anchor checks; local mode (`references/local-mode.md`) changes only where the diff comes from and where the result goes.
-
-**Your own PR, already open.** `local` on its branch reviews it as your own work. Given its number instead, the external use runs unchanged: the eligibility check skips bot authors but not you, Stage 8 offers to post the findings as comments on your own PR, and only the verdict is skipped (GitHub refuses one from the author). The exception is a PR linked to a `dotCMS/private-issues` issue: your own PR sets `SELF_TRIAGE`, every finding is kept for local triage, and nothing is posted.
+All three run the same reviewers, standards, validation and anchor checks; `references/local-mode.md` says what changes for your own work, including your own open PR.
 
 ## Arguments
 
@@ -37,9 +36,9 @@ Both run the same reviewers, standards, validation and anchor checks; local mode
 | `local` | First token: local mode. |
 | `base=<ref>` | Local mode: the base of `git diff <base>`. Default `git merge-base HEAD origin/<default branch>`, after a fetch. |
 | `issue=<ref>` | Local mode: the issue whose ACs the change is checked against (`38250`, `owner/repo#N` or a link; `dotCMS/private-issues#N` is private mode). Without it the ac-validator and the test-case designer do not run. |
-| `out=<dir>` | Local mode: where the report and the test plan go. Default `local/code-review/`, or `local/security/<N>/` for a private issue. |
+| `out=<dir>` | Your own work: where the report and the test plan go. Default `local/code-review/`, or `local/security/<N>/` for a private issue. |
 
-Parse once. `LOCAL` when the first token is `local`, then read its `key=value` tokens and read `references/local-mode.md` now: it replaces Stage 2 and lists what changes at every other stage. In local mode `auto`, `dry-run` and `force` do not apply: print `Ignoring <token>: local mode never posts.` for each one given. Otherwise set `AUTO_POST`, `DRY_RUN` and `FORCE` from their tokens. `DRY_RUN` beats `AUTO_POST` (a dry run never posts), and `DRY_RUN` and `FORCE` both bypass Stage 1.
+Parse once. `LOCAL` when the first token is `local`, then read its `key=value` tokens. `OWN_PR` when the PR is yours (above). For either, read `references/local-mode.md` now: it lists what changes at every stage, and `auto`, `dry-run` and `force` do not apply (print `Ignoring <token>: your own work is reviewed into a local report.` for each one given). Otherwise set `AUTO_POST`, `DRY_RUN` and `FORCE` from their tokens. `DRY_RUN` beats `AUTO_POST` (a dry run never posts), and `DRY_RUN` and `FORCE` both bypass Stage 1.
 
 ## Command rules
 
@@ -99,4 +98,4 @@ Read each stage's reference when you reach that stage, not before.
 | 9 | Simplifier | optional proposals, never edits | answered or skipped | `posting.md` |
 | 10 | Summary | summary, PR head checkout removed | summary printed | `posting.md` |
 
-Stages 1-6 are automatic; 8-10 are interactive unless `auto` or `dry-run`. In local mode `local-mode.md` replaces Stages 2, 7b and 8, and Stages 1 and 9 are skipped.
+Stages 1-6 are automatic; 8-10 are interactive unless `auto` or `dry-run`. For your own work (`LOCAL` or `OWN_PR`), `local-mode.md` changes Stages 2, 7, 7b, 8 and 10, and Stages 1 and 9 are skipped.

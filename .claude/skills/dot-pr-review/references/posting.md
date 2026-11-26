@@ -1,6 +1,6 @@
 # Stages 8 to 10: posting, simplifier, summary
 
-Local mode never posts: its Stage 8 writes the report instead (`local-mode.md`), skips Stage 9, and changes the Stage 10 summary.
+Your own work (`LOCAL` or `OWN_PR`) never posts: its Stage 8 writes the report instead (`local-mode.md`), skips Stage 9, and changes the Stage 10 summary.
 
 ## Stage 8: Comment Posting
 
@@ -105,7 +105,7 @@ Options:
   4. No verdict
 ```
 
-Send it with `gh api repos/dotCMS/core/pulls/<N>/reviews -X POST -f commit_id="<HEAD_SHA>" -f event="APPROVE|REQUEST_CHANGES|COMMENT" -f body="<two or three sentences: the recommendation and its main reason>"`. On a PR that fixes a private issue the body is neutral, like every other comment there. `auto` and `dry-run` never submit a verdict, and neither does a review of your own PR (the author is the current user): GitHub does not accept a verdict from a PR's author.
+Send it with `gh api repos/dotCMS/core/pulls/<N>/reviews -X POST -f commit_id="<HEAD_SHA>" -f event="APPROVE|REQUEST_CHANGES|COMMENT" -f body="<two or three sentences: the recommendation and its main reason>"`. On a PR that fixes a private issue the body is neutral, like every other comment there. `auto` and `dry-run` never submit a verdict.
 
 ### Per-finding walk-through (only when the user picks option 3)
 

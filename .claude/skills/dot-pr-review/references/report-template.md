@@ -1,6 +1,6 @@
 # Stage 7: Structured Output (SHA-Anchored Links)
 
-Print the report with SHA-anchored GitHub links. Local mode writes the same report to a file, with the changes listed in `local-mode.md`.
+Print the report with SHA-anchored GitHub links. Your own work writes the same report to a file, with the changes listed in `local-mode.md`.
 
 **Risk Level** goes up one step when `CI_GATE_EVIDENCE` shows a changed workflow that first runs after merge: no check of the PR proves it.
 

@@ -1,6 +1,6 @@
 # Stage 7b: Pre-Post Verification (runs before any comment is posted)
 
-Local mode runs its own version of this stage, in `local-mode.md`.
+For your own work, `local-mode.md` says how this stage runs: `LOCAL` checks the working tree, and `OWN_PR` runs 7b.1 to 7b.4 below and posts nothing.
 
 Everything so far was computed from the Stage 2 snapshot. Since then the PR may have moved, and other reviewers, human or bot, may have said what you are about to say: a stale anchor puts a comment on the wrong line, and a duplicate is worse than silence. This stage runs **every time** before Stage 8, interactive or `auto`, and nothing reaches GitHub without passing it.
 

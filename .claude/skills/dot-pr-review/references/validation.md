@@ -1,6 +1,6 @@
 # Stages 5 and 6: consolidate and validate
 
-Read after Stage 4b. Local mode runs both stages as written here; `local-mode.md` names its two differences (the head check and `SELF_TRIAGE`).
+Read after Stage 4b. Your own work runs both stages as written here; `local-mode.md` names its differences (the head check and anchors for `LOCAL`, and `SELF_TRIAGE`).
 
 ## Stage 5: Consolidate Findings
 
@@ -243,4 +243,4 @@ On the author's own security fix nothing is posted, and a real defect that score
 
 ### Filter
 
-Keep findings whose validator score is 80 or more and drop the rest, except under `SELF_TRIAGE` (above; in local mode `SELF_TRIAGE` follows `PRIVATE_LINKED`). Zero survivors is a valid result: Stage 7 reports "no issues found" in its usual shape.
+Keep findings whose validator score is 80 or more and drop the rest, except under `SELF_TRIAGE` (above; for your own work `SELF_TRIAGE` follows `PRIVATE_LINKED`). Zero survivors is a valid result: Stage 7 reports "no issues found" in its usual shape.

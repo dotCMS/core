@@ -1,6 +1,6 @@
 # Stages 1 and 2: eligibility and PR data
 
-Local mode skips Stage 1 and replaces this Stage 2 with "Local Stage 2" in `local-mode.md`.
+Your own work skips Stage 1. `LOCAL` replaces this Stage 2 with "Local Stage 2" in `local-mode.md`; `OWN_PR` runs it as written.
 
 ## Stage 1: Eligibility Check
 

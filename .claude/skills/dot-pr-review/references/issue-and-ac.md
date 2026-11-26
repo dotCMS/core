@@ -18,7 +18,7 @@ gh issue view <ISSUE_N> --repo "$ISSUE_REPO" --json number,title,body,labels,iss
 
    **Private linked issue:** when `ISSUE_REPO` is `dotCMS/private-issues`, set `PRIVATE_LINKED = true`. The PR is a security fix in a public repo: the review runs in full, and Stage 8 changes ("Private linked issue" in `posting.md`).
 
-   **Own PR on a private issue:** when `PRIVATE_LINKED` is true, compare the PR author (`gh pr view <N> --repo dotCMS/core --json author --jq .author.login`) with the current user (`gh api user --jq .login`). If they match, set `SELF_TRIAGE = true`: the review is the author's own check before merge, nothing is posted, and every finding feeds a local fix list ("Own PR on a private issue" in `validation.md`, the triage table in `report-template.md`).
+   **Your own work** (`LOCAL` or `OWN_PR`, `local-mode.md`): `SELF_TRIAGE = PRIVATE_LINKED`. On a private issue the review is the author's own check before merge: nothing is posted, and every finding feeds a local fix list ("Own PR on a private issue" in `validation.md`, the triage table in `report-template.md`).
 
 3. Extract the acceptance criteria from the issue body (an "Acceptance Criteria" / "AC" section; else the full body as free-form intent). Store them as `ACCEPTANCE_CRITERIA` and write them, with the issue type and the parent line below, to `<RUN_DIR>/bundles/acceptance-criteria.md`, the file the AC-aware reviewers read. The structural fields set the bar:
 
