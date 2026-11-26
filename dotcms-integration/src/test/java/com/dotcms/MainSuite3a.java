@@ -53,7 +53,8 @@ import org.junit.runners.Suite;
         com.dotmarketing.portlets.contentlet.action.ImportContentletsActionTest.class,
         com.dotmarketing.portlets.workflows.action.EditWorkflowTaskActionTest.class,
         com.dotmarketing.portal.struts.DotCustomLoginPostActionTest.class,
-        com.dotmarketing.portlets.htmlpageasset.business.render.page.PageViewSerializerRelatedContentTest.class
+        com.dotmarketing.portlets.htmlpageasset.business.render.page.PageViewSerializerRelatedContentTest.class,
+        com.dotcms.enterprise.publishing.remote.BundleTrustedListRoundTripTest.class
 })
 public class MainSuite3a {
 }
