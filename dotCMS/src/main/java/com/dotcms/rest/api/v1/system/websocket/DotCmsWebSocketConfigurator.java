@@ -61,7 +61,8 @@ public class DotCmsWebSocketConfigurator extends Configurator {
 	 * properties. The user is the one the HTTP session resolves to through
 	 * {@link PortalUtil#getUser(HttpSession)}, which checks the user's current status as every
 	 * request does; a session that yields no user there yields no user here either. Without a
-	 * session user, a JWT {@code Authorization} header is tried.
+	 * session user, a JWT {@code Authorization} header is tried; its user is put on this connection
+	 * only and the HTTP session is left as it was, so the session does not become logged in.
 	 *
 	 * @param serverEndpointConfig the endpoint configuration receiving the user properties
 	 * @param request              the handshake request, with the HTTP session and headers

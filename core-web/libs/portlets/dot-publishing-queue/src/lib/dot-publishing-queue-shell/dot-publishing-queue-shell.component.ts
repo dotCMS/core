@@ -98,7 +98,7 @@ export class DotPublishingQueueShellComponent {
         // (T174). Not while the asset list or the bundle wizard is open: a content change moves
         // no bundle row, and the dialog reloads its own list (#38303).
         inject(DotContentChangeService)
-            .changes$.pipe(takeUntilDestroyed())
+            .edits$.pipe(takeUntilDestroyed())
             .subscribe(() => {
                 if (!this.#store.selectedBundleId() && !this.#selectBundleRef) {
                     this.#store.refresh();

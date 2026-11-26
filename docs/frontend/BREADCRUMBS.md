@@ -162,7 +162,9 @@ myFeatureTab: {
   - a redirect from another portlet (Part 1 of #37759 sends Content Search and Site Browser links there): Content Drive is appended to that portlet's trail;
   - a trail that already ends on Content Drive: the trail is left alone.
 
-  The crumb links back to the same folder, filters and tree, without the params that open a panel or a folder dialog. Otherwise, once another crumb followed it, a click on it would reopen the content, or start another create, the link named.  
+  The crumb links back to the same folder, filters and tree, without the params that open a panel or a folder dialog. Otherwise, once another crumb followed it, a click on it would reopen the content, or start another create, the link named.
+
+- **URLs written outside the router**: Content Drive writes its folder, filters and tree with `Location.go` / `replaceState`, which never reaches the router. The store also listens to `Location.onUrlChange`, and while Content Drive's crumb is the last one, it follows the new URL (`followUrl`), without the params that open a panel or a dialog. Without it, coming back through the crumb opened the folder the author first arrived on instead of the one they left (#38379). The page editor also writes its address this way but keeps its own crumb: the crumb states the persona `editEmaGuard` needs, which the address leaves out for the default persona, and the editor rebuilds it whenever the page loads.  
 - **Reload with pending tab crumbs**: If a child component calls `addNewBreadcrumb` with a tab `id` before the menu finishes loading (common on hard reload), the store detects those crumbs (items with `id` but no `url`) and re-appends them after the menu effect resets the base trail. No extra work is needed in components — just always provide a stable `id`.
 
 ## Summary

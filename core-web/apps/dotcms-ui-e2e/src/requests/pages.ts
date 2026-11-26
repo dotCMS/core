@@ -17,8 +17,14 @@ export interface Page {
     inode: string;
 }
 
-type CreatePage = Omit<Page, 'identifier' | 'inode' | 'hostFolder'>;
+type CreatePage = Omit<Page, 'identifier' | 'inode' | 'hostFolder'> & {
+    /** The folder (inode or identifier) to create the page in; the default site's root when unset. */
+    hostFolder?: string;
+};
 
+/**
+ * Creates and publishes a page, at the default site's root unless `data.hostFolder` names a folder.
+ */
 export async function createPage(request: APIRequestContext, data: CreatePage): Promise<Page> {
     const sites = await getSites(request);
     const defaultSite = sites.find((site) => site.default && !site.systemHost);
@@ -31,7 +37,7 @@ export async function createPage(request: APIRequestContext, data: CreatePage): 
         data: {
             contentlet: {
                 ...data,
-                hostFolder: defaultSite.identifier
+                hostFolder: data.hostFolder ?? defaultSite.identifier
             }
         },
         headers: {

@@ -10,7 +10,7 @@ import java.util.Optional;
 import javax.imageio.ImageIO;
 import com.dotmarketing.image.focalpoint.FocalPoint;
 import com.dotmarketing.image.focalpoint.FocalPointAPIImpl;
-import com.dotmarketing.util.Logger;
+import com.dotmarketing.exception.DotRuntimeException;
 
 /**
  * Crop a image focusing in a point
@@ -50,7 +50,7 @@ public class CropImageFilter extends ImageFilter {
 		
 		try {
 
-			final BufferedImage src = ImageIO.read(file);
+			final BufferedImage src = StrictImageReader.read(file);
 			final Dimension current = new Dimension(src.getWidth(), src.getHeight());
 
 	        if(widthInput ==0 && heightInput >0){
@@ -97,15 +97,15 @@ public class CropImageFilter extends ImageFilter {
 
 			final BufferedImage out = src.getSubimage(x, y, width, height);
 			
-            final File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() +".tmp");
+            final File tempResultFile = stagingFileFor(resultFile);
 
             
 			
 			ImageIO.write(out, FILE_EXT, tempResultFile);
 			out.flush();
-			tempResultFile.renameTo(resultFile);
+			publishRendition(tempResultFile, resultFile);
 		} catch (IOException e) {
-			Logger.error(this.getClass(), e.getMessage());
+			throw new DotRuntimeException("unable to convert file:" + file + " : " + e.getMessage(), e);
 		}
 
 		

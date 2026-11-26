@@ -364,6 +364,18 @@ describe('DotPublishingQueueShellComponent — the panel named in the URL', () =
         expect(refresh).toHaveBeenCalledTimes(3);
     });
 
+    // A lock is not an edit: the listing stays as it is (#38379).
+    it('does not reload the list when content is locked or unlocked in a panel', () => {
+        mount({ editContent: IDENTIFIER, editContentLang: '2' });
+        const refresh = vi.spyOn(spectator.inject(DotPublishingQueueStore, true), 'refresh');
+
+        spectator
+            .inject(DotContentChangeService)
+            .notify({ kind: 'locked', contentlet: { inode: 'locked' } as never, depth: 0 });
+
+        expect(refresh).not.toHaveBeenCalled();
+    });
+
     /**
      * A save in a panel over one of the dialogs changes no bundle row; the dialog reloads its own
      * list. So while a dialog is open the bundle list is left alone (stack review L7-7).

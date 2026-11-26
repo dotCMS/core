@@ -7,6 +7,7 @@ import { Title } from '@angular/platform-browser';
 import { ActivatedRouteSnapshot, Router } from '@angular/router';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotSidePanelRef } from '@dotcms/ui';
 import { createFakeContentlet } from '@dotcms/utils-testing';
@@ -177,6 +178,13 @@ describe('RouterEditContentHost', () => {
                 folderPath: undefined
             });
         });
+    });
+
+    // Full-screen has no opener listing the content, so a lock change has nowhere to go (#38379).
+    it('treats a reported lock change as a no-op', () => {
+        expect(() =>
+            host.reportLockChanged({ inode: 'x', locked: true } as DotCMSContentlet)
+        ).not.toThrow();
     });
 
     describe('setContentTitle', () => {

@@ -8,6 +8,7 @@ import {
     withState
 } from '@ngrx/signals';
 
+import { Location } from '@angular/common';
 import { computed, effect, inject, signal, Signal, untracked } from '@angular/core';
 import { Event, NavigationEnd, Router } from '@angular/router';
 
@@ -17,7 +18,12 @@ import { filter, map } from 'rxjs/operators';
 
 import { MenuItemEntity } from '@dotcms/dotcms-models';
 
-import { processSpecialRoute, shouldReplaceLastCrumb } from './breadcrumb.utils';
+import {
+    followsContentDrive,
+    followUrl,
+    processSpecialRoute,
+    shouldReplaceLastCrumb
+} from './breadcrumb.utils';
 
 import { resolveMenuItem } from '../menu/menu-resolver';
 
@@ -68,7 +74,8 @@ export function withBreadcrumbs(
     return signalStoreFeature(
         withState(initialBreadcrumbState),
         withProps(() => ({
-            router: inject(Router)
+            router: inject(Router),
+            location: inject(Location)
         })),
         withComputed(({ breadcrumbs }) => {
             const breadcrumbCount = computed(() => breadcrumbs().length);
@@ -262,6 +269,17 @@ export function withBreadcrumbs(
                     .subscribe((url) => {
                         processUrl(url);
                     });
+
+                // Some pages write their state into the URL without a navigation (Content Drive,
+                // the page editor), so the router never sees it; the last crumb follows it here
+                // (#38379).
+                store.location.onUrlChange((url) => {
+                    const crumb = followUrl(url, store.lastBreadcrumb());
+
+                    if (crumb) {
+                        setLastBreadcrumb(crumb);
+                    }
+                });
             };
             return {
                 setBreadcrumbs,
@@ -295,26 +313,44 @@ export function withBreadcrumbs(
                     }
                 });
 
-                // Process current URL when menuItems become available
+                // Process current URL when menuItems become available. Only the menu is tracked:
+                // a crumb that followed a `Location` write (#38379) changes the trail while
+                // `router.url` still names the URL the author arrived on, and re-running here
+                // would rebuild the trail from that stale URL.
                 effect(() => {
                     const menu = menuItems();
-                    const currentUrl = store.router.url;
 
-                    // When `menuItems` is loaded and we have a current URL, process the route
-                    if (menu.length > 0 && currentUrl) {
-                        const breadcrumbs = store.breadcrumbs();
-                        const newUrl = `/dotAdmin/#${currentUrl}`;
+                    untracked(() => {
+                        const currentUrl = store.router.url;
 
-                        // Check if any breadcrumb matches the current URL
-                        const hasMatchingBreadcrumb = breadcrumbs.some(
-                            (crumb) => crumb.url === newUrl
-                        );
-
-                        // Only process if we don't have a matching breadcrumb for the current URL
-                        if (!hasMatchingBreadcrumb) {
-                            store._processUrl(currentUrl);
+                        // The menu also reloads later (portlet layouts change). If Content Drive
+                        // has written its own address since, and its crumb follows it, the
+                        // router's URL is stale and processing it would reset that crumb.
+                        if (
+                            followsContentDrive(
+                                store.location.path(true),
+                                currentUrl,
+                                store.lastBreadcrumb()
+                            )
+                        ) {
+                            return;
                         }
-                    }
+
+                        // When `menuItems` is loaded and we have a current URL, process the route
+                        if (menu.length > 0 && currentUrl) {
+                            const newUrl = `/dotAdmin/#${currentUrl}`;
+
+                            // Check if any breadcrumb matches the current URL
+                            const hasMatchingBreadcrumb = store
+                                .breadcrumbs()
+                                .some((crumb) => crumb.url === newUrl);
+
+                            // Only process if we don't have a matching breadcrumb for the current URL
+                            if (!hasMatchingBreadcrumb) {
+                                store._processUrl(currentUrl);
+                            }
+                        }
+                    });
                 });
             }
         })

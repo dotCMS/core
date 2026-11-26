@@ -17,6 +17,7 @@ import { map, switchMap, takeUntil, tap } from 'rxjs/operators';
 
 import {
     DotActionUrlService,
+    DotContentChangeKind,
     DotContentChangeService,
     DotContentEditor,
     DotContentEditorChoice,
@@ -458,12 +459,19 @@ export class DotEditContentOpenerService {
             lastSaved = contentlet;
             url?.saved(contentlet);
             options.saved?.(contentlet);
-            this.#changes.notify({ kind: 'saved', contentlet, depth });
+            this.#changes.notify({ kind: DotContentChangeKind.SAVED, contentlet, depth });
         };
         outputs['deleted'] = () => {
             options.deleted?.();
-            this.#changes.notify({ kind: 'deleted', contentlet: lastSaved ?? opened(), depth });
+            this.#changes.notify({
+                kind: DotContentChangeKind.DELETED,
+                contentlet: lastSaved ?? opened(),
+                depth
+            });
         };
+        // Only the new editor locks from the panel; the legacy one never emits it.
+        outputs['lockChanged'] = (contentlet: DotCMSContentlet) =>
+            this.#changes.notify({ kind: DotContentChangeKind.LOCKED, contentlet, depth });
 
         return outputs;
     }

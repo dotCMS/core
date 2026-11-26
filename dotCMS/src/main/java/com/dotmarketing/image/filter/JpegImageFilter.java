@@ -39,7 +39,6 @@ public class JpegImageFilter extends ImageFilter {
 			return resultFile;
 		}
 		
-		resultFile.delete();
 
 		try {
 			Iterator<ImageWriter> iter = ImageIO.getImageWritersByFormatName("jpeg");
@@ -51,7 +50,7 @@ public class JpegImageFilter extends ImageFilter {
 			if(progressive){
 			  iwp.setProgressiveMode(ImageWriteParam.MODE_DEFAULT);
 			}
-			BufferedImage src = ImageIO.read(file);
+			BufferedImage src = StrictImageReader.read(file);
 			BufferedImage dst = new BufferedImage(src.getWidth(), src.getHeight(), BufferedImage.TYPE_3BYTE_BGR);
 			Graphics2D graphics = dst.createGraphics();  
 
@@ -61,7 +60,7 @@ public class JpegImageFilter extends ImageFilter {
 			graphics.drawImage(src, 0, 0, src.getWidth(), src.getHeight(),null);
 			
 			
-            final File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() +".tmp.jpg");
+            final File tempResultFile = stagingFileFor(resultFile);
 
             
 			try(ImageOutputStream ios = ImageIO.createImageOutputStream(tempResultFile)){
@@ -71,7 +70,7 @@ public class JpegImageFilter extends ImageFilter {
     			writer.dispose();
 			}
 			
-	        tempResultFile.renameTo(resultFile);
+	        publishRendition(tempResultFile, resultFile);
 
 
 		} catch (Exception e) {
