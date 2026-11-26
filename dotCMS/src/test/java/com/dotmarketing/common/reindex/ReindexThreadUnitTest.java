@@ -65,6 +65,12 @@ import static org.mockito.Mockito.verify;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.never;
+import org.mockito.InOrder;
 
 /**
  * Test for {@link ReindexThread}
@@ -236,6 +242,108 @@ public class ReindexThreadUnitTest extends UnitTestBase {
                 Set.of("id2"), l1.workingRecords.keySet());
     }
 
+
+    // ================================================================================
+    // #37270 — journal entries are acknowledged once per batch, after the processor closed.
+    // ================================================================================
+
+    /**
+     * A batch's successful entries are deleted from the journal only after the bulk processor
+     * closed, which is when every bulk response of the batch has reported back. Deleting earlier
+     * lets a sibling document's success erase a failure that has not reported yet (#37270).
+     */
+    @Test
+    public void acknowledgesBatchAfterProcessorClose() throws Exception {
+        final ReindexEntry entry = ReindexEntry.builder().id(1L).identToIndex("id1").priority(0)
+                .build();
+        final ReindexQueueAPI queueApi = mock(ReindexQueueAPI.class);
+        when(queueApi.findContentToReindex()).thenReturn(Map.of("id1", entry));
+        final ContentletIndexAPI indexApi = mock(ContentletIndexAPI.class);
+        final IndexBulkProcessor proc = mock(IndexBulkProcessor.class);
+        final AtomicReference<BulkProcessorListener> listener = new AtomicReference<>();
+        when(indexApi.createBulkProcessor(any(IndexBulkListener.class))).thenAnswer(inv -> {
+            listener.set(inv.getArgument(0));
+            return proc;
+        });
+        final CountDownLatch batchAppended = new CountDownLatch(1);
+        doAnswer(inv -> {
+            // Every document of id1 was indexed in this batch.
+            listener.get().succeeded.add("id1");
+            batchAppended.countDown();
+            return null;
+        }).when(indexApi).appendToBulkProcessor(any(), any());
+
+        final Thread loop = runLoopInBackground(newThread(queueApi, indexApi));
+        try {
+            assertTrue("a batch should be appended within 5 s",
+                    batchAppended.await(5, TimeUnit.SECONDS));
+        } finally {
+            ReindexThread.stopThread();
+            loop.join(3_000);
+        }
+
+        final InOrder order = inOrder(proc, queueApi);
+        order.verify(proc).close();
+        order.verify(queueApi).deleteReindexEntry(
+                argThat((List<ReindexEntry> rows) -> rows.contains(entry)));
+    }
+
+    /**
+     * When closing the processor throws, the batch is not acknowledged: its rows stay in the
+     * journal and are read again. A lost acknowledgement costs a repeated reindex; an
+     * acknowledgement in a {@code finally} would lose the rows (#37270). Passes before the change
+     * too; it guards the implementation.
+     */
+    @Test
+    public void doesNotAcknowledgeWhenBatchThrows() throws Exception {
+        final ReindexEntry entry = ReindexEntry.builder().id(1L).identToIndex("id1").priority(0)
+                .build();
+        final ReindexQueueAPI queueApi = mock(ReindexQueueAPI.class);
+        when(queueApi.findContentToReindex()).thenReturn(Map.of("id1", entry));
+        final ContentletIndexAPI indexApi = mock(ContentletIndexAPI.class);
+        final IndexBulkProcessor proc = mock(IndexBulkProcessor.class);
+        final AtomicReference<BulkProcessorListener> listener = new AtomicReference<>();
+        when(indexApi.createBulkProcessor(any(IndexBulkListener.class))).thenAnswer(inv -> {
+            listener.set(inv.getArgument(0));
+            return proc;
+        });
+        final CountDownLatch closed = new CountDownLatch(1);
+        doAnswer(inv -> {
+            listener.get().succeeded.add("id1");
+            return null;
+        }).when(indexApi).appendToBulkProcessor(any(), any());
+        doAnswer(inv -> {
+            closed.countDown();
+            throw new RuntimeException("flush failed");
+        }).when(proc).close();
+
+        final Thread loop = runLoopInBackground(newThread(queueApi, indexApi));
+        try {
+            assertTrue("the processor should be closed within 5 s",
+                    closed.await(5, TimeUnit.SECONDS));
+        } finally {
+            ReindexThread.stopThread();
+            loop.join(3_000);
+        }
+
+        verify(queueApi, never()).deleteReindexEntry(anyList());
+    }
+
+    /** Runs the private {@code runReindexLoop} on a background thread with the state RUNNING. */
+    private static Thread runLoopInBackground(final ReindexThread thread) throws Exception {
+        setStateRunning(thread);
+        final Method runLoop = ReindexThread.class.getDeclaredMethod("runReindexLoop");
+        runLoop.setAccessible(true);
+        final Thread loopThread = new Thread(() -> {
+            try {
+                runLoop.invoke(thread);
+            } catch (Exception ignored) {
+                // InvocationTargetException is expected if stopThread races with invoke
+            }
+        });
+        loopThread.start();
+        return loopThread;
+    }
 
     // ================================================================================
     // User Story 1 (issue #36922, Bug 1) — shutdown must be deterministic and quiet.

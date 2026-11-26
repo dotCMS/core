@@ -41,6 +41,14 @@ public class BulkProcessorListener implements IndexBulkListener {
 
     final Map<String, ReindexEntry> workingRecords;
 
+    // RED STUB (#37270): compile-only, replaced by the implementation after the Red gate.
+    final Set<String> succeeded = ConcurrentHashMap.newKeySet();
+
+    // RED STUB (#37270): compile-only, replaced by the implementation after the Red gate.
+    List<ReindexEntry> entriesToAcknowledge() {
+        return List.of();
+    }
+
     static final List<String> RESERVED_IDS = List.of(Host.SYSTEM_HOST);
 
     /**
