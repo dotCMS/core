@@ -38,7 +38,7 @@ public class FailedReindexRecordViewTest {
 
     private static final Set<String> RECORD_KEYS = new TreeSet<>(Set.of("identifier", "inode",
             "title", "contentTypeVariable", "languageId", "archived", "operation", "failedAttempts",
-            "priority", "failureReason", "violation"));
+            "priority", "failureReason", "violation", "state"));
 
     private static final Set<String> VIOLATION_KEYS = new TreeSet<>(Set.of("type", "fieldPath",
             "actual"));

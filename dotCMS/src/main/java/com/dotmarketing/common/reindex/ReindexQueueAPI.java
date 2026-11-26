@@ -181,14 +181,22 @@ public interface ReindexQueueAPI {
      */
     void markAsFailed(ReindexEntry idx, String cause) throws DotDataException;
 
-    // RED STUB (#37270): compile-only, replaced by the implementation after the Red gate.
+    /**
+     * Counts the journal rows that gave up: their retries ran out and the reindex queue no longer
+     * reads them. Unlike {@link #failedRecordCount()}, rows still being retried are not counted,
+     * which is what a finished reindex reports as skipped (#37270).
+     *
+     * @return the number of parked rows
+     * @throws DotDataException if the journal cannot be read
+     */
     long parkedRecordCount() throws DotDataException;
 
     /**
-     * returns the list of all failed reindex records
-     * 
-     * @return
-     * @throws DotDataException
+     * Lists the journal rows that failed at least once, parked or still being retried, whatever
+     * band they were queued at. Describes the same rows as {@link #failedRecordCount()} (#37270).
+     *
+     * @return the failed rows, with their last failure reason
+     * @throws DotDataException if the journal cannot be read
      */
     List<ReindexEntry> getFailedReindexRecords() throws DotDataException;
 
@@ -216,9 +224,11 @@ public interface ReindexQueueAPI {
     void deleteReindexEntry(String identiferToDelete) throws DotDataException;
 
     /**
-     * returns if there are any records that have been marked as failed
-     * @return
-     * @throws DotDataException
+     * Counts the journal rows that failed at least once, parked or still being retried. Describes
+     * the same rows as {@link #getFailedReindexRecords()} (#37270).
+     *
+     * @return the number of failed rows
+     * @throws DotDataException if the journal cannot be read
      */
     long failedRecordCount() throws DotDataException;
 

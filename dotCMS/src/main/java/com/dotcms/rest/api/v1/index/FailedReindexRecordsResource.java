@@ -32,7 +32,8 @@ import javax.ws.rs.core.MediaType;
 import org.glassfish.jersey.server.JSONP;
 
 /**
- * Vendor-neutral listing of the reindex journal entries that exhausted their retries.
+ * Vendor-neutral listing of the reindex journal entries that failed at least once, parked or
+ * still being retried (#37270).
  *
  * <p>Replaces {@code GET /api/v1/esindex/failed}, which embeds each entry's full contentlet and
  * so grows with the size of the content that failed (#37269).</p>
@@ -51,14 +52,15 @@ public class FailedReindexRecordsResource {
      *
      * @param request  the HTTP request
      * @param response the HTTP response
-     * @return the failed journal entries, identified but without content values, with the
-     *         document limits and retry policy they are measured against
+     * @return the failed journal entries, parked or still being retried, identified but without
+     *         content values, with the document limits and retry policy they are measured against
      * @throws DotDataException if the journal cannot be read
      */
     @Operation(
             operationId = "listFailedReindexRecords",
             summary = "List failed reindex records",
-            description = "Returns every reindex journal entry that exhausted its retries, with the"
+            description = "Returns every reindex journal entry that failed at least once, whether it"
+                    + " gave up (parked) or will be tried again (retrying), with the"
                     + " index-document limits and retry policy they are measured against. Each"
                     + " record identifies the content (identifier, inode, title, content type"
                     + " variable, language), what the index still owes for it (reindex or delete),"

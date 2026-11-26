@@ -61,6 +61,18 @@ public class ReindexQueueFactory {
 
     private static final ConcurrentLinkedQueue<ReindexEntry> queue = new ConcurrentLinkedQueue<>();
 
+    /**
+     * Rows that failed at least once: every priority except the four fresh band values (0, 100,
+     * 200, 300). Parked rows (at or above {@code ERROR}) are included. Written as ranges, not as
+     * {@code MOD(priority, 100) <> 0}, so PostgreSQL can use the index on {@code priority}: the
+     * Maintenance screen polls the count every few seconds while a full reindex holds millions of
+     * rows. Holds while {@code RETRY_FAILED_INDEX_TIMES} is below 100 (#37270).
+     */
+    private static final String FAILED_PREDICATE = "((priority > 0 AND priority < 100)"
+            + " OR (priority > 100 AND priority < 200)"
+            + " OR (priority > 200 AND priority < 300)"
+            + " OR priority > 300)";
+
     public ConcurrentLinkedQueue<ReindexEntry> getLocalQueue() {
         return queue;
     }
@@ -184,19 +196,47 @@ public class ReindexQueueFactory {
     }
 
 
+    /**
+     * Counts the rows that failed at least once, parked or still being retried. Describes the same
+     * rows as {@link #getFailedReindexRecords()} (#37270).
+     *
+     * @return the number of failed rows
+     * @throws DotDataException if the journal cannot be read
+     */
     protected long failedRecordCount() throws DotDataException {
-        DotConnect dc = new DotConnect();
-        return dc.setSQL("SELECT count(*) as count from dist_reindex_journal where priority >= ? ")
-                .addParam(Priority.ERROR.dbValue()).getInt("count");
+        return new DotConnect()
+                .setSQL("SELECT count(*) as count FROM dist_reindex_journal WHERE "
+                        + FAILED_PREDICATE)
+                .getInt("count");
+    }
+
+    /**
+     * Counts the rows that gave up: their retries ran out and the reindex queue no longer reads
+     * them. This is what a reindex skipped, as opposed to rows that are still being retried.
+     *
+     * @return the number of parked rows
+     * @throws DotDataException if the journal cannot be read
+     */
+    protected long parkedRecordCount() throws DotDataException {
+        return new DotConnect()
+                .setSQL("SELECT count(*) as count FROM dist_reindex_journal WHERE priority >= ?")
+                .addParam(Priority.ERROR.dbValue())
+                .getInt("count");
     }
 
 
+    /**
+     * Lists the rows that failed at least once, parked or still being retried, whatever band they
+     * were queued at. Describes the same rows as {@link #failedRecordCount()} (#37270).
+     *
+     * @return the failed rows, with their last failure reason
+     * @throws DotDataException if the journal cannot be read
+     */
     @CloseDBIfOpened
     protected List<ReindexEntry> getFailedReindexRecords() throws DotDataException {
         final DotConnect dc = new DotConnect();
-        dc.setSQL(
-                "SELECT id, ident_to_index, priority, dist_action, index_val, time_entered FROM dist_reindex_journal WHERE priority > ?");
-        dc.addParam(ReindexQueueFactory.Priority.REINDEX.dbValue());
+        dc.setSQL("SELECT id, ident_to_index, priority, dist_action, index_val, time_entered"
+                + " FROM dist_reindex_journal WHERE " + FAILED_PREDICATE);
         final List<Map<String, Object>> failedRecords = dc.loadObjectResults();
         final List<ReindexEntry> failed = new ArrayList<>();
         long identifier;

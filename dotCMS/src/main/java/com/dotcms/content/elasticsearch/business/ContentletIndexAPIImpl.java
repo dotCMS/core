@@ -2001,8 +2001,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             // One message per channel with the same words: a pop-up for whoever is connected
             // and a bell notification — "finished successfully", how many contents were skipped,
             // and, on a forced switchover, that the reindex was stopped before it had finished.
+            // Parked rows only: a row still being retried was not skipped (#37270).
             new FailedIndexingNotifier().reindexFinished(
-                    queueApi.getFailedReindexRecords().size(), switchForced);
+                    queueApi.parkedRecordCount(), switchForced);
         } catch (Exception e) {
             Logger.warnAndDebug(this.getClass(), "Could not send failed-reindex notification: " + e.getMessage(), e);
         }
