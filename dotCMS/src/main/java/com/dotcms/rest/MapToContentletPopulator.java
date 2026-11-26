@@ -1054,11 +1054,13 @@ public class MapToContentletPopulator  {
                     } catch (Exception e) {
 
                         Logger.warn(this, e.getMessage(), e);
+                        // The detail stays in the log above: a Lucene value can produce search
+                        // engine errors that should not reach API clients.
                         appendSaveWarning(contentlet, String.format(
                                 "Relationship field '%s' was not changed: its value could not be "
-                                        + "resolved (%s). Send related identifiers as a "
+                                        + "resolved. Send related identifiers as a "
                                         + "comma-separated string or an array, or a Lucene query.",
-                                queryEntry.getKey(), e.getMessage()));
+                                queryEntry.getKey()));
                     }
                 } else if (query != null && query.trim().equals("")){
 

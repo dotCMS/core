@@ -4,22 +4,20 @@ package com.dotcms.rest.api.v2.contenttype;
 import static com.dotcms.util.CollectionsUtils.imap;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
-import io.vavr.control.Try;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.api.v1.contenttype.ContentTypeHelper;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -120,7 +118,8 @@ public class FieldResource implements Serializable {
 
             } else {
 
-                field = fieldAPI.save(withContentTypeFromPath(field, typeIdOrVarName, user), user);
+                field = fieldAPI.save(ContentTypeHelper.getInstance()
+                        .withContentTypeFromPath(field, typeIdOrVarName, user), user);
 
                 response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(field).mapObject())).build();
             }
@@ -130,35 +129,6 @@ public class FieldResource implements Serializable {
         }
 
         return response;
-    }
-
-    /**
-     * The field to create on the content type named in the path. A body without
-     * {@code contentTypeId} gets the path's type; a body whose {@code contentTypeId} names another
-     * type (by id or variable) is refused rather than saved on that other type. The returned field
-     * always carries the type's id.
-     *
-     * @throws DotStateException (400) when the body and the path name different content types
-     */
-    public static Field withContentTypeFromPath(final Field field, final String typeIdOrVarName,
-                                                final User user)
-            throws DotDataException, DotSecurityException {
-        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
-        final ContentType contentType = contentTypeAPI.find(typeIdOrVarName);
-        final String bodyType = field.contentTypeId();
-        if (UtilMethods.isSet(bodyType) && !bodyType.equals(contentType.id())) {
-            // The body may name the type by id or by variable, like the path does.
-            final String bodyTypeId = Try.of(() -> contentTypeAPI.find(bodyType).id())
-                    .getOrNull();
-            if (!contentType.id().equals(bodyTypeId)) {
-                throw new DotStateException(String.format(
-                        "The field's contentTypeId '%s' does not match the content type in the "
-                                + "path ('%s', id '%s'). Omit contentTypeId: the path decides "
-                                + "the type.",
-                        bodyType, typeIdOrVarName, contentType.id()));
-            }
-        }
-        return FieldBuilder.builder(field).contentTypeId(contentType.id()).build();
     }
 
     @GET

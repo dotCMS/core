@@ -13,6 +13,7 @@ import com.dotcms.rest.exception.BadRequestException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.contenttype.model.field.CustomField;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.ImmutableCustomField;
 import com.dotcms.contenttype.model.field.layout.FieldLayout;
 import com.dotcms.contenttype.model.field.layout.FieldUtil;
@@ -30,6 +31,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.workflow.form.WorkflowSystemActionForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -1143,6 +1145,39 @@ public class ContentTypeHelper implements Serializable {
                 .build();
         rebuilt.constructWithFields(fields);
         return rebuilt;
+    }
+
+    /**
+     * The field to create on the content type named in the path. A body without
+     * {@code contentTypeId} gets the path's type; a body whose {@code contentTypeId} names another
+     * type (by id or variable) is refused rather than saved on that other type. The returned field
+     * always carries the type's id. Without a type in the path, the field is returned as given,
+     * so the body decides as before.
+     *
+     * @throws DotStateException (400) when the body and the path name different content types
+     */
+    public Field withContentTypeFromPath(final Field field, final String typeIdOrVarName,
+                                                final User user)
+            throws DotDataException, DotSecurityException {
+        if (!UtilMethods.isSet(typeIdOrVarName)) {
+            return field;
+        }
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+        final ContentType contentType = contentTypeAPI.find(typeIdOrVarName);
+        final String bodyType = field.contentTypeId();
+        if (UtilMethods.isSet(bodyType) && !bodyType.equals(contentType.id())) {
+            // The body may name the type by id or by variable, like the path does.
+            final String bodyTypeId = Try.of(() -> contentTypeAPI.find(bodyType).id())
+                    .getOrNull();
+            if (!contentType.id().equals(bodyTypeId)) {
+                throw new DotStateException(String.format(
+                        "The field's contentTypeId '%s' does not match the content type in the "
+                                + "path ('%s', id '%s'). Omit contentTypeId: the path decides "
+                                + "the type.",
+                        bodyType, typeIdOrVarName, contentType.id()));
+            }
+        }
+        return FieldBuilder.builder(field).contentTypeId(contentType.id()).build();
     }
 
     /**

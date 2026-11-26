@@ -165,7 +165,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
    * envelope's {@code messages}; it is never persisted (stripped with the other transient
    * workflow keys).
    */
-  public static final String SAVE_WARNINGS_KEY = "__saveWarnings__";
+  // The value predates the name: it is kept because callers compiled against the released
+  // STORY_BLOCK_CONVERSION_WARNINGS_KEY have this string inlined.
+  public static final String SAVE_WARNINGS_KEY = "__storyBlockConversionWarnings__";
 
   /**
    * @deprecated The key now carries every save warning, not only Story Block conversion ones.

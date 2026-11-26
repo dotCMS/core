@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v2.contenttype;
 
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.test.util.ApiTokenTestUtils;
 import org.junit.ClassRule;
 
@@ -2642,5 +2643,103 @@ public class FieldResourceTest {
         request.setHeader("Authorization", TOKEN_UTILS.adminBearerHeader());
 
         return request;
+    }
+
+    private static String textFieldJson(final String variable, final String contentTypeId) {
+        return "{"
+                + "\"clazz\": \"" + ImmutableTextField.class.getCanonicalName() + "\","
+                + "\"name\": \"" + variable + "\", \"variable\": \"" + variable + "\","
+                + "\"dataType\": \"TEXT\""
+                + (null == contentTypeId ? "" : ", \"contentTypeId\": \"" + contentTypeId + "\"")
+                + "}";
+    }
+
+    private static FieldResource systemUserFieldResource() {
+        final WebResource webResource = mock(WebResource.class);
+        final InitDataObject initData = mock(InitDataObject.class);
+        when(initData.getUser()).thenReturn(APILocator.systemUser());
+        when(webResource.init(nullable(String.class), any(HttpServletRequest.class),
+                any(HttpServletResponse.class), anyBoolean(), nullable(String.class)))
+                .thenReturn(initData);
+        return new FieldResource(webResource, APILocator.getContentTypeFieldAPI());
+    }
+
+    private static boolean hasField(final ContentType contentType, final String variable)
+            throws DotDataException {
+        return APILocator.getContentTypeFieldAPI().byContentTypeId(contentType.id()).stream()
+                .anyMatch(field -> variable.equals(field.variable()));
+    }
+
+    /**
+     * Method to test: {@link FieldResource#createContentTypeField}
+     * Given Scenario: The body has no contentTypeId; the path names the type by id, then by variable
+     * Expected Result: 200, and the field is created on the path's type
+     */
+    @Test
+    public void test_createField_withoutContentTypeIdInBody_usesThePathType() throws Exception {
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        try {
+            final FieldResource resource = systemUserFieldResource();
+
+            final Response byId = resource.createContentTypeField(contentType.id(),
+                    textFieldJson("pathById", null), getHttpRequest(), new EmptyHttpResponse());
+            assertEquals(byId.getEntity().toString(), 200, byId.getStatus());
+
+            final Response byVariable = resource.createContentTypeField(contentType.variable(),
+                    textFieldJson("pathByVariable", null), getHttpRequest(), new EmptyHttpResponse());
+            assertEquals(byVariable.getEntity().toString(), 200, byVariable.getStatus());
+
+            assertTrue(hasField(contentType, "pathById"));
+            assertTrue(hasField(contentType, "pathByVariable"));
+        } finally {
+            ContentTypeDataGen.remove(contentType);
+        }
+    }
+
+    /**
+     * Method to test: {@link FieldResource#createContentTypeField}
+     * Given Scenario: The body names the path's type by its variable
+     * Expected Result: 200, and the field is stored with the type's id
+     */
+    @Test
+    public void test_createField_bodyNamesThePathTypeByVariable_storesTheId() throws Exception {
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        try {
+            final Response response = systemUserFieldResource().createContentTypeField(
+                    contentType.id(), textFieldJson("sameType", contentType.variable()),
+                    getHttpRequest(), new EmptyHttpResponse());
+
+            assertEquals(response.getEntity().toString(), 200, response.getStatus());
+            final Field saved = APILocator.getContentTypeFieldAPI()
+                    .byContentTypeIdAndVar(contentType.id(), "sameType");
+            assertEquals(contentType.id(), saved.contentTypeId());
+        } finally {
+            ContentTypeDataGen.remove(contentType);
+        }
+    }
+
+    /**
+     * Method to test: {@link FieldResource#createContentTypeField}
+     * Given Scenario: The body's contentTypeId names a different type than the path
+     * Expected Result: 400, and no field is created on either type
+     */
+    @Test
+    public void test_createField_bodyNamesAnotherType_return400() throws Exception {
+        final ContentType pathType = new ContentTypeDataGen().nextPersisted();
+        final ContentType otherType = new ContentTypeDataGen().nextPersisted();
+        try {
+            final Response response = systemUserFieldResource().createContentTypeField(
+                    pathType.id(), textFieldJson("mismatch", otherType.id()),
+                    getHttpRequest(), new EmptyHttpResponse());
+
+            assertEquals(400, response.getStatus());
+            assertTrue(response.getEntity().toString(),
+                    response.getEntity().toString().contains("does not match the content type in the path"));
+            assertFalse(hasField(pathType, "mismatch"));
+            assertFalse(hasField(otherType, "mismatch"));
+        } finally {
+            ContentTypeDataGen.remove(pathType);
+            ContentTypeDataGen.remove(otherType);
+        }
     }
 }

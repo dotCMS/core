@@ -202,7 +202,7 @@ public class FieldResource implements Serializable {
 
 			} else {
 
-				field = fapi.save(com.dotcms.rest.api.v2.contenttype.FieldResource
+				field = fapi.save(ContentTypeHelper.getInstance()
 						.withContentTypeFromPath(field, typeId, user), user);
 
 				response = Response.ok(new ResponseEntityView<>(new JsonFieldTransformer(field).mapObject())).build();
