@@ -17,6 +17,6 @@ public record ExportRow(String inode, String identifier, long languageId, String
      * @return {@code identifier + ":" + languageId}
      */
     public String key() {
-        throw new UnsupportedOperationException("not implemented");
+        return identifier + ":" + languageId;
     }
 }

@@ -1,6 +1,8 @@
 package com.dotcms.rest.api.v1.drive.export;
 
 import com.dotcms.rest.api.v1.drive.DriveRequestForm;
+import com.dotcms.rest.exception.BadRequestException;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -74,6 +76,25 @@ public interface AbstractDriveExportRequestForm {
      *         has no identifier or no valid language
      */
     default Mode validate() {
-        throw new UnsupportedOperationException("not implemented");
+        final ExportSelectionForm selection = selection();
+        final int selected = selection == null ? 0
+                : selection.folders().size() + selection.contentlets().size();
+        if (selected == 0) {
+            if (query() == null) {
+                throw new BadRequestException(
+                        "Select items or filter the listing to one content type to export.");
+            }
+            return Mode.FILTER;
+        }
+        if (selected > MAX_SELECTION_ITEMS) {
+            throw new BadRequestException(
+                    "You can export at most " + MAX_SELECTION_ITEMS + " items at once.");
+        }
+        for (final ExportContentletRefForm contentlet : selection.contentlets()) {
+            if (!UtilMethods.isSet(contentlet.identifier()) || contentlet.languageId() <= 0) {
+                throw new BadRequestException("Invalid contentlet in the selection.");
+            }
+        }
+        return Mode.SELECTION;
     }
 }

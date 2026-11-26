@@ -7,6 +7,8 @@ import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.content.export.ContentletCsvWriter;
+import com.dotcms.content.export.HostFolderMode;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.*;
@@ -1910,6 +1912,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	 *            - The Content Type Inode of the contentlets.
 	 * @throws DotSecurityException
 	 *             An error occurred when retrieving contentlet data.
+	 * @throws DotDataException
+	 *             The Content Type could not be read.
 	 */
 	public void downloadToExcel(final HttpServletResponse response, final User user, final List<Map<String, String>> contentletsToExport, final String contentTypeInode) throws DotSecurityException, DotDataException {
 		PrintWriter writer = null;
@@ -1918,18 +1922,9 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			final List<String> contentletInodes = new ArrayList<>();
 			for (int i = 2; i < contentletsToExport.size(); ++i) {
 				final Object contentletData = contentletsToExport.get(i);
-				if (contentletData != null && contentletData instanceof HashMap) {
+				if (contentletData instanceof HashMap) {
                     final Map<String, String> contentletMap = contentletsToExport.get(i);
 					contentletInodes.add(contentletMap.get("inode"));
-				}
-			}
-			final List<Contentlet> contentletList = new ArrayList<>();
-			for (final String inode : contentletInodes) {
-				try{
-                    final Contentlet contentlet = this.conAPI.find(inode, user, DONT_RESPECT_FRONTEND_ROLES);
-                    contentletList.add(contentlet);
-				} catch (final DotDataException ex){
-					Logger.warn(this, "Unable to find contentlet with Inode: " + inode);
 				}
 			}
             int totalSize = 0;
@@ -1941,136 +1936,10 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
                         + StandardCharsets.UTF_8.name());
                 response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + csvFileName +"\"");
 				writer = response.getWriter();
-				writer.print("Identifier");
-				writer.print(",languageCode");
-				writer.print(",countryCode");
-                final List<com.dotcms.contenttype.model.field.Field> contentTypeFields =
-                        APILocator.getContentTypeFieldAPI().byContentTypeId((contentTypeInode));
-				for (final com.dotcms.contenttype.model.field.Field field : contentTypeFields) {
-				    // Exclude fields that are not exportable
-					if (isNewFieldTypeAllowedOnImportExport(field)) {
-						writer.print("," + field.variable());
-					}
-				}
-
-				writer.print("\r\n");
-				int counter = 0;
-				int loggingPoint = 2000;
-                totalSize = contentletList.size();
-				for (final Contentlet content : contentletList) {
-                    counter += 1;
-                    if (counter % loggingPoint == 0) {
-                        Logger.info(this, String.format("Exporting %d out of %d contentlet(s)", counter, totalSize));
-                    }
-					final List<Category> catList = this.catAPI.getParents(content, user, DONT_RESPECT_FRONTEND_ROLES);
-					writer.print(content.getIdentifier());
-					final Language lang = APILocator.getLanguageAPI().getLanguage(content.getLanguageId());
-					writer.print("," +lang.getLanguageCode());
-					writer.print(","+lang.getCountryCode());
-
-					for (final com.dotcms.contenttype.model.field.Field field: contentTypeFields) {
-						try {
-							// We don't need to export fields of these types
-							if (!isNewFieldTypeAllowedOnImportExport(field)) {
-                               continue;
-							}
-
-							Object value = StringPool.BLANK;
-							if (this.conAPI.getFieldValue(content,field) != null) {
-								value = this.conAPI.getFieldValue(content,field);
-							}
-							String text = StringPool.BLANK;
-							if (field instanceof CategoryField) {
-								final Category category = this.catAPI.find(field.values(), user, DONT_RESPECT_FRONTEND_ROLES);
-                                final List<Category> children = catList;
-                                final List<Category> allChildren= this.catAPI.getAllChildren(category, user, DONT_RESPECT_FRONTEND_ROLES);
-								if (children.size() >= 1 && this.catAPI.canUseCategory(category, user, DONT_RESPECT_FRONTEND_ROLES)) {
-									for (final Category cat : children){
-										if(allChildren.contains(cat)){
-											if(UtilMethods.isSet(cat.getKey())){
-												text = text+","+cat.getKey();
-											}else{
-												text = text+","+cat.getCategoryName();
-											}
-										}
-									}
-								}
-								if(UtilMethods.isSet(text)){
-									text=text.substring(1);
-								}
-							} else if (field instanceof TagField) {
-							    //Get Content Tags per field's Velocity Var Name
-                                final List<Tag> tags = this.tagAPI.getTagsByInodeAndFieldVarName(content.getInode(), field.variable());
-							    if (!tags.isEmpty()) {
-							        for (final Tag tag : tags){
-							            if(text.equals(StringPool.BLANK)) {
-							                text = tag.getTagName();
-							            } else {
-							                text = text + "," + tag.getTagName();
-							            }
-							        }
-							    }
-							} else if (field instanceof RelationshipField) {
-								text = loadRelationships(((ContentletRelationships)value).getRelationshipsRecords());
-							} else if (field instanceof KeyValueField) {
-								text = new ObjectMapper().writeValueAsString(value);
-                            } else if (BaseContentType.HTMLPAGE.equals(contentType.baseType()) && PageContentType
-                                    .PAGE_URL_FIELD_VAR.equalsIgnoreCase(field.variable())) {
-                                final Identifier id = APILocator.getIdentifierAPI().find(content.getIdentifier());
-                                if (null != id && UtilMethods.isSet(id.getId())) {
-                                    text = id.getPath();
-                                }
-							} else if (field instanceof ImageField || field instanceof FileField) {
-								// Both field types store the identifier of a file asset; export its path
-								final String fileIdentifier = value.toString();
-								if (UtilMethods.isSet(fileIdentifier)) {
-									final Identifier id = APILocator.getIdentifierAPI().find(fileIdentifier);
-									if (null != id && UtilMethods.isSet(id.getId())) {
-										text = id.getPath();
-									}
-								}
-
-							} else if (field instanceof BinaryField){
-								final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-								final String fileLink = new ResourceLink.ResourceLinkBuilder().getFileLink(request, user, content, field.variable());
-								text = fileLink;
-							} else{
-								if (value instanceof Date || value instanceof Timestamp) {
-									if (field instanceof DateField) {
-                                        final SimpleDateFormat formatter = new SimpleDateFormat (WebKeys.DateFormats.EXP_IMP_DATE);
-										text = formatter.format(value);
-									} else if (field instanceof DateTimeField) {
-                                        final SimpleDateFormat formatter = new SimpleDateFormat (WebKeys.DateFormats.EXP_IMP_DATETIME);
-										text = formatter.format(value);
-									} else if (field instanceof TimeField) {
-                                        final SimpleDateFormat formatter = new SimpleDateFormat (WebKeys.DateFormats.EXP_IMP_TIME);
-										text = formatter.format(value);
-									}
-								} else {
-									text = value.toString();
-									if(text.endsWith(",")){
-										text = text.substring (0, text.length()-1);
-									}
-								}
-							}
-							//Windows carriage return conversion
-							text = text.replaceAll("\r","");
-							if(text.contains(",") || text.contains("\n")) {
-								//Double quotes replacing
-								text = text.replaceAll("\"","\"\"");
-								writer.print(",\""+text+"\"");
-							} else {
-								writer.print(","+text);
-							}
-						} catch (final Exception e) {
-							writer.print(",");
-                            Logger.error(this, String.format("An error occurred when exporting field '%s' [%s] to CSV" +
-                                    " file '%s': %s", field.name(), field.inode(), csvFileName, e.getMessage()), e);
-						}
-					}
-					writer.print("\r\n");
-				}
-				writer.flush();
+				// The Content Drive export writes the same file through the same writer
+				totalSize = new ContentletCsvWriter().write(contentType, contentletInodes, user,
+						HttpServletRequestThreadLocal.INSTANCE.getRequest(), HostFolderMode.IDENTIFIER,
+						writer);
 				writer.close();
 				HibernateUtil.closeSession();
 			} catch (final Exception p) {
@@ -2094,22 +1963,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
         } else {
 			try {writer.print("\r\n");} catch (Exception e) {	Logger.debug(this,"Error: download to excel "+e);	}
 		}
-	}
-
-	/**
-	 * Builds the list of related records separated by comma
-	 */
-	private String loadRelationships(List<ContentletRelationshipRecords> relationshipRecords)
-			throws DotDataException {
-
-		final StringBuilder result = new StringBuilder();
-
-		relationshipRecords.forEach(record -> result.append(String
-				.join(StringPool.COMMA,
-						record.getRecords().stream().map(Contentlet::getIdentifier).collect(
-								Collectors.toList()))));
-
-		return result.toString();
 	}
 
 	/**

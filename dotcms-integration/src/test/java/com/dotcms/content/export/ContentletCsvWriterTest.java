@@ -447,8 +447,11 @@ public class ContentletCsvWriterTest extends IntegrationTestBase {
      */
     @Test
     public void test_write_skipsRowsTheUserCannotRead() throws Exception {
+        // A back-end user, as every Drive user is: dotCMS denies a front-end user READ on any
+        // contentlet that is not live, and these fixtures are working versions.
         final Role role = new RoleDataGen().nextPersisted();
-        final User limitedUser = new UserDataGen().roles(role).nextPersisted();
+        final User limitedUser = new UserDataGen()
+                .roles(role, APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
         final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
         permissionAPI.save(new Permission(inFolder.getPermissionId(), role.getId(),
                 PermissionAPI.PERMISSION_READ), inFolder, systemUser, false);
