@@ -140,6 +140,9 @@ function retryFailedRecords () {
             alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"Retry-Failed-Reindex-Records-Refused")) %>');
             return null;
         }
+        if (!response.ok) {
+            throw new Error(response.status);
+        }
         return response.json();
     })
     .then(data => {
@@ -147,8 +150,13 @@ function retryFailedRecords () {
             alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"Retry-Failed-Reindex-Records-Done")) %>'
                 .replace('{0}', data.entity.requeued));
         }
-        checkReindexation();
-    });
+    })
+    .catch(error => {
+        // A 401, a 500 or a body that is not JSON: tell the admin instead of failing silently.
+        alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"Retry-Failed-Reindex-Records-Failed")) %>'
+            .replace('{0}', error.message));
+    })
+    .finally(() => checkReindexation());
 }
 
 function deleteFailedRecords () {

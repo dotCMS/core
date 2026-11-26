@@ -179,6 +179,25 @@ public class ContentletIndexAPIImplShadowAddFailureTest {
                 lastReason.contains("primary rejected document"));
     }
 
+    /**
+     * Given Scenario: The first document of the entry reaches the primary's processor and the
+     * second one throws while it is being added, so the entry is partly queued (#37270, AC-004).
+     * Expected Result: Besides being marked failed, the entry is withheld on the processor. The
+     * queued sibling will succeed; without the withhold the end of the batch would acknowledge
+     * the entry and delete the row that now holds this failure.
+     */
+    @Test
+    public void test_primaryAddFailureAfterQueuedSibling_withholdsEntry() throws Exception {
+        doThrow(new IllegalStateException("primary rejected document"))
+                .when(esOps).addIndexOpToProcessor(esProc, ES_WORKING, "doc-2", MAPPING);
+
+        append();
+
+        verify(esOps).addIndexOpToProcessor(esProc, ES_WORKING, "doc-1", MAPPING);
+        verify(queueAPI).markAsFailed(eq(entry), eq("primary rejected document"));
+        verify(esProc).withhold("id-1");
+    }
+
     /** Appends the entry through a Phase 1 composite with the journal API mocked. */
     private void append() throws Exception {
         final ContentletIndexAPIImpl.CompositeBulkProcessor composite =

@@ -348,19 +348,6 @@ public class ReindexQueueFactory {
     }
 
     /**
-     * Sends every parked row back to the queue (#37270). Each row returns to the band it was
-     * queued at, with a fresh retry budget: the parked value minus {@code ERROR}, rounded down to
-     * the hundred (705 → 300, 505 → 100). It keeps its row id, so a newer row for the same
-     * identifier still supersedes it. A parked reindex row whose content no longer exists comes
-     * back as a delete, so its stale document leaves the index instead of the row being dropped
-     * when the content cannot be loaded. The server is cleared and the row is stamped now:
-     * left with an old timestamp, the stale-row requeue would take it for a stuck one as soon as
-     * it is picked up. Must run inside a transaction so both statements apply together.
-     *
-     * @return how many rows were requeued, and how many of them as deletes
-     * @throws DotDataException if the journal cannot be updated
-     */
-    /**
      * Deletes the parked rows, the ones whose retries ran out, and returns their identifiers so the
      * caller can record what was dropped (#37270). Rows still being retried are kept. A single
      * {@code DELETE … RETURNING} makes the returned set exactly the deleted set: a row that parks
@@ -382,6 +369,19 @@ public class ReindexQueueFactory {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Sends every parked row back to the queue (#37270). Each row returns to the band it was
+     * queued at, with a fresh retry budget: the parked value minus {@code ERROR}, rounded down to
+     * the hundred (705 → 300, 505 → 100). It keeps its row id, so a newer row for the same
+     * identifier still supersedes it. A parked reindex row whose content no longer exists comes
+     * back as a delete, so its stale document leaves the index instead of the row being dropped
+     * when the content cannot be loaded. The server is cleared and the row is stamped now:
+     * left with an old timestamp, the stale-row requeue would take it for a stuck one as soon as
+     * it is picked up. Must run inside a transaction so both statements apply together.
+     *
+     * @return how many rows were requeued, and how many of them as deletes
+     * @throws DotDataException if the journal cannot be updated
+     */
     protected ParkedRecordsRetry retryParkedRecords() throws DotDataException {
         final int asDelete = new DotConnect().executeUpdate(
                 "UPDATE dist_reindex_journal SET dist_action = ?"

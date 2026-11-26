@@ -36,6 +36,9 @@ import com.google.common.collect.ImmutableList;
  */
 public class ReindexQueueAPIImpl implements ReindexQueueAPI {
 
+    /** Most identifiers per log line of a clear, so a large clear does not produce one huge line. */
+    private static final int CLEARED_IDENTIFIERS_PER_LINE = 500;
+
     private final ReindexQueueFactory reindexQueueFactory;
     private final Supplier<FailedIndexingNotifier> notifier;
 
@@ -103,8 +106,6 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
     public long failedRecordCount() throws DotDataException {
         return reindexQueueFactory.failedRecordCount();
     }
-    /** Most identifiers per log line of a clear, so a large clear does not produce one huge line. */
-    private static final int CLEARED_IDENTIFIERS_PER_LINE = 500;
 
     @Override
     @WrapInTransaction

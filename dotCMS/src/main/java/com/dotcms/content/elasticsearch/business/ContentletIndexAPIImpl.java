@@ -2906,7 +2906,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * document the engine clients' parser would refuse is withheld: the processor is told to
      * {@link IndexBulkProcessor#withhold(String) withhold} the identifier and the entry is marked
      * failed with the field and size, before any healthy sibling is queued (#37269). A mapping
-     * or primary queueing failure marks the entry failed; a pool-exhaustion failure is rethrown
+     * failure marks the entry failed. A primary queueing failure also withholds it, since some of
+     * its documents may already be queued (#37270). A pool-exhaustion failure is rethrown
      * untouched so the reindex loop can back off.</p>
      *
      * @param proc the bulk processor of the current reindex iteration
@@ -2957,6 +2958,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         try {
             enqueueMappedDocuments(proc, healthy, idx.isReindex());
         } catch (final Exception e) {
+            // Siblings queued before the failure will succeed: without the withhold, the end of
+            // the batch would acknowledge this entry and delete the row holding the failure.
+            proc.withhold(idx.getIdentToIndex());
             // Keep the withheld document's attribution: the primary's error must not replace it.
             APILocator.getReindexQueueAPI().markAsFailed(idx, rejections.isEmpty()
                     ? e.getMessage()

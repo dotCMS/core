@@ -67,6 +67,16 @@ public class FailedReindexRecordsTest {
     private static ContentType contentType;
     private static User systemUser;
 
+    /**
+     * Holds the journal rows that existed before the class ran. Retry, clear and the wide delete
+     * act on the whole journal, so those rows are set aside first and put back at the end instead
+     * of being requeued or deleted by these tests.
+     */
+    private static final String JOURNAL_BACKUP = "failed_reindex_records_test_journal";
+
+    /** Every contentlet the class created, destroyed at the end. */
+    private static final List<Contentlet> createdContentlets = new ArrayList<>();
+
     /** Identifier of every row a test inserted, removed after each test. */
     private final List<String> inserted = new ArrayList<>();
 
@@ -78,15 +88,44 @@ public class FailedReindexRecordsTest {
         systemUser = APILocator.systemUser();
         Config.setProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", true);
         ReindexThread.pause();
+        setJournalAside();
         contentType = new ContentTypeDataGen()
                 .field(new FieldDataGen().type(TextAreaField.class).velocityVarName("body").next())
                 .nextPersisted();
     }
 
     @AfterClass
-    public static void restore() {
-        Config.setProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false);
-        ReindexThread.unpause();
+    public static void restore() throws Exception {
+        try {
+            for (final Contentlet contentlet : createdContentlets) {
+                // Silently: one of them had its versions deleted by hand.
+                ContentletDataGen.destroy(contentlet, true);
+            }
+            createdContentlets.clear();
+            if (contentType != null) {
+                ContentTypeDataGen.remove(contentType, true);
+            }
+            putJournalBack();
+        } finally {
+            Config.setProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false);
+            ReindexThread.unpause();
+        }
+    }
+
+    /** Moves every existing journal row to a backup table and empties the journal. */
+    private static void setJournalAside() throws Exception {
+        new DotConnect().executeStatement("DROP TABLE IF EXISTS " + JOURNAL_BACKUP);
+        new DotConnect().executeStatement(
+                "CREATE TABLE " + JOURNAL_BACKUP + " AS SELECT * FROM dist_reindex_journal");
+        new DotConnect().executeStatement("DELETE FROM dist_reindex_journal");
+    }
+
+    /** Replaces what the tests left in the journal with the rows set aside before the class. */
+    private static void putJournalBack() throws Exception {
+        new DotConnect().executeStatement("DELETE FROM dist_reindex_journal");
+        new DotConnect().executeStatement(
+                "INSERT INTO dist_reindex_journal SELECT * FROM " + JOURNAL_BACKUP);
+        new DotConnect().executeStatement("DROP TABLE " + JOURNAL_BACKUP);
     }
 
     @After
@@ -370,10 +409,12 @@ public class FailedReindexRecordsTest {
     }
 
     private static Contentlet newContentlet(final String body) {
-        return new ContentletDataGen(contentType)
+        final Contentlet contentlet = new ContentletDataGen(contentType)
                 .setProperty("body", body)
                 .setPolicy(IndexPolicy.DEFER)
                 .nextPersisted();
+        createdContentlets.add(contentlet);
+        return contentlet;
     }
 
     /**

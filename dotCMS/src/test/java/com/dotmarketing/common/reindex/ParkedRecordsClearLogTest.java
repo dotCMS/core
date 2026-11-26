@@ -3,6 +3,8 @@ package com.dotmarketing.common.reindex;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -37,14 +39,15 @@ public class ParkedRecordsClearLogTest {
         assertEquals(4, lines.size());
         assertTrue(lines.get(0), lines.get(0).contains("dotcms.org.1"));
         assertTrue(lines.get(0), lines.get(0).contains("1201"));
-        int listed = 0;
+        final List<String> listed = new ArrayList<>();
         for (final String line : lines.subList(1, lines.size())) {
-            final long ids = identifiers.stream().filter(id -> line.contains(id + ",")
-                    || line.endsWith(id)).count();
-            assertTrue("at most 500 identifiers per line, got " + ids, ids <= 500);
-            listed += (int) ids;
+            // Each identifier line is "<label>: id, id, ...": parse it rather than search it.
+            final List<String> ids = Arrays.asList(
+                    line.substring(line.indexOf("): ") + 3).split(", "));
+            assertTrue("at most 500 identifiers per line, got " + ids.size(), ids.size() <= 500);
+            listed.addAll(ids);
         }
-        assertEquals("every identifier is logged once", 1_201, listed);
+        assertEquals("every identifier is logged once, in order", identifiers, listed);
     }
 
     /**

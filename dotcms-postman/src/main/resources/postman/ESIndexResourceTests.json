@@ -951,6 +951,51 @@
 					"protocolProfileBehavior": {
 						"disableCookies": true
 					}
+				},
+				{
+					"name": "ClearFailedRecordsWithoutCredentials",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "1f54f949-be53-4f80-8198-b7f5a0f64b58",
+								"exec": [
+									"pm.test(\"Anonymous is rejected\", function () { pm.response.to.have.status(401); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/esindex/failed",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"esindex",
+								"failed"
+							]
+						}
+					},
+					"response": [],
+					"protocolProfileBehavior": {
+						"disableCookies": true
+					}
 				}
 			],
 			"protocolProfileBehavior": {}
