@@ -2636,6 +2636,13 @@ public class BrowserAPIImpl implements BrowserAPI {
         return returnMap;
     }
 
+    @CloseDBIfOpened
+    @Override
+    public ExportCandidates getContentForExport(final BrowserQuery browserQuery, final int maxRows)
+            throws DotSecurityException, DotDataException {
+        throw new UnsupportedOperationException("not implemented");
+    }
+
     @Override
     @CloseDBIfOpened
     public PaginatedContents getPaginatedContents(final BrowserQuery browserQuery)

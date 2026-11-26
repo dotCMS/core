@@ -4,6 +4,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.drive.export.DriveExportRequestForm;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
@@ -103,6 +104,28 @@ public class ContentDriveResource {
                 String.format("User [%s] is requesting content drive search for path [%s]",
                         user.getUserId(), form.assetPath()));
         return Response.ok(new ResponseEntityView<>(helper.driveSearch(form, user))).build();
+    }
+
+    /**
+     * Exports what the Drive shows, or what is selected in it, as a CSV or a zip of CSVs.
+     * <p>
+     * Not implemented yet: it answers 501. It stays hidden from the OpenAPI document until it is.
+     *
+     * @param request  the HTTP request
+     * @param response the HTTP response
+     * @param form     the export request
+     * @return 501 Not Implemented
+     */
+    @Hidden
+    @Path("/export")
+    @POST
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({"text/csv", "application/zip", MediaType.APPLICATION_JSON})
+    public Response export(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            final DriveExportRequestForm form) {
+        return Response.status(Response.Status.NOT_IMPLEMENTED).build();
     }
 
 }

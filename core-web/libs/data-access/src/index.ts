@@ -20,6 +20,7 @@ export * from './lib/dot-categories/dot-categories.service';
 export * from './lib/dot-company-configuration/dot-company-configuration.service';
 export * from './lib/dot-containers/dot-containers.service';
 export * from './lib/dot-content-drive/dot-content-drive.service';
+export * from './lib/dot-content-drive-export/dot-content-drive-export.service';
 export * from './lib/dot-content-search/dot-content-search.service';
 export * from './lib/dot-content-type/dot-content-type.service';
 export * from './lib/dot-content-types-info/dot-content-types-info.service';

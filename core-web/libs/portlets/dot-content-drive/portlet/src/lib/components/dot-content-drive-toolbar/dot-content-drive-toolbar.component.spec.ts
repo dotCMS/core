@@ -5,7 +5,7 @@ import {
     createComponentFactory,
     mockProvider
 } from '@openng/spectator/vitest';
-import { of } from 'rxjs';
+import { EMPTY, of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -18,6 +18,7 @@ import { Tooltip } from 'primeng/tooltip';
 import {
     DotCategoriesService,
     DotContentTypeService,
+    DotContentDriveExportService,
     DotContentletService,
     DotHttpErrorManagerService,
     DotLanguagesService,
@@ -39,11 +40,12 @@ import { createFakeTextField, mockLocales, MockDotMessageService } from '@dotcms
 
 import { DotContentDriveToolbarComponent } from './dot-content-drive-toolbar.component';
 
-import { DIALOG_TYPE } from '../../shared/constants';
+import { DEFAULT_PAGE, DIALOG_TYPE } from '../../shared/constants';
 import { MOCK_BASE_TYPES, MOCK_CONTENT_TYPES, MOCK_ITEMS } from '../../shared/mocks';
 import {
     DotContentDriveActionExecution,
     DotContentDriveFilters,
+    DotContentDriveStatus,
     DotContentDriveViewType
 } from '../../shared/models';
 import { DotContentDriveNavigationService } from '../../shared/services';
@@ -187,7 +189,13 @@ describe('DotContentDriveToolbarComponent', () => {
                 languages: signal(mockLocales),
                 defaultLanguageId: vi.fn().mockReturnValue(1),
                 viewType: viewTypeSignal,
-                setViewType: vi.fn()
+                setViewType: vi.fn(),
+                // Read by the Export button this toolbar renders (#37900): whether the listing has
+                // anything to export, and the request it exports.
+                status: signal(DotContentDriveStatus.LOADED),
+                items: signal<DotContentDriveItem[]>([]),
+                pages: signal([DEFAULT_PAGE]),
+                $request: signal({ assetPath: '//demo.dotcms.com/' })
             }),
             mockProvider(DotContentTypeService, {
                 getContentTypes: vi.fn().mockReturnValue(of(MOCK_CONTENT_TYPES)),
@@ -201,7 +209,12 @@ describe('DotContentDriveToolbarComponent', () => {
                         }
                     })
                 ),
-                getAllContentTypes: vi.fn().mockReturnValue(of(MOCK_BASE_TYPES))
+                getAllContentTypes: vi.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
+                // The Export button fetches the one filtered type to rule out Forms.
+                getContentType: vi.fn().mockReturnValue(of(MOCK_CONTENT_TYPES[0]))
+            }),
+            mockProvider(DotContentDriveExportService, {
+                export: vi.fn().mockReturnValue(EMPTY)
             }),
             // The shared DotLanguageFilterComponent fetches the language list on init, so without
             // this the toolbar's render reaches for /api/v2/languages and the spec fails on a
@@ -671,6 +684,21 @@ describe('DotContentDriveToolbarComponent', () => {
             await settleToolbarAnimation(spectator);
 
             expect(spectator.query(byTestId('upload-asset-button'))).toBeTruthy();
+        });
+    });
+
+    describe('Export button (#37900)', () => {
+        it('should sit in the Upload / Add New block when nothing is selected', async () => {
+            await settleToolbarAnimation(spectator);
+
+            // The block is the row Upload and Add New share: the parent of their tooltip wrappers.
+            const block = spectator.query(byTestId('upload-asset-tooltip'))?.parentElement;
+            const exportButton = spectator.query(byTestId('export-button'));
+
+            expect(block).toBeTruthy();
+            expect(block?.contains(spectator.query(byTestId('add-new-tooltip')))).toBe(true);
+            expect(exportButton).toBeTruthy();
+            expect(block?.contains(exportButton)).toBe(true);
         });
     });
 

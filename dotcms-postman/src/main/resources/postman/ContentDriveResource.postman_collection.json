@@ -2740,6 +2740,324 @@
       "description": "Coverage for the showLinks flag and the link pagination fields on POST /api/v1/drive/search (issue #36991)."
     },
     {
+      "name": "Export",
+      "item": [
+        {
+          "name": "Export - Create Fresh Content Type",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code should be 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.collectionVariables.set(\"exportContentTypeId\", jsonData.entity[0].id);",
+                  "pm.collectionVariables.set(\"exportContentTypeVar\", jsonData.entity[0].variable);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/contenttype",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "contenttype"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"description\": \"Content Type for Drive Export Tests\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"Drive Export Test {{$randomBankAccount}}\",\n    \"variable\": \"driveExportTest{{$randomBankAccount}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"indexed\": true,\n            \"dataType\": \"TEXT\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"listed\": true,\n            \"sortOrder\": 1,\n            \"unique\": false,\n            \"name\": \"Title\",\n            \"variable\": \"title\",\n            \"fixed\": true\n        }\n    ],\n    \"workflow\": [\n        \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n    ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export - Create 3 Contentlets",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code should be 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Three contentlets created\", function () {",
+                  "    pm.expect(jsonData.errors.length).to.eql(0);",
+                  "    pm.expect(jsonData.entity.results.length).to.eql(3);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "workflow",
+                "actions",
+                "default",
+                "fire",
+                "PUBLISH"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"{{exportContentTypeVar}}\",\n            \"title\": \"Export item 1\",\n            \"contentHost\": \"{{testSiteId}}\"\n        },\n        {\n            \"contentType\": \"{{exportContentTypeVar}}\",\n            \"title\": \"Export item 2\",\n            \"contentHost\": \"{{testSiteId}}\"\n        },\n        {\n            \"contentType\": \"{{exportContentTypeVar}}\",\n            \"title\": \"Export item 3\",\n            \"contentHost\": \"{{testSiteId}}\"\n        }\n    ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export - Filter Mode Returns One CSV",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code should be 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"The body is a CSV\", function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.match(/^text\\/csv/);",
+                  "});",
+                  "",
+                  "pm.test(\"The file is named as Content Search names it\", function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Disposition')).to.include('_contents_');",
+                  "});",
+                  "",
+                  "pm.test(\"The counts report 3 rows in 1 file\", function () {",
+                  "    pm.expect(pm.response.headers.get('X-Export-Contentlets')).to.eql('3');",
+                  "    pm.expect(pm.response.headers.get('X-Export-Files')).to.eql('1');",
+                  "});",
+                  "",
+                  "pm.test(\"The CSV holds the header and 3 rows\", function () {",
+                  "    var lines = pm.response.text().split('\\r\\n').filter(function (line) { return line.length > 0; });",
+                  "    pm.expect(lines[0].indexOf('Identifier,languageCode,countryCode')).to.eql(0);",
+                  "    pm.expect(lines.length).to.eql(4);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/drive/export",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "drive",
+                "export"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"query\": {\n        \"assetPath\": \"//{{testSiteName}}/\",\n        \"browseScope\": \"ALL\",\n        \"contentTypes\": [\n            \"{{exportContentTypeVar}}\"\n        ]\n    }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export - Two Content Types Are Rejected",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code should be 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"The message asks for exactly one readable type\", function () {",
+                  "    pm.expect(pm.response.json().errors[0].message).to.eql('Choose exactly one content type you can read to export.');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/drive/export",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "drive",
+                "export"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"query\": {\n        \"assetPath\": \"//{{testSiteName}}/\",\n        \"browseScope\": \"ALL\",\n        \"contentTypes\": [\n            \"{{exportContentTypeVar}}\",\n            \"{{testContentTypeVar}}\"\n        ]\n    }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export - Unknown Content Type Is Rejected",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code should be 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"The message is the same as for two types\", function () {",
+                  "    pm.expect(pm.response.json().errors[0].message).to.eql('Choose exactly one content type you can read to export.');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/drive/export",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "drive",
+                "export"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"query\": {\n        \"assetPath\": \"//{{testSiteName}}/\",\n        \"browseScope\": \"ALL\",\n        \"contentTypes\": [\n            \"noSuchDriveExportType\"\n        ]\n    }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export - Delete Fresh Content Type",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code should be 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/contenttype/id/{{exportContentTypeId}}",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "contenttype",
+                "id",
+                "{{exportContentTypeId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Cleanup",
       "item": [
         {
