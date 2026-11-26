@@ -45,7 +45,7 @@ Parse once. `LOCAL` when the first token is `local`, then read its `key=value` t
 Every Bash call in this skill follows these; the permission rules and hooks of a core checkout reject the alternatives mid-run.
 
 - One command per call, run in place from the repo root, with repo-relative paths in commands and in agent prompts alike. The only absolute paths are the run directory (`RUN_DIR`, and `HEAD_DIR` inside it) and the skill's own directory (`SKILL_DIR`, given when it loads).
-- `--repo dotCMS/core` on every `gh pr` and `gh api` call. `gh` output and errors reach you whole: saving stdout to a file in `RUN_DIR` is fine, piping it through `head` or `tail` or silencing stderr hides auth and rate-limit errors. The version check below is the one filter, run exactly as written.
+- `--repo dotCMS/core` on every `gh pr` and `gh api` call. `gh` output and errors reach you whole: saving stdout to a file in `RUN_DIR` is fine, piping it through `head` or `tail` or silencing stderr hides auth and rate-limit errors.
 - Comments are fetched as a JSON field (`--json comments`). gh 2.99+ rejects `--comments` next to `--json`.
 - Mechanical steps are the scripts in `scripts/`, run from the repo root exactly as `bash .claude/skills/dot-pr-review/scripts/<name>.sh`: that is the one form `allowed-tools` pre-approves (each prints its usage with `--help`). References are read as `<SKILL_DIR>/references/<name>.md`. Hooks can reject a heredoc or an inline `python`/`node` script, and `rm -rf` on an absolute path, so a run writes no such script and wipes nothing: a new run gets a new directory.
 
@@ -57,19 +57,19 @@ Run `pwd`, then `ls docs/frontend`. If `docs/frontend/` is missing, stop with:
 
 A worktree passes like a clone. Store the directory as `CORE_REPO`: the reviewers read from it, and Stage 7b re-slices the diff from it.
 
-Then gate on the `gh` version. Stages 2 and 3 need `changeType` from `gh pr view --json files`, `gh pr diff --exclude`, and the `issueType` and `parent` issue fields:
+Then gate on the `gh` version. Stages 2 and 3 need `changeType` from `gh pr view --json files`, `gh pr diff --exclude`, and the `issueType` and `parent` issue fields. Run:
 
 ```bash
-gh --version | awk 'NR==1{v=$3} END{if(v==""){print "GH_MISSING"; exit} split(v,a,"."); print (a[1]>2 || (a[1]==2 && a[2]>=99)) ? "GH_OK " v : "GH_TOO_OLD " v}'
+gh --version
 ```
 
-Act on the token it prints; it compares the version numerically (`2.100` sorts below `2.99` as text):
+Its first line reads `gh version <major>.<minor>.<patch> (<date>)`. Compare major, then minor, as numbers: `2.100` is newer than `2.99`, although it sorts below it as text.
 
-| Output | Action |
+| Result | Action |
 |---|---|
-| `GH_OK <version>` | proceed |
-| `GH_TOO_OLD <version>` | **abort**: "This skill requires GitHub CLI 2.99.0 or newer (found `<version>`). Upgrade with `brew upgrade gh` or `mise up gh@latest`, then retry." |
-| `GH_MISSING` | **abort**: "GitHub CLI (`gh`) is not installed or not on PATH. Install it from https://cli.github.com and run `gh auth login`." |
+| 2.99 or newer | proceed |
+| older than 2.99 | **abort**: "This skill requires GitHub CLI 2.99.0 or newer (found `<version>`). Upgrade with `brew upgrade gh` or `mise up gh@latest`, then retry." |
+| command not found, or no version on the first line | **abort**: "GitHub CLI (`gh`) is not installed or not on PATH. Install it from https://cli.github.com and run `gh auth login`." |
 
 A later `gh` call failing with `unknown flag:` or `Unknown JSON field:` means an older `gh` is first on PATH: abort and report the failing command verbatim. Every flag and field stays as written; the older forms they replaced give a worse review that still looks complete.
 
