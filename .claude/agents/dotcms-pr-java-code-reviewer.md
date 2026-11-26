@@ -102,7 +102,7 @@ No doc owns these, so they are written out here:
 - Formatting, import order, line length — the build handles those
 - Pre-existing patterns untouched by this PR
 - `@Deprecated` usages that the PR is actively migrating away from
-- A save or multi-step write as "not atomic" before checking the method **and its callers** for `@WrapInTransaction` or `LocalTransaction.wrap` / `wrapReturn`. Annotations sit above the signature, where `grep -A` from the method line never looks: read from a few lines above it (`grep -n -B4 '<methodName>('`). `@CloseDBIfOpened` is not a transaction. If you still report it, quote the annotation lines you checked (or their absence on the method and its callers) in `evidence`; transactions are otherwise the persistence reviewer's.
+- A multi-step write as "not atomic": transactions are the persistence reviewer's. To report one anyway, first follow "Before claiming a missing transaction" in `.claude/agents/dotcms-pr-java-persistence-reviewer.md`.
 
 ## Confidence Scoring
 
