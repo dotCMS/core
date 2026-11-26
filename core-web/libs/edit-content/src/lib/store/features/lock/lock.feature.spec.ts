@@ -324,9 +324,10 @@ describe('LockFeature', () => {
                 expect(store.isReadOnly()).toBe(false);
             });
 
-            it('should be false when the content is locked by another user', () => {
-                // canLock is also false for an EDIT user blocked by someone else's lock;
-                // that case keeps its own "locked by" banner and the Release Lock flow.
+            it('should be true when the content is locked by another user', () => {
+                // `_canlock` and the action list answer the same for a READ-only user and an
+                // EDIT user blocked by someone else's lock: canLock false, no actions. Neither
+                // can save, so both get the disabled form (#38724 review).
                 readOnlyState();
                 store.updateContent({
                     inode: 'inode-1',
@@ -334,7 +335,7 @@ describe('LockFeature', () => {
                     lockedBy: { userId: '123', firstName: 'John', lastName: 'Doe' }
                 } as unknown as DotCMSContentlet);
 
-                expect(store.isReadOnly()).toBe(false);
+                expect(store.isReadOnly()).toBe(true);
             });
 
             it('should be false for new content', () => {

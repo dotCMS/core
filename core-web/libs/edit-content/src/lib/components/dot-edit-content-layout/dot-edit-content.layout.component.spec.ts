@@ -41,8 +41,10 @@ import {
 } from '@dotcms/data-access';
 import {
     ComponentStatus,
+    DotCMSContentlet,
     DotCMSWorkflowAction,
     DotContentletCanLock,
+    DotCurrentUser,
     DotLanguage
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
@@ -792,6 +794,50 @@ describe('EditContentLayoutComponent', () => {
                 expect(message).toBeTruthy();
                 // DotMessageService is mocked to echo the key.
                 expect(message).toContainText('edit.content.no.edit.permission');
+            }));
+
+            it('should show only the lock banner when another user holds the lock (#38724 review)', fakeAsync(() => {
+                // canLock false + no actions is also what an EDIT user blocked by someone
+                // else's lock gets. The form is read-only either way; the lock banner names
+                // the reason, so the no-edit-permission message is not added on top.
+                spectator
+                    .inject(DotContentletService, true)
+                    .canLock.mockReturnValue(
+                        of({ canLock: false, locked: true } as DotContentletCanLock)
+                    );
+                workflowActionsService.getByInode.mockReturnValue(of([]));
+                const emptyPage = {
+                    entity: [],
+                    pagination: null,
+                    errors: [],
+                    i18nMessagesMap: {},
+                    messages: [],
+                    permissions: []
+                };
+                dotEditContentService.getReferencePages.mockReturnValue(of(0));
+                dotEditContentService.getActivities.mockReturnValue(of([]));
+                dotEditContentService.getVersions.mockReturnValue(of(emptyPage));
+                dotEditContentService.getPushPublishHistory.mockReturnValue(of(emptyPage));
+                patchState(unprotected(store), {
+                    currentUser: { userId: 'viewer' } as DotCurrentUser,
+                    contentlet: {
+                        ...MOCK_CONTENTLET_1_TAB,
+                        locked: true,
+                        lockedBy: { userId: 'someone-else', firstName: 'Ann', lastName: 'Lee' }
+                    } as unknown as DotCMSContentlet,
+                    initialContentletState: 'existing',
+                    canLock: false,
+                    currentContentActions: {}
+                });
+                spectator.detectChanges();
+                tick();
+                spectator.detectChanges();
+
+                expect(store.isReadOnly()).toBe(true);
+                expect(spectator.query(byTestId('edit-content-layout__lock-warning'))).toBeTruthy();
+                expect(
+                    spectator.query(byTestId('edit-content-layout__read-only-message'))
+                ).toBeNull();
             }));
 
             it('should not show the no-edit-permission message when the content is editable', fakeAsync(() => {

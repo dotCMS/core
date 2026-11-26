@@ -45,15 +45,15 @@ export function withLock() {
             /**
              * Whether the current user may only read this content.
              *
-             * Driven by the backend, not by a frontend permission guess: a user with READ
-             * but no EDIT gets `canLock: false` from `_canlock` and an empty EDITING action
-             * list. `canLock` is also false for an EDIT user blocked by someone else's lock,
-             * so that case is excluded here — it keeps its own "locked by" banner and the
-             * Release Lock flow. New content and an unanswered `_canlock` (`null`) are never
-             * read-only.
+             * Driven by the backend, not by a frontend permission guess: `_canlock` answers
+             * false and the EDITING action list is empty. That is the answer for a user with
+             * READ but no EDIT, and also for an EDIT user blocked by someone else's lock: the
+             * backend gives both the same response, and neither can save, so both get the
+             * disabled form. The layout then shows the lock banner instead of the
+             * no-permission message when someone else holds the lock. New content and an
+             * unanswered `_canlock` (`null`) are never read-only.
              *
-             * @returns boolean - True when the form must render disabled with the
-             * no-permission message.
+             * @returns boolean - True when the form must render disabled.
              */
             isReadOnly: computed(() => {
                 const contentlet = store.contentlet();
@@ -66,23 +66,9 @@ export function withLock() {
                     return false;
                 }
 
-                const hasActions = Object.values(store.currentContentActions()).some(
+                return !Object.values(store.currentContentActions()).some(
                     (actions) => actions.length > 0
                 );
-
-                if (hasActions) {
-                    return false;
-                }
-
-                const locker = resolveLocker(contentlet);
-                const currentUser = store.currentUser();
-                const lockedByAnotherUser =
-                    !!contentlet.locked &&
-                    !!locker &&
-                    !!currentUser &&
-                    currentUser.userId !== locker.userId;
-
-                return !lockedByAnotherUser;
             }),
 
             /**

@@ -119,8 +119,10 @@
         }
 
         <!-- Read-only banner: the backend denied the lock and offered no workflow action
-             (READ without EDIT), so the form below is disabled. Same lock-banner styling. -->
-        @if (isReadOnly) {
+             (READ without EDIT), so the form below is disabled. Same lock-banner styling.
+             When someone else holds the lock, the lock banner above already says why the
+             form is disabled, so this one is not added on top. -->
+        @if (isReadOnly && !lockWarningMessage) {
             <p-message
                 severity="warn"
                 styleClass="rounded-none! border-x-0! border-y-(--p-yellow-200)!"
