@@ -8,12 +8,12 @@ Each reviewer gets its standards, its diff slice, the existing-feedback digest a
 
 ```
 <RUN_DIR>/bundles/frontend-standards.md     = docs/frontend/ANGULAR_STANDARDS.md + TYPESCRIPT_STANDARDS.md + STYLING_STANDARDS.md   # code bucket non-empty
-<RUN_DIR>/bundles/testing-rules.md          = docs/frontend/TESTING_REVIEW_RULES.md                                                # test bucket non-empty
+<RUN_DIR>/bundles/testing-rules.md          = docs/frontend/TESTING_REVIEW_RULES.md + <SKILL_DIR>/references/right-test.md       # test bucket non-empty
 <RUN_DIR>/bundles/java-code-standards.md    = docs/backend/JAVA_STANDARDS.md + CONFIGURATION_PATTERNS.md + VIRTUAL_THREADS.md + docs/core/PROGRESSIVE_ENHANCEMENT.md   # java or jsp bucket non-empty
 <RUN_DIR>/bundles/java-api-standards.md     = docs/backend/REST_API_PATTERNS.md + dotCMS/src/main/java/com/dotcms/rest/README.md + dotCMS/src/main/java/com/dotcms/rest/CLAUDE.md   # only if RUN_JAVA_API
 <RUN_DIR>/bundles/java-persistence-standards.md = docs/backend/DATABASE_PATTERNS.md                                                # only if RUN_JAVA_PERSISTENCE
 <RUN_DIR>/bundles/java-security-standards.md    = docs/backend/SECURITY_BACKEND.md + docs/core/SECURITY_PRINCIPLES.md                 # only if RUN_JAVA_SECURITY
-<RUN_DIR>/bundles/java-test-standards.md    = docs/testing/BACKEND_UNIT_TESTS.md + docs/testing/INTEGRATION_TESTS.md                 # java_test bucket non-empty
+<RUN_DIR>/bundles/java-test-standards.md    = docs/testing/BACKEND_UNIT_TESTS.md + docs/testing/INTEGRATION_TESTS.md + <SKILL_DIR>/references/right-test.md   # java_test bucket non-empty
 <RUN_DIR>/bundles/ci-standards.md           = docs/core/CICD_PIPELINE.md + .github/workflows/README.md, both at BASE_SHA            # only if RUN_CI
 <RUN_DIR>/bundles/maven-standards.md        = docs/backend/MAVEN_BUILD_SYSTEM.md at BASE_SHA                                       # only if RUN_MAVEN
 <RUN_DIR>/bundles/effective-pom.diff        = "Effective POM" below                                                             # only if RUN_MAVEN

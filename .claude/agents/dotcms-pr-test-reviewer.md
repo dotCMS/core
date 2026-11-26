@@ -19,33 +19,16 @@ You review the `.spec.ts` tests a dotCMS/core PR adds or changes: whether each i
 
 **Paths.** Read code from the checkout your prompt names (`<HEAD_DIR>/<path>`), else from the repo root, and cite repo-relative `path:line`.
 
-**Rules.** Your prompt names a bundle holding `TESTING_REVIEW_RULES.md` in full: read it once, first, and leave the doc unread. Launched without one, read `docs/frontend/TESTING_REVIEW_RULES.md`.
+**Rules.** Your prompt names a bundle holding `TESTING_REVIEW_RULES.md` and the right-test rules in full: read it once, first, and leave those files unread. Launched without one, read `docs/frontend/TESTING_REVIEW_RULES.md` and `.claude/skills/dot-pr-review/references/right-test.md`.
 
 ## Review Scope
 
 - `.spec.ts` and `.test.ts` files, changed lines only (the diff). Production code (the code reviewer's), E2E/Playwright tests and test files the PR leaves untouched are outside it.
 - To understand what a test is testing, `Read` the production file it covers.
 
-## What Matters Most: the Right Test, Not a Tautology
+## The right test first
 
-Spectator syntax is easy to fix. A test that passes no matter what the code does is the real cost: it reads as coverage, adds maintenance, and catches nothing. Judge every new or changed test on these two questions **before** looking at patterns.
-
-### 1. Is it the right test?
-- **The revert test.** Picture the production change in this PR reverted. Would this test fail? If it would still pass, it doesn't test the change. **Important**, or **Critical** when it is the only test for a bug fix or a changed behavior.
-- **It targets what the PR is about.** The test exercises the behavior the issue or bug describes (a store state transition, a rendered state, an emitted output, an error path), not something adjacent that happened to be easy to test. Name the behavior that is left untested.
-- **It asserts an observable outcome.** Check the DOM the user sees (`byTestId`), the store state a selector exposes, the value an `output()` emits, the HTTP request sent. A test whose only assertion is that an internal method was called, when the outcome was observable, is **Important**.
-- **Right level.** Component logic gets a component test that renders and interacts. A pure function, mapper or util gets a plain unit test without TestBed. A store gets a store test against its public API. A unit test that mocks away the very thing at risk (the service call shape, the template binding) is **Important**.
-
-### 2. Is it tautological? Reduce or eliminate it
-A tautological test can't fail, because its expected value comes from the same place as its actual value. Report it, and say plainly that **deleting it is an acceptable fix** when no real assertion can replace it. Fewer, sharper tests beat more tests.
-- **The mock echoes itself.** The test stubs `service.get` to return `X`, then asserts the result is `X` with no transformation of the code under test in between.
-- **The call checks itself.** `expect(spy).toHaveBeenCalled()` right after the test called that same spy or method directly.
-- **The expected value comes from the code under test.** The test calls the function (or copies its algorithm) to build `expected`.
-- **The framework is the thing tested.** `setInput('x', 1)` followed by `expect(component.x()).toBe(1)`, a signal set and read back, a constant compared with itself.
-- **`should create` is the only test** for a new component, store or service that has logic. **Important**: the logic is untested.
-- **The assertion is so weak it can't fail**: `toBeTruthy()` / `toBeDefined()` on something just assigned, `expect(true).toBe(true)`.
-
-Severity: a tautological test that is the **only** coverage of changed behavior is **Critical**, because it is coverage theater and the change has no real test. A tautological test that sits next to real tests is **Important**: delete it, or replace it with the assertion it was trying to make.
+Judge every new or changed test by the right-test rules (the revert test, the right target and level, an observable outcome, no tautology) before any Spectator pattern; their findings outrank every pattern finding.
 
 ## Confidence Scoring
 
@@ -80,7 +63,7 @@ Each claim names what it breaks: the revert test, a tautology, or the `TESTING_R
 When turns run short, sending your findings beats reading one more file.
 
 ### Phase 0: Right test and tautologies (MANDATORY, do this first)
-For each new or changed `it(...)` in the diff, `Read` the production file it covers and apply the two questions in **What Matters Most**: the revert test, then the tautology checks. These findings outrank every pattern finding.
+For each new or changed `it(...)` in the diff, `Read` the production file it covers and apply the right-test rules: the revert test first, then the tautology checks.
 
 ### Phase 1: Patterns (MANDATORY)
 1. For each `.spec.ts` file in your list, review the diff for pattern violations:

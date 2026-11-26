@@ -50,7 +50,7 @@ Test files:
 PR diff for test files: <slice>
 
 <testing-rules>
-Bundle: <RUN_DIR>/bundles/testing-rules.md, the full text of TESTING_REVIEW_RULES.md. Read it once, first.
+Bundle: <RUN_DIR>/bundles/testing-rules.md, the full text of TESTING_REVIEW_RULES.md and right-test.md. Read it once, first.
 </testing-rules>
 
 Review Spectator patterns, coverage, and test quality against the <testing-rules> bundle. Do NOT read docs/frontend/TESTING_REVIEW_RULES.md — the bundle holds it in full.
@@ -220,7 +220,7 @@ Production classes they cover (for judging adequacy):
 PR diff: <slice>
 
 <standards>
-Bundle: <RUN_DIR>/bundles/java-test-standards.md, the full text of BACKEND_UNIT_TESTS.md and INTEGRATION_TESTS.md. Read it once, first.
+Bundle: <RUN_DIR>/bundles/java-test-standards.md, the full text of BACKEND_UNIT_TESTS.md, INTEGRATION_TESTS.md and right-test.md. Read it once, first.
 </standards>
 
 If the test files include anything under test-karate/ or dotcms-postman/, or the PR adds a REST endpoint, Read docs/testing/API_TESTING.md and check the API tests against it (new tests go in Karate; Postman is legacy).
