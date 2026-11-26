@@ -116,12 +116,12 @@ REASON: <one line>
 
 ### Logic findings → Sonnet validation
 
-One **Sonnet** agent per `domain == Logic` finding, in parallel. It may `Read(core-web/**)` to confirm a hop. Inline the **finding** (file, line, traced path, AC reference, broken-behavior description, suggested fix, reviewer confidence), the **referenced AC** text (or "none" for a Pass-2 defect), and the **diff chunks** for the hops in the path.
+One **Sonnet** agent per `domain == Logic` finding, in parallel. It may read the PR head (`<HEAD_DIR>/**`) to confirm a hop: the logic reviewer traces Java as well as TypeScript. Inline the **finding** (file, line, traced path, AC reference, broken-behavior description, suggested fix, reviewer confidence), the **referenced AC** text (or "none" for a Pass-2 defect), and the **diff chunks** for the hops in the path.
 
 **Sonnet validator prompt template**:
 
 ```
-You are validating a LOGIC review finding for a dotCMS frontend PR. The finding claims a traced data-flow path produces behavior that is wrong or contradicts an acceptance criterion.
+You are validating a LOGIC review finding for a dotCMS PR. The finding claims a traced data-flow path produces behavior that is wrong or contradicts an acceptance criterion.
 
 Score 0–100 how confident you are the finding is REAL:
 - 100: The traced path provably yields the wrong behavior; every hop checks out.
@@ -130,7 +130,7 @@ Score 0–100 how confident you are the finding is REAL:
 - 25:  Likely a false positive — the path doesn't actually break, or the "expected" behavior was misread.
 - 0:   False positive: the behavior is correct, the AC was misread, or the issue is pre-existing/unchanged.
 
-You MAY Read <HEAD_DIR>/core-web/** (the PR head) to confirm a single hop if the inlined context is insufficient. Verify the path hop-by-hop; do not take the reviewer's word for it.
+You MAY Read <HEAD_DIR>/** (the PR head) to confirm a single hop if the inlined context is insufficient. Verify the path hop-by-hop; do not take the reviewer's word for it.
 
 Acceptance criterion referenced (or "none"):
 <AC text>
@@ -238,7 +238,7 @@ Replace each contested row in `AC_COVERAGE` with its verdict. A MISSING verdict 
 
 On the author's own security fix nothing is posted, and a real defect that scores 30 still has to be fixed before merge. So:
 
-- **Every finding gets a Sonnet validator that can read the repo**, never the tool-free Haiku: the Logic prompt above for every domain, with "frontend" removed from its first line, `Read`/`Grep` on `dotCMS/**`, `dotcms-integration/**` and `core-web/**`, and the added line "Check each premise of the finding against the code before you score it." A tool-free validator scores premises it cannot check (a past self-review saw a Haiku give 35 to a real finding on an assumption about `FieldBuilder.builder(field)` that the code disproves).
+- **Every finding gets a Sonnet validator that can read the repo**, never the tool-free Haiku: the Logic prompt above for every domain, with `Read`/`Grep` on `<HEAD_DIR>/**`, and the added line "Check each premise of the finding against the code before you score it." A tool-free validator scores premises it cannot check (a past self-review saw a Haiku give 35 to a real finding on an assumption about `FieldBuilder.builder(field)` that the code disproves).
 - **Every finding is kept**, with its validator score and one-line reason; Stage 7 adds an "All findings (local triage)" table after the severity sections.
 - **The reviewers' facts count, not only their claims.** When a finding says another call already does the work ("`FieldAPIImpl#save` already clears the content type cache"), the line it points at may be redundant even though the finding argued something else: list it for triage.
 
