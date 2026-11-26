@@ -1218,13 +1218,18 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	/**
 	 * Returns the file stored in a binary field, loading it from the assets folder when the field
 	 * holds no existing file yet. A stale file value is dropped; a value that is not a file is left
-	 * as it is.
+	 * as it is. A name containing a path separator or {@code ..} is not a field variable, so it
+	 * returns {@code null} without reading the field or the assets folder.
 	 *
 	 * @param velocityVarName the binary field's variable name
 	 * @return the file, or {@code null} if the field has none
 	 * @throws IOException if the assets folder cannot be read
 	 */
 	public java.io.File getBinary(String velocityVarName)throws IOException {
+		if (velocityVarName == null || velocityVarName.contains("/") || velocityVarName.contains("\\")
+				|| velocityVarName.contains("..")) {
+			return null;
+		}
 		final Object rawValue = map.get(velocityVarName);
 		File f = (rawValue instanceof File) ? (File) rawValue : null;
 		if((f==null || !f.exists()) ){

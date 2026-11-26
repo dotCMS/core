@@ -23,6 +23,40 @@ import static org.junit.Assert.assertNull;
 
 public class ContentletTest {
 
+    /**
+     * Asking for the binary of a field that holds something other than a file returns nothing and
+     * leaves that value in place.
+     */
+    @Test
+    public void getBinary_keepsAValueThatIsNotAFile() throws Exception {
+        final Contentlet contentlet = new Contentlet();
+        contentlet.setModUser("someone");
+
+        assertNull(contentlet.getBinary("modUser"));
+        assertEquals("someone", contentlet.getModUser());
+    }
+
+    /**
+     * A name with a path separator or {@code ..} is not a field variable: it returns nothing without
+     * touching the field map or looking in the assets folder.
+     */
+    @Test
+    public void getBinary_ignoresANameThatIsAPath() throws Exception {
+        final Contentlet contentlet = new Contentlet();
+        contentlet.setInode("8b2c4e6a-1f3d-4a5b-9c7e-0d1f2a3b4c5d");
+        contentlet.setModUser("someone");
+        contentlet.getMap().put("a/b", "kept");
+
+        try (MockedStatic<APILocator> apiLocator = Mockito.mockStatic(APILocator.class)) {
+            for (final String name : new String[] {"../modUser", "a/b", "..\\x", "x/../../y", ".."}) {
+                assertNull(name, contentlet.getBinary(name));
+            }
+            apiLocator.verifyNoInteractions();
+        }
+        assertEquals("someone", contentlet.getModUser());
+        assertEquals("kept", contentlet.getMap().get("a/b"));
+    }
+
     @Test
     public void testGetTitle_WhenExistingTitleField_returnItsValue() throws DotDataException, DotSecurityException {
         final ContentletAPI contentletAPI = Mockito.mock(ContentletAPI.class);

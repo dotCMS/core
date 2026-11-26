@@ -49,6 +49,7 @@ import javax.servlet.http.Part;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.generic.MathTool;
 import org.apache.velocity.tools.generic.SortTool;
+import org.apache.velocity.util.introspection.SecureUberspector;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -364,10 +365,12 @@ public class SecureIntrospectorRenderTest {
         ctx.put("c", content);
 
         Config.setProperty(FeatureFlagName.FEATURE_FLAG_VELOCITY_ALLOW_MODEL_MUTATORS, true);
+        SecureUberspector.reloadModelMutatorSetting();
         try {
             VelocityUtil.eval("$c.setModUser('after')$c.map.put('note', 'set')", ctx);
         } finally {
             Config.setProperty(FeatureFlagName.FEATURE_FLAG_VELOCITY_ALLOW_MODEL_MUTATORS, false);
+            SecureUberspector.reloadModelMutatorSetting();
         }
 
         assertEquals("after", content.getModUser());
@@ -388,13 +391,13 @@ public class SecureIntrospectorRenderTest {
         ctx.put("inner", inner);
         final String change = "$outer.setModUser('changed')$inner.setModUser('changed')";
 
-        try (TemplateEditableObject ignored = TemplateEditableObject.open(() -> outer)) {
+        try (TemplateEditableObject ignored = TemplateEditableObject.open(outer)) {
             VelocityUtil.eval(change, ctx);
             assertEquals("changed", outer.getModUser());
             assertNull(inner.getModUser());
 
             outer.setModUser("reset");
-            try (TemplateEditableObject nested = TemplateEditableObject.open(() -> inner)) {
+            try (TemplateEditableObject nested = TemplateEditableObject.open(inner)) {
                 VelocityUtil.eval(change + "$inner.map.put('note', 'set')", ctx);
             }
             assertEquals("the inner scope hides the outer one", "reset", outer.getModUser());
@@ -405,7 +408,7 @@ public class SecureIntrospectorRenderTest {
         }
         assertFalse(TemplateEditableObject.isEditable(outer));
 
-        try (TemplateEditableObject ignored = TemplateEditableObject.open(() -> outer)) {
+        try (TemplateEditableObject ignored = TemplateEditableObject.open(outer)) {
             throw new IllegalStateException("thrown inside the scope");
         } catch (final IllegalStateException expected) {
             assertFalse("a scope never outlives its block", TemplateEditableObject.isEditable(outer));

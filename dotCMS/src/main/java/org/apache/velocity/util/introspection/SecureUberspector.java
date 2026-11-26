@@ -188,8 +188,36 @@ public class SecureUberspector extends UberspectImpl implements RuntimeServicesA
      */
     private static boolean mayChange(final Object target)
     {
-        return TemplateEditableObject.isEditable(target)
-                || Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_VELOCITY_ALLOW_MODEL_MUTATORS, false);
+        return TemplateEditableObject.isEditable(target) || allowsModelMutators();
+    }
+
+    /** The value of {@link FeatureFlagName#FEATURE_FLAG_VELOCITY_ALLOW_MODEL_MUTATORS}; {@code null} until read. */
+    private static volatile Boolean allowModelMutators;
+
+    /**
+     * Reads {@link FeatureFlagName#FEATURE_FLAG_VELOCITY_ALLOW_MODEL_MUTATORS} once and keeps the value, since it is
+     * consulted on every model method call and field map read a template makes.
+     *
+     * @return {@code true} if templates may change model objects
+     */
+    private static boolean allowsModelMutators()
+    {
+        Boolean allow = allowModelMutators;
+        if (allow == null)
+        {
+            allow = Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_VELOCITY_ALLOW_MODEL_MUTATORS, false);
+            allowModelMutators = allow;
+        }
+        return allow;
+    }
+
+    /**
+     * Makes the next model method call read {@link FeatureFlagName#FEATURE_FLAG_VELOCITY_ALLOW_MODEL_MUTATORS} again,
+     * for a change made at runtime through {@link Config#setProperty(String, Object)}.
+     */
+    public static void reloadModelMutatorSetting()
+    {
+        allowModelMutators = null;
     }
 
     /**

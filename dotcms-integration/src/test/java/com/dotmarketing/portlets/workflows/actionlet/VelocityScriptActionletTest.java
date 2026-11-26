@@ -42,6 +42,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 public class VelocityScriptActionletTest extends BaseWorkflowIntegrationTest {
 
@@ -294,6 +295,46 @@ public class VelocityScriptActionletTest extends BaseWorkflowIntegrationTest {
     @Test
     public void Test_Velocity_Script_Actionlet_Changes_Only_Processed_Content() throws Exception {
 
+        final String[] outcome = runScriptWithOtherContent(otherInode ->
+                "#set($other = $contents.getContentByInode(\"" + otherInode + "\"))\n"
+                + "$other.setProperty(\"title\", \"changed by the action\")\n"
+                + "$content.setProperty(\"txt\", \"set by the action\")\n"
+                + "$dotJSON.put(\"otherTitle\", $other.title)\n");
+
+        Assert.assertEquals("set by the action", outcome[0]);
+        Assert.assertEquals("Other title", outcome[1]);
+    }
+
+    /**
+     * Handing the workflow another content item does not make that item editable: the content the action was
+     * processing when the script started stays the only one the script may change.
+     */
+    @Test
+    public void Test_Velocity_Script_Actionlet_Swapped_Content_Stays_ReadOnly() throws Exception {
+
+        final String[] outcome = runScriptWithOtherContent(otherInode ->
+                "#set($processed = $content)\n"
+                + "#set($other = $contents.getContentByInode(\"" + otherInode + "\"))\n"
+                + "$workflow.setContentlet($other)\n"
+                + "$other.setProperty(\"title\", \"changed by the action\")\n"
+                + "$workflow.setContentlet($processed)\n"
+                + "$processed.setProperty(\"txt\", \"set by the action\")\n"
+                + "$dotJSON.put(\"otherTitle\", $other.title)\n");
+
+        Assert.assertEquals("set by the action", outcome[0]);
+        Assert.assertEquals("Other title", outcome[1]);
+    }
+
+    /**
+     * Saves a content item titled "Other title", fires a Velocity Script action whose script is built from that
+     * item's inode on a second, new content item, and reports what the action left behind. The script must end by
+     * putting the title of the other item it changed, {@code $other}, in {@code $dotJSON} under {@code otherTitle}.
+     *
+     * @param scriptForOtherInode builds the script from the other item's inode
+     * @return the processed content's {@code txt} value, and the other item's title as the script saw it at the end
+     */
+    private String[] runScriptWithOtherContent(final Function<String, String> scriptForOtherInode) throws Exception {
+
         final User admin = APILocator.systemUser();
         WorkflowScheme scheme = null;
         ContentType type = null;
@@ -312,16 +353,12 @@ public class VelocityScriptActionletTest extends BaseWorkflowIntegrationTest {
                     VelocityScriptActionlet.class);
             scheme = schemeResult.getScheme();
 
-            final String script =
-                    "#set($other = $contents.getContentByInode(\"" + other.getInode() + "\"))\n"
-                    + "$other.setProperty(\"title\", \"changed by the action\")\n"
-                    + "$content.setProperty(\"txt\", \"set by the action\")\n";
             final WorkflowActionClass actionClass = schemeResult.getActionClass();
             final List<WorkflowActionClassParameter> params = new ArrayList<>();
             final WorkflowActionClassParameter scriptParam = new WorkflowActionClassParameter();
             scriptParam.setActionClassId(actionClass.getId());
             scriptParam.setKey("script");
-            scriptParam.setValue(script);
+            scriptParam.setValue(scriptForOtherInode.apply(other.getInode()));
             params.add(scriptParam);
             final WorkflowActionClassParameter resultKeyParam = new WorkflowActionClassParameter();
             resultKeyParam.setActionClassId(actionClass.getId());
@@ -342,9 +379,9 @@ public class VelocityScriptActionletTest extends BaseWorkflowIntegrationTest {
                             .workflowActionId(schemeResult.getAction().getId())
                             .build());
 
-            Assert.assertEquals("set by the action", result.getStringProperty("txt"));
-            Assert.assertEquals("Other title",
-                    contentletAPI.find(other.getInode(), admin, false).getStringProperty("title"));
+            // Read inside the script: a lookup after the action may return a fresh copy of the other item
+            final DotJSON dotJSON = (DotJSON) ((Map<String, Object>) result.get("result")).get("dotJSON");
+            return new String[] {result.getStringProperty("txt"), (String) dotJSON.get("otherTitle")};
 
         } finally {
             for (final Contentlet content : new Contentlet[] {checkedIn, other}) {

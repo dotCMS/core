@@ -2341,7 +2341,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
                                     new Object[]{actionlet.getName(), params});
 
 
-					try (TemplateEditableObject ignored = TemplateEditableObject.open(processor::getContentlet)) {
+					try (TemplateEditableObject ignored = TemplateEditableObject.open(processor.getContentlet())) {
 						actionlet.executePreAction(processor, params);
 					}
 					//if we should stop processing further actionlets
@@ -2384,7 +2384,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 						batchable.preBatchAction(processor, actionClass, params);
 						//gather data to run in batch later
 					} else {
-						try (TemplateEditableObject ignored = TemplateEditableObject.open(processor::getContentlet)) {
+						try (TemplateEditableObject ignored = TemplateEditableObject.open(processor.getContentlet())) {
 							actionlet.executeAction(processor, params);
 						}
 					}
