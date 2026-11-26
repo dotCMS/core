@@ -7586,6 +7586,13 @@ paths:
       description: |-
         Performs a comprehensive content search using [Lucene query syntax](https://dev.dotcms.com/docs/content-search-syntax). Supports filtering, sorting, pagination, and depth-based relationship loading. Returns structured JSON with search metadata and contentlet results.
 
+        **What a query returns:**
+
+        - **Unpublished content too.** Called as a back-end user (API token or session), results include working (unpublished) versions. Add `+live:true` to get published content only; a draft that is not in that result still exists.
+        - **One entry per language version.** Content that exists in two languages comes back twice, with the same `identifier`. Filter with `+languageId:<id>` **in the query**: a `languageId` property in the request body does not filter.
+        - **Fields by type.** Query a content type's field as `+<ContentTypeVar>.<fieldVar>:value`, e.g. `+Blog.author:"Ada"`, together with `+contentType:<ContentTypeVar>`.
+        - **Relationships.** With `depth: 1`, relationship fields come back as the related contentlets, resolved in each result's language.
+
         > **Note:** This is a wrapper around the former `api/content/_search`. Both paths remain valid for backwards compatibility, but the `v1` path is preferred.
       operationId: wrapperLuceneSearch
       parameters:
@@ -9494,12 +9501,14 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/ContentTypeFieldView"
-        description: "A SINGLE field object to create on the content type. This endpoint\
-          \ creates exactly one field: if you pass a JSON array, only the first element\
-          \ is saved (it returns 200 and silently drops the rest). To add multiple\
-          \ fields at once, use PUT /api/v1/contenttype/{typeId}/fields (which takes\
-          \ an array), or include them inline as the 'fields' array when creating\
-          \ the content type via POST /api/v1/contenttype."
+        description: "A SINGLE field object to create on the content type. The content\
+          \ type is the one in the path; `contentTypeId` in the body can be omitted,\
+          \ and a different one is rejected with 400. This endpoint creates exactly\
+          \ one field: if you pass a JSON array, only the first element is saved (it\
+          \ returns 200 and silently drops the rest). To add multiple fields at once,\
+          \ use PUT /api/v1/contenttype/{typeId}/fields (which takes an array), or\
+          \ include them inline as the 'fields' array when creating the content type\
+          \ via POST /api/v1/contenttype."
         required: true
       responses:
         "200":
@@ -21012,7 +21021,13 @@ paths:
           }
         }
         ```
-        Field keys inside `contentlet` are the content type's field `variable` names (e.g., `title`, `body`, `image`). Unknown field names are silently dropped (a typo like `titel` will be ignored and may surface as a misleading 'title is required' error). Radio/Select/Checkbox values are not validated against the field's `values` list — out-of-range values are accepted as-is. Always verify spelling against `fields[].variable` from `GET /api/v1/contenttype/id/{idOrVar}`.
+        Field keys inside `contentlet` are the content type's field `variable` names (e.g., `title`, `body`, `image`), and they are case-sensitive. Unknown field names are dropped (a typo like `titel` will be ignored and may surface as a misleading 'title is required' error); a key that matches a field only by case (`Title` for `title`) is dropped too and reported in `messages`. Radio/Select/Checkbox values are not validated against the field's `values` list — out-of-range values are accepted as-is. Always verify spelling against `fields[].variable` from `GET /api/v1/contenttype/id/{idOrVar}`.
+
+        **Language** — set `languageId` in `contentlet`. Without it, new content is saved in the instance's default language. To add a language version to existing content, send its `identifier` with the new `languageId`.
+
+        **Relationship fields** — the value is the related content's identifiers, as a comma-separated string (`"id1,id2"`) or an array (`["id1", "id2"]`), or a Lucene query; an empty string or array clears the relationship. Relationships are read per language: content read in a language shows only related items that have a version in that language. The save still succeeds when an identifier does not exist (it is skipped) or when related content has no version in the content's language; both are reported in `messages`. Read relationships back with `POST /api/v1/content/_search` and `depth: 1`.
+
+        **`messages`** — advisory entries about the save (ignored keys, related content that will not resolve as sent, Story Block conversion). The save itself succeeded; read them before assuming the content looks exactly as sent.
 
         **Validation error response shape:**
 
@@ -40084,8 +40099,8 @@ components:
         languageId:
           type: integer
           format: int64
-          description: Language id to search in. Defaults to the system default language
-            when omitted.
+          description: "Not a filter: results are not limited to this language. Filter\
+            \ by language with `+languageId:<id>` in `query`."
           example: 1
         limit:
           type: integer

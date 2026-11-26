@@ -158,12 +158,23 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   public static final String STYLE_PROPERTIES_KEY = "dotStyleProperties";
 
   /**
-   * Transient map key holding {@code List<String>} advisory warnings produced while converting
-   * a Story Block field value (Markdown/HTML → Tiptap JSON) on the save path. The REST layer
-   * pops this key off the fired contentlet and surfaces each entry in the response envelope's
-   * {@code messages}; it is never persisted (stripped with the other transient workflow keys).
+   * Transient map key holding {@code List<String>} advisory warnings produced on the save path:
+   * a Story Block value that could not be converted losslessly, related content that will not
+   * resolve as the caller expects, a field key that only matches a field by case. The REST
+   * layer pops this key off the fired contentlet and surfaces each entry in the response
+   * envelope's {@code messages}; it is never persisted (stripped with the other transient
+   * workflow keys).
    */
-  public static final String STORY_BLOCK_CONVERSION_WARNINGS_KEY = "__storyBlockConversionWarnings__";
+  // The value predates the name: it is kept because callers compiled against the released
+  // STORY_BLOCK_CONVERSION_WARNINGS_KEY have this string inlined.
+  public static final String SAVE_WARNINGS_KEY = "__storyBlockConversionWarnings__";
+
+  /**
+   * @deprecated The key now carries every save warning, not only Story Block conversion ones.
+   * Use {@link #SAVE_WARNINGS_KEY}.
+   */
+  @Deprecated
+  public static final String STORY_BLOCK_CONVERSION_WARNINGS_KEY = SAVE_WARNINGS_KEY;
 
   // means the contentlet is being used on unit test mode.
   // this is only for unit test. do not use on production.
