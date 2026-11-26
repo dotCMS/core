@@ -102,6 +102,17 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
     public long failedRecordCount() throws DotDataException {
         return reindexQueueFactory.failedRecordCount();
     }
+    // RED STUB (#37270): compile-only, replaced by the implementation after the Red gate.
+    @Override
+    public int clearParkedRecords(final User user) {
+        return 0;
+    }
+
+    // RED STUB (#37270): compile-only, replaced by the implementation after the Red gate.
+    static List<String> clearLogLines(final String userId, final List<String> identifiers) {
+        return List.of();
+    }
+
     @Override
     @WrapInTransaction
     public ParkedRecordsRetry retryParkedRecords(final User user) throws DotDataException {

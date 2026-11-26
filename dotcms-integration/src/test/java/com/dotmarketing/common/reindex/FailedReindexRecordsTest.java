@@ -14,6 +14,7 @@ import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.ReindexQueueFactory.ReindexAction;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -229,6 +230,46 @@ public class FailedReindexRecordsTest {
     }
 
     /**
+     * Given Scenario: A parked row (705) and a row still being retried (302).
+     * Expected Result: The operator's clear deletes the parked row only, returns its identifier
+     * for the log, and leaves the retrying row to be retried (AC-003).
+     */
+    @Test
+    public void clearDeletesParkedOnlyAndReturnsIdentifiers() throws Exception {
+        final String parked = UUIDGenerator.generateUuid();
+        final String retrying = UUIDGenerator.generateUuid();
+        final long parkedRow = insertRow(parked, 705, new Date());
+        final long retryingRow = insertRow(retrying, 302, new Date());
+
+        final List<String> cleared = FactoryLocator.getReindexQueueFactory().clearParkedRecords();
+
+        assertTrue("the parked identifier is returned for the log: " + cleared,
+                cleared.contains(parked));
+        assertTrue("a retrying row is not cleared", !cleared.contains(retrying));
+        assertEquals("the parked row is gone", 0, rowsWithId(parkedRow));
+        assertEquals("the retrying row stays", 1, rowsWithId(retryingRow));
+    }
+
+    /**
+     * Given Scenario: A parked row (705), a retrying row (302) and a fresh reindex row (300).
+     * Expected Result: {@code deleteFailedRecords()}, used when a full reindex starts and when the
+     * server boots without indices, still deletes every row above 300: there every row is
+     * requeued right after, so nothing is lost (AC-003).
+     */
+    @Test
+    public void deleteFailedRecordsStillWide() throws Exception {
+        final long parkedRow = insertRow(UUIDGenerator.generateUuid(), 705, new Date());
+        final long retryingRow = insertRow(UUIDGenerator.generateUuid(), 302, new Date());
+        final long freshRow = insertRow(UUIDGenerator.generateUuid(), 300, new Date());
+
+        reindexQueueAPI.deleteFailedRecords();
+
+        assertEquals(0, rowsWithId(parkedRow));
+        assertEquals(0, rowsWithId(retryingRow));
+        assertEquals(1, rowsWithId(freshRow));
+    }
+
+    /**
      * Inserts one journal row with the given priority under a fresh identifier.
      *
      * @return the identifier of the row
@@ -284,6 +325,11 @@ public class FailedReindexRecordsTest {
                         + " WHERE ident_to_index = ?")
                 .addParam(priority).addParam(identifier).loadResult();
         assertTrue("the content must have a journal row to park", rowsOf(identifier) > 0);
+    }
+
+    private static int rowsWithId(final long id) throws DotDataException {
+        return new DotConnect().setSQL("SELECT count(*) AS count FROM dist_reindex_journal"
+                + " WHERE id = ?").addParam(id).getInt("count");
     }
 
     private static int rowsOf(final String identifier) throws DotDataException {

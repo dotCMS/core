@@ -353,6 +353,11 @@ public class ReindexQueueFactory {
      * @return how many rows were requeued, and how many of them as deletes
      * @throws DotDataException if the journal cannot be updated
      */
+    // RED STUB (#37270): compile-only, replaced by the implementation after the Red gate.
+    protected List<String> clearParkedRecords() throws DotDataException {
+        return List.of();
+    }
+
     protected ParkedRecordsRetry retryParkedRecords() throws DotDataException {
         final int asDelete = new DotConnect().executeUpdate(
                 "UPDATE dist_reindex_journal SET dist_action = ?"
