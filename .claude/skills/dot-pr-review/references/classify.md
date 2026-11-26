@@ -73,7 +73,7 @@ If reviewable >= 1 → PROCEED with STACK
 Reviewing <reviewable> of <non_noise_total> changed files — the rest are out of scope and carry no reviewer.
 ```
 
-When `reviewable` exceeds 120 files, add to that line that the instance caps (4 code, 4 java-code) leave each reviewer 30+ files, so the review is real but shallower per file. Proceed without asking.
+When `reviewable` exceeds 120 files, add to that line that the instance caps (4 code, 4 java-code) leave each reviewer 30+ files, so the review is real but shallower per file, and record the cap in `COVERAGE_GAPS`: the report's Coverage line and the posting table then show the review as partial wherever a human decides on it. Reviewing someone else's PR interactively, ask once, `Continue with the capped review?`, and go on only on a yes. Under `auto` or `dry-run`, and for your own work (which asks nothing), go on with the cap recorded.
 
 **`force`**: a `reviewable == 0` SKIP becomes a warning, and the run proceeds with the `out-of-scope` files routed to the historical reviewer and the ac-validator only.
 
