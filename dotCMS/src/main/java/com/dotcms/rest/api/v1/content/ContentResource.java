@@ -1236,7 +1236,7 @@ public class ContentResource {
                     "Supports filtering, sorting, pagination, and depth-based relationship loading. " +
                     "Returns structured JSON with search metadata and contentlet results.\n\n" +
                     "**What a query returns:**\n\n" +
-                    "- **Unpublished content too.** Called with an API token, results include working " +
+                    "- **Unpublished content too.** Called as a back-end user (API token or session), results include working " +
                     "(unpublished) versions. Add `+live:true` to get published content only; a draft that is " +
                     "not in that result still exists.\n" +
                     "- **One entry per language version.** Content that exists in two languages comes back " +

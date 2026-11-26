@@ -42,7 +42,6 @@ import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTran
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.LuceneQueryUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
@@ -64,6 +63,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.StringReader;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.function.LongFunction;
 import java.util.function.LongSupplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -494,6 +494,15 @@ public class MapToContentletPopulator  {
             }
         }
         return result;
+    }
+
+    /**
+     * @deprecated Returns every save warning, not only Story Block conversion ones. Use
+     * {@link #popSaveWarningMessages(Contentlet...)}.
+     */
+    @Deprecated
+    public static List<MessageEntity> popStoryBlockConversionMessages(final Contentlet... contentlets) {
+        return popSaveWarningMessages(contentlets);
     }
 
     /**
@@ -997,8 +1006,6 @@ public class MapToContentletPopulator  {
 
                 if (UtilMethods.isSet(query)) {
 
-                    this.warnAboutRelatedIdentifiers(contentlet, queryEntry.getKey(), query);
-
                     try {
 
                         // Resolve the relationship targets on behalf of the user performing the
@@ -1021,6 +1028,16 @@ public class MapToContentletPopulator  {
                         final List<Contentlet> contentlets = APILocator.getPermissionAPI()
                                 .filterCollection(resolvedContentlets,
                                         PermissionAPI.PERMISSION_READ, user, false);
+
+                        // Built from what is actually related (after the READ filter), so the
+                        // messages describe the saved result and never tell a caller anything
+                        // about content they cannot read.
+                        relationshipResultWarnings(queryEntry.getKey(), query,
+                                contentlets.stream().collect(Collectors.toMap(
+                                        Contentlet::getIdentifier, Contentlet::getLanguageId,
+                                        (first, second) -> first, LinkedHashMap::new)),
+                                contentlet.getLanguageId(), this::languageLabel)
+                                .forEach(message -> appendSaveWarning(contentlet, message));
 
                         if (contentlets.size() > 0) {
 
@@ -1122,49 +1139,62 @@ public class MapToContentletPopulator  {
     }
 
     /**
-     * Adds a save warning for each related identifier in {@code filter} that will not relate as
-     * the caller expects: one that does not exist (it is skipped), and one with no version in
-     * the language being saved (the relationship is stored, but reading this contentlet in that
-     * language returns it without the related content until a version exists). Lucene queries
-     * in the filter are not checked.
+     * Save warnings for one relationship field, computed from the contentlets that were actually
+     * related (identifier to language id, after the READ permission filter):
+     * <ul>
+     *     <li>each identifier in {@code filter} that was not related, without telling apart
+     *     content that does not exist from content the caller cannot read;</li>
+     *     <li>each related contentlet resolved from another language, which is how
+     *     {@link RelationshipUtil#filterContentlet} relates an item with no version in the
+     *     language being saved. Reads in that language may return this content without it.</li>
+     * </ul>
+     * Lucene queries in the filter are not checked; identifiers in it are.
      */
-    private void warnAboutRelatedIdentifiers(final Contentlet contentlet, final String fieldName,
-                                             final String filter) {
-        if (LuceneQueryUtils.isLuceneQuery(filter)) {
-            return;
-        }
-        final long languageId = contentlet.getLanguageId();
+    @VisibleForTesting
+    static List<String> relationshipResultWarnings(final String fieldName, final String filter,
+                                                   final Map<String, Long> related,
+                                                   final long languageId,
+                                                   final LongFunction<String> languageLabel) {
+        final List<String> warnings = new ArrayList<>();
+        final Set<String> requested = new LinkedHashSet<>();
         for (final String element : filter.split(COMMA)) {
             final String id = element.trim();
-            if (!UUIDUtil.isUUID(id)) {
-                continue;
-            }
-            try {
-                final Identifier identifier = APILocator.getIdentifierAPI().find(id);
-                if (null == identifier || !UtilMethods.isSet(identifier.getId())) {
-                    appendSaveWarning(contentlet, String.format(
-                            "Relationship field '%s': no content exists with identifier '%s'; "
-                                    + "it was not related.", fieldName, id));
-                    continue;
-                }
-                if (languageId > 0 && null == APILocator.getContentletAPI()
-                        .findContentletForLanguage(languageId, identifier)) {
-                    final Language language = APILocator.getLanguageAPI().getLanguage(languageId);
-                    final String languageLabel = null != language
-                            ? language.getIsoCode() + " (id " + languageId + ")"
-                            : "id " + languageId;
-                    appendSaveWarning(contentlet, String.format(
-                            "Relationship field '%s': related content '%s' has no version in "
-                                    + "language %s. The relationship is saved, but reading this "
-                                    + "content in that language returns it without the related "
-                                    + "content until '%s' has a version in that language.",
-                            fieldName, id, languageLabel, id));
-                }
-            } catch (final Exception e) {
-                Logger.debug(this, String.format("Could not check related identifier '%s': %s",
-                        id, e.getMessage()));
+            if (UUIDUtil.isUUID(id)) {
+                requested.add(id);
             }
         }
+        // Identifiers are stored with or without dashes; compare them in one form, ignoring case.
+        final Set<String> relatedKeys = related.keySet().stream()
+                .map(id -> UUIDUtil.unUidIfy(id).toLowerCase())
+                .collect(Collectors.toSet());
+        requested.stream()
+                .filter(id -> !relatedKeys.contains(UUIDUtil.unUidIfy(id).toLowerCase()))
+                .forEach(id -> warnings.add(
+                String.format("Relationship field '%s': '%s' was not related: no content with "
+                        + "that identifier exists, or you do not have permission to read it.",
+                        fieldName, id)));
+        if (languageId > 0) {
+            related.forEach((id, relatedLanguageId) -> {
+                if (null != relatedLanguageId && relatedLanguageId != languageId) {
+                    warnings.add(String.format("Relationship field '%s': related content '%s' "
+                            + "has no version in language %s. The relationship is saved, but "
+                            + "reads of this content in that language (for example _search with "
+                            + "depth) may return it without the related content. To fix it, save "
+                            + "'%s' with languageId %d and the same identifier, then read this "
+                            + "content again.",
+                            fieldName, id, languageLabel.apply(languageId), id, languageId));
+                }
+            });
+        }
+        return warnings;
+    }
+
+    private String languageLabel(final long languageId) {
+        final Language language = Try.of(() -> APILocator.getLanguageAPI().getLanguage(languageId))
+                .getOrNull();
+        return null != language && UtilMethods.isSet(language.getIsoCode())
+                ? language.getIsoCode() + " (id " + languageId + ")"
+                : "id " + languageId;
     }
 
     /**

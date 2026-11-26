@@ -173,7 +173,7 @@ Custom scripts have a **10-second timeout**; a check that polls can raise it wit
 
 Give fixtures a per-run name (`'EvalAuthor' + Date.now().toString(36) + run`). Deleting a content type finishes in the background, and its variable stays taken until it does, so reusing one fixed name across runs fails.
 
-If `setup` throws, the run is recorded as failed without calling the model. Cleanup still runs, but with no values, so a setup that creates several things should clean up after itself before rethrowing.
+If `setup` throws, the run is recorded as failed without calling the model, and cleanup still runs. Values the script has already assigned to `vars` (e.g. `Object.assign(vars, { type })` right after choosing a name) are used for that cleanup, so assign each fixture's name before creating it. Returned values are merged over the assigned ones.
 
 ### Cleanup
 

@@ -223,7 +223,7 @@ export async function loadDotCMSContext(
         onError?.(label, err);
     };
 
-    const [contentTypes, sites, languages, currentUser] = await Promise.all([
+    const loaders = [
         loadContentTypes(request).catch((err): ContentTypeSummary[] => {
             fail('contentTypes', err);
             return [];
@@ -240,18 +240,19 @@ export async function loadDotCMSContext(
             fail('currentUser', err);
             return null;
         })
-    ]);
+    ] as const;
+    const [contentTypes, sites, languages, currentUser] = await Promise.all(loaders);
 
     const statuses = failures.map(authStatus);
-    if (failures.length === 4 && statuses.every((status) => status !== undefined)) {
+    if (failures.length === loaders.length && statuses.every((status) => status !== undefined)) {
         const status = statuses[0] as number;
         throw new HttpError(
             status,
             status === 401 ? 'Unauthorized' : 'Forbidden',
             'dotCMS rejected the configured API token while loading instance context ' +
                 '(content types, sites, languages, current user). The token is invalid, expired, ' +
-                'revoked, or lacks back-end access. Create a new API token in dotCMS and update ' +
-                'the server configuration (AUTH_TOKEN); retrying with the same token will not help.'
+                'revoked, or lacks back-end access. Provide a valid token for this connection; ' +
+                'retrying with the same token will not help.'
         );
     }
 

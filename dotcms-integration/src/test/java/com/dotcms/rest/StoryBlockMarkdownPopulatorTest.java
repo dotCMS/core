@@ -186,11 +186,11 @@ public class StoryBlockMarkdownPopulatorTest extends IntegrationTestBase {
         assertFalse("The rich block is replaced", stored.contains("dotContent"));
 
         final List<MessageEntity> messages =
-                MapToContentletPopulator.popStoryBlockConversionMessages(result);
+                MapToContentletPopulator.popSaveWarningMessages(result);
         assertTrue("A replacement warning must be surfaced",
                 UtilMethods.isSet(messages) && messages.get(0).getMessage().contains("emb-1"));
         assertFalse("Popping must remove the transient key",
-                result.getMap().containsKey(Contentlet.STORY_BLOCK_CONVERSION_WARNINGS_KEY));
+                result.getMap().containsKey(Contentlet.SAVE_WARNINGS_KEY));
     }
 
     /**
@@ -316,7 +316,7 @@ public class StoryBlockMarkdownPopulatorTest extends IntegrationTestBase {
         assertFalse("Rich blocks are replaced", stored.contains("dotContent"));
 
         final List<MessageEntity> messages =
-                MapToContentletPopulator.popStoryBlockConversionMessages(result);
+                MapToContentletPopulator.popSaveWarningMessages(result);
         assertTrue("A replacement warning must be surfaced", UtilMethods.isSet(messages));
         final String warning = messages.get(0).getMessage();
         assertTrue("Warning names the replaced contentlet", warning.contains("emb-1"));
@@ -345,7 +345,7 @@ public class StoryBlockMarkdownPopulatorTest extends IntegrationTestBase {
         assertTrue("Rich block preserved via its fence", stored.contains("\"dotContent\""));
         assertTrue("Reference identity preserved", stored.contains("emb-1"));
         assertFalse("Nothing was lost, so no warning is raised",
-                result.getMap().containsKey(Contentlet.STORY_BLOCK_CONVERSION_WARNINGS_KEY));
+                result.getMap().containsKey(Contentlet.SAVE_WARNINGS_KEY));
     }
 
     /**
@@ -370,7 +370,7 @@ public class StoryBlockMarkdownPopulatorTest extends IntegrationTestBase {
             assertEquals("Existing rich document must be preserved untouched", richDoc,
                     result.getStringProperty(STORY_BLOCK_VAR));
             final List<MessageEntity> messages =
-                    MapToContentletPopulator.popStoryBlockConversionMessages(result);
+                    MapToContentletPopulator.popSaveWarningMessages(result);
             assertTrue("The caller is told the value was ignored", UtilMethods.isSet(messages));
         } finally {
             Config.setProperty(MapToContentletPopulator.STORY_BLOCK_RICH_OVERWRITE_PROTECT_PROP, previous);
@@ -613,7 +613,7 @@ public class StoryBlockMarkdownPopulatorTest extends IntegrationTestBase {
         assertTrue("Its identifier survives", stored.contains("emb-9"));
 
         final List<MessageEntity> messages =
-                MapToContentletPopulator.popStoryBlockConversionMessages(result);
+                MapToContentletPopulator.popSaveWarningMessages(result);
         assertFalse("No replacement warning when the rich block is carried over",
                 UtilMethods.isSet(messages));
     }

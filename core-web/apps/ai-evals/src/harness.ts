@@ -98,18 +98,39 @@ async function runSetup(
     dotcmsUrl: string,
     authToken: string
 ): Promise<TaskVars> {
-    const result = await runScript(
-        script,
-        { url: dotcmsUrl, token: authToken, vars: {}, run },
-        SETUP_TIMEOUT_MS
-    );
-    if (result === undefined || result === null) return {};
-    if (typeof result !== 'object' || Array.isArray(result)) {
-        throw new Error('setup must return an object of values (or nothing)');
+    // Values the script assigns to `vars` as it goes are kept if it throws later, so cleanup can
+    // still remove what it created before failing.
+    const assigned: Record<string, unknown> = {};
+    const toVars = (values: Record<string, unknown>): TaskVars =>
+        Object.fromEntries(Object.entries(values).map(([k, v]) => [k, String(v)]));
+    let result: unknown;
+    try {
+        result = await runScript(
+            script,
+            { url: dotcmsUrl, token: authToken, vars: assigned as TaskVars, run },
+            SETUP_TIMEOUT_MS
+        );
+    } catch (err) {
+        throw new SetupError(err, toVars(assigned));
     }
-    return Object.fromEntries(
-        Object.entries(result as Record<string, unknown>).map(([k, v]) => [k, String(v)])
-    );
+    if (result === undefined || result === null) return toVars(assigned);
+    if (typeof result !== 'object' || Array.isArray(result)) {
+        throw new SetupError(
+            new Error('setup must return an object of values (or nothing)'),
+            toVars(assigned)
+        );
+    }
+    return toVars({ ...assigned, ...(result as Record<string, unknown>) });
+}
+
+/** A failed setup, with the values it had assigned to `vars` before failing. */
+class SetupError extends Error {
+    constructor(
+        readonly original: unknown,
+        readonly vars: TaskVars
+    ) {
+        super(original instanceof Error ? original.message : String(original));
+    }
 }
 
 // ── HTTP GET assertion ────────────────────────────────────────────────────────
@@ -281,6 +302,10 @@ async function executeRun(index: number, options: RunTaskOptions): Promise<RunRe
             vars = await runSetup(task.setup, index, dotcmsUrl, authToken);
             partialRun = { ...partialRun, vars };
         } catch (err) {
+            if (err instanceof SetupError) {
+                vars = err.vars;
+                partialRun = { ...partialRun, vars };
+            }
             return failed('setup', err);
         }
     }

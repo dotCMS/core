@@ -4,6 +4,7 @@ package com.dotcms.rest.api.v2.contenttype;
 import static com.dotcms.util.CollectionsUtils.imap;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import io.vavr.control.Try;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
@@ -134,24 +135,30 @@ public class FieldResource implements Serializable {
     /**
      * The field to create on the content type named in the path. A body without
      * {@code contentTypeId} gets the path's type; a body whose {@code contentTypeId} names another
-     * type is refused rather than saved on that other type.
+     * type (by id or variable) is refused rather than saved on that other type. The returned field
+     * always carries the type's id.
      *
      * @throws DotStateException (400) when the body and the path name different content types
      */
     public static Field withContentTypeFromPath(final Field field, final String typeIdOrVarName,
                                                 final User user)
             throws DotDataException, DotSecurityException {
-        final ContentType contentType = APILocator.getContentTypeAPI(user).find(typeIdOrVarName);
-        if (!UtilMethods.isSet(field.contentTypeId())) {
-            return FieldBuilder.builder(field).contentTypeId(contentType.id()).build();
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+        final ContentType contentType = contentTypeAPI.find(typeIdOrVarName);
+        final String bodyType = field.contentTypeId();
+        if (UtilMethods.isSet(bodyType) && !bodyType.equals(contentType.id())) {
+            // The body may name the type by id or by variable, like the path does.
+            final String bodyTypeId = Try.of(() -> contentTypeAPI.find(bodyType).id())
+                    .getOrNull();
+            if (!contentType.id().equals(bodyTypeId)) {
+                throw new DotStateException(String.format(
+                        "The field's contentTypeId '%s' does not match the content type in the "
+                                + "path ('%s', id '%s'). Omit contentTypeId: the path decides "
+                                + "the type.",
+                        bodyType, typeIdOrVarName, contentType.id()));
+            }
         }
-        if (!field.contentTypeId().equals(contentType.id())) {
-            throw new DotStateException(String.format(
-                    "The field's contentTypeId '%s' does not match the content type in the path "
-                            + "('%s', id '%s'). Omit contentTypeId: the path decides the type.",
-                    field.contentTypeId(), typeIdOrVarName, contentType.id()));
-        }
-        return field;
+        return FieldBuilder.builder(field).contentTypeId(contentType.id()).build();
     }
 
     @GET

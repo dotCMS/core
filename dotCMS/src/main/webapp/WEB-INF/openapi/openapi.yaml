@@ -7588,7 +7588,7 @@ paths:
 
         **What a query returns:**
 
-        - **Unpublished content too.** Called with an API token, results include working (unpublished) versions. Add `+live:true` to get published content only; a draft that is not in that result still exists.
+        - **Unpublished content too.** Called as a back-end user (API token or session), results include working (unpublished) versions. Add `+live:true` to get published content only; a draft that is not in that result still exists.
         - **One entry per language version.** Content that exists in two languages comes back twice, with the same `identifier`. Filter with `+languageId:<id>` **in the query**: a `languageId` property in the request body does not filter.
         - **Fields by type.** Query a content type's field as `+<ContentTypeVar>.<fieldVar>:value`, e.g. `+Blog.author:"Ada"`, together with `+contentType:<ContentTypeVar>`.
         - **Relationships.** With `depth: 1`, relationship fields come back as the related contentlets, resolved in each result's language.
@@ -40086,8 +40086,8 @@ components:
         languageId:
           type: integer
           format: int64
-          description: Language id to search in. Defaults to the system default language
-            when omitted.
+          description: "Not a filter: results are not limited to this language. Filter\
+            \ by language with `+languageId:<id>` in `query`."
           example: 1
         limit:
           type: integer

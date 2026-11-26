@@ -495,9 +495,7 @@ describe('createRuntime context — rejected credentials', () => {
     it('does not cache the failure: a later call with working credentials loads normally', async () => {
         let refused = true;
         fetchMock.mockImplementation(async () =>
-            refused
-                ? jsonResponse({}, { ok: false, status: 401 })
-                : jsonResponse({ entity: [] })
+            refused ? jsonResponse({}, { ok: false, status: 401 }) : jsonResponse({ entity: [] })
         );
 
         const dotcms = createRuntime({ url: 'https://demo.dotcms.com', token: 't' });

@@ -9,6 +9,7 @@ setup: |
     const suffix = Date.now().toString(36) + run;
     const book = 'EvalBook' + suffix;
     const author = 'EvalAuthor' + suffix;
+    Object.assign(vars, { book, author }); // cleanup can use these if setup fails later
     const headers = { Authorization: `Bearer ${token}`, Accept: 'application/json', 'Content-Type': 'application/json' };
     const call = async (method, path, body) => {
         const r = await fetch(new URL(path, url), { method, headers, body: body && JSON.stringify(body) });

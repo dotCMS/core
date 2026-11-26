@@ -167,6 +167,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
    */
   public static final String SAVE_WARNINGS_KEY = "__saveWarnings__";
 
+  /**
+   * @deprecated The key now carries every save warning, not only Story Block conversion ones.
+   * Use {@link #SAVE_WARNINGS_KEY}.
+   */
+  @Deprecated
+  public static final String STORY_BLOCK_CONVERSION_WARNINGS_KEY = SAVE_WARNINGS_KEY;
+
   // means the contentlet is being used on unit test mode.
   // this is only for unit test. do not use on production.
   @VisibleForTesting

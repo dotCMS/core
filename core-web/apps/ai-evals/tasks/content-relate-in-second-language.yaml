@@ -13,6 +13,7 @@ setup: |
     const suffix = Date.now().toString(36) + run;
     const author = 'EvalAuthor' + suffix;
     const post = 'EvalPost' + suffix;
+    Object.assign(vars, { author, post }); // cleanup can use these if setup fails later
     const headers = { Authorization: `Bearer ${token}`, Accept: 'application/json', 'Content-Type': 'application/json' };
     const call = async (method, path, body) => {
         const r = await fetch(new URL(path, url), { method, headers, body: body && JSON.stringify(body) });
@@ -27,6 +28,7 @@ setup: |
     if (!second) {
         second = (await call('POST', '/api/v2/languages', { languageCode: 'fr', countryCode: 'FR', language: 'French', country: 'France' })).entity;
         createdLanguage = String(second.id);
+        vars.createdLanguage = createdLanguage;
     }
     const sites = (await call('GET', '/api/v1/site?per_page=100')).entity;
     const site = sites.find((s) => s.hostname === 'default') ?? sites.find((s) => s.default);
