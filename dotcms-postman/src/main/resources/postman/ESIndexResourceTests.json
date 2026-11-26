@@ -795,6 +795,57 @@
 					"response": []
 				},
 				{
+					"name": "RetryFailedRecordsAfterFullReindexStopped",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "efe63de7-5c83-4081-8eb9-f074fedae2f5",
+								"exec": [
+									"// #37270: once the full reindex is no longer running, the same retry succeeds.",
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/index/failed/retry",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"index",
+								"failed",
+								"retry"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "ClearFailedRecordsAsAdmin",
 					"event": [
 						{

@@ -201,6 +201,32 @@ public class FailedReindexRecordsTest {
     }
 
     /**
+     * Given Scenario: A content is indexed, then its versions disappear from the database while
+     * its document stays in the index (a stale search hit), and its journal row is parked.
+     * Expected Result: The retry requeues the row as a delete; the next iteration removes the
+     * stale document and acknowledges the row, without failing the batch (AC-001).
+     */
+    @Test
+    public void retriedDeleteRemovesStaleDocumentAndLeavesJournal() throws Exception {
+        final Contentlet content = newContentlet("stale body");
+        final String identifier = content.getIdentifier();
+        inserted.add(identifier);
+        runOneReindexIteration(claimEntries(identifier));
+        assertTrue("the content must be indexed first: " + identifier, awaitIndexed(identifier));
+
+        new DotConnect().setSQL("DELETE FROM contentlet_version_info WHERE identifier = ?")
+                .addParam(identifier).loadResult();
+        insertRow(identifier, 705, new Date());
+
+        reindexQueueAPI.retryParkedRecords(systemUser);
+        runOneReindexIteration(claimEntries(identifier));
+
+        assertTrue("the stale document must leave the index: " + identifier,
+                awaitAbsent(identifier));
+        assertEquals("the retried delete must leave the journal", 0, rowsOf(identifier));
+    }
+
+    /**
      * Given Scenario: A parked row whose cause is still there: an oversized document the mapping
      * step withholds every time.
      * Expected Result: After the retry it fails again, parks again once its budget runs out, and
@@ -382,6 +408,20 @@ public class FailedReindexRecordsTest {
         if (!acknowledged.isEmpty()) {
             reindexQueueAPI.deleteReindexEntry(acknowledged);
         }
+    }
+
+    /** Waits for the index to refresh and tells whether the identifier is no longer searchable. */
+    private static boolean awaitAbsent(final String identifier) throws Exception {
+        for (int i = 0; i < 20; i++) {
+            CacheLocator.getESQueryCache().clearCache();
+            CacheLocator.getOSQueryCache().clearCache();
+            if (APILocator.getContentletAPI().indexCount("+identifier_dotraw:" + identifier,
+                    systemUser, false) == 0) {
+                return true;
+            }
+            Thread.sleep(500);
+        }
+        return false;
     }
 
     /** Waits for the index to refresh and tells whether the identifier is searchable. */

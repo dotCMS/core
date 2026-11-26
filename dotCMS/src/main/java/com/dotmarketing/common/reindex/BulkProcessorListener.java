@@ -148,6 +148,21 @@ public class BulkProcessorListener implements IndexBulkListener {
         Logger.info(this.getClass(), "-----------");
     }
 
+    /**
+     * Records the outcome of one bulk response of the batch, per identifier: whether one of its
+     * documents was indexed and whether one failed. An entry is marked failed the first time one
+     * of its documents fails in the batch, and never again in the same batch. The query caches are
+     * cleared on any success, so a search right after a save does not read a stale cached result.
+     *
+     * <p>No journal row is deleted here (#37270). A sibling document of the same identifier
+     * (another language, the working or live version, or the other engine in Phase 2) may fail in
+     * a response that has not come back yet, and deleting on the first success erased that
+     * failure. {@link ReindexThread} deletes {@link #entriesToAcknowledge()} once the processor
+     * closed and every response of the batch has reported.</p>
+     *
+     * @param executionId unique ID assigned by the bulk processor
+     * @param results     one result per document of the response
+     */
     @Override
     public void afterBulk(final long executionId, final List<IndexBulkItemResult> results) {
         if (shadow) {
