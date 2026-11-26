@@ -19942,7 +19942,9 @@ paths:
   /v1/users:
     post:
       description: "Creates a new user. Requires a CMS Administrator. FirstName, LastName,\
-        \ Email and Password are required"
+        \ Email and Password are required. The optional active flag sets the new user's\
+        \ status; omit it to create an active user. The optional male flag is applied\
+        \ the same way; omit it to take the default."
       operationId: createUser
       requestBody:
         content:
@@ -19992,7 +19994,12 @@ paths:
         \ the user's individual role) are never modified, keys that resolve to no\
         \ role are ignored, and null or blank entries are rejected with 400. Note\
         \ that roles without a key cannot be expressed in this list — manage those\
-        \ through the role-centric /v1/roles/{roleId}/users endpoints instead."
+        \ through the role-centric /v1/roles/{roleId}/users endpoints instead. The\
+        \ optional active flag activates or deactivates the user; omit it to leave\
+        \ the status untouched. Deactivating a user invalidates their login tokens\
+        \ and ends their sessions, which is why deactivating your own account is refused\
+        \ with a 400. The optional male flag follows the same rule: omit it to leave\
+        \ the stored value untouched."
       operationId: updateUser
       requestBody:
         content:
@@ -20016,7 +20023,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseSiteVariablesEntityView"
-          description: If the user information is not valid
+          description: "If the user information is not valid, or the payload asks\
+            \ to deactivate the calling user's own account"
         "403":
           content:
             application/json:
@@ -20132,6 +20140,8 @@ paths:
       - Users
   /v1/users/deactivate/{userId}:
     patch:
+      description: "Deactivates a user, which invalidates their login tokens and ends\
+        \ their sessions. Deactivating your own account is refused with a 400."
       operationId: deactivateUser
       parameters:
       - description: "Identifier of an user.\n\nExample value: `b9d89c80-3d88-4311-8365-187323c96436` "
@@ -20152,7 +20162,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseUserMapEntityView"
-          description: If the user information is not valid
+          description: "If the user id is the calling user's own, which cannot be\
+            \ deactivated"
         "403":
           content:
             application/json:
@@ -42786,6 +42797,12 @@ components:
       properties:
         active:
           type: boolean
+          description: "Whether the user account is active. Absent = the status is\
+            \ left as it is on update, and a new user is created active. An explicit\
+            \ value activates or deactivates the user; deactivating invalidates their\
+            \ login tokens and ends their sessions."
+          example: true
+          nullable: true
         additionalInfo:
           type: object
           additionalProperties:
@@ -42802,6 +42819,11 @@ components:
           type: string
         male:
           type: boolean
+          description: "Whether the user is male. Absent = the stored value is left\
+            \ as it is on update, and a new user is created with false. An explicit\
+            \ value sets it."
+          example: false
+          nullable: true
         middleName:
           type: string
         nickName:
