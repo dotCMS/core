@@ -1163,15 +1163,16 @@ public class ContentTypeHelper implements Serializable {
     }
 
     /**
-     * Rejects a request whose {@code workflow} key is present but is not a JSON array, including
-     * {@code "workflow": null}. Without this check such a value would be read as an empty list
-     * and silently remove every scheme; {@code "workflow": []} is the way to clear them. Every
-     * content type in the body is checked: a single object, or each entry of an array body.
+     * Rejects a request whose {@code workflow} value has a shape the form cannot read. Accepted
+     * shapes are an array, a string (one scheme id or variable name, or several comma-separated)
+     * and {@code null}; anything else, such as a number, a boolean or an object, would otherwise
+     * be read as an empty list and silently remove every scheme. Every content type in the body
+     * is checked: a single object, or each entry of an array body.
      *
      * @param requestJson the raw request body, may be {@code null}
-     * @throws BadRequestException if any {@code workflow} value is not an array
+     * @throws BadRequestException if any {@code workflow} value has another shape
      */
-    public static void checkWorkflowIsArray(final Object requestJson) {
+    public static void checkWorkflowShape(final Object requestJson) {
         final JsonNode root = readRequestTree(requestJson);
         if (null == root) {
             return;
@@ -1179,9 +1180,9 @@ public class ContentTypeHelper implements Serializable {
         final Iterable<JsonNode> entries = root.isArray() ? root : List.of(root);
         for (final JsonNode entry : entries) {
             final JsonNode workflow = entry.get(ContentTypeFormDeserialize.WORKFLOW_ATTRIBUTE_NAME);
-            if (null != workflow && !workflow.isArray()) {
-                throw new BadRequestException(
-                        "`workflow` must be an array of workflow scheme ids or scheme objects");
+            if (null != workflow && !workflow.isArray() && !workflow.isTextual() && !workflow.isNull()) {
+                throw new BadRequestException("`workflow` must be an array of workflow scheme ids "
+                        + "or scheme objects, a comma-separated string of scheme ids, or null");
             }
         }
     }
