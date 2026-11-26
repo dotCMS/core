@@ -7,6 +7,7 @@ import {
 import { of } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
+import { signal } from '@angular/core';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -17,11 +18,12 @@ import {
     DotMessageService,
     DotRolesService
 } from '@dotcms/data-access';
+import { GlobalStore } from '@dotcms/store';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotUsersCreateComponent } from './dot-users-create.component';
 
-import { DotUsersService } from '../services/dot-users.service';
+import { DotUserFormPayload, DotUsersService } from '../services/dot-users.service';
 import { createFakeUser, createFakeUserDetail } from '../testing/dot-user.mock';
 
 const MOCK_USER = createFakeUser();
@@ -29,6 +31,13 @@ const MOCK_USER_DETAIL = createFakeUserDetail();
 
 /** `p-tab` value of the Permissions tab. */
 const PERMISSIONS_TAB = 2;
+
+/**
+ * Stands in for `GlobalStore.loggedUser`. A real signal, so a test that
+ * sets it after the component exists still drives the effect that
+ * disables the Active toggle.
+ */
+const loggedUser = signal<{ userId: string } | null>(null);
 
 /** p-button doesn't forward clicks itself — reach the inner native button. */
 function saveButton(spectator: Spectator<DotUsersCreateComponent>): HTMLButtonElement {
@@ -88,8 +97,19 @@ describe('DotUsersCreateComponent', () => {
                 getRoots: vi.fn().mockReturnValue(of([])),
                 getById: vi.fn()
             }),
-            mockProvider(DotHttpErrorManagerService, { handle: vi.fn() })
+            mockProvider(DotHttpErrorManagerService, { handle: vi.fn() }),
+            mockProvider(GlobalStore, {
+                // A getter, so the component reads the live signal instead of a snapshot
+                // taken when the provider was built.
+                get loggedUser() {
+                    return loggedUser;
+                }
+            })
         ]
+    });
+
+    beforeEach(() => {
+        loggedUser.set(null);
     });
 
     describe('create mode', () => {
@@ -209,6 +229,32 @@ describe('DotUsersCreateComponent', () => {
             );
         });
 
+        it('should always send `active` on create', () => {
+            // On create there is no stored status to preserve, so the
+            // toggle's value is the only source and must travel even
+            // when the user never touched it.
+            spectator.component.form.patchValue({
+                account: {
+                    firstName: 'Ada',
+                    lastName: 'Lovelace',
+                    email: 'ada@dotcms.com',
+                    password: 'Xy7#abcdefghijklm',
+                    confirmPassword: 'Xy7#abcdefghijklm'
+                }
+            });
+            spectator.detectChanges();
+
+            spectator.click(saveButton(spectator));
+
+            expect(dialogRef.close).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    action: 'save',
+                    mode: 'create',
+                    payload: expect.objectContaining({ active: true })
+                })
+            );
+        });
+
         it('should send the password exactly as typed, spaces included', () => {
             const typed = ' Xy7#abcdefghijk ';
             spectator.component.form.patchValue({
@@ -319,6 +365,60 @@ describe('DotUsersCreateComponent', () => {
             expect(account.lastName).toBe('Doe');
             expect(account.email).toBe('jane@dotcms.com');
             expect(account.active).toBe(true);
+        });
+
+        it('should omit `active` when the Active toggle was never touched', () => {
+            // The backend reads an absent `active` as "leave the status
+            // as it is" (#38730). Resending the value the dialog loaded
+            // would undo a deactivation another administrator made while
+            // this dialog was open.
+            spectator.component.form.controls.account.patchValue({ firstName: 'Renamed' });
+            spectator.detectChanges();
+
+            spectator.click(saveButton(spectator));
+
+            const call = (dialogRef.close as Mock).mock.calls[0][0] as {
+                payload: DotUserFormPayload;
+            };
+            expect(call.payload).not.toHaveProperty('active');
+            expect(call.payload.firstName).toBe('Renamed');
+        });
+
+        it('should send `active` when the Active toggle was moved', () => {
+            // `patchValue` on load leaves the control pristine, so a dirty
+            // control is exactly what distinguishes a real toggle flip from
+            // the loaded value.
+            const active = spectator.component.form.controls.account.controls.active;
+            active.setValue(false);
+            active.markAsDirty();
+            spectator.detectChanges();
+
+            spectator.click(saveButton(spectator));
+
+            expect(dialogRef.close).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    action: 'save',
+                    mode: 'update',
+                    payload: expect.objectContaining({ active: false })
+                })
+            );
+        });
+
+        it('should disable the Active toggle on your own account', () => {
+            // PUT /v1/users refuses to deactivate the caller's own account, and
+            // this dialog closes on Save, so letting the toggle be moved would
+            // throw away every other edit when the request comes back rejected.
+            loggedUser.set({ userId: MOCK_USER.userId });
+            spectator.detectChanges();
+
+            expect(spectator.component.form.controls.account.controls.active.disabled).toBe(true);
+        });
+
+        it('should leave the Active toggle enabled on another user', () => {
+            loggedUser.set({ userId: 'someone-else' });
+            spectator.detectChanges();
+
+            expect(spectator.component.form.controls.account.controls.active.enabled).toBe(true);
         });
 
         it('should NOT mark password as required in edit mode', () => {
