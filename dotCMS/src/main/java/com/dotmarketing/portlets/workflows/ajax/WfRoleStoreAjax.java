@@ -6,6 +6,7 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -239,7 +240,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
      *
      * @param actionId the action id from the request
      * @return the {@link WorkflowAction}, or {@code null} when no id is given, the id matches no
-     *         action or the lookup fails
+     *         action, the lookup fails or the action's scheme needs a license this instance lacks
      */
     private WorkflowAction findAction(final String actionId) {
         if (!UtilMethods.isSet(actionId)) {
@@ -247,8 +248,10 @@ public class WfRoleStoreAjax extends WfBaseAction {
         }
         try {
             return APILocator.getWorkflowAPI().findAction(actionId, getUser());
-        } catch (final DotDataException | DotSecurityException e) {
-            Logger.warn(WfRoleStoreAjax.class, "Unable to load a workflow action for the assignee list");
+        } catch (final DotDataException | DotSecurityException | InvalidLicenseException e) {
+            Logger.warn(WfRoleStoreAjax.class, String.format(
+                    "Unable to load a workflow action for the assignee list of user ID '%s'",
+                    null != getUser() ? getUser().getUserId() : null));
             Logger.debug(WfRoleStoreAjax.class, "Workflow action lookup failed", e);
             return null;
         }

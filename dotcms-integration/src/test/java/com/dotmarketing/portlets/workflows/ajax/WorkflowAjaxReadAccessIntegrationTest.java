@@ -294,6 +294,24 @@ public class WorkflowAjaxReadAccessIntegrationTest extends IntegrationTestBase {
     }
 
     /**
+     * Method to test: {@link WfStepAjax#listByScheme(HttpServletRequest, HttpServletResponse)}
+     * Given: a back-end user whose only portlet is Publishing Queue (a role picker portlet, not a
+     * step list one), and a back-end user with no portlet at all
+     * Expected: 403 and no steps for both
+     */
+    @Test
+    public void stepList_publishingQueueOnlyAndNoPortletUsers_areForbidden() throws Exception {
+        final User noPortletUser = track(new UserDataGen()
+                .roles(roleAPI.loadBackEndUserRole()).nextPersisted());
+        for (final User user : List.of(userWithPortlet("publishing-queue"), noPortletUser)) {
+            final Result result = stepList(user, scheme.getId());
+
+            assertEquals(user.getUserId(), HttpServletResponse.SC_FORBIDDEN, result.status);
+            assertFalse(user.getUserId(), result.body.contains(step.getId()));
+        }
+    }
+
+    /**
      * Status sent with {@code sendError} (0 when none) and the body written.
      */
     private static final class Result {

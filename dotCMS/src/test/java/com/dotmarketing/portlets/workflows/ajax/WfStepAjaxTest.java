@@ -79,6 +79,16 @@ class WfStepAjaxTest {
     }
 
     @Test
+    void stepListWithoutSchemeAnswersForbiddenWithoutAccess() throws Exception {
+        when(readAccess.canReadSteps(user)).thenReturn(false);
+
+        stepAjax.listByScheme(request, response);
+
+        verify(response).sendError(HttpServletResponse.SC_FORBIDDEN);
+        verify(response, never()).getWriter();
+    }
+
+    @Test
     void stepListWithoutSchemeWritesNothing() throws Exception {
         when(readAccess.canReadSteps(user)).thenReturn(true);
 

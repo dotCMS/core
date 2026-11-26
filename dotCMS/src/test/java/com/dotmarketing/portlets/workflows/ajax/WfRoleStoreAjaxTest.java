@@ -12,6 +12,10 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.util.SecurityLogger;
+import java.util.function.Supplier;
+import org.mockito.ArgumentCaptor;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.liferay.portal.model.User;
@@ -86,6 +90,28 @@ class WfRoleStoreAjaxTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    void refusalRecordsOneSecurityLogLineWithoutRequestValues() throws Exception {
+        when(user.getUserId()).thenReturn("refused-user");
+        when(readAccess.canReadRoles(user)).thenReturn(false);
+        when(request.getParameter("roleId")).thenReturn("some-role-id");
+        when(request.getParameter("searchName")).thenReturn("some-search");
+
+        try (MockedStatic<SecurityLogger> securityLogger = org.mockito.Mockito.mockStatic(SecurityLogger.class)) {
+            roleStore.action(request, response);
+
+            final ArgumentCaptor<Supplier<String>> message = ArgumentCaptor.forClass(Supplier.class);
+            securityLogger.verify(() -> SecurityLogger.logInfo(org.mockito.ArgumentMatchers.eq(WfRoleStoreAjax.class),
+                    message.capture()));
+            securityLogger.verifyNoMoreInteractions();
+            final String line = message.getValue().get();
+            org.junit.jupiter.api.Assertions.assertTrue(line.contains("refused-user"));
+            org.junit.jupiter.api.Assertions.assertFalse(line.contains("some-role-id"));
+            org.junit.jupiter.api.Assertions.assertFalse(line.contains("some-search"));
+        }
+    }
+
+    @Test
     void assigneesAnswerForbiddenWithoutAccess() throws Exception {
         final WorkflowAction action = mock(WorkflowAction.class);
         when(request.getParameter("actionId")).thenReturn("action-id");
@@ -118,6 +144,18 @@ class WfRoleStoreAjaxTest {
     void assigneesAnswerForbiddenWhenActionLookupFails() throws Exception {
         when(request.getParameter("actionId")).thenReturn("action-id");
         when(workflowAPI.findAction("action-id", user)).thenThrow(new DotDataException("lookup failed"));
+
+        roleStore.assignable(request, response);
+
+        verify(readAccess).canListAssignees(user, null);
+        verify(response).sendError(HttpServletResponse.SC_FORBIDDEN);
+        verify(response, never()).getWriter();
+    }
+
+    @Test
+    void assigneesAnswerForbiddenWhenLicenseCheckFails() throws Exception {
+        when(request.getParameter("actionId")).thenReturn("action-id");
+        when(workflowAPI.findAction("action-id", user)).thenThrow(new InvalidLicenseException("license required"));
 
         roleStore.assignable(request, response);
 

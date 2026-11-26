@@ -84,6 +84,15 @@ class WorkflowAjaxReadAccessTest {
     }
 
     @Test
+    void missingUserIsRefusedByEveryCheck() throws Exception {
+        when(layoutAPI.doesUserHaveAccessToPortlet(anyString(), any())).thenReturn(true);
+
+        assertFalse(readAccess.canReadRoles(null));
+        assertFalse(readAccess.canReadSteps(null));
+        assertFalse(readAccess.canListAssignees(null, action));
+    }
+
+    @Test
     void rolesAreNotReadableWhenLayoutLookupFails() throws Exception {
         when(layoutAPI.doesUserHaveAccessToPortlet(anyString(), eq(user)))
                 .thenThrow(new DotDataException("lookup failed"));
