@@ -57,6 +57,8 @@ Each `gh` call is ONE Bash command. Do not combine them with `&&`, do not pipe t
 
 **Capture the HEAD SHA** from `headRefOid` — it's used throughout for SHA-anchored links (Stage 7) and for posting comments (Stage 8). Store it as `HEAD_SHA`, the base as `BASE_SHA`, and `changedFiles` as `CHANGED_FILES`.
 
+If a fetch fails, run `gh pr list --repo dotCMS/core --limit 100` to help locate the PR and report "Unable to fetch PR #<N>." If `HEAD_SHA` cannot be read, use `main` in the links and warn that they go stale if the PR is rebased.
+
 ### Large PRs: build the diff from local git
 
 `gh pr diff` fails with HTTP 406 above 20,000 diff lines and writes nothing, and `gh pr view --json files` stops at 100 files. When either happens (`CHANGED_FILES` > 100, or the 406):
@@ -75,7 +77,7 @@ git -C <CORE_REPO> fetch origin pull/<N>/head
 git -C <CORE_REPO> worktree add --detach <RUN_DIR>/pr<N> <HEAD_SHA>
 ```
 
-(fetch only when `cat-file` errors). Store it as `HEAD_DIR`. Every reviewer reads code from `<HEAD_DIR>/<path>` and reports repo-relative `file:line`; the historical reviewer runs `git -C <HEAD_DIR>` for blame and log. Stage 10 removes it with `git -C <CORE_REPO> worktree remove --force <HEAD_DIR>`, also when the run stops early.
+(fetch only when `cat-file` errors). Store it as `HEAD_DIR`. If `git worktree add` fails, abort and say why: reviewers reading `main` instead of the PR review the wrong code. Every reviewer reads code from `<HEAD_DIR>/<path>` and reports repo-relative `file:line`; the historical reviewer runs `git -C <HEAD_DIR>` for blame and log. Stage 10 removes it with `git -C <CORE_REPO> worktree remove --force <HEAD_DIR>`, also when the run stops early.
 
 ### Existing feedback digest
 

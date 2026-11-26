@@ -35,6 +35,8 @@ Whatever is already in your sidecar (<SIDECAR>) counts; this message confirms wh
 
 **5. A report with no sidecar rows is the only copy.** When an agent's final message (or its resume answer) lists findings but its sidecar is `EMPTY` or `MISSING`, turn each listed finding into a row before Stage 5: write them with the Write tool to `<SIDECAR_DIR>/<agent>.from-report.jsonl`, in the sidecar schema, with `"source":"report"`, and fill `evidence` from the file at the cited line (`sed -n '<line>p' <HEAD_DIR>/<path>`) so the anchor check can run. Run `merge-sidecars.sh` again afterwards.
 
+**A test-case designer still empty after its resume** leaves Stage 7 printing "Test design unavailable", and its gate is not applied.
+
 **6. Record coverage gaps.** Collect every `UNREVIEWED:` area plus every `LOST` instance's assigned files into `COVERAGE_GAPS`. Stage 7 must print this; a review that silently under-covers is worse than one that admits it.
 
 Never present a review as complete while any instance is `LOST` with an empty sidecar and a failed resume. Say plainly which files went unreviewed.

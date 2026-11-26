@@ -79,7 +79,7 @@ Validation is **routed by domain**:
 
 All paths share the same `≥ 80` cutoff and feed the same Stage 7 report.
 
-**At most 20 subagents run at once**; calls past 20 are rejected, not queued. Send the validators in order of value: the Sonnet validators for Logic, CI, Maven and Docs findings and MISSING or contested ACs first, then the Haiku validators for the strongest findings (Critical, then Important, by reviewer confidence). Send at most 20, and send the rest as slots free up. A finding that never got a validator is not dropped silently: it scores 50, as a timeout does.
+**At most 20 subagents run at once**; calls past 20 are rejected, not queued. Send the validators in order of value: the Sonnet validators for Logic, CI, Maven and Docs findings and MISSING or contested ACs first, then the Haiku validators for the strongest findings (Critical, then Important, by reviewer confidence). Send at most 20, and send the rest as slots free up. A finding whose validator times out or never ran scores 50 (below the cut-off), never dropped silently.
 
 For every finding outside the Sonnet domains (Logic, CI, Maven, Docs), launch a **Haiku agent in parallel** (one Haiku per finding). Each Haiku must be able to decide purely from the prompt — **it must NOT call any tools** (no `Read`, no `Grep`, no `Bash`). Tool use here defeats the speed and cost benefit of Haiku and re-reads files the reviewer already analyzed.
 

@@ -65,7 +65,7 @@ STACK = "frontend" if frontend_files > 0 and backend_files == 0
       = "mixed"    if both > 0
       = "none"     if both == 0 (only ci, maven or docs files)
 
-If reviewable == 0 → SKIP (report to user and stop)
+If reviewable == 0 → SKIP: "PR #<N> has no files any reviewer owns. Skipping review." and stop
 If reviewable >= 1 → PROCEED with STACK
 ```
 
