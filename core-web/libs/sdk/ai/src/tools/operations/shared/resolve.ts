@@ -176,7 +176,9 @@ async function siteFromApi(
         const raw = entityOf(
             await dotcms.request({
                 path: '/api/v1/site',
-                query: { filter: wanted, per_page: 50, page: 1 }
+                // `archive=false` returns live AND unpublished sites; without it the endpoint
+                // returns only live ones, so a site kept unpublished could not be resolved.
+                query: { filter: wanted, archive: false, per_page: 50, page: 1 }
             })
         );
         const candidates = Array.isArray(raw) ? raw : [];

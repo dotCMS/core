@@ -102,6 +102,29 @@ describe('resolveSite', () => {
             expect(site.identifier).toBe(DEMO_SITE.identifier);
         });
 
+        it('resolves an unpublished site by hostname', async () => {
+            // As the instance answers: without `archive`, the list holds only live sites;
+            // `archive=false` adds the unpublished (stopped) ones.
+            const unpublished = { ...DEMO_SITE, live: false };
+            const { runtime, calls } = fakeRuntime({
+                cachedSites: [],
+                onRequest: (opts) =>
+                    opts.path === '/api/v1/site' && opts.query?.archive === false
+                        ? { entity: [unpublished] }
+                        : { entity: [] }
+            });
+
+            const site = await resolveSite(runtime, 'demo.dotcms.com');
+
+            expect(site.identifier).toBe(DEMO_SITE.identifier);
+            expect(calls[0].query).toEqual({
+                filter: 'demo.dotcms.com',
+                archive: false,
+                per_page: 50,
+                page: 1
+            });
+        });
+
         it('still resolves when loadContext itself throws', async () => {
             const { runtime } = fakeRuntime({
                 contextThrows: true,

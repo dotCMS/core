@@ -381,27 +381,34 @@ describe('createRuntime context freshness', () => {
         global.fetch = fetchMock as unknown as typeof fetch;
     });
 
-    it('loads active and archived sites, and reuses the snapshot within one runtime', async () => {
-        // As a live instance answers: the plain listing holds the active sites, and
-        // `archive=true` holds ONLY archived ones. Asking only with `archive=true` — as the
-        // loader did — left `sites` empty on an instance with no archived site.
+    it('loads active, unpublished and archived sites, and reuses the snapshot within one runtime', async () => {
+        // As a live instance answers: without `archive` the listing holds only live sites,
+        // `archive=false` holds live and unpublished (stopped) ones, and `archive=true` holds
+        // ONLY archived ones. Asking only with `archive=true` — as the loader once did — left
+        // `sites` empty on an instance with no archived site.
+        const live = {
+            identifier: 'demo',
+            siteName: 'demo.dotcms.com',
+            isDefault: true,
+            isLive: true
+        };
+        const unpublished = { identifier: 'draft', siteName: 'draft.dotcms.com', isLive: false };
+        const archivedSite = { identifier: 'old', siteName: 'old.dotcms.com', isArchived: true };
+        const archiveParams: (string | null)[] = [];
         let siteLoads = 0;
         fetchMock.mockImplementation(async (url: string) => {
             const parsed = new URL(url);
             if (parsed.pathname === '/api/v1/site') {
                 siteLoads += 1;
-                const archived = parsed.searchParams.get('archive') === 'true';
+                const archive = parsed.searchParams.get('archive');
+                archiveParams.push(archive);
                 return jsonResponse({
-                    entity: archived
-                        ? [{ identifier: 'old', siteName: 'old.dotcms.com', isArchived: true }]
-                        : [
-                              {
-                                  identifier: 'demo',
-                                  siteName: 'demo.dotcms.com',
-                                  isDefault: true,
-                                  isLive: true
-                              }
-                          ]
+                    entity:
+                        archive === 'true'
+                            ? [archivedSite]
+                            : archive === 'false'
+                              ? [live, unpublished]
+                              : [live]
                 });
             }
             return jsonResponse({ entity: [] });
@@ -412,8 +419,10 @@ describe('createRuntime context freshness', () => {
         const loadsAfterFirst = siteLoads;
         const cached = await dotcms.loadContext();
 
+        expect(archiveParams).toEqual(['false', 'true']);
         expect(first.sites).toEqual([
             expect.objectContaining({ identifier: 'demo', isDefault: true, archived: false }),
+            expect.objectContaining({ identifier: 'draft', live: false, archived: false }),
             expect.objectContaining({ identifier: 'old', archived: true })
         ]);
         expect(cached.sites).toBe(first.sites);
