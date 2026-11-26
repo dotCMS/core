@@ -76,7 +76,7 @@ Launch each reviewer by its bare name (`dotcms-pr-code-reviewer`): the copy in t
 
 ## Launch rules
 
-- Launch every active instance in **one message** with one Agent call each; on `mixed` both families go in that same batch.
+- Launch every active instance in **one message** with one Agent call each, in the **foreground** (`run_in_background: false`); on `mixed` both families go in that same batch. The calls of one message still run in parallel, and the run stays in the turn that invoked the skill: the tools its `allowed-tools` pre-approves hold only in that turn, so a background launch hands the rest of the run (`merge-sidecars.sh`, `verify-anchors.sh`, the report) to permission prompts.
 - **At most 20 subagents run at once**; calls past 20 are rejected, not queued. Above 20 instances, launch first java-security, ci, logic, ac-validator, java-code and code reviewers, then the rest as slots free up. A rejected call is sent again when a slot frees; it stays on the roster.
 - Write the roster, `<RUN_DIR>/roster.txt`: one sidecar file name per launched instance, added as each launch happens. Stage 4b and `merge-sidecars.sh` check every name on it.
 - The `sql` bucket goes only to java-persistence and the `config` bucket only to java-security.
