@@ -32,7 +32,9 @@ test.describe('Admin navigation — login as', () => {
             firstName: 'Menu',
             lastName: `Impersonated${suffix}`,
             email: `e2e-menu-login-as-${suffix}@dotcms.com`,
-            password: 'e2e-menu-pass'
+            // The server's password policy: 15 to 64 characters, with an uppercase letter, a
+            // lowercase letter, a digit and a special character.
+            password: 'E2e-Menu-Pass-2026!'
         };
         // With no saved login, `request` has no session. The administrator signs in on a context
         // of its own, apart from the browser's session the login-as below turns into the user's.
