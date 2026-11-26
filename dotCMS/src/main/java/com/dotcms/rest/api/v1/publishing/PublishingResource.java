@@ -23,9 +23,11 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ConflictException;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
@@ -724,7 +726,8 @@ public class PublishingResource {
      * <p>All dates must be in ISO 8601 format with timezone offset:
      * {@code YYYY-MM-DDTHH:mm:ss±HH:MM} (e.g., {@code 2025-03-15T14:30:00-05:00})</p>
      *
-     * <p>The caller needs the {@code publishing-queue} or {@code publishing-queue-beta} portlet.</p>
+     * <p>The caller needs the {@code publishing-queue} or {@code publishing-queue-beta} portlet, and
+     * must own the bundle or be a CMS Administrator.</p>
      *
      * @param request   The HTTP request
      * @param response  The HTTP response
@@ -759,7 +762,7 @@ public class PublishingResource {
             ),
             @ApiResponse(
                     responseCode = "403",
-                    description = "Forbidden - no permission to use specified environments",
+                    description = "Forbidden - the user is neither the bundle owner nor a CMS Administrator",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON)
             ),
             @ApiResponse(
@@ -835,6 +838,14 @@ public class PublishingResource {
         final Bundle bundle = bundleAPI.get().getBundleById(bundleId);
         if (bundle == null) {
             throw new NotFoundException(String.format("Bundle not found: %s", bundleId));
+        }
+        try {
+            bundleAPI.get().checkCanModifyBundle(bundle, user);
+        } catch (final DotSecurityException e) {
+            Logger.warn(this, String.format(
+                    "Bundle push refused for user '%s' on bundle '%s': only the bundle owner or a CMS Administrator may push it",
+                    user.getUserId(), bundleId));
+            throw new ForbiddenException(e, e.getMessage());
         }
 
         // 6. Validate environments and permissions

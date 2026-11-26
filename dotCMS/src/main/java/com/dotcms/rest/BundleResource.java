@@ -48,6 +48,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.FileUtil;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -122,12 +123,14 @@ public class BundleResource {
             new PublishQueueElementTransformer();
 
     /**
-     * Return the assets from a bundleId
+     * Returns the assets in a bundle. The caller needs access to the Publishing Queue; a bundle
+     * that has not been sent yet can only be read by its owner or a CMS Administrator.
      *
-     * @param bundleId
-     * @param request
-     * @param response
-     * @return
+     * @param bundleId   the bundle id
+     * @param limitParam the maximum number of assets to return for a bundle that has left the queue
+     * @param request    the current request
+     * @param response   the current response
+     * @return the assets in the bundle
      */
     @Path("/{bundleId}/assets")
     @GET
@@ -137,9 +140,11 @@ public class BundleResource {
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response) throws DotDataException {
 
-        new WebResource.InitBuilder(webResource)
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
+                .requiredPortlet(PortletID.PUBLISHING_QUEUE.toString(),
+                        PortletID.PUBLISHING_QUEUE_BETA.toString())
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init();
@@ -148,11 +153,12 @@ public class BundleResource {
             PublishAuditStatus publishAuditStatus = PublishAuditAPI.getInstance()
                     .getPublishAuditStatus(bundleId, 0);
 
-            if (!UtilMethods.isSet(publishAuditStatus)) {
-                final Bundle bundle = APILocator.getBundleAPI().getBundleById(bundleId);
-                if (!UtilMethods.isSet(bundle)) {
-                    throw new NotFoundException(String.format("Bundle %s not exists", bundleId));
-                }
+            final Bundle bundle = APILocator.getBundleAPI().getBundleById(bundleId);
+            if (!UtilMethods.isSet(publishAuditStatus) && !UtilMethods.isSet(bundle)) {
+                throw new NotFoundException(String.format("Bundle %s not exists", bundleId));
+            }
+            if (UtilMethods.isSet(bundle)) {
+                checkCanReadBundle(bundle, initData.getUser(), "Bundle assets");
             }
 
             final List<PublishQueueElement> queueElements = PublisherAPIImpl.getInstance()
@@ -277,6 +283,16 @@ public class BundleResource {
         return Response.ok(jsonResponse.toString()).cacheControl(nocache).build();
     }
 
+	/**
+	 * Renames a bundle. Only the owner of the bundle or a CMS Administrator may rename it.
+	 *
+	 * @param request  the current request, carrying the new name in {@code bundleName}
+	 * @param response the current response
+	 * @param params   path parameters, carrying the bundle id in {@code bundleid}
+	 * @return {@code true} when the bundle was renamed, {@code false} when it was not found or
+	 *         could not be saved
+	 * @throws IOException if the new name cannot be decoded
+	 */
 	@GET
 	@Path("/updatebundle/{params:.*}")
 	@Produces("application/json")
@@ -302,7 +318,11 @@ public class BundleResource {
 	            return responseResource.response( "false" );
 			}
 	
-			Bundle bundle = APILocator.getBundleAPI().getBundleById(bundleId);
+			final Bundle bundle = APILocator.getBundleAPI().getBundleById(bundleId);
+			if (null == bundle) {
+				return responseResource.response( "false" );
+			}
+			checkCanModifyBundle(bundle, initData.getUser(), "Bundle rename");
 			bundle.setName(bundleName);
 			APILocator.getBundleAPI().updateBundle(bundle);
 	
@@ -446,6 +466,48 @@ public class BundleResource {
 			throw new ForbiddenException(String.format(
 					"User '%s' is not allowed to delete the push history of an environment",
 					user.getUserId()));
+		}
+	}
+
+	/**
+	 * Makes sure the user may change the bundle: only its owner or a CMS Administrator may.
+	 *
+	 * @param bundle     the bundle being changed
+	 * @param user       the user making the request
+	 * @param entryPoint the endpoint making the change, named in the log when the user is refused
+	 * @throws DotDataException   if the user's roles cannot be read
+	 * @throws ForbiddenException if the user is neither the owner of the bundle nor a CMS Administrator
+	 */
+	private void checkCanModifyBundle(final Bundle bundle, final User user, final String entryPoint)
+			throws DotDataException {
+		try {
+			this.bundleAPI.checkCanModifyBundle(bundle, user);
+		} catch (final DotSecurityException e) {
+			Logger.warn(this, String.format(
+					"%s refused for user '%s' on bundle '%s': only the bundle owner or a CMS Administrator may use it",
+					entryPoint, user.getUserId(), bundle.getId()));
+			throw new ForbiddenException(e, e.getMessage());
+		}
+	}
+
+	/**
+	 * Makes sure the user may read the bundle. A bundle that has been sent is listed in the
+	 * Publishing Queue to everyone with access to that tool, which the endpoints calling this
+	 * already require. A bundle not sent yet is only listed to its owner and to CMS
+	 * Administrators, so reading one takes the same.
+	 *
+	 * @param bundle     the bundle being read
+	 * @param user       the user making the request
+	 * @param entryPoint the endpoint reading the bundle, named in the log when the user is refused
+	 * @throws DotDataException   if the user's roles cannot be read
+	 * @throws ForbiddenException if the bundle has not been sent and the user is neither its owner
+	 *                            nor a CMS Administrator
+	 */
+	private void checkCanReadBundle(final Bundle bundle, final User user, final String entryPoint)
+			throws DotDataException {
+		final boolean notSentYet = null == bundle.getPublishDate() && null == bundle.getExpireDate();
+		if (notSentYet) {
+			checkCanModifyBundle(bundle, user, entryPoint);
 		}
 	}
 
@@ -846,6 +908,17 @@ public class BundleResource {
     } // deleteAllSuccess.
 
 
+    /**
+     * Downloads the generated file of a bundle. The caller needs access to the Publishing Queue; a
+     * bundle that has not been sent yet can only be downloaded by its owner or a CMS
+     * Administrator.
+     *
+     * @param request  the current request
+     * @param response the current response
+     * @param bundleId the bundle id
+     * @return the bundle file, 404 when the bundle or its file does not exist, or 403 when the user
+     *         may not read the bundle
+     */
     @Path("/_download/{bundleId}")
     @GET
     @JSONP
@@ -867,6 +940,7 @@ public class BundleResource {
             if (!UtilMethods.isSet(bundle)) {
                 throw new DoesNotExistException("Bundle with ID: " + bundleId + " not found");
             }
+            checkCanReadBundle(bundle, initData.getUser(), "Bundle download");
             final File bundleFile = new File(
                     ConfigUtils.getBundlePath() + File.separator + bundle.getId() + ".tar.gz");
             if (!bundleFile.exists()) {
@@ -880,12 +954,24 @@ public class BundleResource {
         }catch (DoesNotExistException e){
             Logger.error(this,e.getMessage());
             return ExceptionMapperUtil.createResponse("",e.getMessage(),Response.Status.NOT_FOUND);
+        }catch (ForbiddenException e){
+            return ExceptionMapperUtil.createResponse("",e.getMessage(),Response.Status.FORBIDDEN);
         }catch (Exception e){
             Logger.error(this,e.getMessage());
             return ExceptionMapperUtil.createResponse("",e.getMessage(),Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
     
+    /**
+     * Sets the filter and operation of a bundle and generates its file, which the response
+     * carries. Only the owner of the bundle or a CMS Administrator may do this; the bundle keeps
+     * its owner.
+     *
+     * @param request       the current request
+     * @param response      the current response
+     * @param asyncResponse resumed with the generated file, or with 403 or 404
+     * @param form          the bundle id, filter and operation
+     */
     @Path("/_generate")
     @POST
     @JSONP
@@ -912,10 +998,11 @@ public class BundleResource {
                 throw new DoesNotExistException("Bundle with ID: " + form.bundleId + " not found");
             }
             
+            checkCanModifyBundle(bundle, user, "Bundle generation");
+
             //set Filter to the bundle
             final FilterDescriptor filter = APILocator.getPublisherAPI().getFilterDescriptorByKey(form.filterKey);
             bundle.setFilterKey(filter.getKey());
-            bundle.setOwner(user.getUserId());
             //set ForcePush value of the filter to the bundle
             bundle.setForcePush(
                     (boolean) filter.getFilters().getOrDefault(FilterDescriptor.FORCE_PUSH_KEY,false));
@@ -939,6 +1026,8 @@ public class BundleResource {
         }catch (DoesNotExistException e){
             Logger.error(this,e.getMessage());
             asyncResponse.resume(ExceptionMapperUtil.createResponse("",e.getMessage(),Response.Status.NOT_FOUND));
+        }catch (ForbiddenException e){
+            asyncResponse.resume(ExceptionMapperUtil.createResponse("",e.getMessage(),Response.Status.FORBIDDEN));
         }catch (Exception e){
             Logger.error(this,e.getMessage());
             asyncResponse.resume(ExceptionMapperUtil.createResponse("",e.getMessage(),Response.Status.INTERNAL_SERVER_ERROR));
@@ -1163,6 +1252,18 @@ public class BundleResource {
         );
     } // uploadBundleAsync.
 
+    /**
+     * Downloads the manifest of a generated bundle. The caller needs access to the Publishing
+     * Queue; a bundle that has not been sent yet can only be read by its owner or a CMS
+     * Administrator.
+     *
+     * @param bundleId the bundle id
+     * @param request  the current request
+     * @param response the current response
+     * @return the manifest as a CSV attachment
+     * @throws DotDataException if the bundle cannot be read
+     * @throws IOException      if the bundle file cannot be read
+     */
     @Path("/{bundleId}/manifest")
     @GET
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_OCTET_STREAM})
@@ -1171,9 +1272,11 @@ public class BundleResource {
             @Context final HttpServletResponse response)
             throws DotDataException, IOException {
 
-        new WebResource.InitBuilder(webResource)
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
+                .requiredPortlet(PortletID.PUBLISHING_QUEUE.toString(),
+                        PortletID.PUBLISHING_QUEUE_BETA.toString())
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init();
@@ -1182,6 +1285,7 @@ public class BundleResource {
         if (!UtilMethods.isSet(bundle)) {
             throw new DoesNotExistException("Bundle with ID: " + bundleId + " not found");
         }
+        checkCanReadBundle(bundle, initData.getUser(), "Bundle manifest");
 
         final File bundleTarGzipFile = TarGzipBundleOutput.getBundleTarGzipFile(bundleId);
 
