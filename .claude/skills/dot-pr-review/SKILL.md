@@ -24,7 +24,7 @@ Decide first which one the request is. The first token decides, and nothing else
 
 Both run the same reviewers, standards, validation and anchor checks; local mode (`references/local-mode.md`) changes only where the diff comes from and where the result goes.
 
-**Your own PR, already open.** `local` on its branch reviews it as your own work. Given its number instead, the external use runs unchanged: the eligibility check never looks at who opened the PR, Stage 8 offers to post the findings as comments on your own PR, and only the verdict is skipped (GitHub refuses one from the author). The exception is a PR linked to a `dotCMS/private-issues` issue: your own PR sets `SELF_TRIAGE`, every finding is kept for local triage, and nothing is posted.
+**Your own PR, already open.** `local` on its branch reviews it as your own work. Given its number instead, the external use runs unchanged: the eligibility check skips bot authors but not you, Stage 8 offers to post the findings as comments on your own PR, and only the verdict is skipped (GitHub refuses one from the author). The exception is a PR linked to a `dotCMS/private-issues` issue: your own PR sets `SELF_TRIAGE`, every finding is kept for local triage, and nothing is posted.
 
 ## Arguments
 
