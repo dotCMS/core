@@ -95,13 +95,18 @@ export interface DotUserDetail extends DotUserListItem {
  *   with Access-toggle deltas applied, so membership is preserved on
  *   every save — omitting `roles` (the alternative "don't touch" mode)
  *   is not used by this UI.
+ * - `active` and `male` follow the "absent means do not touch" rule:
+ *   the backend leaves the stored status/gender alone when the field is
+ *   missing. On an edit we only send `active` when the user actually
+ *   moved the toggle, so an otherwise unrelated save cannot reinstate a
+ *   user another administrator deactivated while the dialog was open.
  */
 export interface DotUserFormPayload {
     userId?: string;
     firstName: string;
     lastName: string;
     email: string;
-    active: boolean;
+    active?: boolean;
     password?: string;
     middleName?: string;
     nickName?: string;

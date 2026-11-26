@@ -7,13 +7,25 @@ import { catchError, map } from 'rxjs/operators';
 import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
+    DotCMSContentType,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 
 import { DotContentTypeService } from '../dot-content-type/dot-content-type.service';
 
+/** The two content editors: the new Angular editor, or the legacy (JSP) one. */
+export type DotContentEditor = 'new' | 'legacy';
+
+/** Which editor a content type uses, and the content type the decision was read from. */
+export interface DotContentEditorChoice {
+    editor: DotContentEditor;
+    /** The resolved content type, or `null` when the lookup failed (then `editor` is `'legacy'`). */
+    contentType: DotCMSContentType | null;
+}
+
 /**
- * Canonical resolver for "where in dotAdmin should I open this contentlet for editing?".
+ * Canonical resolver for "which editor opens this content type?" ({@link resolveEditor}) and
+ * "where in dotAdmin should I open this contentlet for editing?" ({@link resolveEditUrl}).
  *
  * This service exists to consolidate logic that has been re-implemented inline at multiple
  * call sites across the admin (Query Tool, Content Drive's `#editContentlet`, the legacy and
@@ -23,8 +35,12 @@ import { DotContentTypeService } from '../dot-content-type/dot-content-type.serv
  *
  * ## What it resolves
  *
- * Given a contentlet, returns the dotAdmin hash route that should open it for editing.
- * Three shapes, in priority order:
+ * {@link resolveEditor} answers the editor decision alone: `'new'` when the content type's
+ * metadata has `CONTENT_EDITOR2_ENABLED`, `'legacy'` otherwise, with the content type it read.
+ * The side-panel opener in `@dotcms/edit-content` uses it to pick the panel (#38303).
+ *
+ * {@link resolveEditUrl} is built on it. Given a contentlet, it returns the dotAdmin hash route
+ * that should open it for editing. Three shapes, in priority order:
  *
  * 1. **HTMLPAGE** (`baseType === HTMLPAGE`)
  *    → `/dotAdmin/#/edit-page/content?url=<url>&language_id=<lang>&mId=edit`
@@ -42,37 +58,20 @@ import { DotContentTypeService } from '../dot-content-type/dot-content-type.serv
  * The caller decides what to do with the URL (open in new tab, `Router.navigate`, etc.) —
  * this service only resolves "what is the URL?".
  *
- * ## Caching
+ * ## Read fresh on every call
  *
- * The content-type → `useNewEditor` boolean is cached for the lifetime of the application
- * (the service is `providedIn: 'root'`). A list view rendering 50 contentlets of the same
- * content type hits `/api/v1/contenttype/id/{type}` once, not 50 times.
- *
- * **Cache invalidation caveat:** if an admin toggles `CONTENT_EDITOR2_ENABLED` on a content
- * type during the same session, cached entries go stale until a full page reload. This
- * matches the behavior of the prior inline implementations and is acceptable because the
- * flag is rarely toggled at runtime.
+ * Nothing is cached: each call asks `/api/v1/contenttype/id/{type}` again, so a "new edit
+ * content screen" toggled on a content type (`CONTENT_EDITOR2_ENABLED`) takes effect on the next
+ * open, without a reload (#38303). Callers resolve on a click, one request per open, never per
+ * row of a list.
  *
  * ## Error fallback
  *
- * If the content-type lookup fails (4xx/5xx, network), the resolver returns the **legacy**
- * editor URL rather than propagating the error. Rationale: the legacy editor handles every
- * content type, so falling back keeps the user's edit flow working even when metadata
+ * If the content-type lookup fails (4xx/5xx, network), the resolver chooses the **legacy**
+ * editor (and its URL) rather than propagating the error. Rationale: the legacy editor handles
+ * every content type, so falling back keeps the user's edit flow working even when metadata
  * reads transiently fail. The error is intentionally swallowed — callers that need to
  * react to the failure should query `DotContentTypeService.getContentType()` directly.
- *
- * ## Existing duplicates (TODO migrations)
- *
- * Three older implementations of this pattern still exist and should migrate to this
- * service when their owners next touch the surrounding code:
- *
- * - `libs/new-block-editor/src/lib/editor/services/contentlet-edit-url.service.ts`
- *   (component-scoped, no HTMLPAGE branch)
- * - `libs/portlets/dot-content-drive/.../dot-content-drive-navigation.service.ts#editContentlet`
- *   (calls `Router.navigate` directly; would consume `resolveEditUrl(...)` and pass the
- *   result to `Router.navigateByUrl`)
- * - `libs/block-editor/src/lib/elements/dot-bubble-menu/dot-bubble-menu.component.ts`
- *   (inline, no cache, legacy editor only)
  *
  * @example
  * ```ts
@@ -87,12 +86,30 @@ import { DotContentTypeService } from '../dot-content-type/dot-content-type.serv
 export class DotContentletEditUrlService {
     readonly #contentTypeService = inject(DotContentTypeService);
 
-    // Cached per content-type variable: true ⇒ new editor, false ⇒ legacy editor.
-    readonly #editorFlagCache = new Map<string, boolean>();
+    /**
+     * Resolves which editor opens content of a type: `'new'` when the type's metadata has
+     * `CONTENT_EDITOR2_ENABLED`, `'legacy'` otherwise. The content type is read fresh on every
+     * call, so a toggled flag takes effect on the next open. A failed lookup falls back to
+     * `'legacy'` with no content type.
+     *
+     * @param contentTypeVariableOrId The content type's variable or id.
+     * @returns An observable that emits the choice once and completes.
+     */
+    resolveEditor(contentTypeVariableOrId: string): Observable<DotContentEditorChoice> {
+        return this.#contentTypeService.getContentType(contentTypeVariableOrId).pipe(
+            map((contentType): DotContentEditorChoice => {
+                const usesNewEditor =
+                    !!contentType?.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED];
+
+                return { editor: usesNewEditor ? 'new' : 'legacy', contentType };
+            }),
+            catchError(() => of<DotContentEditorChoice>({ editor: 'legacy', contentType: null }))
+        );
+    }
 
     /**
      * Resolves the dotAdmin URL to open `contentlet` for editing. See the class JSDoc
-     * for the routing rules, caching behavior, and error fallback semantics.
+     * for the routing rules and the error fallback. The editor choice is read fresh on every call.
      *
      * @param contentlet The contentlet the user wants to edit. Must have at least
      *                   `inode`, `contentType`, and `baseType` populated; HTMLPAGE
@@ -103,19 +120,8 @@ export class DotContentletEditUrlService {
         const pageUrl = buildPageEditUrl(contentlet);
         if (pageUrl) return of(pageUrl);
 
-        const cached = this.#editorFlagCache.get(contentlet.contentType);
-        if (cached !== undefined) {
-            return of(buildContentletEditUrl(cached, contentlet.inode));
-        }
-
-        return this.#contentTypeService.getContentType(contentlet.contentType).pipe(
-            catchError(() => of(null)),
-            map((ct) => {
-                const useNewEditor =
-                    !!ct?.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED];
-                this.#editorFlagCache.set(contentlet.contentType, useNewEditor);
-                return buildContentletEditUrl(useNewEditor, contentlet.inode);
-            })
+        return this.resolveEditor(contentlet.contentType).pipe(
+            map(({ editor }) => buildContentletEditUrl(editor === 'new', contentlet.inode))
         );
     }
 }

@@ -9,7 +9,9 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rendering.velocity.viewtools.RestrictedViewToolAccess;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.rest.api.v1.contenttype.ContentTypeForm.ContentTypeFormDeserialize;
 import com.dotcms.rest.exception.BadRequestException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.contenttype.model.field.CustomField;
 import com.dotcms.contenttype.model.field.Field;
@@ -1143,6 +1145,66 @@ public class ContentTypeHelper implements Serializable {
                 .build();
         rebuilt.constructWithFields(fields);
         return rebuilt;
+    }
+
+    /**
+     * Returns {@code true} if the raw request JSON has a {@code workflow} key, the only key that
+     * sets workflow schemes. When it is absent, an update leaves the content type's schemes as
+     * they are. The {@code workflows} key that GET returns is read-only and ignored on write. For
+     * a JSON array body, the first entry is checked, the same one the update form reads.
+     *
+     * @param requestJson the raw request body
+     * @return whether the body (or its first entry) has a {@code workflow} key
+     */
+    public static boolean requestContainsWorkflow(final Object requestJson) {
+        final JsonNode root = readRequestTree(requestJson);
+        final JsonNode entry = null != root && root.isArray() ? root.path(0) : root;
+        return null != entry && entry.has(ContentTypeFormDeserialize.WORKFLOW_ATTRIBUTE_NAME);
+    }
+
+    /**
+     * Rejects a request whose {@code workflow} value has a shape the form cannot read. Accepted
+     * shapes are an array, a string (one scheme id or variable name, or several comma-separated)
+     * and {@code null}; anything else, such as a number, a boolean or an object, would otherwise
+     * be read as an empty list and silently remove every scheme. Every content type in the body
+     * is checked: a single object, or each entry of an array body.
+     *
+     * @param requestJson the raw request body, may be {@code null}
+     * @throws BadRequestException if any {@code workflow} value has another shape
+     */
+    public static void checkWorkflowShape(final Object requestJson) {
+        final JsonNode root = readRequestTree(requestJson);
+        if (null == root) {
+            return;
+        }
+        final Iterable<JsonNode> entries = root.isArray() ? root : List.of(root);
+        for (final JsonNode entry : entries) {
+            final JsonNode workflow = entry.get(ContentTypeFormDeserialize.WORKFLOW_ATTRIBUTE_NAME);
+            if (null != workflow && !workflow.isArray() && !workflow.isTextual() && !workflow.isNull()) {
+                throw new BadRequestException("`workflow` must be an array of workflow scheme ids "
+                        + "or scheme objects, a comma-separated string of scheme ids, or null");
+            }
+        }
+    }
+
+    /**
+     * Parses the raw request body into a JSON tree.
+     *
+     * @param requestJson the raw request body, may be {@code null}
+     * @return the parsed tree, or {@code null} if there is no body or it cannot be parsed
+     */
+    private static JsonNode readRequestTree(final Object requestJson) {
+        if (requestJson == null) {
+            return null;
+        }
+        try {
+            return DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
+                    .readTree(requestJson.toString());
+        } catch (final Exception e) {
+            Logger.warn(ContentTypeResource.class,
+                    "Could not parse request JSON to check the workflow key: " + e.getMessage());
+            return null;
+        }
     }
 
     /**

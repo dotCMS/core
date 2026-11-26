@@ -37,6 +37,7 @@ import {
     DotAjaxActionResponseView,
     DotBulkRefreshCompletedEvent,
     DotBulkUploadCompletedEvent,
+    DotCMSContentlet,
     DotContentDriveItem,
     DotContentDriveSearchResponse,
     DotCurrentUser,
@@ -44,8 +45,7 @@ import {
     DotFolderDeleteActiveRun,
     DotLanguage,
     DotSite,
-    DotWorkflowPushPublishValue,
-    FeaturedFlags
+    DotWorkflowPushPublishValue
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { createFakeTagField, createFakeTextField, mockLocales } from '@dotcms/utils-testing';
@@ -170,19 +170,6 @@ describe('DotContentDriveStore', () => {
             expect(store.status()).toBe(DotContentDriveStatus.LOADING);
             expect(store.isTreeExpanded()).toBe(DEFAULT_TREE_EXPANDED);
             expect(store.sort()).toEqual(DEFAULT_SORT);
-        });
-    });
-
-    // Content Drive stopped reading the side-panel flag: both editors always open in a panel
-    // (#37759, FR-006). The flag keeps working outside Content Drive; this store just never asks.
-    describe('side-panel flag', () => {
-        it('does not fetch the side-panel flag', () => {
-            const properties = spectator.inject(DotPropertiesService);
-            const askedFor = (properties.getFeatureFlags as Mock).mock.calls.flatMap(
-                ([keys]) => keys ?? []
-            );
-
-            expect(askedFor).not.toContain(FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL);
         });
     });
 
@@ -1303,6 +1290,51 @@ describe('DotContentDriveStore', () => {
                     field: 'modDate',
                     order: DotContentDriveSortOrder.ASC
                 });
+            });
+        });
+
+        // The edit side panel reports a lock change with the content; the row takes the new lock
+        // in place, with no list request (#38379).
+        describe('updateItemLock', () => {
+            const locked = {
+                inode: 'inode-123',
+                identifier: '123',
+                locked: true,
+                lockedBy: { userId: 'u-1', firstName: 'Ana', lastName: 'Lee' },
+                lockedByName: 'Ana Lee',
+                lockedOn: '2026-11-24T10:00:00Z'
+            } as unknown as DotCMSContentlet;
+
+            beforeEach(() => store.setItems(MOCK_ITEMS));
+
+            it('should give the row of that content its new lock, leaving the others alone', () => {
+                store.updateItemLock(locked);
+
+                expect(store.items()[0]).toEqual(
+                    expect.objectContaining({
+                        title: 'Test Content 1',
+                        locked: true,
+                        lockedByName: 'Ana Lee',
+                        lockedOn: '2026-11-24T10:00:00Z'
+                    })
+                );
+                expect(store.items()[1]).toEqual(MOCK_ITEMS[1]);
+            });
+
+            it('should update a selected row too, so actions read the new lock', () => {
+                store.setSelectedItems([MOCK_ITEMS[0]]);
+
+                store.updateItemLock(locked);
+
+                expect(store.selectedItems()[0]).toEqual(
+                    expect.objectContaining({ inode: 'inode-123', locked: true })
+                );
+            });
+
+            it('should change nothing when the content is not on the page', () => {
+                store.updateItemLock({ ...locked, inode: 'elsewhere' } as DotCMSContentlet);
+
+                expect(store.items()).toEqual(MOCK_ITEMS);
             });
         });
 

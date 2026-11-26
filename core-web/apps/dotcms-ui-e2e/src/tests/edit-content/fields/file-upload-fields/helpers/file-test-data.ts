@@ -4,11 +4,14 @@ export const E2E_IMPORT_URL = process.env['E2E_IMPORT_URL'] ?? 'https://placehol
 export const REQUIRED_FIELD_ERROR = 'This field is mandatory';
 
 /** Minimal text file buffer for file/binary upload tests. */
-export function createTestTextFile(name = 'e2e-test-file.txt') {
+export function createTestTextFile(
+    name = 'e2e-test-file.txt',
+    content = 'dotCMS E2E test file content'
+) {
     return {
         name,
         mimeType: 'text/plain',
-        buffer: Buffer.from('dotCMS E2E test file content')
+        buffer: Buffer.from(content)
     };
 }
 
