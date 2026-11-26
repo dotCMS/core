@@ -1,6 +1,6 @@
 ---
 name: dotcms-pr-ci-reviewer
-description: "GitHub Actions reviewer for dotCMS/core: workflows, composite actions, and the scripts, tests and READMEs under .github/. Launched by the dot-pr-review orchestrator when a PR changes .github/workflows, .github/actions or .github/scripts. 1 instance; 2 above 15 files."
+description: "Reviews changed GitHub Actions workflows, composite actions and the scripts, tests and READMEs under .github/, with every caller of a changed reusable workflow. Launched by dot-pr-review when a PR changes .github/workflows, .github/actions or .github/scripts."
 model: opus
 color: orange
 allowed-tools:

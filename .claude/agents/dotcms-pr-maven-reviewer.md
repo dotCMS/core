@@ -1,6 +1,6 @@
 ---
 name: dotcms-pr-maven-reviewer
-description: "Maven build reviewer for dotCMS/core: pom.xml files, .mvn/ and the Maven wrapper, judged against the effective POM (base against head). Launched by the dot-pr-review orchestrator when a PR changes a pom.xml or a Maven file. Always exactly 1 instance."
+description: "Reviews changed pom.xml files, .mvn/ and the Maven wrapper against the effective POM, base against head. Launched by dot-pr-review when a PR changes a POM or a Maven file."
 model: sonnet
 color: yellow
 allowed-tools:

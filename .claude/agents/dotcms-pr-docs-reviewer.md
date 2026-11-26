@@ -1,6 +1,6 @@
 ---
 name: dotcms-pr-docs-reviewer
-description: "Documentation reviewer for dotCMS/core: checks every claim a doc makes about the code against the PR head. Launched by the dot-pr-review orchestrator when a PR changes docs/, CLAUDE.md, AGENTS.md, .github/copilot-instructions.md, .github/instructions or .github/prompts, or a README next to changed code. 1 instance; 2 above 12 files."
+description: "Checks every claim a changed doc makes about the code (docs/, CLAUDE.md, AGENTS.md, Copilot instructions and prompts, READMEs next to changed code) against the PR head. Launched by dot-pr-review when a PR changes one."
 model: sonnet
 color: cyan
 allowed-tools:
