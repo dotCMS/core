@@ -294,6 +294,19 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
             expect(store.loadAssets).toHaveBeenCalledTimes(2);
         });
 
+        // A lock is not an edit: the listing stays as it is (#38379).
+        it('does not reload the asset list when content is locked or unlocked in a panel', () => {
+            clickRow(0);
+
+            spectator.inject(DotContentChangeService).notify({
+                kind: 'locked',
+                contentlet: { inode: 'i1' } as DotCMSContentlet,
+                depth: 0
+            });
+
+            expect(store.loadAssets).not.toHaveBeenCalled();
+        });
+
         // The safety net for workflow actions in the legacy editor, which report nothing.
         it('reloads the asset list when a legacy editor panel closes', () => {
             clickRow(0);

@@ -49,6 +49,7 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
     readonly #navigation$ = new Subject<InPlaceNavigationRequest>();
     readonly #saved$ = new Subject<DotCMSContentlet>();
     readonly #left$ = new Subject<void>();
+    readonly #lockChanged$ = new Subject<DotCMSContentlet>();
     readonly #openContent$ = new Subject<DotOpenContentEvent>();
 
     /** Set once the edited content is deleted; later save reports would point at content that is gone. */
@@ -64,6 +65,9 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
 
     /** Emits each successful save so the dialog can notify its opener. */
     readonly saved$ = this.#saved$.asObservable();
+
+    /** Emits each lock or unlock, so the opener can announce it to a listing that shows the lock. */
+    readonly lockChanged$ = this.#lockChanged$.asObservable();
 
     /** Emits when the edited content was deleted and the side panel must close. */
     readonly left$ = this.#left$.asObservable();
@@ -94,6 +98,10 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
             languageId: request?.languageId,
             variantName: request?.variantName
         };
+    }
+
+    reportLockChanged(contentlet: DotCMSContentlet): void {
+        this.#lockChanged$.next(contentlet);
     }
 
     reportSaved(contentlet: DotCMSContentlet): void {
@@ -224,6 +232,7 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
         this.#navigation$.complete();
         this.#saved$.complete();
         this.#left$.complete();
+        this.#lockChanged$.complete();
         this.#openContent$.complete();
     }
 }

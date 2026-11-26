@@ -4,7 +4,6 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
@@ -16,7 +15,6 @@ import javax.imageio.ImageWriter;
 import javax.imageio.stream.FileImageOutputStream;
 import javax.imageio.stream.ImageOutputStream;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 public class GifImageFilter extends ImageFilter {
@@ -34,19 +32,17 @@ public class GifImageFilter extends ImageFilter {
 			return resultFile;
 		}
 		
-		resultFile.delete();
-
 		try {
 			Iterator<ImageWriter> iter = ImageIO.getImageWritersByFormatName("gif");
 			ImageWriter writer = iter.next();
 			ImageWriteParam iwp = writer.getDefaultWriteParam();
 
-			BufferedImage src = ImageIO.read(file);
+			BufferedImage src = StrictImageReader.read(file);
 			BufferedImage dst = new BufferedImage(src.getWidth(), src.getHeight(), BufferedImage.TYPE_4BYTE_ABGR);
 			Graphics2D graphics = dst.createGraphics();  
 
 			graphics.setPaint ( new Color ( 255, 255, 255 ) );
-            final File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() +".tmp");
+            final File tempResultFile = stagingFileFor(resultFile);
 
 			graphics.fillRect(0, 0, src.getWidth(), src.getHeight());
 			graphics.drawImage(src, 0, 0, src.getWidth(), src.getHeight(),null);
@@ -56,7 +52,7 @@ public class GifImageFilter extends ImageFilter {
 			ios.flush();
 			writer.dispose();
 			ios.close();
-			tempResultFile.renameTo(resultFile);
+			publishRendition(tempResultFile, resultFile);
 			//writer.setOutput(output);
 
 		//	IIOImage image = new IIOImage(src, null, null);
@@ -64,10 +60,8 @@ public class GifImageFilter extends ImageFilter {
 		//	writer.dispose();
 			
 
-		} catch (FileNotFoundException e) {
-			Logger.error(this.getClass(), e.getMessage());
 		} catch (IOException e) {
-			Logger.error(this.getClass(), e.getMessage());
+			throw new DotRuntimeException("unable to convert file:" + file + " : " + e.getMessage(), e);
 		}
 		
 		

@@ -105,6 +105,12 @@ export class DotEditContentSidePanelComponent implements DotSidePanelContent, On
      */
     readonly languageChanged = output<number>();
 
+    /**
+     * The content was locked or unlocked. Not a save, so it never reaches `saved`; the opener
+     * announces it so a listing can show the new lock (#38379).
+     */
+    readonly lockChanged = output<DotCMSContentlet>();
+
     /** The content was deleted from inside the editor. The panel closes right after. */
     readonly deleted = output<void>();
 
@@ -172,6 +178,10 @@ export class DotEditContentSidePanelComponent implements DotSidePanelContent, On
             host.languageChanged$
                 .pipe(takeUntilDestroyed(this.#destroyRef))
                 .subscribe((languageId) => this.languageChanged.emit(languageId));
+
+            host.lockChanged$
+                .pipe(takeUntilDestroyed(this.#destroyRef))
+                .subscribe((contentlet) => this.lockChanged.emit(contentlet));
 
             // Stacked under this panel's injector, not the field's: a re-render of the form
             // underneath must not close the panel on top, and it closes when this one does.

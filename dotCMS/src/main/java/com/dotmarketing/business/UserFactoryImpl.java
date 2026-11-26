@@ -538,6 +538,69 @@ public class UserFactoryImpl implements UserFactory {
         return updated > 0;
     }
 
+    /**
+     * Runs one atomic increment, so concurrent failed logins each add one. The user is evicted from the cache
+     * right away and again once the surrounding transaction commits, as in
+     * {@link #updateRememberMeToken(String, String)}.
+     */
+    @Override
+    public int incrementFailedLoginAttempts(final String userId) throws DotDataException {
+        final String id = storedUserId(userId);
+        final List<Map<String, Object>> rows = new DotConnect()
+                .setSQL("update user_ set failedloginattempts = coalesce(failedloginattempts, 0) + 1"
+                        + " where userid = ? returning failedloginattempts")
+                .addParam(id)
+                .loadObjectResults();
+        evictNowAndOnCommit(id);
+        return rows.isEmpty() ? 0 : ((Number) rows.get(0).get("failedloginattempts")).intValue();
+    }
+
+    /**
+     * The user is evicted from the cache right away and again once the surrounding transaction commits, as in
+     * {@link #updateRememberMeToken(String, String)}.
+     */
+    @Override
+    public void resetFailedLoginAttempts(final String userId) throws DotDataException {
+        final String id = storedUserId(userId);
+        new DotConnect().executeUpdate("update user_ set failedloginattempts = 0 where userid = ?", id);
+        evictNowAndOnCommit(id);
+    }
+
+    /**
+     * The user is evicted from the cache right away and again once the surrounding transaction commits, as in
+     * {@link #updateRememberMeToken(String, String)}.
+     */
+    @Override
+    public void requirePasswordReset(final String userId) throws DotDataException {
+        final String id = storedUserId(userId);
+        // Bound through addParam: executeUpdate(sql, true, id) would take the true as its logException argument
+        new DotConnect().setSQL("update user_ set passwordreset = ? where userid = ?")
+                .addParam(true)
+                .addParam(id)
+                .loadResult();
+        evictNowAndOnCommit(id);
+    }
+
+    /**
+     * @return the user id trimmed and lower-cased, the way ids are stored
+     * @throws DotDataException if {@code userId} is blank
+     */
+    private static String storedUserId(final String userId) throws DotDataException {
+        if (!UtilMethods.isSet(userId)) {
+            throw new DotDataException("Can't update a user without a userId");
+        }
+        return userId.trim().toLowerCase();
+    }
+
+    /**
+     * Evicts the user from the cache now, and again once the surrounding transaction commits (right away when none
+     * is open), so no node keeps a copy read before the commit.
+     */
+    private void evictNowAndOnCommit(final String id) throws DotDataException {
+        userCache.remove(id);
+        HibernateUtil.addSyncCommitListener(() -> userCache.remove(id));
+    }
+
     private User createUser(final User user) throws DotDataException {
 
         final DotConnect dotConnect = new DotConnect();

@@ -84,6 +84,12 @@ export interface EditContentHost {
     reportSaved(contentlet: DotCMSContentlet): void;
 
     /**
+     * Reports that the content was locked or unlocked. A lock is not a save, but a listing shows
+     * it (#38379). Full-screen ignores it; the overlay forwards it to whoever opened the editor.
+     */
+    reportLockChanged(contentlet: DotCMSContentlet): void;
+
+    /**
      * Reloads the editor with a different content (locale switch, etc.). Full-screen
      * navigates via the router (guard handles dirty state); the dialog reloads in
      * place (the layout handles the dirty check).

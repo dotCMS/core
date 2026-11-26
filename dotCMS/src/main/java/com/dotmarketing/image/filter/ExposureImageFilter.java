@@ -7,7 +7,7 @@ import java.util.Map;
 
 import javax.imageio.ImageIO;
 
-import com.dotmarketing.util.Logger;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotcms.repackage.com.dotmarketing.jhlabs.image.ExposureFilter;
 
 public class ExposureImageFilter extends ImageFilter {
@@ -36,19 +36,19 @@ public class ExposureImageFilter extends ImageFilter {
 		}
 
 		try {
-			BufferedImage src = ImageIO.read(file);
+			BufferedImage src = StrictImageReader.read(file);
 
 			
-            final File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() +".tmp.jpg");
+            final File tempResultFile = stagingFileFor(resultFile);
 
 			
 			BufferedImage dst = ef.filter(src, null);
 			ImageIO.write(dst, "png", tempResultFile);
 			dst.flush();
 			
-	        tempResultFile.renameTo(resultFile);
+	        publishRendition(tempResultFile, resultFile);
 		} catch (IOException e) {
-			Logger.error(this.getClass(), e.getMessage());
+			throw new DotRuntimeException("unable to convert file:" + file + " : " + e.getMessage(), e);
 		}
 
 		return resultFile;
