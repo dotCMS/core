@@ -24,11 +24,15 @@ do alone, for two reasons:
 
 - The code is spread across four stores, and only one of them is a set of files a person could
   search: templates and containers kept in the database, template and container files kept as
-  file assets, Velocity inside content type field definitions, and Velocity script steps inside
-  workflow actions.
-- The failure is silent. These templates keep working while reads still come from Elasticsearch
-  and break once reads move to OpenSearch — and they break by rendering *less*, not by raising an
-  error.
+  file assets, Velocity inside content type field definitions, and Velocity inside the parameters
+  of workflow action steps.
+- The failure arrives late and the obvious fix fails silently. The deprecated calls keep querying
+  Elasticsearch, which dual-write keeps current, so these templates keep working through Phase 2.
+  Once the migration completes (Phase 3) they fail the page render — or, if support enabled
+  `FEATURE_FLAG_OPEN_SEARCH_LEGACY_ES_SEARCH_RETURNS_NULL` to buy time, they return nothing and the
+  page silently renders less. A hand rewrite has its own silent traps: after the rename,
+  `$item.map.field` resolves to nothing and `toString()` stops producing JSON, with no error
+  either way.
 
 This feature gives support and administrators one restricted tool that finds that code, explains
 what has to change, rewrites the mechanical part on request without touching the live site, and
@@ -43,8 +47,8 @@ audit before moving reads to OpenSearch. They get one report listing every occur
 deprecated calls and their dependent usages, across all four stores, each with enough information
 to find it in the admin UI without database access.
 
-**Why this priority**: Knowing what breaks is the value on its own — it turns a silent production
-regression into a worklist. Everything else builds on it.
+**Why this priority**: Knowing what breaks is the value on its own — it turns a page failure that
+would only show up once the migration completes into a worklist before it. Everything else builds on it.
 
 **Independent Test**: Load a fixture containing one occurrence per rule in each store, request the
 audit, and check that every occurrence is reported with its location and rule and that nothing in
@@ -192,10 +196,12 @@ admin without the role, and an admin with the role.
 
 **Acceptance Scenarios**:
 
-1. **Given** a user who is not both CMS administrator and member of the migration role, **When**
-   they call any operation of the tool, **Then** they are refused with "forbidden" and nothing is
-   read or written.
-2. **Given** an admin holding the migration role, **When** they call any operation, **Then** it is
+1. **Given** an anonymous caller, **When** they call any operation of the tool, **Then** they are
+   refused as unauthorized and nothing is read or written.
+2. **Given** an authenticated user who is not both CMS administrator and member of the migration
+   role, **When** they call any operation of the tool, **Then** they are refused as forbidden and
+   nothing is read or written.
+3. **Given** an admin holding the migration role, **When** they call any operation, **Then** it is
    served.
 
 ### Edge Cases
@@ -231,9 +237,13 @@ admin without the role, and an admin with the role.
   body, header, footer and head code; (b) containers in the database — code, pre-loop, post-loop,
   and the per-content-type code of each container; (c) `.vtl` file assets, including file
   templates (`/application/templates/`), file containers (`/application/containers/`), theme
-  shells and scripting endpoints (`/application/apivtl/`); (d) content type field definitions that
-  hold Velocity (widget code and custom fields); (e) the code of Velocity script steps in workflow
-  actions.
+  shells and scripting endpoints (`/application/apivtl/`) — every `.vtl` under those folders, since
+  a file container keeps its code in several files (container code, pre-loop, post-loop, default
+  and one per content type) besides its metadata file; (d) content type field definitions that
+  hold Velocity (widget code, the widget pre-execute code, and custom fields); (e) the parameters
+  of workflow action steps that evaluate Velocity — the Velocity script step, and also the steps
+  whose parameters are rendered as Velocity (e-mail, notifications, comment, set value, move
+  content, send form e-mail).
 - **FR-002**: The audit MUST NOT treat the template's visual layout definition or a container's
   content query as code.
 - **FR-003**: When a widget or custom field is only an include of a `.vtl` file, the audit MUST
@@ -293,7 +303,8 @@ admin without the role, and an admin with the role.
   becomes a configuration property of the installation, (b) any CMS administrator can read, edit
   and delete its entries through the system-table endpoint and the maintenance JVM-info view,
   bypassing the migration-role gate and allowing the only backup of unversioned code to be lost,
-  and (c) the whole table is loaded into memory at startup.
+  and (c) the whole table is loaded into memory on first access, which happens at boot because the
+  configuration reads it.
 - **FR-018**: Each run MUST record its state (applied, partially applied, published, reverted),
   its date and the user who ran it.
 
@@ -326,8 +337,9 @@ admin without the role, and an admin with the role.
 
 - **FR-025**: Every operation (audit, dry run, apply, publish, revert, list runs, read run) MUST be
   restricted to users who are CMS administrators **and** members of the migration support role,
-  the same gate as the migration readiness report; any other caller MUST be refused as forbidden
-  before anything is read or written.
+  the same gate as the migration readiness report. An unauthenticated caller MUST be refused as
+  unauthorized (401) and an authenticated user lacking either role as forbidden (403), in both
+  cases before anything is read or written.
 - **FR-026**: Every apply, publish and revert MUST be written to the security audit log with the
   user, the run id and the number of objects affected.
 
@@ -367,8 +379,8 @@ admin without the role, and an admin with the role.
 - **SC-005**: A second apply on a converted installation changes zero objects.
 - **SC-006**: None of the report-only cases (JSON `toString()`, `maxScore`, results escaping the
   file) is ever modified by apply.
-- **SC-007**: 100% of calls by users lacking either the admin role or the migration role are
-  refused, across every operation.
+- **SC-007**: 100% of anonymous calls and of calls by users lacking either the admin role or the
+  migration role are refused, across every operation.
 - **SC-008**: An operator who lost the run id can find and revert the run without database access.
 - **SC-009**: Before applying, the operator can see 100% of the objects that will be skipped for a
   lock, with the lock owner; no object locked by another user is written unless it was named in
