@@ -2,7 +2,7 @@
 
 Read at Stage 4, after `agents.md` built the bundles and slices. Local mode uses the same templates with the wording changes in `local-mode.md`.
 
-A prompt is three parts: the **Inputs block** below, the agent's template, and the **sidecar line** from `sidecar-and-budget.md` with that instance's sidecar path. Without the sidecar line the agent writes to its fallback path, outside the run, and Stage 4b reads it as `MISSING`.
+A prompt is three parts: the **Inputs block** below, the agent's template, and the **sidecar line** from `sidecar-and-budget.md` with that instance's sidecar path. Without the sidecar line the agent takes itself for launched outside dot-pr-review: it writes no sidecar and answers in whatever shape the prompt asks, and Stage 4b reads it as `MISSING`.
 
 The templates carry inputs only. Each agent's rules, method and output live in its own file in `.claude/agents/`, so a rule is changed there, once, and never restated in a prompt.
 

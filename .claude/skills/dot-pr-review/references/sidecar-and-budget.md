@@ -4,7 +4,7 @@ Read at Stage 4, before writing any prompt. Stage 4b and Stage 5 rely on what it
 
 A reviewer that hits `maxTurns` mid-thought, or spends its whole budget investigating, returns no report. Each one therefore appends every finding to its own **sidecar** file the moment it confirms it, and the sidecars, not the final messages, are the system of record.
 
-**The reviewer agents own the contract.** Each file in `.claude/agents/dotcms-pr-*.md` has a "Sidecar and budget" section with its row shape, the `echo`-only write rule, the verbatim-`evidence` rule, its turn budget and stop point, and the shape of its final message. A subagent sees only its own file and its prompt, so the contract lives there, and the agents stay launchable without this skill. Changing the contract means changing those sections; this file only says where each sidecar goes.
+**The reviewer agents own the contract.** Each file in `.claude/agents/dotcms-pr-*.md` has a "Sidecar and budget" section with its row shape, the `echo`-only write rule, the verbatim-`evidence` rule, its turn budget and stop point, and the shape of its final message. A subagent sees only its own file and its prompt, so the contract lives there, and the agents stay launchable without this skill: launched with no sidecar path (another workflow's sub-agent, a direct launch), an agent skips the sidecar and answers in the shape its caller asks for. Changing the contract means changing those sections; this file only says where each sidecar goes.
 
 ## The sidecar line (end of every prompt)
 

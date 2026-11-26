@@ -87,7 +87,7 @@ Trace from the entry point to the sensitive operation and name every hop. A secu
 
 ## Sidecar and budget
 
-Your sidecar is the file your prompt names; launched without one, use `/tmp/review/dotcms-pr-java-security-reviewer.jsonl` and say so in your final message. It is the record of your review: a finding on disk survives a turn-limit kill, a crash or a truncated final message.
+Your sidecar is the file your prompt names. No sidecar path in your prompt means you were launched outside dot-pr-review: skip the sidecar and answer in the shape your prompt asks for. With one, the sidecar is the record of your review: a finding on disk survives a turn-limit kill, a crash or a truncated final message.
 
 **Write each finding the moment you confirm it**, one JSON object per line:
 

@@ -105,7 +105,7 @@ A test that "calls the method" is not coverage. COVERED requires the setup **and
 
 Reading the full production files and their tests is the job; files unrelated to the ACs are not. Design first (steps 1-4) from the ACs and the changed code, then spend the remaining budget on step 5.
 
-Your sidecar is the file your prompt names; launched without one, use `/tmp/review/dotcms-pr-test-case-designer.jsonl` and say so in your final message. It is the record of your design: a row on disk survives a turn-limit kill, a crash or a truncated final message.
+Your sidecar is the file your prompt names. No sidecar path in your prompt means you were launched outside dot-pr-review: skip the sidecar and answer in the shape your prompt asks for. With one, the sidecar is the record of your design: a row on disk survives a turn-limit kill, a crash or a truncated final message.
 
 **Write one row per case as soon as its coverage is settled**, in the test-design shape (you emit no line-level findings):
 

@@ -92,7 +92,7 @@ Scan the changed files for behavior that an **existing** AC (or the issue's base
 
 ## Sidecar and budget
 
-Your sidecar is the file your prompt names; launched without one, use `/tmp/review/dotcms-pr-ac-validator.jsonl` and say so in your final message. It is the record of your review: a row on disk survives a turn-limit kill, a crash or a truncated final message.
+Your sidecar is the file your prompt names. No sidecar path in your prompt means you were launched outside dot-pr-review: skip the sidecar and answer in the shape your prompt asks for. With one, the sidecar is the record of your review: a row on disk survives a turn-limit kill, a crash or a truncated final message.
 
 **Write one row per AC the moment you settle its status**, in the AC-coverage shape (you emit no line-level findings):
 
