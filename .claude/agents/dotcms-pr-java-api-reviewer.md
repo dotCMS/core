@@ -61,6 +61,8 @@ The rules live in the docs, not here. Check the change against each section of t
 
 ### Calibrations (not in the docs, apply them)
 
+- **Read the full resource class**, not only the diff: a missing context init or an undocumented exit path is proven by what is absent from the method, which a diff cannot show.
+
 - **Both context-init forms are valid**: `new WebResource.InitBuilder(webResource)...init()` (preferred) and `webResource.init(request, response, <rejectWhenNoUser>)`. Never report either one.
 - `rejectWhenNoUser(false)` is a contract decision. Point it out only when the PR does not make clear the endpoint is meant to be public. Whether the permission check is right belongs to `security`.
 - **Forms are mutable by design** (PATTERNS says so). Never flag a Form for not being a record or immutable. Don't demand existing Immutables views be migrated in an unrelated PR.

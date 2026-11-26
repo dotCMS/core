@@ -49,6 +49,9 @@ The core docs are the source of truth. **Your prompt names a bundle** holding th
 
 ## Scope Boundaries
 
+JSPs in your list are yours for display regressions (what the page now shows); their output encoding is the security reviewer's.
+
+
 The specialists own these, so leave them to them:
 - JAX-RS resources, endpoints, DTOs, status codes → `dotcms-pr-java-api-reviewer`
 - SQL, DotConnect, transactions, caching → `dotcms-pr-java-persistence-reviewer`

@@ -56,6 +56,10 @@ The docs don't cover these, so they are written out here:
 - Caller input reaching `Runtime.exec`/`ProcessBuilder`, a file path, a server-side URL fetch (SSRF), or an XML/XSLT parser: **Critical**. XML parsed without external entities disabled (XXE): **Critical**. Caller-controlled data deserialized into arbitrary types: **Critical**.
 - An error that tells "user does not exist" apart from "wrong password" (user enumeration): **Important**.
 
+### JSPs
+
+Every value a changed JSP writes to the page must be encoded for its context (HTML body, attribute, JavaScript, URL). Grep the sibling JSP and JS files for the same values: a fix in one page that misses its sibling is incomplete. `UtilMethods.webifyString` replaces only the double quote; it is not HTML encoding.
+
 ### Legacy surfaces: DWR and Struts
 
 A DWR class (`*Ajax.java`, exposed through `WEB-INF/dwr.xml`) or a Struts action (`*Action.java`
@@ -83,7 +87,7 @@ throw, including the ones it rethrows or now lets through, and say where its mes
 
 ## How to Judge
 
-Trace from the entry point to the sensitive operation and name every hop. A security finding needs a traced path from caller-controlled input to the dangerous sink; without one it is a guess, and stays unreported. If the path exists but a control you cannot see might sit upstream, report it at **85-94** and say what you could not verify.
+Trace from the entry point to the sensitive operation and name every hop. A security finding needs a traced path from caller-controlled input to the dangerous sink; without one it is a guess, and stays unreported. If the path exists but a control you cannot see might sit upstream, report it at **85-94** and say what you could not verify. A missing permission check has no keyword to grep: verify it by reading the method, and treat the absence as the finding.
 
 ## What NOT to Flag
 

@@ -49,6 +49,9 @@ The rules live in `DATABASE_PATTERNS.md`, not here. Check the change against eac
 
 ### Beyond the doc
 
+Read the full method around every query: a transaction boundary is set outside the line that runs the SQL.
+
+
 The doc doesn't cover these, so they are written out here:
 - A dynamic **identifier** (table or column name) can't be bound and must come from a whitelist. An identifier built from caller input is **Critical**.
 - Cache population inside a transaction that may roll back: **Critical**.
