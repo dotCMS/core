@@ -678,6 +678,26 @@ public class RoleAPIImpl implements RoleAPI {
 						&& layoutAPI.doesUserHaveAccessToUsersPortlet(user));
 	}
 
+	/**
+	 * A CMS Administrator may read roles, and so may a user who holds a Roles screen or a Users
+	 * screen. A Roles screen is the {@code roles} portlet or the old Roles &amp; Tools screen kept as
+	 * {@code roles-legacy}; a Users screen is {@code users} or {@code users-legacy}, as decided by
+	 * {@link LayoutAPI#doesUserHaveAccessToUsersPortlet(User)}.
+	 *
+	 * @param user the {@link User} making the request
+	 * @return {@code true} when the user may read roles
+	 * @throws DotDataException if the user's portlet access cannot be resolved
+	 */
+	@Override
+	public boolean canReadRoles(final User user) throws DotDataException {
+
+		final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
+		return user.isAdmin()
+				|| layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), user)
+				|| layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES_LEGACY.toString(), user)
+				|| layoutAPI.doesUserHaveAccessToUsersPortlet(user);
+	}
+
 	@CloseDBIfOpened
     @Override
     public boolean isParentRole(Role parent, Role child)

@@ -36,9 +36,13 @@
  * 								 RolesFilteringSelect.html
  * 
  * 
- * Ajax Code used by the dijit
- * 
- * com.dotmarketing.portlets.browser.ajax.RoleAjax.getRolesTree
+ * REST endpoint used by the dijit
+ *
+ * GET /api/v1/roles?fullHierarchy=true&permissionable={permissionable}
+ *
+ * Set the permissionable attribute to the id of the asset whose permissions are being edited:
+ * a user without the Roles or Users portlet can read the roles when they may edit that asset's
+ * permissions.
  */
 dojo.provide("dotcms.dijit.form.RolesFilteringSelect");
 
@@ -51,6 +55,7 @@ dojo.require("dijit.Tree");
 dojo.declare("dotcms.dijit.form.RolesFilteringSelect", [dijit._Widget, dijit._Templated], {
 	
 	excludeRoles:"",
+	permissionable:"",
 	templatePath: dojo.moduleUrl("dotcms", "dijit/form/RolesFilteringSelect.html"),
 
 	postCreate: function (elem) {
@@ -67,13 +72,72 @@ dojo.declare("dotcms.dijit.form.RolesFilteringSelect", [dijit._Widget, dijit._Te
 		this.rolesTreeWrapper = dojo.byId('rolesTreeWrapper-' + this.id);
 		this.rolesTree = dojo.byId('rolesTree-' + this.id);
 		
-		/*
-		 * Ajax call to retrieve tree data 
-		 */
-		RoleAjax.getRolesTreeFiltered(false, this.excludeRoles, dojo.hitch(this, this.postCreateCallback));
+		this._loadRoles();
 		this.bodyClickHandle = dojo.connect(dojo.body(), 'onclick', this, this._onBodyClick);
 	},
-	
+
+	/**
+	 * Loads the whole role hierarchy and hands it to postCreateCallback as tree items, leaving
+	 * out the roles listed in excludeRoles and the workflow special roles.
+	 */
+	_loadRoles: function () {
+		var url = '/api/v1/roles?fullHierarchy=true';
+		if (this.permissionable) {
+			url += '&permissionable=' + encodeURIComponent(this.permissionable);
+		}
+		var excluded = this.excludeRoles ? this.excludeRoles.split(',') : [];
+		var self = this;
+		fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+			.then(function (response) {
+				if (!response.ok) {
+					throw new Error('Roles could not be loaded: HTTP ' + response.status);
+				}
+				return response.json();
+			})
+			.then(function (data) {
+				self.postCreateCallback(self._toTreeItems(data.entity || [], excluded));
+			})
+			.catch(function (error) {
+				console.error(error);
+				self.postCreateCallback([]);
+			});
+	},
+
+	/**
+	 * Turns the REST role views into the items the tree and the Permissions tab read: the role
+	 * fields under the names the tab expects, and the children under "children", sorted by name.
+	 */
+	_toTreeItems: function (roles, excluded) {
+		var items = [];
+		for (var i = 0; i < roles.length; i++) {
+			var role = roles[i];
+			if (excluded.indexOf(role.id) >= 0 || this._isWorkflowRole(role)) {
+				continue;
+			}
+			items.push({
+				id: role.id,
+				name: role.name,
+				description: role.description,
+				roleKey: role.roleKey,
+				DBFQN: role.dbfqn,
+				FQN: role.fqn,
+				parent: role.parent,
+				editPermissions: role.editPermissions,
+				editUsers: role.editUsers,
+				editLayouts: role.editLayouts,
+				locked: role.locked,
+				system: role.system,
+				children: this._toTreeItems(role.roleChildren || [], excluded)
+			});
+		}
+		items.sort(function (a, b) { return a.name < b.name ? -1 : (a.name > b.name ? 1 : 0); });
+		return items;
+	},
+
+	_isWorkflowRole: function (role) {
+		return !!role.roleKey && role.roleKey.indexOf('cms_workflow_any_who_can_') === 0;
+	},
+
 	postCreateCallback: function(treeData) {
 
 		this.treeData = treeData;

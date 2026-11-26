@@ -455,6 +455,18 @@ public interface RoleAPI {
 	 */
 	boolean canReadRoleMembership(User user) throws DotDataException;
 
+	/**
+	 * Whether a user may list roles and read their details (names, keys, hierarchy and flags,
+	 * never the users that hold them): a CMS Administrator, or a user with access to a Roles
+	 * screen ({@code roles} or the old {@code roles-legacy}) or a Users screen ({@code users} or
+	 * the old {@code users-legacy}). Both screens pick roles, so either one is enough.
+	 *
+	 * @param user the {@link User} making the request
+	 * @return {@code true} when the user may read roles
+	 * @throws DotDataException if the user's portlet access cannot be resolved
+	 */
+	boolean canReadRoles(User user) throws DotDataException;
+
     /**
      * Checks if the first role parameter is indeed a parent of the second role parameter.
      *

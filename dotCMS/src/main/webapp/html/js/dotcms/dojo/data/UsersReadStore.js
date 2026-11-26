@@ -54,7 +54,7 @@ dojo.declare("dotcms.dojo.data.UsersReadStore", dotcms.dojo.data.DWRReadStore, {
 			if(args.identity.indexOf('user-') == 0)
 				UserAjax.getUserById(args.identity.substring(5, args.identity.length), options);
 			else if(args.identity.indexOf('role-') == 0)
-				UserAjax.getRoleById(args.identity.substring(5, args.identity.length), options);
+				this.loadRole(args.identity.substring(5, args.identity.length), options);
 		} else {
 			if(args.identity == '' && this.includeBlankResult) {
 				var blankObj = { name:"", id:"", emailaddress:"", type:"blank" };
@@ -64,8 +64,55 @@ dojo.declare("dotcms.dojo.data.UsersReadStore", dotcms.dojo.data.DWRReadStore, {
 			if(args.item.type == 'user')
 				UserAjax.getUserById(args.item.id, options);
 			else if(args.item.type == 'role')
-				UserAjax.getRoleById(args.item.id, options);
+				this.loadRole(args.item.id, options);
 		}
+	},
+
+	/**
+	 * Calls GET /api/v1/roles with the given path and query, passing the store's asset as
+	 * permissionable so a user who may edit that asset's permissions can read roles. Resolves to
+	 * the response entity.
+	 */
+	_getRoles: function (path, query) {
+		if(this.assetInode)
+			query.permissionable = this.assetInode;
+		var url = '/api/v1/roles' + path + '?' + Object.keys(query).map(function (key) {
+			return encodeURIComponent(key) + '=' + encodeURIComponent(query[key]);
+		}).join('&');
+		return fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+			.then(function (response) {
+				if(!response.ok)
+					throw new Error('Roles could not be loaded: HTTP ' + response.status);
+				return response.json();
+			})
+			.then(function (data) { return data.entity; });
+	},
+
+	_toRoleItem: function (role) {
+		return { id: role.id, name: role.name, emailaddress: '', type: 'role' };
+	},
+
+	loadRole: function (roleId, options) {
+		this._getRoles('/' + encodeURIComponent(roleId), { loadChildrenRoles: false })
+			.then(dojo.hitch(this, function (role) {
+				options.callback.call(options.scope, this._toRoleItem(role));
+			}))
+			.catch(function (error) {
+				options.errorHandler.call(options.scope, error.message, error);
+			});
+	},
+
+	/**
+	 * Lists roles whose name starts with the query, one page at a time. The total is the
+	 * listed count plus one while a page comes back full, so the select keeps offering more.
+	 */
+	fetchRoles: function (params) {
+		var count = params.limit > 0 ? params.limit : 1000;
+		return this._getRoles('/_search', { searchName: params.query, start: params.start, count: count })
+			.then(dojo.hitch(this, function (roles) {
+				var data = (roles || []).map(this._toRoleItem);
+				return { data: data, total: params.start + data.length + (data.length >= count ? 1 : 0) };
+			}));
 	},
 
 	fetchUsersRoles: function (args, options) {
@@ -84,10 +131,27 @@ dojo.declare("dotcms.dojo.data.UsersReadStore", dotcms.dojo.data.DWRReadStore, {
 			UserAjax.getUsersList(this.assetInode, this.permission, params, modOptions);
 		}else if(!this.includeUsers){
 
-			UserAjax.getRolesList(this.assetInode, this.permission, params, modOptions);
+			this.fetchRoles(params)
+				.then(function (results) { cbFn.call(modOptions.scope, results); })
+				.catch(function (error) { options.errorHandler.call(options.scope, error.message, error); });
 		}else {
 
-			UserAjax.getUsersAndRolesList(this.assetInode, this.permission, params, modOptions);
+			// Roles from REST, users from the Users portlet's own listing, in one page
+			var roles = this.fetchRoles(params);
+			var users = new Promise(dojo.hitch(this, function (resolve, reject) {
+				UserAjax.getUsersList(this.assetInode, this.permission, params, {
+					callback: resolve,
+					errorHandler: function (message, error) { reject(error || new Error(message)); }
+				});
+			}));
+			Promise.all([roles, users])
+				.then(function (results) {
+					cbFn.call(modOptions.scope, {
+						data: results[1].data.concat(results[0].data),
+						total: (results[1].total || 0) + results[0].total
+					});
+				})
+				.catch(function (error) { options.errorHandler.call(options.scope, error.message, error); });
 		}
 	},
 	

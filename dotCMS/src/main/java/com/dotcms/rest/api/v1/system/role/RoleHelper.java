@@ -6,7 +6,10 @@ import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ConflictException;
+import com.dotcms.rest.api.v1.system.permission.AssetPermissionHelper;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.DuplicateRoleException;
 import com.dotmarketing.business.DuplicateRoleKeyException;
@@ -30,10 +33,14 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 import org.apache.commons.beanutils.BeanUtils;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -620,5 +627,114 @@ public class RoleHelper {
         }
 
         return views;
+    }
+
+    /**
+     * Builds the {@link RoleView}s for the given roles with every descendant hydrated, at any
+     * depth, as nested child views. The views carry role details and user counts only, never the
+     * users themselves. A role already placed in the tree is not placed again, so a damaged
+     * hierarchy with a cycle still ends.
+     *
+     * @param roles   the roles at the top of the tree, order is preserved
+     * @param roleAPI the {@link RoleAPI} used to load children and resolve counts
+     * @return the views in the same order as the given roles, each with its whole subtree
+     * @throws DotDataException if loading a child role or the count query fails
+     */
+    public List<RoleView> toRoleHierarchyViews(final List<Role> roles,
+                                               final RoleAPI roleAPI) throws DotDataException {
+
+        final Map<String, List<Role>> childrenByParentId = new LinkedHashMap<>();
+        final Set<String> visited = new HashSet<>();
+        final Deque<Role> pending = new ArrayDeque<>();
+        for (final Role role : roles) {
+            if (visited.add(role.getId())) {
+                pending.add(role);
+            }
+        }
+
+        while (!pending.isEmpty()) {
+
+            final Role role = pending.poll();
+            final List<Role> children = new ArrayList<>();
+            for (final String childRoleId : null == role.getRoleChildren()
+                    ? List.<String>of() : role.getRoleChildren()) {
+
+                if (!visited.add(childRoleId)) {
+                    continue;
+                }
+                final Role child = roleAPI.loadRoleById(childRoleId);
+                if (null == child || !UtilMethods.isSet(child.getId())) {
+
+                    Logger.warn(this, "Child role: " + childRoleId + " of role: "
+                            + role.getId() + " does not resolve, skipping it");
+                    continue;
+                }
+                children.add(child);
+                pending.add(child);
+            }
+            childrenByParentId.put(role.getId(), children);
+        }
+
+        final Map<String, Integer> userCounts =
+                roleAPI.countUsersByRoleIds(new ArrayList<>(childrenByParentId.keySet()));
+        final List<RoleView> views = new ArrayList<>();
+        for (final Role role : roles) {
+            if (childrenByParentId.containsKey(role.getId())) {
+                views.add(toRoleHierarchyView(role, childrenByParentId, userCounts));
+            }
+        }
+        return views;
+    }
+
+    /**
+     * Builds the view of one role and, recursively, of the children collected for it.
+     *
+     * @param role               the role to build the view for
+     * @param childrenByParentId the children collected for each role in the tree
+     * @param userCounts         the user count of each role in the tree
+     * @return the role's view with its subtree
+     */
+    private RoleView toRoleHierarchyView(final Role role,
+                                         final Map<String, List<Role>> childrenByParentId,
+                                         final Map<String, Integer> userCounts) {
+
+        final List<RoleView> childViews = new ArrayList<>();
+        for (final Role child : childrenByParentId.getOrDefault(role.getId(), List.of())) {
+            childViews.add(toRoleHierarchyView(child, childrenByParentId, userCounts));
+        }
+        return new RoleView(role, childViews, userCounts.getOrDefault(role.getId(), 0));
+    }
+
+    /**
+     * Whether the user may change the permissions of the asset with the given id. The id is the
+     * one the Permissions tab works with: a folder, site, contentlet, template or container id,
+     * a content type id or a category inode.
+     *
+     * @param assetId the id of the asset
+     * @param user    the user making the request
+     * @return {@code true} when the asset exists and the user holds
+     *         {@link PermissionAPI#PERMISSION_EDIT_PERMISSIONS} on it
+     * @throws DotDataException if the asset or the user's permissions cannot be read
+     */
+    public boolean canEditPermissionsOf(final String assetId, final User user)
+            throws DotDataException {
+
+        if (!UtilMethods.isSet(assetId)) {
+            return false;
+        }
+        // Content types and categories first: the shared resolver below logs every id it
+        // cannot place, and the Permissions tab of those screens sends theirs
+        final User systemUser = APILocator.systemUser();
+        Permissionable asset = Try.of(() -> (Permissionable) APILocator
+                .getContentTypeAPI(systemUser).find(assetId)).getOrNull();
+        if (null == asset) {
+            asset = Try.of(() -> (Permissionable) APILocator.getCategoryAPI()
+                    .find(assetId, systemUser, false)).getOrNull();
+        }
+        if (null == asset) {
+            asset = Try.of(() -> new AssetPermissionHelper().resolveAsset(assetId)).getOrNull();
+        }
+        return null != asset && APILocator.getPermissionAPI().doesUserHavePermission(asset,
+                PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user, false);
     }
 }
