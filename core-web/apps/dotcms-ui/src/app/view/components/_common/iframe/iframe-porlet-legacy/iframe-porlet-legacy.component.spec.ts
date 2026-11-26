@@ -123,6 +123,19 @@ describe('IframePortletLegacyComponent — the panel in the URL', () => {
         expect(spectator.inject(DotIframeService).reloadData).toHaveBeenCalledWith('content');
     });
 
+    // A lock is not an edit, and reloading the iframe would throw away what the portlet shows
+    // behind the panel (#38379).
+    it('does not reload the portlet when content is locked or unlocked in a side panel', async () => {
+        mount({ p_p_id: 'content' });
+        await settle();
+
+        spectator
+            .inject(DotContentChangeService)
+            .notify({ kind: 'locked', contentlet: { inode: 'locked-inode' } as never, depth: 0 });
+
+        expect(spectator.inject(DotIframeService).reloadData).not.toHaveBeenCalled();
+    });
+
     it('opens the version a URL names by identifier and language', async () => {
         mount({ editContent: IDENTIFIER, editContentLang: '2' });
         await settle();

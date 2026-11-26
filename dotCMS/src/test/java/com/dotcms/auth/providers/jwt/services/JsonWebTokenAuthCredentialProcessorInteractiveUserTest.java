@@ -76,6 +76,15 @@ class JsonWebTokenAuthCredentialProcessorInteractiveUserTest {
     }
 
     @Test
+    void sessionOverload_regularUser_returnsUserAndWritesNothingToTheSession() throws Exception {
+        final HttpSession session = mock(HttpSession.class);
+        final User real = user("dotcms.org.1");
+        withToken(real, (p, r, s) ->
+                assertSame(real, p.processAuthHeaderFromJWT("Bearer abc", s, "192.0.2.1")), request(), session);
+        verify(session, never()).setAttribute(anyString(), any());
+    }
+
+    @Test
     void requestOverload_builtInAccount_returnsNullAndWritesNothing() throws Exception {
         final HttpServletRequest request = request();
         withToken(user(UserAPI.SYSTEM_USER_ID), (p, r, s) ->

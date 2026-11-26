@@ -65,10 +65,11 @@ interface RouteHandlerConfig {
 }
 
 /**
- * The Content Drive params that say where the author is browsing. Every other param (the open
- * panel, a folder dialog, …) names something that is only open for a moment.
+ * The Content Drive params that say where the author is browsing and how it is shown (folder,
+ * filters, tree, list or cards). Every other param (the open panel, a folder dialog, …) names
+ * something that is only open for a moment.
  */
-const CONTENT_DRIVE_BROWSING_PARAMS = ['path', 'filters', 'isTreeExpanded'];
+const CONTENT_DRIVE_BROWSING_PARAMS = ['path', 'filters', 'isTreeExpanded', 'viewType'];
 
 /**
  * The URL a Content Drive crumb links back to: the same folder, filters and tree, without the
@@ -89,6 +90,70 @@ function contentDriveCrumbUrl(url: string): string {
         .filter((param) => CONTENT_DRIVE_BROWSING_PARAMS.includes(param.split('=')[0]));
 
     return browsing.length > 0 ? `${urlPath}?${browsing.join('&')}` : urlPath;
+}
+
+/** Content Drive's route, the one route whose crumb follows URLs written outside the router. */
+const CONTENT_DRIVE_ROUTE = '/content-drive';
+
+/**
+ * Whether the last crumb follows a Content Drive address the router never saw, so the router's
+ * own URL is stale and must not rebuild the trail. Content Drive writes its folder, filters and
+ * tree with `Location`, and its crumb follows them ({@link followUrl}); the router still reports
+ * the URL Content Drive was opened on. The menu effect re-runs on a later menu reload (portlet
+ * layouts change) and would otherwise reset the crumb to that URL.
+ *
+ * @param address The address bar's path, as `Location.path(true)` reports it.
+ * @param routerUrl The URL the router last navigated to.
+ * @param last The last crumb of the trail.
+ * @returns `true` when the address and the last crumb are both Content Drive's and the router
+ * lags behind the address.
+ */
+export function followsContentDrive(
+    address: string,
+    routerUrl: string,
+    last: MenuItem | null
+): boolean {
+    const path = address.replace(/^.*#/, '');
+    const lastRoute = (last?.url ?? '').replace(/^.*#/, '').split('?')[0];
+
+    return (
+        path !== routerUrl &&
+        path.split('?')[0] === CONTENT_DRIVE_ROUTE &&
+        lastRoute === CONTENT_DRIVE_ROUTE
+    );
+}
+
+/**
+ * The last crumb after Content Drive moved its own URL, or `null` when the trail should stay as it
+ * is.
+ *
+ * Content Drive writes its folder, filters and tree into the URL with `Location.go` /
+ * `replaceState`, which never reaches the router. Its crumb would otherwise keep the URL the author
+ * arrived on, and coming back to it from another page opened that state instead of the one they
+ * left (#38379). Only a Content Drive URL is followed, and only while Content Drive's crumb is the
+ * last one; the crumb leaves out the params that open a panel or a dialog (see
+ * {@link contentDriveCrumbUrl}).
+ *
+ * The page editor also writes its address outside the router, but it keeps its own crumb: that
+ * crumb states the persona `editEmaGuard` needs, which the address leaves out for the default one,
+ * and the editor rebuilds it whenever the page loads.
+ *
+ * @param url The URL Content Drive moved to, as `Location` reports it (`#/content-drive?…`).
+ * @param last The last crumb of the trail.
+ * @returns The last crumb pointing at the new URL, or `null` to leave the trail alone.
+ */
+export function followUrl(url: string, last: MenuItem | null): MenuItem | null {
+    const path = url.replace(/^.*#/, '');
+    const lastRoute = (last?.url ?? '').replace(/^.*#/, '').split('?')[0];
+    const route = path.split('?')[0];
+
+    if (!last?.url || route !== CONTENT_DRIVE_ROUTE || lastRoute !== CONTENT_DRIVE_ROUTE) {
+        return null;
+    }
+
+    const crumbUrl = `/dotAdmin/#${contentDriveCrumbUrl(path)}`;
+
+    return crumbUrl === last.url ? null : { ...last, url: crumbUrl };
 }
 
 /**

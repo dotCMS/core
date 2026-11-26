@@ -9,7 +9,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import org.apache.commons.lang.StringUtils;
 import org.glassfish.jersey.server.ContainerRequest;
@@ -86,23 +85,25 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
     }
 
     /**
-     * Resolves the user of a JWT header and stores it on the session, unless the account cannot be used
-     * interactively, in which case there is no credential and nothing is stored.
+     * Resolves the user of a JWT header, or {@code null} when the token is not valid or the account
+     * cannot be used interactively. Nothing is stored on the session: the token identifies its user
+     * only to the caller, as it does for a REST request, so the HTTP session does not become logged
+     * in. Revocation and expiry are checked on new handshakes; they do not close a WebSocket
+     * connection that was already authenticated.
+     *
+     * @param authorizationHeader the {@code Authorization} header value
+     * @param session             the HTTP session of the call, may be {@code null}; read only to log a
+     *                            refused account once per session
+     * @param ipAddress           the client address the token's network restriction is checked against
+     * @return the token's {@link User}, or {@code null}
      */
     @Override
     public User processAuthHeaderFromJWT(final String authorizationHeader,
             final HttpSession session, final String ipAddress) {
 
         final Optional<JWToken> jwToken = internalProcessAuthHeaderFromJWT(authorizationHeader, ipAddress, false);
-        final User user = InteractiveUserPolicy.refuseIfNotEligible(
+        return InteractiveUserPolicy.refuseIfNotEligible(
                 jwToken.isPresent() ? jwToken.get().getActiveUser().get() : null, null, session);
-
-        if (user != null && null != session) {
-            session.setAttribute(WebKeys.CMS_USER, user);
-            session.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
-        }
-
-        return user;
     } // processAuthCredentialsFromJWT.
 
     /**

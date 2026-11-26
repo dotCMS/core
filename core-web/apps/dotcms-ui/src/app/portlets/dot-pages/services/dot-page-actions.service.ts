@@ -113,7 +113,7 @@ export class DotPageActionsService {
         // Every save and delete in a side panel, at any depth, while the portlet is shown: a page
         // saved from a relationship inside another panel is in the listing too (T174).
         inject(DotContentChangeService)
-            .changes$.pipe(takeUntilDestroyed())
+            .edits$.pipe(takeUntilDestroyed())
             .subscribe(() => this.#refreshPages());
     }
 

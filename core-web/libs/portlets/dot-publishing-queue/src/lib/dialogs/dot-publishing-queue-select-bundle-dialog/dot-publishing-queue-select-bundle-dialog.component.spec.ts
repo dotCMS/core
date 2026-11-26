@@ -463,6 +463,20 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             expect(service.getBundleAssets).toHaveBeenCalledWith('bundle-1');
         });
 
+        // A lock is not an edit: the listing stays as it is (#38379).
+        it("does not reload the bundle's assets when content is locked or unlocked in a panel", () => {
+            clickRow(0);
+            (service.getBundleAssets as Mock).mockClear();
+
+            spectator.inject(DotContentChangeService).notify({
+                kind: 'locked',
+                contentlet: { inode: 'related' } as DotCMSContentlet,
+                depth: 0
+            });
+
+            expect(service.getBundleAssets).not.toHaveBeenCalled();
+        });
+
         // The safety net for workflow actions in the legacy editor, which report nothing.
         it("reloads the active bundle's assets when a legacy editor panel closes", () => {
             clickRow(0);

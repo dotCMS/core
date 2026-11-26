@@ -29,6 +29,8 @@ import { catchError, filter, take } from 'rxjs/operators';
 
 import {
     AddToBundleService,
+    DotContentChange,
+    DotContentChangeKind,
     DotContentChangeService,
     DotCurrentUserService,
     DotFolderBulkDeleteRefusalKind,
@@ -693,7 +695,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
 
         inject(DotContentChangeService)
             .changes$.pipe(takeUntilDestroyed())
-            .subscribe(() => this.onContentChanged());
+            .subscribe((change) => this.onContentChanged(change));
 
         // Shareable deep-link: a panel or folder-dialog param reopens what it names on load. Read
         // once from the snapshot (the portlet is not re-created on in-session query-param changes).
@@ -2139,8 +2141,24 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * FR-013). Content saved from a relationship inside the panel a row opened is in the list too
      * (#38303, T174). The opener switches the URL to the saved content on a create's first save
      * (FR-025).
+     *
+     * A lock change is not a save: the row takes the new lock from the reported content, with no
+     * list request (#38379).
+     *
+     * @param change What changed in the panel.
      */
-    protected onContentChanged() {
+    protected onContentChanged(change: DotContentChange) {
+        if (change.kind === DotContentChangeKind.LOCKED) {
+            this.#store.updateItemLock(change.contentlet);
+
+            // Under a Locked status filter the lock decides which rows belong in the list.
+            if (this.#store.filters()?.status?.includes('LOCKED')) {
+                this.#store.reloadContentDrive({ quiet: true });
+            }
+
+            return;
+        }
+
         this.#store.reloadContentDrive({ quiet: true });
     }
 

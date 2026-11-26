@@ -586,6 +586,20 @@ describe('DotQueryToolPageComponent', () => {
                 expect(store.runSearch).toHaveBeenCalledTimes(2);
             });
 
+            // A lock is not an edit: the listing stays as it is (#38379).
+            it('does not rerun the search when content is locked or unlocked in a panel', () => {
+                const store = spectator.inject(DotQueryToolStore, true);
+                clickResult(SAMPLE_CONTENTLET);
+
+                spectator.inject(DotContentChangeService).notify({
+                    kind: 'locked',
+                    contentlet: SAMPLE_CONTENTLET as never,
+                    depth: 0
+                });
+
+                expect(store.runSearch).not.toHaveBeenCalled();
+            });
+
             it('reruns the search and clears the request when it closes', () => {
                 const store = spectator.inject(DotQueryToolStore, true);
                 stubbed(store)['query'] = vi.fn().mockReturnValue('+live:true');
