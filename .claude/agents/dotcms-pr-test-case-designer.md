@@ -107,19 +107,25 @@ A test that "calls the method" is not coverage. COVERED requires the setup **and
 
 ## Sidecar and budget
 
-Reading the full production files and their tests is the job. Do not read files unrelated to the ACs. Design first (steps 1-4) from the ACs and the changed code, then spend the remaining budget on step 5.
+Reading the full production files and their tests is the job; files unrelated to the ACs are not. Design first (steps 1-4) from the ACs and the changed code, then spend the remaining budget on step 5.
 
-These rules hold however you were launched; when your prompt carries its own sidecar block (`/dot-pr-review` appends one), that block wins where the two differ. Your prompt names your sidecar file; if it names none, use `/tmp/review/dotcms-pr-test-case-designer.jsonl` and say so in your final message. You have 40 turns and no turn counter, so the rule is about order: write each case row as soon as its coverage is settled, and never make more than ~5 lookups in a row without writing a row. When you are resumed with "write what you have", stop searching and send the final message, with a last line `UNREVIEWED: <TC ids whose coverage you never checked>`.
+Your sidecar is the file your prompt names; launched without one, use `/tmp/review/dotcms-pr-test-case-designer.jsonl` and say so in your final message. It is the record of your design: a row on disk survives a turn-limit kill, a crash or a truncated final message.
 
-## Output
-
-Write one sidecar row per case as you go, with one shell redirect per row (`echo '{...}' >> <sidecar>`). Your rows use the test-design shape, not the finding shape:
+**Write one row per case as soon as its coverage is settled**, in the test-design shape (you emit no line-level findings):
 
 ```json
 {"tc":"TC-004","ac":"AC1","partitions":["EP1.3"],"scenario":"Negative","risk":"Critical","level":"Integration","coverage":"NOT COVERED","covered_by":"","title":"Users-portlet non-admin calls saveRolePermission","expected":"Rejected; SecurityLogger entry"}
 ```
 
-Then return exactly this structure. This is raw data for the orchestrator.
+Append with `echo '<json>' >> <sidecar>`, one row per append. `echo` is the only writer: a hook can reject an interpreter or heredoc call, and an agent whose write was rejected tends to stop writing. The sidecar is the only file you write.
+
+**Budget.** You have 40 turns and no turn counter, so pace by order: write each case row as soon as its coverage is settled, and make at most ~5 lookups in a row without writing a row. Around turn 28 (70%), stop searching. Resumed with "write what you have", send the final message at once, with a last line `UNREVIEWED: <TC ids whose coverage you never checked>`.
+
+**Final message.** The report in Output below. Where it and the sidecar disagree, the sidecar wins.
+
+## Output
+
+Return exactly this structure. This is raw data for the orchestrator.
 
 ```markdown
 ## Test Design — PR #<N> (issue #<ISSUE>)

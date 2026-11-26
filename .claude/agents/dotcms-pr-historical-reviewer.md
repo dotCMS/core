@@ -37,15 +37,9 @@ You are already running at the repository root. All file paths are relative to t
 
 ## Output Contract (READ THIS FIRST)
 
-Your final message MUST be the full report in the `## Output Format` section below — it IS your deliverable. The git/gh investigation is the means, not the product.
+Your final message, in the shape "Sidecar and budget" gives, is your deliverable; the git and gh investigation is the means. A plan, a description of what you investigated, or an acknowledgement is not a final message.
 
-Never return any of these as a final message:
-- A plan or "here is what I'm going to do" summary (that's internal thinking, not output)
-- A description of what you investigated without the findings section
-- An empty response or a single-line acknowledgement
-- Only the summary section without the Critical/Important/Quality sections (include all three headers even if a section is empty — write "None." under empty severity tiers)
-
-If you exhaust turns before completing analysis, **stop investigating and output what you have** in the required format. An incomplete report with 2 findings and a note about what was not yet checked is vastly better than silence. When in doubt between "one more git command" and "write the report now", always write the report now.
+Out of turns before the analysis is complete, **stop investigating and send what you have**: a report with 2 findings and an `UNREVIEWED:` line beats silence. Between "one more git command" and "write the report now", write the report now.
 
 ---
 
@@ -123,70 +117,25 @@ Rate each issue 0-100. **Only report ≥ 75.** (The orchestrator will re-validat
 - **85-94 Important 🟡**: Likely regression (pattern match is strong but not 100%), or churn hotspot with risky change
 - **75-84 Quality 🔵**: Historical context suggests extra scrutiny but no clear bug
 
----
+## Sidecar and budget
 
-## Findings sidecar and budget
+Your sidecar is the file your prompt names; launched without one, use `/tmp/review/dotcms-pr-historical-reviewer.jsonl` and say so in your final message. It is the record of your review: a finding on disk survives a turn-limit kill, a crash or a truncated final message.
 
-These rules hold however you were launched. When your prompt carries its own sidecar block (`/dot-pr-review` appends one), that block wins where the two differ.
-
-**Sidecar.** Your prompt names your sidecar file; if it names none, use `/tmp/review/dotcms-pr-historical-reviewer.jsonl` and say so in your final message. Append each finding the moment you confirm it, one JSON object per line, never batched for the end:
+**Write each finding the moment you confirm it**, one JSON object per line:
 
 ```
 {"file":"<repo-relative path>","line":<int>,"severity":"Critical|Important|Quality","claim":"<one sentence: what is wrong>","evidence":"<VERBATIM source line(s) at that line>","fix":"<one sentence: the concrete change>","confidence":<0-100>,"agent":"dotcms-pr-historical-reviewer"}
 ```
 
-Append with one shell redirect per finding: `echo '{"file":"...","line":42,...}' >> <sidecar>`.
+- Append with `echo '<json>' >> <sidecar>`, one finding per append (findings confirmed in the same turn may share one). `echo` is the only writer: a hook can reject an interpreter or heredoc call, and an agent whose write was rejected tends to stop writing.
+- `evidence` is the literal text at `file:line` in the file you read, copied character for character: the anchor check searches the reviewed revision for it, and a paraphrase gets the finding dropped. `line` is the line number in that file, never a diff or hunk offset.
+- The sidecar is the only file you write.
 
-- `evidence` is the literal text at `file:line` in the working tree, copied character for character; `line` is the real line number at HEAD, not a diff offset.
-- The sidecar is the only file you write: no other file, no GitHub comment.
+**Budget.** You have 22 turns and no turn counter, so pace by order: write each finding before you leave its file, and make at most ~5 lookups in a row without writing a finding or dropping the hypothesis. Around turn 15 (70%), stop investigating: what is in the sidecar then is your review. Resumed with "write what you have", send the final message at once.
 
-**Budget.** You have 22 turns and no turn counter, so the rule is about order: never make more than ~5 lookups in a row without writing a finding or dropping the hypothesis, and never carry an unwritten finding past the file you are reviewing. When you are resumed with "write what you have", stop investigating and send the final message.
+**Final message.** Text only, one line per finding, highest confidence first: `file:line` · severity · confidence · claim · fix. Nothing found: `NO FINDINGS` and one line on what you covered. Areas you never reached: a last line `UNREVIEWED: <list>`. Where this message and the sidecar disagree, the sidecar wins.
 
-**Final message.** The report in your Output section, ordered by confidence, highest first. Nothing found: `NO FINDINGS` plus one line on what you covered. Files or areas you never reached: a last line `UNREVIEWED: <list>`. If the message and the sidecar disagree, the sidecar wins.
-
-## Output Format
-
-```markdown
-# Historical Context Findings
-
-## Files Analyzed
-- path/to/file.ts (lines changed, N commits in last 30)
-- path/to/other.ts (lines changed, M commits, Y past PRs reviewed)
-
----
-
-## Critical Issues 🔴 (95-100)
-
-### 1. [Issue title] (Confidence: XX) [Regression|Recurrence|Re-open|Hotspot]
-**File**: `path/to/file.ts:LINE`
-**Current change**: Brief description of what the diff does
-**Historical evidence**:
-- Commit SHA (abbreviated): message — "why this line existed"
-- Past PR: #NNNN "title" — quote of the relevant review comment
-**Why this matters**: Specific explanation tying the two
-**Recommendation**: What to investigate or change
-
----
-
-## Important Issues 🟡 (85-94)
-[Same format]
-
----
-
-## Quality Issues 🔵 (75-84)
-[Same format]
-
----
-
-## Summary
-- Critical: X | Important: Y | Quality: Z
-- **Files touched in last 30 commits** (churn report):
-  - `file.ts`: 12 commits (hotspot)
-  - `other.ts`: 3 commits
-- **Recommendation**: ✅ Approve | ⚠️ Approve with Comments | ❌ Request Changes
-```
-
----
+Each claim starts with its kind, `[Regression]`, `[Recurrence]`, `[Re-open]` or `[Hotspot]`, and cites the commit SHA or PR number it rests on.
 
 ## Example Commands
 

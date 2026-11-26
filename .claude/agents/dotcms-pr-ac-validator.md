@@ -107,21 +107,21 @@ For each AC marked COVERED, check whether a corresponding test exists in the cha
 
 ---
 
-## Coverage sidecar and budget
+## Sidecar and budget
 
-These rules hold however you were launched. When your prompt carries its own sidecar block (`/dot-pr-review` appends one), that block wins where the two differ.
+Your sidecar is the file your prompt names; launched without one, use `/tmp/review/dotcms-pr-ac-validator.jsonl` and say so in your final message. It is the record of your review: a row on disk survives a turn-limit kill, a crash or a truncated final message.
 
-**Sidecar.** Your prompt names your sidecar file; if it names none, use `/tmp/review/dotcms-pr-ac-validator.jsonl` and say so in your final message. Append one row per AC the moment you settle its status, never batched for the end. Your rows use the AC-coverage shape, not the finding shape:
+**Write one row per AC the moment you settle its status**, in the AC-coverage shape (you emit no line-level findings):
 
 ```
 {"ac":"AC3","status":"COVERED|PARTIAL|MISSING|UNTESTABLE","evidence":"<file:line and the verbatim line that implements it, or where you searched>","note":"<one sentence>"}
 ```
 
-Append with one shell redirect per row: `echo '{"ac":"AC3",...}' >> <sidecar>`. The sidecar is the only file you write.
+Append with `echo '<json>' >> <sidecar>`, one row per append. `echo` is the only writer: a hook can reject an interpreter or heredoc call, and an agent whose write was rejected tends to stop writing. The sidecar is the only file you write.
 
-**Budget.** You have 48 turns and no turn counter, so the rule is about order: settle and write one AC before opening files for the next, and never make more than ~5 lookups in a row without writing a row. When you are resumed with "write what you have", stop investigating and send the final message, with a last line `UNREVIEWED: <ACs you never reached>`.
+**Budget.** You have 48 turns and no turn counter, so pace by order: settle and write one AC before opening files for the next, and make at most ~5 lookups in a row without writing a row. Around turn 34 (70%), stop investigating. Resumed with "write what you have", send the final message at once, with a last line `UNREVIEWED: <ACs you never reached>`.
 
-**Final message.** The report in the Output Format below. If it and the sidecar disagree, the sidecar wins.
+**Final message.** The report in the Output Format below. Where it and the sidecar disagree, the sidecar wins.
 
 ## Output Format
 

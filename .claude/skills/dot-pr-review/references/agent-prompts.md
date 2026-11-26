@@ -2,7 +2,7 @@
 
 Read at Stage 4, after `agents.md` built the bundles and slices. Local mode uses the same templates with the wording changes in `local-mode.md`.
 
-Every template below is incomplete on its own: the **Inputs block** below goes first, and the **Crash-Safe Findings Sidecar + Turn Budget** block from `sidecar-and-budget.md` is appended verbatim to each one, with that agent's `<SIDECAR>`, `<MAX_TURNS>` and `<STOP_AT>` substituted. An agent launched without it has no crash protection and no stop rule.
+A prompt is three parts: the **Inputs block** below, the agent's template, and the **sidecar line** from `sidecar-and-budget.md` with that instance's sidecar path. Without the sidecar line the agent writes to its fallback path, outside the run, and Stage 4b reads it as `MISSING`.
 
 `<slice>` is the agent's own `<RUN_DIR>/slices/<agent>-<i>.patch`. A file list in a template is pasted as paths, one per line; a diff or a standards doc is never pasted, only its path.
 
