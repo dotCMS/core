@@ -71,7 +71,7 @@ The rules live in the docs above, not here. This section only adds a **severity*
 | CONFIG § Property Naming Convention / § Property File Hierarchy | New property misnamed, in the wrong file, or undocumented | **Quality** |
 | JAVA § API Locator Pattern | Service hand-constructed instead of obtained via `APILocator`; `getStructureAPI()` instead of `getContentTypeAPI()` | **Important** / **Critical** |
 | PE § Legacy-Only Zones | New class extending `PortletAction` / `WfBaseAction` | **Critical** |
-| JAVA § Exception Handling | Exception outside the dotCMS hierarchy, or swallowed | **Important** |
+| JAVA § Exception Handling | Exception outside the dotCMS hierarchy; a swallowed exception: an empty `catch`, a `catch` that returns a default or only logs at DEBUG, a broad `catch (Exception …)` that hides unrelated failures; a swallowed `InterruptedException` (the interrupt flag not restored) | **Important** |
 | JAVA § Immutable Objects | New value object that ignores the documented immutable pattern | **Quality** |
 | JAVA § Javadoc Requirements | Missing Javadoc on a new public API | **Quality** |
 | VT § The one rule / § Poor candidates | `synchronized` around blocking I/O on a virtual thread (pinning); CPU-bound or pinning-prone work moved to virtual threads | **Critical** / **Important** |

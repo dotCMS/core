@@ -119,7 +119,7 @@ Changes confined to interfaces and types, constants, barrel files, or markup and
 
 **Stack-aware input of the agnostic agents** (extend their input; launch no duplicate):
 
-- **Silent-failure-hunter**: on `backend`/`mixed`, also trigger on Java additions containing `catch (`, `catch (Exception`, an empty `{}` catch body, `e.printStackTrace()`, a `catch` that only logs at DEBUG, or a swallowed `InterruptedException`. Pass it the `java` bucket alongside the `.ts` files.
+- **Silent-failure-hunter**: TypeScript only. Java error handling (an empty or swallowing `catch`, `e.printStackTrace()`, a `catch` that only logs at DEBUG, a swallowed `InterruptedException`) belongs to the java-code reviewer, which receives the `java` bucket anyway.
 - **Comment-analyzer**: on `backend`/`mixed`, also trigger on `+ *//`, `+ */\*`, and Javadoc tags (`@param`, `@return`, `@throws`, `@deprecated`) in `*.java` additions.
 - **Logic-reviewer**: on `backend`/`mixed`, treat a Java class with branching, loops, stream pipelines, or state transitions as a logic-bearing unit — services, managers, factories, and helpers under `com.dotcms.**`. It traces input → transformation → output the same way it does for a TypeScript utility.
 - **AC-validator** and **historical-reviewer** receive the full changed-file list on any `STACK`.
