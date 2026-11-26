@@ -16,6 +16,8 @@ import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
+import { defaultIfEmpty } from 'rxjs/operators';
+
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -86,9 +88,12 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
     /**
      * System-wide TinyMCE configuration served by `/api/vtl/tinymceprops` (`get.vtl`).
      * `undefined` while the request is in flight; `null` when it failed (no `get.vtl`,
-     * no scripting permission, server error), which the service maps for us.
+     * no scripting permission, server error), which the service maps for us, and also when
+     * the request completes without a value (cancelled), so the editor never waits forever.
      */
-    $wideConfig = toSignal<RawEditorOptions | null>(this.#dotWysiwygTinymceService.getProps());
+    $wideConfig = toSignal<RawEditorOptions | null>(
+        this.#dotWysiwygTinymceService.getProps().pipe(defaultIfEmpty(null))
+    );
 
     /**
      * Whether the system-wide configuration request has settled (answered or failed).

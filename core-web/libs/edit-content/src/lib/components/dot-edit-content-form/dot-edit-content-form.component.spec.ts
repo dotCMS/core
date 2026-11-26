@@ -1274,6 +1274,23 @@ describe('DotFormComponent', () => {
             expect(initFormSpy).not.toHaveBeenCalled();
         });
 
+        it('should not rebuild the form on a Publish-style refetch (#38724 review)', () => {
+            const initFormSpy = vi.spyOn(
+                component as DotEditContentFormComponent & { initializeForm(): void },
+                'initializeForm'
+            );
+
+            // Publish / Unpublish change the state, not the content: unsaved edits stay.
+            fireActionReturning({
+                ...MOCK_CONTENTLET_1_OR_2_TABS,
+                live: !MOCK_CONTENTLET_1_OR_2_TABS.live,
+                publishDate: '2026-11-26 12:00:00.0',
+                statusIcons: '<span class="live"></span>'
+            } as DotCMSContentlet);
+
+            expect(initFormSpy).not.toHaveBeenCalled();
+        });
+
         it('should not rebuild the form when only values the form does not use change (#38724 review)', () => {
             const initFormSpy = vi.spyOn(
                 component as DotEditContentFormComponent & { initializeForm(): void },

@@ -149,6 +149,18 @@ describe('DotWysiwygTinymceComponent', () => {
             expect(init).not.toHaveProperty('systemWideOption');
         });
 
+        it('should create the editor with the defaults when the request completes without answering (#38724 review)', () => {
+            render();
+
+            // A cancelled request completes with no value; the field must not wait forever.
+            props$.complete();
+            spectator.detectChanges();
+
+            expect(spectator.query(EditorComponent)?.init).toEqual(
+                expect.objectContaining(DEFAULT_TINYMCE_CONFIG)
+            );
+        });
+
         it('should cover the field with a loading overlay until TinyMCE has initialised', () => {
             render();
 
