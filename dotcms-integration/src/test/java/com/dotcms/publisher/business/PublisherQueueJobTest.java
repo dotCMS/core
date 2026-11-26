@@ -285,6 +285,56 @@ public class PublisherQueueJobTest {
     }
 
     /**
+     * Method to test: {@link PublisherQueueJob} audit-status pass for a refused bundle that was
+     * scheduled again for later, when its endpoint has no usable key.
+     * <p>
+     * Given scenario: as in {@link #test_refusedBundleScheduledAgain_keepsItsScheduledRows()}, but the
+     * endpoint's stored key is only spaces, so the poll is skipped instead of failing.
+     * <p>
+     * Expected result: the bundle is not given up and its scheduled rows are kept. Before the fix the
+     * skipped poll went on to the status update, which counted an attempt on every pass because no
+     * bundle was due, and finalizing the bundle deleted the scheduled push.
+     */
+    @Test
+    public void test_refusedBundleScheduledAgain_endpointWithoutUsableKey_keepsItsScheduledRows() throws Exception {
+        try (AuditStub stub = AuditStub.unauthorized()) {
+            final User user = TestUserUtils.getAdminUser();
+            final Contentlet contentlet = new ContentletDataGen(new ContentTypeDataGen().nextPersisted())
+                    .nextPersisted();
+            final Environment environment = PublisherTestUtil.createEnvironment(user, true);
+            final PublishingEndPoint keyless = PublisherTestUtil.createEndpoint(environment);
+            keyless.setPort(String.valueOf(stub.port()));
+            keyless.setAuthKey(new StringBuilder(PublicEncryptionFactory.encryptString("   ")));
+            APILocator.getPublisherEndPointAPI().updateEndPoint(keyless);
+            final Bundle bundle = PublisherTestUtil.createBundle("bundle-" + System.nanoTime(), user, environment);
+            try {
+                seedAudit(bundle, environment, Map.of(keyless.getId(), Status.INVALID_TOKEN));
+                APILocator.getPublishAuditAPI().updatePublishAuditStatus(bundle.getId(),
+                        Status.FAILED_TO_SEND_TO_ALL_GROUPS,
+                        APILocator.getPublishAuditAPI().getPublishAuditStatus(bundle.getId()).getStatusPojo());
+                final Date tomorrow = new Date(System.currentTimeMillis() + 24L * 60 * 60 * 1000);
+                PublisherAPI.getInstance().addContentsToPublish(
+                        list(contentlet.getIdentifier()), bundle.getId(), tomorrow, user);
+                assertFalse("A push scheduled for tomorrow is not due yet", isBundleQueued(bundle.getId()));
+
+                for (int pass = 0; pass < PublisherQueueJob.MAX_NUM_TRIES; pass++) {
+                    invokeUpdateAuditStatus(PublisherAPI.getInstance().getQueueBundleIdsToProcess());
+                }
+
+                assertEquals("A refused bundle scheduled again must not be given up",
+                        Status.FAILED_TO_SEND_TO_ALL_GROUPS, statusOf(bundle.getId()));
+                assertFalse("The scheduled push must be kept",
+                        PublisherAPI.getInstance().getQueueElementsByBundleId(bundle.getId()).isEmpty());
+                assertEquals("An endpoint with no usable key must not be asked", 0, stub.requests());
+            } finally {
+                PublisherAPI.getInstance().deleteElementsFromPublishQueueTable(bundle.getId());
+                cleanUpAudit(bundle);
+                PublisherTestUtil.cleanBundleEndpointEnv(bundle, keyless, environment);
+            }
+        }
+    }
+
+    /**
      * Method to test: {@link PublisherQueueJob} audit-status pass for a bundle that is no longer in the
      * {@code publishing_queue} but whose receiver accepted it (issue #35764).
      * <p>

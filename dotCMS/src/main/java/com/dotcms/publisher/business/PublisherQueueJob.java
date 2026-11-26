@@ -601,7 +601,8 @@ public class PublisherQueueJob implements StatefulJob {
 	/**
 	 * Updates the local Publish Audit History with the information retrieved from a remote
 	 * end-point. When the tracking map is empty there is nothing to aggregate, and the status is
-	 * left as it is.
+	 * left as it is. A bundle a receiver refused that only has queue rows for a later date keeps its
+	 * status and attempts, so its scheduled push is not given up before it runs.
 	 *
 	 * @param bundleAudit         The {@link PublishAuditStatus} object that contains the audit
 	 *                            status of the bundle in the local environment.
@@ -629,6 +630,14 @@ public class PublisherQueueJob implements StatefulJob {
 		}
 		final PublishAuditHistory localHistory = bundleAudit.getStatusPojo();
 		final String auditedBundleId = bundleAudit.getBundleId();
+		// A refused bundle that was pushed again for a later date is not due yet, so it is missing from
+		// the due list. Counting this pass as an attempt would finalize it and delete the scheduled push;
+		// the send counts the attempt instead, as in the failed-poll path of updateAuditStatus (#35764)
+		if (isRefusedByAReceiver(localHistory) && !isBundleInQueue(auditedBundleId, bundlesInQueue)
+				&& hasQueueRows(auditedBundleId)) {
+			pubAuditAPI.updatePublishAuditStatus(auditedBundleId, bundleAudit.getStatus(), localHistory);
+			return;
+		}
 		// Info needed to generate the Growl Notification
 		final Bundle bundle = APILocator.getBundleAPI().getBundleById(auditedBundleId);
 		if (null == bundle) {
