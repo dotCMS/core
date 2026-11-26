@@ -67,7 +67,7 @@ Each finding sits under the severity its reviewer gave it (Critical, Important, 
 
 ## Critical Issues
 
-### 1. [Issue title] (Confidence: XX / Validator: YY) [Angular|TypeScript|Styling|Test|Historical|SilentFailure|Comment|Logic|CI|Maven|Docs] [ADDED-BY-THIS-PR|PRE-EXISTING]
+### 1. [Issue title] (Confidence: XX / Validator: YY) [Angular|TypeScript|Styling|Test|Java|API|Persistence|Security|JavaTest|Historical|SilentFailure|Comment|Logic|CI|Maven|Docs] [ADDED-BY-THIS-PR|PRE-EXISTING]
 **File**: [`path/to/file.ts:LINE`](https://github.com/dotCMS/core/blob/<HEAD_SHA>/path/to/file.ts#L<LINE-1>-L<LINE+1>)
 **Issue**: Brief description
 **Fix**: Concrete suggestion

@@ -67,7 +67,7 @@ Validation is **routed by domain**, and every route keeps scores of 80 or more:
 
 - **`domain == Logic`** → a **Sonnet** validator (*Logic findings*, below): a multi-hop trace needs real reasoning, and Haiku rejects true ones.
 - **`domain` is `CI`, `Maven` or `Docs`** → a **Sonnet** validator with its own template (*CI, Maven and Docs findings*, below). These findings rest on a second file the diff does not show (the caller of a removed input, the parent a module overrides, the code a doc describes), and many are no broken data-flow path, so the Logic rubric would score them as no defect.
-- **Every other domain** (code, test, styling, silent-failure, comment, historical) → one tool-free Haiku per finding (below).
+- **Every other domain** (code, test, styling, silent-failure, comment, historical, and the Java reviewers' Java, API, Persistence, Security and JavaTest) → one tool-free Haiku per finding (below).
 
 **At most 20 subagents run at once**; calls past 20 are rejected, not queued. Send the validators in order of value: the Sonnet validators for Logic, CI, Maven and Docs findings and MISSING or contested ACs first, then the Haiku validators for the strongest findings (Critical, then Important, by reviewer confidence), and the rest as slots free up. A finding whose validator times out or never ran scores 50 (below the cut-off), never dropped silently.
 
