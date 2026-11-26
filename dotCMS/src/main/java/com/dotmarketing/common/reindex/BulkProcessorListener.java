@@ -13,13 +13,17 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -38,6 +42,14 @@ public class BulkProcessorListener implements IndexBulkListener {
     final Map<String, ReindexEntry> workingRecords;
 
     static final List<String> RESERVED_IDS = List.of(Host.SYSTEM_HOST);
+
+    /**
+     * Opens the journal reason of an entry that failed only because another document of the same
+     * bulk request could not be serialized. Kept short: the journal truncates reasons to 300
+     * characters and the cause that follows must survive.
+     */
+    static final String COLLATERAL_FAILURE_PREFIX = "Collateral failure, this entry may be healthy:"
+            + " its bulk request failed because a document in it could not be serialized. Cause: ";
 
     /** Stand-in used when the vendor reports a failed item without any message. */
     static final String NO_FAILURE_MESSAGE = "(no failure message reported)";
@@ -78,13 +90,16 @@ public class BulkProcessorListener implements IndexBulkListener {
     }
 
     /**
-     * Creates a listener for a shadow-index provider (OS in Phases 1 and 2).
+     * Creates a listener for a shadow-index provider (OS in Phase 1 only).
      *
      * <p>The shadow index replicates ES writes but is not yet the source of truth.
      * Its failure semantics are fire-and-forget: failures are logged at warn level
      * but the reindex queue entry is never marked as failed and no rebuild is triggered.
-     * In Phase 3, OS becomes the primary and this factory is no longer used — the caller
-     * passes the standard {@link BulkProcessorListener} directly.</p>
+     * From Phase 2 on OS serves reads, so {@code createBulkProcessor} no longer uses this
+     * factory for it and passes the standard {@link BulkProcessorListener} instead.</p>
+     *
+     * @param provider the shadow provider, used for log labels and the per-provider log switch
+     * @return a fire-and-forget listener that never touches the reindex journal
      */
     public static BulkProcessorListener forShadowProvider(final IndexTag provider) {
         return new BulkProcessorListener(provider, true);
@@ -136,7 +151,6 @@ public class BulkProcessorListener implements IndexBulkListener {
         float totalResponses = 0;
 
         for (final IndexBulkItemResult result : results) {
-            totalResponses++;
             final String reservedId = getMatchingReservedIdIfAny(result.id());
             final String id;
             if (reservedId != null) {
@@ -148,8 +162,12 @@ public class BulkProcessorListener implements IndexBulkListener {
 
             final ReindexEntry idx = workingRecords.get(id);
             if (idx == null) {
+                // Not tracked in this batch (e.g. a sibling of a withheld identifier, #37269): it
+                // is neither a success nor a failure of a tracked entry, so it stays out of the
+                // failure-rate ratio below.
                 continue;
             }
+            totalResponses++;
             if (result.failed()) {
                 handleFailure(idx, "bulk index failure:" + result.failureMessage());
             } else {
@@ -161,12 +179,29 @@ public class BulkProcessorListener implements IndexBulkListener {
         // 50% failure rate guard: log a warning so the failure is observable.
         // No explicit rebuild needed — ReindexThread creates a fresh processor per batch,
         // so the next batch will automatically start with a clean processor.
-        if (lastBatchSize > 0 && (totalResponses == 0 || ((float) successful.size() / totalResponses < .5))) {
+        // An empty response is suspicious; a batch whose results are all untracked (only siblings
+        // of withheld identifiers) is not.
+        if (lastBatchSize > 0 && (results.isEmpty()
+                || (totalResponses > 0 && (float) successful.size() / totalResponses < .5))) {
             Logger.warn(this.getClass(),
                     "High bulk-index failure rate detected (>50%) — next batch will use a fresh processor.");
         }
     }
 
+    /**
+     * Handles a bulk request that failed as a whole, before the engine returned per-document
+     * results, so the document that caused it cannot be identified.
+     *
+     * <p>Every tracked entry is marked failed. When the cause is a content problem — a JSON
+     * processing error anywhere in the cause chain — each entry is told it failed collaterally
+     * and one ERROR line lists the identifiers of the request, so support does not inspect every
+     * contentlet as if it were the culprit (#37269). Any other cause (connection, timeout,
+     * authentication) keeps the exception's own message. Nothing is resent; each entry still
+     * consumes a retry attempt.</p>
+     *
+     * @param executionId unique ID assigned by the bulk processor
+     * @param failure     the exception that failed the whole request
+     */
     @Override
     public void afterBulk(final long executionId, final Throwable failure) {
         final String msg = failure != null ? failure.getMessage() : "(no message)";
@@ -175,8 +210,55 @@ public class BulkProcessorListener implements IndexBulkListener {
                     "[OS] Bulk process failed entirely (fire-and-forget): " + msg, failure);
             return;
         }
+        if (isContentFailure(failure)) {
+            Logger.error(ReindexThread.class, "Bulk process failed entirely because one of its"
+                    + " documents could not be serialized; the culprit cannot be identified, so "
+                    + workingRecords.size() + " entries are marked failed collaterally: "
+                    + workingRecords.keySet() + ". Cause: " + msg, failure);
+            final String collateral = COLLATERAL_FAILURE_PREFIX + msg;
+            workingRecords.values().forEach(idx -> handleFailure(idx, collateral));
+            return;
+        }
         Logger.error(ReindexThread.class, "Bulk process failed entirely: " + msg, failure);
         workingRecords.values().forEach(idx -> handleFailure(idx, msg));
+    }
+
+    /**
+     * Tells whether a whole-request failure was caused by a document's content rather than by
+     * transport. Only a {@link JsonProcessingException} in the cause chain counts: a plain
+     * {@link java.io.IOException} is a transport problem even though
+     * {@code JsonProcessingException} extends it.
+     *
+     * @param failure the exception that failed the whole request; may be {@code null}
+     * @return {@code true} when a JSON processing error is anywhere in the cause chain
+     */
+    static boolean isContentFailure(final Throwable failure) {
+        final Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (Throwable t = failure; t != null && seen.add(t); t = t.getCause()) {
+            if (t instanceof JsonProcessingException) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Stops tracking the identifier for this batch: one of its documents was withheld and its
+     * entry already holds the failure (#37269).
+     *
+     * <p>Removing it from {@link #workingRecords} means a successful sibling document no longer
+     * deletes the entry, and a whole-request failure no longer overwrites its reason. It must be
+     * called before any sibling document is queued, since the processor can flush mid-append. A
+     * shadow listener never tracks entries, so the call is a no-op there.</p>
+     *
+     * @param identifier the contentlet identifier whose entry already holds a failure
+     */
+    @Override
+    public void withhold(final String identifier) {
+        if (shadow) {
+            return;
+        }
+        workingRecords.remove(identifier);
     }
 
     /**

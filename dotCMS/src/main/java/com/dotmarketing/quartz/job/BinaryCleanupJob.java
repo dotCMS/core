@@ -66,6 +66,7 @@ public class BinaryCleanupJob implements StatefulJob {
     Logger.info(this.getClass(), "STARTING TMP/TRASH FILE CLEANUP");
 
     cleanUpTmpUploadedFiles();
+    cleanUpDotGeneratedSharedStaging();
     cleanUpOldBundles();
     cleanUpTrashFolder();
     cleanUpLocalBackupDirectory();
@@ -84,6 +85,20 @@ public class BinaryCleanupJob implements StatefulJob {
     Logger.info(this.getClass(), String.format(FILE_DELETION_STATUS_MSG, hours, HOURS, ConfigUtils.getAssetTempPath()));
     final File folder = new File(ConfigUtils.getAssetTempPath());
     FileUtil.cleanTree(folder, olderThan);
+  }
+
+  /**
+   * Deletes rendition copies abandoned in the shared store's staging folder (a process killed while
+   * publishing a rendition), using the same age limit as the temporary upload files. Files still being
+   * written are recent, so they are left alone.
+   */
+  void cleanUpDotGeneratedSharedStaging() {
+    final int hours = Config.getIntProperty(CLEANUP_TMP_FILES_OLDER_THAN_HOURS, 3);
+    final Date olderThan = Date.from(Instant.now().minus(Duration.ofHours(hours)));
+    final String staging = ConfigUtils.getDotGeneratedSharedStagingPath();
+
+    Logger.info(this.getClass(), String.format(FILE_DELETION_STATUS_MSG, hours, HOURS, staging));
+    FileUtil.cleanTree(new File(staging), olderThan);
   }
 
   /**

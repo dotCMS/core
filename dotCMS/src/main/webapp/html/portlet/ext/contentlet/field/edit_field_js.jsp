@@ -779,7 +779,7 @@ var cmsfile=null;
 	}
 
 	function addFileCallback(file) {
-		var ident, assetURI;
+		var assetURI;
 		var ext = file.extension;
 		var ident = file.identifier;
 		var fileExt = getFileExtension(file.name).toString();
@@ -789,7 +789,13 @@ var cmsfile=null;
 		} else if (file.baseType === "FILEASSET") {
 			assetURI = `${file.path}`;
 		} else {
-			assetURI = `/dA/${file.path.split(".")[1]}/${file.name}`;
+			// Any content type of base type dotAsset (DotAsset, Image, ...): link by identifier so the
+			// link follows the asset's latest version, the same way the image button does. file.path is
+			// the identifier URI (/content.<inode of the first version>) and stays pinned to that version.
+			// The full identifier is used (not a shorty) so the link resolves under any
+			// MINIMUM_SHORTY_ID_LENGTH, and the row's language is kept so a translated asset keeps
+			// serving its own language instead of the visitor's.
+			assetURI = `/dA/${ident}/${file.name}?language_id=${file.languageId}`;
 		}
 
 		tinyMCEFilePickerCallback(assetURI, {});

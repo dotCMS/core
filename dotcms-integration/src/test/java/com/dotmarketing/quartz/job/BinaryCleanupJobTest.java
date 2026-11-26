@@ -133,6 +133,40 @@ public class BinaryCleanupJobTest {
    *
    * @throws IOException An error occurred when adding the file to the folder.
    */
+  /**
+   * <ul>
+   *     <li><b>Method to test: </b>{@link BinaryCleanupJob#cleanUpDotGeneratedSharedStaging()}</li>
+   *     <li><b>Given Scenario: </b>The shared rendition store's staging folder holds a copy abandoned
+   *     10 hours ago (a process killed while publishing) and one being written now.</li>
+   *     <li><b>Expected Result: </b>The abandoned copy is deleted and the recent one is kept.</li>
+   * </ul>
+   *
+   * @throws Exception An error occurred when creating the test files.
+   */
+  @Test
+  public void deleteAbandonedSharedRenditionStaging() throws Exception {
+    Config.setProperty(BinaryCleanupJob.CLEANUP_TMP_FILES_OLDER_THAN_HOURS, 3);
+    final File staging = new File(ConfigUtils.getDotGeneratedSharedStagingPath());
+    staging.mkdirs();
+    final File abandoned = new File(staging, "dotGenerated_rendition.webp_abandoned.tmp");
+    final File inProgress = new File(staging, "dotGenerated_rendition.webp_in-progress.tmp");
+    try {
+      new FileOutputStream(abandoned).close();
+      new FileOutputStream(inProgress).close();
+      if (!abandoned.setLastModified(Instant.now().minus(Duration.ofHours(10)).toEpochMilli())) {
+        fail("Could not set last modified date for file: " + abandoned.getAbsolutePath());
+      }
+
+      new BinaryCleanupJob().cleanUpDotGeneratedSharedStaging();
+
+      assertEquals("the abandoned staging copy must be deleted", false, abandoned.exists());
+      assertEquals("a staging copy still being written must be kept", true, inProgress.exists());
+    } finally {
+      abandoned.delete();
+      inProgress.delete();
+    }
+  }
+
   private void createTestFolderWithFile(final String parentPath, final String folderName,
                                         final String fileName, final Date date) throws IOException {
     final File parent = new File(parentPath, folderName);
