@@ -145,6 +145,7 @@ table is a gate.
 | Input handling, auth checks, logging of user data, secrets (principles) | [Security Principles](docs/core/SECURITY_PRINCIPLES.md) — the backend patterns are in the Security Patterns row above |
 | `/api/inference/v1/**`, anything under `com.dotcms.ai` | [Inference API](docs/backend/INFERENCE_API.md) |
 | Health endpoints, `com.dotcms.health`, log levels | [Health Monitoring](docs/backend/HEALTH_MONITORING.md) |
+| A log statement (`Logger.info`, `Logger.debug`, `Logger.warn`, `Logger.error`) | [Log Levels](docs/backend/LOG_LEVELS.md) — INFO is for changes and state transitions; per-request, per-item and every-run lines are DEBUG; expected conditions are not errors |
 | GraphQL types for image or file fields, `com.dotcms.graphql` | [GraphQL Asset Fields Migration](docs/backend/GRAPHQL_ASSET_FIELDS_MIGRATION.md) |
 | Reflection, class scanning or annotation lookups | [Jandex Metadata Scanning](docs/backend/JANDEX_METADATA_SCANNING.md) — prefer Jandex over reflection |
 | `OS_*` / `ES_*` properties, the search client configuration | [OpenSearch Client Configuration](docs/backend/OPENSEARCH_CLIENT_CONFIGURATION.md) |
@@ -179,6 +180,7 @@ table is a gate.
 - [Apps Configuration](docs/backend/APPS_CONFIGURATION.md) — Who can change and read Apps configuration; legacy delegation switch
 - [Database Patterns](docs/backend/DATABASE_PATTERNS.md) — DotConnect, transactions
 - [Health Monitoring](docs/backend/HEALTH_MONITORING.md) — Health endpoints, log levels
+- [Log Levels](docs/backend/LOG_LEVELS.md) — Choosing INFO vs DEBUG by how often a statement runs; expected conditions; Supplier form
 - [Security Patterns](docs/backend/SECURITY_BACKEND.md) — Input validation, auth, SQL/XSS prevention, secure logging
 - [Search API Migration](docs/backend/SEARCH_API_MIGRATION.md) — ES → OpenSearch: deprecated `ContentletAPI` search methods, plugin migration guide
 - [GraphQL Asset Fields Migration](docs/backend/GRAPHQL_ASSET_FIELDS_MIGRATION.md) — Image/File fields now resolve to an interface; existing queries keep working, but `__typename` reports the concrete type and generated types must be regenerated

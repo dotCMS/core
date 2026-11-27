@@ -38,6 +38,7 @@ Descriptions say **when to load** the doc, not what it contains.
 | [VIRTUAL_THREADS.md](backend/VIRTUAL_THREADS.md) | Deciding whether a workload belongs on a virtual thread — socket I/O yes, file I/O no |
 | [JANDEX_METADATA_SCANNING.md](backend/JANDEX_METADATA_SCANNING.md) | Looking up classes or annotations at runtime — prefer this over reflection |
 | [HEALTH_MONITORING.md](backend/HEALTH_MONITORING.md) | Working on health endpoints or runtime log levels |
+| [LOG_LEVELS.md](backend/LOG_LEVELS.md) | Writing or changing a log statement — INFO versus DEBUG by how often it runs, expected conditions, the `Supplier` form |
 | [TELEMETRY_IMPLEMENTATION.md](backend/TELEMETRY_IMPLEMENTATION.md) | Adding a metric or working on the `/v1/usage` endpoints |
 | [SYSTEM_EVENTS.md](backend/SYSTEM_EVENTS.md) | Producing or consuming cross-node events — at-least-once delivery and idempotency rules |
 | [INFERENCE_API.md](backend/INFERENCE_API.md) | Working on the OpenAI-compatible `/api/inference/v1` family |
