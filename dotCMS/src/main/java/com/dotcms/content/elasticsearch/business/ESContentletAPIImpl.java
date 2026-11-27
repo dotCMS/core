@@ -19,6 +19,7 @@ import com.dotcms.content.index.domain.ContentSearchResponse;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategyResolver;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.ContentTypeInitializer;
 import com.dotcms.contenttype.business.DotAssetValidationException;
 import com.dotcms.contenttype.business.UniqueFieldValueDuplicatedException;
 import com.dotcms.contenttype.business.uniquefields.UniqueFieldValidationStrategyResolver;
@@ -535,6 +536,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final String folderPath = folderPathParam.endsWith(StringPool.SLASH) ? folderPathParam
                 : folderPathParam + StringPool.SLASH;
 
+        // reject before any folder is looked up or created, so a refused move leaves nothing behind
+        checkFavoritePageDestination(contentlet, host, StringPool.SLASH.equals(folderPath));
+
         //Check if the folder exists via Admin user, b/c user couldn't have VIEW Permissions over the folder
         Folder folder = Try.of(() -> APILocator.getFolderAPI()
                         .findFolderByPath(folderPath, host, APILocator.systemUser(), respectFrontendRoles))
@@ -620,6 +624,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotSecurityException(
                     "CONTENT_APIS_ALLOW_ANONYMOUS setting does not allow anonymous content WRITEs");
         }
+
+        checkFavoritePageDestination(contentlet, host,
+                FolderAPI.SYSTEM_FOLDER.equals(folder.getInode()));
 
         // if the user can write and add a children to the folder
         if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user,
@@ -6027,7 +6034,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         "Unable to checkin an archived piece of content, please un-archive first");
             }
 
-            checkPermission(contentlet, respectFrontendRoles, user);
+            checkPermission(contentlet, respectFrontendRoles, user, createNewVersion);
 
             if (createNewVersion && categories == null) {
                 throw new IllegalArgumentException(
@@ -7045,7 +7052,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     /**
      * Verifies the user may save the given contentlet. An existing contentlet needs WRITE on
-     * itself; a new contentlet needs WRITE on its content type. On top of that, unless
+     * itself, judged on its stored version for a favorite page (see
+     * {@link #canWriteStoredFavorite(Contentlet, boolean, User, boolean)}); a new contentlet needs WRITE on
+     * its content type. On top of that, unless
      * {@link FeatureFlagName#FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK} is off, a new
      * contentlet placed somewhere other than its type's default placement, and an existing
      * contentlet being moved to another site or folder, need "Can Add Children" or WRITE on that
@@ -7054,32 +7063,132 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param contentlet           the {@link Contentlet} about to be checked in
      * @param respectFrontendRoles whether front-end roles (anonymous, logged-in site user) count
      * @param user                 the {@link User} performing the checkin
+     * @param createNewVersion     {@code false} when the save updates the version with the
+     *                             contentlet's inode in place rather than adding a new one
      * @throws DotSecurityException when the user lacks any of the required permissions
      * @throws DotDataException     when a permission or asset lookup fails
      */
     private void checkPermission(
             final Contentlet contentlet,
             final boolean respectFrontendRoles,
-            final User user) throws DotDataException, DotSecurityException {
+            final User user,
+            final boolean createNewVersion) throws DotDataException, DotSecurityException {
 
         DotPreconditions.checkNotNull(contentlet);
 
         final boolean isNew = !InodeUtils.isSet(contentlet.getIdentifier());
-        // keep the two calls distinct: the ContentType overload of doesUserHavePermission has
-        // its own rules (CMS Owner on the type), which a Permissionable-typed call would skip
-        final boolean canWrite = isNew
-                ? permissionAPI.doesUserHavePermission(contentlet.getContentType(),
-                PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)
-                : permissionAPI.doesUserHavePermission(contentlet,
-                PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles);
+        // keep the calls distinct: the ContentType overload of doesUserHavePermission has its
+        // own rules (CMS Owner on the type), which a Permissionable-typed call would skip
+        final boolean canWrite;
+        if (isNew) {
+            canWrite = permissionAPI.doesUserHavePermission(contentlet.getContentType(),
+                    PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles);
+        } else if (isFavoritePage(contentlet)) {
+            canWrite = canWriteStoredFavorite(contentlet, respectFrontendRoles, user,
+                    createNewVersion);
+        } else {
+            canWrite = permissionAPI.doesUserHavePermission(contentlet,
+                    PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles);
+        }
         if (!canWrite) {
             this.throwSecurityException(contentlet, user);
         }
 
-        if (isCheckinDestinationPermissionCheckEnabled()
+        // a favorite page is always saved to the System Host root by populateHost, whatever site
+        // or folder it was given, so the given one is not a destination to authorize
+        if (isCheckinDestinationPermissionCheckEnabled() && !isFavoritePage(contentlet)
                 && (isNew || isBeingRelocated(contentlet))) {
             checkDestinationPermission(contentlet, respectFrontendRoles, user);
         }
+    }
+
+    /**
+     * Tells whether the user may save an existing favorite page, judged on the favorite as it is
+     * stored rather than on the copy being saved. A favorite inherits its permissions from where
+     * it lives, and the copy may name another site or folder and owner; until
+     * {@link #populateHost(Contentlet)} puts it back at the System Host root, a permission lookup
+     * on the copy would resolve them from the place it names. The stored favorite is the stored
+     * version in the language and variant being edited (the default language when none is set,
+     * as checkin saves it there), since each version carries its own owner;
+     * when that version does not exist yet, it is looked up in the requested variant in any
+     * language, then in the DEFAULT variant in any language and then in any variant, since a
+     * favorite may exist only in a variant other than DEFAULT. When the
+     * identifier exists but no version of it can be loaded, the save is refused. When nothing with that identifier is
+     * stored yet, the save creates the favorite, so WRITE on its content type applies. A save
+     * without a new version overwrites the version with the given inode, so it is judged on that
+     * version, and refused when that inode is not a version of the same favorite in the
+     * language and variant being saved; since the save also makes that version the working one,
+     * the working version it replaces, when it is another one, needs WRITE as well.
+     *
+     * @param contentlet           the favorite page being checked in, with its identifier set
+     * @param respectFrontendRoles whether front-end roles count towards the permission
+     * @param user                 the {@link User} performing the checkin
+     * @param createNewVersion     {@code false} when the save updates the version with the
+     *                             contentlet's inode in place
+     * @return {@code true} when the user has WRITE on the stored favorite
+     * @throws DotDataException     when the stored favorite or its identifier cannot be read
+     * @throws DotSecurityException when the stored favorite cannot be read
+     */
+    private boolean canWriteStoredFavorite(final Contentlet contentlet,
+            final boolean respectFrontendRoles, final User user, final boolean createNewVersion)
+            throws DotDataException, DotSecurityException {
+
+        // a checkin without a language saves the default-language version
+        final long languageId = contentlet.getLanguageId() == 0
+                ? languageAPI.getDefaultLanguage().getId()
+                : contentlet.getLanguageId();
+
+        // an in-place save overwrites the version with this inode, so that version is the one
+        // whose owner decides. The save also rewrites that row's language and variant and makes it
+        // the working version for them, so they must stay the ones the stored version has, and
+        // the working version it replaces there, when it is another one, must be writable too
+        if (!createNewVersion) {
+            final Contentlet target = contentFactory.find(contentlet.getInode());
+            if (null == target || !isFavoritePage(target)
+                    || !contentlet.getIdentifier().equals(target.getIdentifier())
+                    || languageId != target.getLanguageId()
+                    || !contentlet.getVariantId().equals(target.getVariantId())
+                    || !permissionAPI.doesUserHavePermission(target,
+                            PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
+                return false;
+            }
+            final Contentlet working = contentFactory.findContentletByIdentifier(
+                    target.getIdentifier(), false, languageId, target.getVariantId());
+            return null == working || target.getInode().equals(working.getInode())
+                    || permissionAPI.doesUserHavePermission(working,
+                            PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles);
+        }
+
+        // the version being edited first: each version carries its own owner; then the requested
+        // variant in any language, since a new translation belongs to the variant it is added to
+        Contentlet stored = contentFactory.findContentletByIdentifier(contentlet.getIdentifier(),
+                false, languageId, contentlet.getVariantId());
+        if (null == stored) {
+            stored = findContentletByIdentifierAnyLanguage(contentlet.getIdentifier(),
+                    contentlet.getVariantId(), true);
+        }
+        if (null == stored) {
+            stored = findContentletByIdentifierAnyLanguage(contentlet.getIdentifier(), true);
+        }
+        if (null == stored) {
+            // the lookup above sees only the DEFAULT variant; a favorite may exist only in another
+            final Optional<ContentletVersionInfo> version = FactoryLocator.getVersionableFactory()
+                    .findAnyContentletVersionInfoAnyVariant(contentlet.getIdentifier(), true);
+            if (version.isPresent()) {
+                stored = contentFactory.find(version.get().getWorkingInode());
+            }
+        }
+        if (null != stored && UtilMethods.isSet(stored.getIdentifier())) {
+            return permissionAPI.doesUserHavePermission(stored,
+                    PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles);
+        }
+
+        final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
+        if (null != identifier && UtilMethods.isSet(identifier.getId())) {
+            return false;
+        }
+        return permissionAPI.doesUserHavePermission(contentlet.getContentType(),
+                PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles);
     }
 
     /**
@@ -11416,16 +11525,62 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     * sets the host / folder if it is not set to either a sibling's host/folder or the content
-     * type's host folder
+     * Refuses to move a favorite page anywhere but the root of the System Host. Only there does it
+     * inherit the owner-only permissions of its content type: in a folder, even one on the System
+     * Host, it would inherit the folder's permissions instead (see
+     * {@link Contentlet#getParentPermissionable()}). Other contentlets are not affected.
      *
-     * @param contentlet
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * @param contentlet the {@link Contentlet} being moved
+     * @param host       the destination site
+     * @param isRoot     whether the destination folder is the site root
+     * @throws IllegalArgumentException when a favorite page would leave the System Host root
+     */
+    private static void checkFavoritePageDestination(final Contentlet contentlet, final Host host,
+            final boolean isRoot) {
+
+        if (isFavoritePage(contentlet)
+                && (!isRoot || !Host.SYSTEM_HOST.equals(host.getIdentifier()))) {
+
+            throw new IllegalArgumentException(
+                    "Favorite pages can only be at the root of the System Host: "
+                            + contentlet.getIdentifier());
+        }
+    }
+
+    /**
+     * Tells whether a contentlet is a favorite page. Favorite pages are always kept on the System
+     * Host: there they inherit their owner-only permissions from their content type, while on a
+     * site or in a folder they would inherit the site's or folder's permissions instead.
+     *
+     * @param contentlet the {@link Contentlet} to check
+     * @return {@code true} if its content type is the favorite page content type
+     */
+    private static boolean isFavoritePage(final Contentlet contentlet) {
+
+        final ContentType contentType = contentlet.getContentType();
+        return null != contentType
+                && ContentTypeInitializer.FAVORITE_PAGE_VAR_NAME.equals(contentType.variable());
+    }
+
+    /**
+     * Sets the site and folder of a contentlet that has neither, to those of another language
+     * version of it or else to those of its content type, falling back to the System Host and
+     * System Folder. A favorite page is always put on the System Host and System Folder, whatever
+     * it was given; see {@link #isFavoritePage(Contentlet)}.
+     *
+     * @param contentlet the {@link Contentlet} being saved
+     * @return the same contentlet, with its site and folder set
+     * @throws DotDataException     if another version of it cannot be read
+     * @throws DotSecurityException if another version of it cannot be read
      */
     protected Contentlet populateHost(final Contentlet contentlet)
             throws DotDataException, DotSecurityException {
+        if (isFavoritePage(contentlet)) {
+
+            contentlet.setHost(Host.SYSTEM_HOST);
+            contentlet.setFolder(FolderAPI.SYSTEM_FOLDER);
+            return contentlet;
+        }
         // check contentlet Host
         // If host and folder are not set yet
         if (!UtilMethods.isSet(contentlet.getHost()) && !UtilMethods.isSet(

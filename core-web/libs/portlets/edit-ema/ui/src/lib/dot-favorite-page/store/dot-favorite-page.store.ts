@@ -44,8 +44,6 @@ export const CMS_OWNER_ROLE_ID = '6b1fa42f-8729-4625-80d1-17e4ef691ce7';
 
 const IMG_RATIO_43 = 1.333;
 
-export const CMS_OWNER_ROLE_LIST = ['CMS OWNER'];
-
 @Injectable()
 export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
     private dotPageRenderService = inject(DotPageRenderService);
@@ -158,6 +156,8 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
         }
     };
 
+    // No permission list is sent: a favorite takes its owner-only permissions from the
+    // dotFavoritePage content type, which passes CMS Owner to its contentlets.
     private publishContentletAndWaitForIndex = (formData: DotFavoritePageFormData) => {
         return this.dotWorkflowActionsFireService.publishContentletAndWaitForIndex<DotCMSContentlet>(
             'dotFavoritePage',
@@ -167,11 +167,6 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
                 url: formData.url,
                 order: formData.order,
                 inode: formData.inode || null
-            },
-            {
-                READ: CMS_OWNER_ROLE_LIST,
-                WRITE: CMS_OWNER_ROLE_LIST,
-                PUBLISH: CMS_OWNER_ROLE_LIST
             }
         );
     };
