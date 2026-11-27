@@ -18,6 +18,7 @@ import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ConflictException;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.DotConflictExceptionMapper;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -1999,6 +2000,190 @@ public class RoleResourceIntegrationTest {
             assertEquals("one title per portlet id",
                     ((List<String>) layout.get("portletIds")).size(),
                     ((List<String>) layout.get("portletTitles")).size());
+        }
+    }
+
+    // ==================== Reading roles: GET /v1/roles, /{roleId}, /_search, /api/role/load* ====================
+
+    /**
+     * Given Scenario: A back-end user whose only tool is Content (no Roles or Users portlet, not
+     * an administrator) reads roles through every role-reading endpoint, naming no asset.
+     * Expected Result: each call is refused with 403.
+     */
+    @Test
+    public void testReadRoles_userWithoutRolesOrUsersPortlet_refused() throws Exception {
+        final User contentUser = backendUserWithOnlyPortlet("content");
+        final Role role = newRole();
+        final com.dotcms.rest.RoleResource legacyResource = new com.dotcms.rest.RoleResource();
+
+        final List<Runnable> calls = List.of(
+                () -> call(() -> resource.loadRootRoles(requestFor(contentUser),
+                        new MockHttpResponse().response(), true, false, null)),
+                () -> call(() -> resource.loadRootRoles(requestFor(contentUser),
+                        new MockHttpResponse().response(), true, true, null)),
+                () -> call(() -> resource.loadRoleByRoleId(requestFor(contentUser),
+                        new MockHttpResponse().response(), role.getId(), false, null)),
+                () -> call(() -> resource.searchRoles(requestFor(contentUser),
+                        new MockHttpResponse().response(), "", "", "", 0, 20, true, false)),
+                () -> call(() -> legacyResource.loadChildren(requestFor(contentUser),
+                        new MockHttpResponse().response(), "")),
+                () -> call(() -> legacyResource.loadById(requestFor(contentUser),
+                        new MockHttpResponse().response(), "id/" + role.getId())),
+                () -> call(() -> legacyResource.loadByName(requestFor(contentUser),
+                        new MockHttpResponse().response(), "name/" + role.getName())));
+
+        for (int i = 0; i < calls.size(); i++) {
+            try {
+                calls.get(i).run();
+                fail("Call " + i + " should have been refused");
+            } catch (final ForbiddenException e) {
+                // expected
+            }
+        }
+    }
+
+    /**
+     * Given Scenario: A back-end user whose only tool is the Users portlet, and one whose only
+     * tool is the Roles portlet, read the role tree and a role.
+     * Expected Result: both are served; picking roles is part of both screens.
+     */
+    @Test
+    public void testReadRoles_usersOrRolesPortlet_allowed() throws Exception {
+        final Role role = newRole();
+        for (final String portletId : List.of("users", "roles")) {
+            final User user = backendUserWithOnlyPortlet(portletId);
+
+            final Response roots = resource.loadRootRoles(requestFor(user),
+                    new MockHttpResponse().response(), true, false, null);
+            assertEquals(portletId, Response.Status.OK.getStatusCode(), roots.getStatus());
+
+            final Response single = resource.loadRoleByRoleId(requestFor(user),
+                    new MockHttpResponse().response(), role.getId(), false, null);
+            assertEquals(portletId, Response.Status.OK.getStatusCode(), single.getStatus());
+
+            final Response legacy = new com.dotcms.rest.RoleResource().loadById(requestFor(user),
+                    new MockHttpResponse().response(), "id/" + role.getId());
+            assertEquals(portletId, Response.Status.OK.getStatusCode(), legacy.getStatus());
+        }
+    }
+
+    /**
+     * Given Scenario: A back-end user with only the Content tool holds EDIT_PERMISSIONS on a
+     * folder, a content type, a contentlet, a menu link and a site, as an editor using the
+     * Permissions tab does. They read the role tree naming each of those, then naming a folder
+     * they may only read, and they search roles.
+     * Expected Result: served for every asset they may edit permissions on; refused for the
+     * read-only folder; the role search is refused, since it takes the Roles or Users portlet.
+     */
+    @Test
+    public void testReadRoles_namingAssetWithEditPermissions_allowedOnlyForThatAsset() throws Exception {
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final User systemUser = APILocator.systemUser();
+        final User editor = backendUserWithOnlyPortlet("content");
+        final Role editorRole = roleAPI.getUserRole(editor);
+        final int editPermissions = PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT_PERMISSIONS;
+
+        final Host site = new SiteDataGen().nextPersisted();
+        createdSites.add(site);
+        final Host editableSite = new SiteDataGen().nextPersisted();
+        createdSites.add(editableSite);
+        final com.dotmarketing.portlets.folders.model.Folder editable =
+                new com.dotcms.datagen.FolderDataGen().site(site).nextPersisted();
+        final com.dotmarketing.portlets.folders.model.Folder readOnly =
+                new com.dotcms.datagen.FolderDataGen().site(site).nextPersisted();
+        final com.dotcms.contenttype.model.type.ContentType contentType =
+                new com.dotcms.datagen.ContentTypeDataGen().host(site).nextPersistedWithSampleFields();
+        final com.dotmarketing.portlets.contentlet.model.Contentlet contentlet =
+                new com.dotcms.datagen.ContentletDataGen(contentType).host(site)
+                        .nextPersistedWithSampleTextValues();
+        final com.dotmarketing.portlets.links.model.Link link =
+                new com.dotcms.datagen.LinkDataGen(editable).hostId(site.getIdentifier())
+                        .nextPersisted();
+        try {
+            final List<com.dotmarketing.business.Permissionable> editableAssets =
+                    List.of(editable, contentType, contentlet, link, editableSite);
+            for (final com.dotmarketing.business.Permissionable asset : editableAssets) {
+                permissionAPI.save(new Permission(asset.getPermissionId(), editorRole.getId(),
+                        editPermissions, true), asset, systemUser, false);
+            }
+            permissionAPI.save(new Permission(readOnly.getPermissionId(), editorRole.getId(),
+                    PermissionAPI.PERMISSION_READ, true), readOnly, systemUser, false);
+
+            for (final com.dotmarketing.business.Permissionable asset : editableAssets) {
+                final Response roots = resource.loadRootRoles(requestFor(editor),
+                        new MockHttpResponse().response(), true, true, asset.getPermissionId());
+                assertEquals(asset.getClass().getSimpleName(),
+                        Response.Status.OK.getStatusCode(), roots.getStatus());
+            }
+
+            try {
+                resource.loadRootRoles(requestFor(editor), new MockHttpResponse().response(),
+                        true, true, readOnly.getPermissionId());
+                fail("A folder the user may only read does not open the roles");
+            } catch (final ForbiddenException e) {
+                // expected
+            }
+
+            try {
+                resource.searchRoles(requestFor(editor), new MockHttpResponse().response(),
+                        "", "", "", 0, 20, true, false);
+                fail("Searching roles takes the Roles or Users portlet");
+            } catch (final ForbiddenException e) {
+                // expected
+            }
+        } finally {
+            com.dotcms.datagen.ContentletDataGen.remove(contentlet);
+            com.dotcms.datagen.ContentTypeDataGen.remove(contentType);
+        }
+    }
+
+    /**
+     * Given Scenario: A root role with a child that has its own child. An administrator reads the
+     * root roles with fullHierarchy, and with the default two levels.
+     * Expected Result: fullHierarchy nests the grandchild under the child under the root; the
+     * default view stops at the child, whose children are not loaded.
+     */
+    @Test
+    public void testLoadRootRoles_fullHierarchy_nestsEveryLevel() throws Exception {
+        final Role root = newRole();
+        final Role child = trackRole(new RoleDataGen().parent(root.getId()).nextPersisted());
+        final Role grandchild = trackRole(new RoleDataGen().parent(child.getId()).nextPersisted());
+
+        final RoleView fullRoot = findView(rootViews(true), root.getId());
+        final RoleView fullChild = findView(fullRoot.getRoleChildren(), child.getId());
+        assertNotNull("grandchild nested under child",
+                findView(fullChild.getRoleChildren(), grandchild.getId()));
+
+        final RoleView defaultRoot = findView(rootViews(false), root.getId());
+        assertTrue("default view does not load the child's children",
+                findView(defaultRoot.getRoleChildren(), child.getId()).getRoleChildren().isEmpty());
+    }
+
+    private static List<RoleView> rootViews(final boolean fullHierarchy) throws Exception {
+        final Response response = resource.loadRootRoles(adminRequest(),
+                new MockHttpResponse().response(), true, fullHierarchy, null);
+        return ((ResponseEntityRoleViewListView) response.getEntity()).getEntity();
+    }
+
+    private static RoleView findView(final List<RoleView> views, final String roleId) {
+        final RoleView view = views.stream().filter(v -> roleId.equals(v.getId()))
+                .findFirst().orElse(null);
+        assertNotNull("role " + roleId + " in the views", view);
+        return view;
+    }
+
+    /** A resource call that may throw a checked exception, rethrown unchecked. */
+    private interface ResourceCall {
+        Object run() throws Exception;
+    }
+
+    private static void call(final ResourceCall call) {
+        try {
+            call.run();
+        } catch (final RuntimeException e) {
+            throw e;
+        } catch (final Exception e) {
+            throw new IllegalStateException(e);
         }
     }
 }

@@ -107,6 +107,10 @@ public class RoleResource implements Serializable {
 
 	private static final String ROLE_ID_SEPARATOR = ",";
 
+	private static final String PERMISSIONABLE_DESCRIPTION = "Id of an asset whose permissions the "
+			+ "caller is editing. A caller without the Roles or Users portlet may read roles when "
+			+ "they hold EDIT_PERMISSIONS on this asset";
+
 	private final WebResource webResource;
 	private final RoleAPI roleAPI;
 	private final RoleHelper roleHelper = new RoleHelper();
@@ -1079,11 +1083,13 @@ public class RoleResource implements Serializable {
 
 
 	/**
-	 * Load role based on the role id.
+	 * Load role based on the role id. The caller needs the Roles or Users portlet, or
+	 * EDIT_PERMISSIONS on the asset named by {@code permissionable}.
 	 *
 	 * @param roleId id of the role to search for.
 	 * @param loadChildrenRoles true - will add the data of all children roles of the requested role.
 	 * 							false - will only show the data of the requested role.
+	 * @param permissionable id of the asset whose permissions the caller is editing, optional
 	 * @return {@link RoleView} role requested.
 	 * @throws DotDataException
 	 * @throws DotSecurityException
@@ -1091,7 +1097,8 @@ public class RoleResource implements Serializable {
 	@Operation(
 		operationId = "loadRoleByRoleId",
 		summary = "Load role by role ID",
-		description = "Load role based on the role id with optional children roles"
+		description = "Load role based on the role id with optional children roles. Requires the "
+				+ "Roles or Users portlet, or EDIT_PERMISSIONS on the asset named by permissionable."
 	)
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
@@ -1105,7 +1112,8 @@ public class RoleResource implements Serializable {
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),
 		@ApiResponse(responseCode = "403", 
-					description = "Forbidden - backend user required",
+					description = "Forbidden - backend user with the Roles or Users portlet, or "
+							+ "EDIT_PERMISSIONS on the permissionable asset, required",
 					content = @Content(mediaType = "application/json")),
 		@ApiResponse(responseCode = "404", 
 					description = "Role not found",
@@ -1119,12 +1127,15 @@ public class RoleResource implements Serializable {
 									 @Parameter(description = "Role ID", required = true)
 									 @PathParam   ("roleid") final String roleId,
 									 @Parameter(description = "Load children roles", required = false)
-									 @DefaultValue("true") @QueryParam("loadChildrenRoles") final boolean loadChildrenRoles)
+									 @DefaultValue("true") @QueryParam("loadChildrenRoles") final boolean loadChildrenRoles,
+									 @Parameter(description = PERMISSIONABLE_DESCRIPTION, required = false)
+									 @QueryParam("permissionable") final String permissionable)
 			throws DotDataException, DotSecurityException {
 
-		new WebResource.InitBuilder(this.webResource).requiredBackendUser(true)
+		final User user = new WebResource.InitBuilder(this.webResource).requiredBackendUser(true)
 				.requiredFrontendUser(false).requestAndResponse(request, response)
-				.rejectWhenNoUser(true).init();
+				.rejectWhenNoUser(true).init().getUser();
+		this.checkCanReadRoles(user, permissionable, "GET /v1/roles/{roleid}");
 
 		final Role role = this.roleAPI.loadRoleById(roleId);
 
@@ -1140,10 +1151,14 @@ public class RoleResource implements Serializable {
 	}
 
 	/**
-	 * Loads the root roles.
+	 * Loads the root roles. The caller needs the Roles or Users portlet, or EDIT_PERMISSIONS on
+	 * the asset named by {@code permissionable}; the Permissions tab names the asset it edits.
 	 *
 	 * @param loadChildrenRoles true - will add the data of all children roles of the requested role.
 	 * 							false - will only show the data of the requested role.
+	 * @param fullHierarchy true - every descendant of the root roles is nested, at any depth
+	 *                      (this takes precedence over {@code loadChildrenRoles}).
+	 * @param permissionable id of the asset whose permissions the caller is editing, optional
 	 * @return list of {@link RoleView}
 	 * @throws DotDataException
 	 * @throws DotSecurityException
@@ -1151,7 +1166,9 @@ public class RoleResource implements Serializable {
 	@Operation(
 		operationId = "loadRootRoles",
 		summary = "Load root roles",
-		description = "Loads the root roles with optional children roles"
+		description = "Loads the root roles with optional children roles, or with the whole "
+				+ "hierarchy when fullHierarchy is true. Requires the Roles or Users portlet, or "
+				+ "EDIT_PERMISSIONS on the asset named by permissionable."
 	)
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
@@ -1162,7 +1179,8 @@ public class RoleResource implements Serializable {
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),
 		@ApiResponse(responseCode = "403", 
-					description = "Forbidden - backend user required",
+					description = "Forbidden - backend user with the Roles or Users portlet, or "
+							+ "EDIT_PERMISSIONS on the permissionable asset, required",
 					content = @Content(mediaType = "application/json"))
 	})
 	@GET
@@ -1170,17 +1188,24 @@ public class RoleResource implements Serializable {
 	public Response loadRootRoles(@Context final HttpServletRequest request,
 								  @Context final HttpServletResponse response,
 								  @Parameter(description = "Load children roles", required = false)
-								  @DefaultValue("true") @QueryParam("loadChildrenRoles") final boolean loadChildrenRoles)
+								  @DefaultValue("true") @QueryParam("loadChildrenRoles") final boolean loadChildrenRoles,
+								  @Parameter(description = "Load every descendant of the root roles at any depth, "
+										  + "instead of their direct children only", required = false)
+								  @DefaultValue("false") @QueryParam("fullHierarchy") final boolean fullHierarchy,
+								  @Parameter(description = PERMISSIONABLE_DESCRIPTION, required = false)
+								  @QueryParam("permissionable") final String permissionable)
 			throws DotDataException, DotSecurityException {
 
-		new WebResource.InitBuilder(this.webResource).requiredBackendUser(true)
+		final User user = new WebResource.InitBuilder(this.webResource).requiredBackendUser(true)
 				.requiredFrontendUser(false).requestAndResponse(request, response)
-				.rejectWhenNoUser(true).init();
+				.rejectWhenNoUser(true).init().getUser();
+		this.checkCanReadRoles(user, permissionable, "GET /v1/roles");
 
 		final List<Role> rootRoles = this.roleAPI.findRootRoles();
 
-		return Response.ok(new ResponseEntityRoleViewListView(
-				this.roleHelper.toRoleViews(rootRoles, loadChildrenRoles, this.roleAPI))).build();
+		return Response.ok(new ResponseEntityRoleViewListView(fullHierarchy
+				? this.roleHelper.toRoleHierarchyViews(rootRoles, this.roleAPI)
+				: this.roleHelper.toRoleViews(rootRoles, loadChildrenRoles, this.roleAPI))).build();
 	}
 
 	/**
@@ -1206,6 +1231,10 @@ public class RoleResource implements Serializable {
 	 * Want to include workflow roles (by default is false)
 	 * /api/v1/roles/_search?includeWorkflowRoles=true
 	 *
+	 * The caller needs the Roles or Users portlet. The results include users' personal roles, so,
+	 * unlike the other role reads, naming an asset whose permissions the caller may edit is not
+	 * enough.
+	 *
 	 * @return list of {@link Role}
 	 * @throws DotDataException
 	 * @throws DotSecurityException
@@ -1216,12 +1245,17 @@ public class RoleResource implements Serializable {
 	@Operation(
 		operationId = "searchRoles",
 		summary = "Search Roles",
-		description = "Search and filter roles by name, key, or ID with pagination support. Includes options to filter by workflow roles.",
+		description = "Search and filter roles by name, key, or ID with pagination support. Includes options to filter by workflow roles. "
+				+ "Requires the Roles or Users portlet.",
 		responses = {
 					@ApiResponse(
 							responseCode = "200",
 							content = @Content(mediaType = "application/json",
-									schema = @Schema(implementation = ResponseEntitySmallRoleView.class)))})
+									schema = @Schema(implementation = ResponseEntitySmallRoleView.class))),
+					@ApiResponse(
+							responseCode = "403",
+							description = "Forbidden - backend user with the Roles or Users portlet required",
+							content = @Content(mediaType = "application/json"))})
 	public Response searchRoles(@Context final HttpServletRequest request,
 								@Context final HttpServletResponse response,
 								@Parameter(name = "searchName", description = "Value to filter by role name")
@@ -1243,6 +1277,7 @@ public class RoleResource implements Serializable {
 		final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource).requiredBackendUser(true)
 				.requiredFrontendUser(false).requestAndResponse(request, response)
 				.rejectWhenNoUser(true).init();
+		this.checkCanReadRoles(initDataObject.getUser(), null, "GET /v1/roles/_search");
 
 		Logger.debug(this, ()-> "Searching role, searchName: " + searchName + ", searchKey: " + searchKey + ", roleId: " + roleId
 				+ ", start: " + startParam + ", count: " + count + ", includeUserRoles: " + includeUserRoles + ", includeWorkflowRoles: " + includeWorkflowRoles);
@@ -1399,6 +1434,30 @@ public class RoleResource implements Serializable {
 		final String forbiddenMessage = "The User: " + modUser.getUserId() + " does not have permissions to retrieve users roles";
 		Logger.error(this, forbiddenMessage);
 		throw new ForbiddenException(forbiddenMessage);
+	}
+
+	/**
+	 * Refuses a caller who may not read roles. Roles are readable by a CMS Administrator, by a
+	 * user with the Roles or the Users portlet ({@link RoleAPI#canReadRoles(User)}), and by a user
+	 * who names, as {@code permissionable}, an asset whose permissions they may edit: the
+	 * Permissions tab picks roles to grant on that asset.
+	 *
+	 * @param user           the user making the request
+	 * @param permissionable the id of the asset the caller is editing permissions on, or null
+	 * @param endpoint       the endpoint being called, for the log
+	 * @throws ForbiddenException when the caller may not read roles
+	 * @throws DotDataException   if the caller's portlets or permissions cannot be read
+	 */
+	private void checkCanReadRoles(final User user, final String permissionable,
+								   final String endpoint) throws DotDataException {
+
+		if (this.roleAPI.canReadRoles(user)
+				|| this.roleHelper.canEditPermissionsOf(permissionable, user)) {
+			return;
+		}
+		Logger.warn(this, "User '" + user.getUserId() + "' may not read roles through " + endpoint
+				+ ": it takes the Roles or Users portlet, or edit-permissions on the named asset");
+		throw new ForbiddenException("Reading roles requires the Roles or Users portlet");
 	}
 
 	/**

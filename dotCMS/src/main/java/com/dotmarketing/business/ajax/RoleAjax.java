@@ -68,9 +68,7 @@ import io.vavr.Lazy;
 import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -113,98 +111,6 @@ public class RoleAjax {
 		this.portletAPI = portletAPI;
 		this.userWebAPI = userWebAPI;
     }
-	
-	public List<Map<String, Object>> getRolesTreeFiltered(boolean onlyUserAssignableRoles, String excludeRoles) throws DotDataException{
-		return getRolesTree (onlyUserAssignableRoles, excludeRoles, false);
-	}
-
-	public List<Map<String, Object>> getRolesTree (boolean onlyUserAssignableRoles, String excludeRoles, boolean excludeUserRoles) throws DotDataException {
-
-		List<Map<String, Object>> toReturn = new ArrayList<>();
-
-		RoleAPI roleAPI = APILocator.getRoleAPI();
-		List<Role> rootRoles = roleAPI.findRootRoles();
-
-		List<String> excludeRolesArray = null;
-		if(UtilMethods.isSet(excludeRoles)){
-			excludeRoles = excludeRoles +","+getWorkflowRolesId();
-			excludeRolesArray = Arrays.asList(excludeRoles.split(","));
-		} else {
-			excludeRolesArray = Arrays.asList(getWorkflowRolesId().split(","));
-		}
-
-		for(Role r : rootRoles) {
-
-			if(onlyUserAssignableRoles) {
-
-				//If the role has no children and is not user assignable then we don't include it
-				if(!r.isEditUsers() && (r.getRoleChildren() == null || r.getRoleChildren().size() == 0))
-					continue;
-				//Special case the users roles branch should be entirely hidden
-				if(r.getRoleKey() != null && r.getRoleKey().equals(RoleAPI.USERS_ROOT_ROLE_KEY))
-					continue;
-			}
-
-			if(excludeUserRoles) {
-				if(r.getRoleKey() != null && r.getRoleKey().equals(RoleAPI.USERS_ROOT_ROLE_KEY))
-					continue;
-			}
-
-			Map<String, Object> roleMap = constructRoleMap(r, excludeRolesArray, onlyUserAssignableRoles);
-			toReturn.add(roleMap);
-
-		}
-		return toReturn;
-
-	}
-
-	private Map<String, Object> constructRoleMap(Role role, List<String> excludeRoles, boolean onlyUserAssignableRoles) throws DotDataException {
-
-		RoleAPI roleAPI = APILocator.getRoleAPI();
-		Map<String, Object> roleMap = new HashMap<>();
-        if(role!=null){
-        	 roleMap = role.toMap();
-        }
-
-
-		List<Map<String, Object>> children = new ArrayList<>();
-
-		if(role!=null && role.getRoleChildren() != null) {
-			for(String id : role.getRoleChildren()) {
-				Role childRole = roleAPI.loadRoleById(id);
-
-				if(onlyUserAssignableRoles) {
-					//If the role has no children and is not user assignable then we don't include it
-					if(!childRole.isEditUsers() && (childRole.getRoleChildren() == null || childRole.getRoleChildren().size() == 0))
-						continue;
-
-					//Special case the users roles branch should be entirely hidden
-					if(childRole.getRoleKey() != null && childRole.getRoleKey().equals(RoleAPI.USERS_ROOT_ROLE_KEY))
-						continue;
-				}
-
-				// Exclude roles in the excludeRoles list
-				if(excludeRoles.contains(id)) {
-					continue;
-				}
-
-				Map<String, Object> childMap = constructRoleMap(childRole, excludeRoles, onlyUserAssignableRoles);
-				children.add(childMap);
-			}
-		}
-
-		Collections.sort(children, new Comparator<Map<String, Object>> () {
-
-			public int compare(Map<String, Object> o1, Map<String, Object> o2) {
-				return ((String)o1.get("name")).compareTo((String)o2.get("name"));
-			}
-
-		});
-		roleMap.put("children", children);
-
-		return roleMap;
-
-	}
 
 	/**
 	 * Lists the users directly granted each of the given roles, keyed by role id. The caller
@@ -889,31 +795,6 @@ public class RoleAjax {
 
 		return ret;
 
-	}
-
-	/**
-	 * Get a string comma separated with the workflow special roles. These Workflow roles should not
-	 * be displayed in the permission tabs
-	 *
-	 * @return String of comma separated ID's of the workflow roles
-	 */
-	private String getWorkflowRolesId() throws DotDataException {
-
-		StringBuilder workflowRolesIds = new StringBuilder();
-		try {
-			for (Role role : APILocator.getRoleAPI().findWorkflowSpecialRoles()) {
-				if (workflowRolesIds.length() > 0) {
-					workflowRolesIds.append(",").append(role.getId());
-				} else {
-					workflowRolesIds.append(role.getId());
-				}
-			}
-
-		} catch (DotSecurityException e) {
-			Logger.error(this, "Error getting workflow roles.", e);
-
-		}
-		return workflowRolesIds.toString();
 	}
 
 }

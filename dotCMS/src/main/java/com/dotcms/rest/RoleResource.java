@@ -14,10 +14,12 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -39,6 +41,26 @@ public class RoleResource {
 
     private final WebResource webResource = new WebResource();
 
+	/**
+	 * Refuses a caller who may not read roles: these lookups serve the Roles screen, so they take
+	 * a CMS Administrator or the Roles or Users portlet ({@link RoleAPI#canReadRoles(User)}).
+	 *
+	 * @param initData the initialized request, carrying the caller
+	 * @param endpoint the endpoint being called, for the log
+	 * @throws ForbiddenException when the caller may not read roles
+	 * @throws DotDataException   if the caller's portlets cannot be read
+	 */
+	private static void checkCanReadRoles(final InitDataObject initData, final String endpoint)
+			throws DotDataException {
+
+		final User user = initData.getUser();
+		if (!APILocator.getRoleAPI().canReadRoles(user)) {
+			Logger.warn(RoleResource.class, "User '" + user.getUserId() + "' may not read roles through "
+					+ endpoint + ": it takes the Roles or Users portlet");
+			throw new ForbiddenException("Reading roles requires the Roles or Users portlet");
+		}
+	}
+
     /**
 	 * <p>Returns a JSON representation of the Role with the given id, including its first level children.
 	 * <br>The role node contains: id, name, locked, children.
@@ -55,6 +77,8 @@ public class RoleResource {
 	 *
 	 *
 	 * <br><p>If no id is given, returns the root node (not a role) and its first level children (root roles)
+	 *
+	 * <p>The caller needs a CMS Administrator role or the Roles or Users portlet.
 	 *
 	 * <br><p>This is used to lazy-load the Tree (UI) of roles in the Role Manager of dotCMS Admin
 	 *
@@ -83,10 +107,10 @@ public class RoleResource {
 		@ApiResponse(responseCode = "401", 
 					description = "Unauthorized - backend user authentication required",
 					content = @Content(mediaType = "application/json")),
-		@ApiResponse(responseCode = "403", 
-					description = "Forbidden - insufficient permissions",
+		@ApiResponse(responseCode = "403",
+					description = "Forbidden - the Roles or Users portlet is required",
 					content = @Content(mediaType = "application/json")),
-		@ApiResponse(responseCode = "500", 
+		@ApiResponse(responseCode = "500",
 					description = "Internal server error",
 					content = @Content(mediaType = "application/json"))
 	})
@@ -104,6 +128,7 @@ public class RoleResource {
 				.requestAndResponse(request, response)
 				.rejectWhenNoUser(true)
 				.init();
+		checkCanReadRoles(initData, "GET /api/role/loadchildren");
 
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
@@ -189,6 +214,8 @@ public class RoleResource {
 	 * <br>DBFQN, FQN, description, editLayouts, editPermissions, editUsers,
 	 * id, locked, name, parent, roleKey, system. See {@link Role}.
 	 *
+	 * <p>The caller needs a CMS Administrator role or the Roles or Users portlet.
+	 *
 	 * <p>This is used to load all the info of a role when clicked on the Tree (UI) in the Role Manager
 	 * of dotCMS Admin
 	 *
@@ -216,7 +243,10 @@ public class RoleResource {
 		@ApiResponse(responseCode = "401", 
 					description = "Unauthorized - backend user authentication required",
 					content = @Content(mediaType = "application/json")),
-		@ApiResponse(responseCode = "500", 
+		@ApiResponse(responseCode = "403",
+					description = "Forbidden - the Roles or Users portlet is required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "500",
 					description = "Internal server error",
 					content = @Content(mediaType = "application/json"))
 	})
@@ -233,6 +263,7 @@ public class RoleResource {
 				.requestAndResponse(request, response)
 				.rejectWhenNoUser(true)
 				.init();
+		checkCanReadRoles(initData, "GET /api/role/loadbyid");
 
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
@@ -277,6 +308,8 @@ public class RoleResource {
 	 * - locked: boolean that indicates if the child role is locked
 	 * - children: list of the role's first level children, if any.
 	 *
+	 * <p>The caller needs a CMS Administrator role or the Roles or Users portlet.
+	 *
 	 * This is used to feed the resulting Tree (UI) in the Role Manager of dotCMS Admin when using
 	 * the filter functionality
 	 *
@@ -304,7 +337,10 @@ public class RoleResource {
 		@ApiResponse(responseCode = "401", 
 					description = "Unauthorized - backend user authentication required",
 					content = @Content(mediaType = "application/json")),
-		@ApiResponse(responseCode = "500", 
+		@ApiResponse(responseCode = "403",
+					description = "Forbidden - the Roles or Users portlet is required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "500",
 					description = "Internal server error",
 					content = @Content(mediaType = "application/json"))
 	})
@@ -322,6 +358,7 @@ public class RoleResource {
 				.requestAndResponse(request, response)
 				.rejectWhenNoUser(true)
 				.init();
+		checkCanReadRoles(initData, "GET /api/role/loadbyname");
 
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );

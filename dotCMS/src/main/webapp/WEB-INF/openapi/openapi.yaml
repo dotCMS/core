@@ -2525,6 +2525,10 @@ paths:
           content:
             application/json: {}
           description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - the Roles or Users portlet is required
         "500":
           content:
             application/json: {}
@@ -2560,6 +2564,10 @@ paths:
           content:
             application/json: {}
           description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - the Roles or Users portlet is required
         "500":
           content:
             application/json: {}
@@ -2599,7 +2607,7 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - insufficient permissions
+          description: Forbidden - the Roles or Users portlet is required
         "500":
           content:
             application/json: {}
@@ -16686,7 +16694,9 @@ paths:
       - Workflow
   /v1/roles:
     get:
-      description: Loads the root roles with optional children roles
+      description: "Loads the root roles with optional children roles, or with the\
+        \ whole hierarchy when fullHierarchy is true. Requires the Roles or Users\
+        \ portlet, or EDIT_PERMISSIONS on the asset named by permissionable."
       operationId: loadRootRoles
       parameters:
       - description: Load children roles
@@ -16695,6 +16705,20 @@ paths:
         schema:
           type: boolean
           default: true
+      - description: "Load every descendant of the root roles at any depth, instead\
+          \ of their direct children only"
+        in: query
+        name: fullHierarchy
+        schema:
+          type: boolean
+          default: false
+      - description: Id of an asset whose permissions the caller is editing. A caller
+          without the Roles or Users portlet may read roles when they hold EDIT_PERMISSIONS
+          on this asset
+        in: query
+        name: permissionable
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -16709,7 +16733,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - backend user required
+          description: "Forbidden - backend user with the Roles or Users portlet,\
+            \ or EDIT_PERMISSIONS on the permissionable asset, required"
       summary: Load root roles
       tags:
       - Roles
@@ -16753,7 +16778,8 @@ paths:
   /v1/roles/_search:
     get:
       description: "Search and filter roles by name, key, or ID with pagination support.\
-        \ Includes options to filter by workflow roles."
+        \ Includes options to filter by workflow roles. Requires the Roles or Users\
+        \ portlet."
       operationId: searchRoles
       parameters:
       - description: Value to filter by role name
@@ -16806,6 +16832,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntitySmallRoleView"
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - backend user with the Roles or Users portlet required
       summary: Search Roles
       tags:
       - Roles
@@ -17048,7 +17078,8 @@ paths:
       tags:
       - Roles
     get:
-      description: Load role based on the role id with optional children roles
+      description: "Load role based on the role id with optional children roles. Requires\
+        \ the Roles or Users portlet, or EDIT_PERMISSIONS on the asset named by permissionable."
       operationId: loadRoleByRoleId
       parameters:
       - description: Role ID
@@ -17063,6 +17094,13 @@ paths:
         schema:
           type: boolean
           default: true
+      - description: Id of an asset whose permissions the caller is editing. A caller
+          without the Roles or Users portlet may read roles when they hold EDIT_PERMISSIONS
+          on this asset
+        in: query
+        name: permissionable
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -17081,7 +17119,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - backend user required
+          description: "Forbidden - backend user with the Roles or Users portlet,\
+            \ or EDIT_PERMISSIONS on the permissionable asset, required"
         "404":
           content:
             application/json: {}

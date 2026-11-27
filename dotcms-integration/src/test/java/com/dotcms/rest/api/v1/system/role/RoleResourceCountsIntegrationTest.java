@@ -110,7 +110,7 @@ public class RoleResourceCountsIntegrationTest {
     private static RoleView loadRoleView(final String roleId, final boolean loadChildren)
             throws Exception {
         final Response restResponse = resource.loadRoleByRoleId(
-                mockAdminRequest(), response, roleId, loadChildren);
+                mockAdminRequest(), response, roleId, loadChildren, null);
         assertEquals(Response.Status.OK.getStatusCode(), restResponse.getStatus());
         final ResponseEntityRoleDetailView view =
                 (ResponseEntityRoleDetailView) restResponse.getEntity();
@@ -221,7 +221,7 @@ public class RoleResourceCountsIntegrationTest {
         assertNotNull(child);
         assertNotNull(granted);
 
-        final Response restResponse = resource.loadRootRoles(mockAdminRequest(), response, false);
+        final Response restResponse = resource.loadRootRoles(mockAdminRequest(), response, false, false, null);
         assertEquals(Response.Status.OK.getStatusCode(), restResponse.getStatus());
         final ResponseEntityRoleViewListView view =
                 (ResponseEntityRoleViewListView) restResponse.getEntity();

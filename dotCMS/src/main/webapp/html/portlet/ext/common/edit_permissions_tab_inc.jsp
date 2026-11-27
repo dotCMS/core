@@ -51,7 +51,7 @@
 		<div class="permissions__bar-user-role-main">
 			<div class="inline-form">
 				<span class="rolesIcon"></span>
-				<select id="permissionsRoleSelector" dojoType="dotcms.dijit.form.RolesFilteringSelect" excludeRoles="<%= APILocator.getRoleAPI().loadCMSAdminRole().getId()%>"></select>
+				<select id="permissionsRoleSelector" dojoType="dotcms.dijit.form.RolesFilteringSelect" excludeRoles="<%= APILocator.getRoleAPI().loadCMSAdminRole().getId()%>" permissionable="<%= com.liferay.util.Xss.encodeForHTMLAttribute(asset.getPermissionId()) %>"></select>
 				<button dojoType="dijit.form.Button" onclick="addRoleToPermissions();return false;"><%= LanguageUtil.get(pageContext, "Add-Role") %></button>
 			</div>
 			<div class="inline-form">
