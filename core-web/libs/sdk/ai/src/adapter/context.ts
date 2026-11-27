@@ -120,9 +120,10 @@ async function loadSites(request: RequestFn): Promise<SiteSummary[]> {
     // second `archive=true` — asking with `archive=true` alone (as this once did, reading it
     // as "include archived") left `sites` empty on any instance without an archived site.
     // Each is paged until a short page, so the injected global is a catalog, not the first
-    // 200 sites.
+    // 200 sites. Pages start at 1: the endpoint serves `page=0` as page 1, so starting at 0
+    // fetched the first page twice.
     for (const archive of [false, true]) {
-        for (let page = 0; page < 100; page += 1) {
+        for (let page = 1; page <= 100; page += 1) {
             const raw = await request({
                 method: 'GET',
                 path: CONTEXT_PATHS.sites,

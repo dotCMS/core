@@ -429,14 +429,22 @@ describe('createRuntime context freshness', () => {
         expect(siteLoads).toBe(loadsAfterFirst);
     });
 
-    it('paginates and de-duplicates the complete site catalog', async () => {
+    it('paginates the complete site catalog from page 1 and de-duplicates it', async () => {
+        // As `PaginationUtil.getPage` answers: pages start at 1 and `page <= 0` is served as
+        // page 1, so starting the walk at 0 fetched the first page twice.
+        const requested: string[] = [];
         fetchMock.mockImplementation(async (url: string) => {
             const parsed = new URL(url);
             if (parsed.pathname !== '/api/v1/site') {
                 return jsonResponse({ entity: [] });
             }
-            const page = Number(parsed.searchParams.get('page'));
-            if (page === 0) {
+            const archive = parsed.searchParams.get('archive');
+            requested.push(`archive=${archive}&page=${parsed.searchParams.get('page')}`);
+            if (archive === 'true') {
+                return jsonResponse({ entity: [] });
+            }
+            const page = Math.max(1, Number(parsed.searchParams.get('page')));
+            if (page === 1) {
                 return jsonResponse({
                     entity: Array.from({ length: 200 }, (_, index) => ({
                         identifier: `site-${index}`,
@@ -446,10 +454,21 @@ describe('createRuntime context freshness', () => {
                 });
             }
             return jsonResponse({
-                entity: [
-                    { identifier: 'site-199', siteName: 'duplicate.example.com', isLive: false },
-                    { identifier: 'site-200', siteName: 'last.example.com', isLive: false }
-                ]
+                entity:
+                    page === 2
+                        ? [
+                              {
+                                  identifier: 'site-199',
+                                  siteName: 'duplicate.example.com',
+                                  isLive: false
+                              },
+                              {
+                                  identifier: 'site-200',
+                                  siteName: 'last.example.com',
+                                  isLive: false
+                              }
+                          ]
+                        : []
             });
         });
 
@@ -458,6 +477,11 @@ describe('createRuntime context freshness', () => {
             token: 't'
         }).loadContext();
 
+        expect(requested).toEqual([
+            'archive=false&page=1',
+            'archive=false&page=2',
+            'archive=true&page=1'
+        ]);
         expect(context.sites).toHaveLength(201);
         expect(context.sites.find((site) => site.identifier === 'site-199')?.hostname).toBe(
             'duplicate.example.com'

@@ -247,7 +247,8 @@ public class SiteResource implements Serializable {
      *                            {@code archive=true}, {@code false} returns archived sites and
      *                            {@code true} returns none
      * @param showSystem          {@code true} to include the System Host in the results
-     * @param page                the page to return
+     * @param page                the page to return; pages start at 1, and 0 or less is
+     *                            served as page 1
      * @param perPage             the number of sites per page
      * @return the paginated list of {@link com.dotmarketing.beans.Host} sites
      */
@@ -283,7 +284,7 @@ public class SiteResource implements Serializable {
             @QueryParam(SitePaginator.LIVE_PARAMETER_NAME) final Boolean showLive,
             @Parameter(description = "Include the system site in the results")
             @QueryParam(SitePaginator.SYSTEM_PARAMETER_NAME) final Boolean showSystem,
-            @Parameter(description = "Page number for pagination (zero-based)")
+            @Parameter(description = "Page number for pagination. Pages start at 1; 0 is treated as 1.")
             @QueryParam(PaginationUtil.PAGE) final int page,
             @Parameter(description = "Number of results per page")
             @QueryParam(PaginationUtil.PER_PAGE) final int perPage

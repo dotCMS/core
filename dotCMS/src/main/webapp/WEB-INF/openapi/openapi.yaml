@@ -17436,7 +17436,8 @@ paths:
         name: system
         schema:
           type: boolean
-      - description: Page number for pagination (zero-based)
+      - description: Page number for pagination. Pages start at 1; 0 is treated as
+          1.
         in: query
         name: page
         schema:
