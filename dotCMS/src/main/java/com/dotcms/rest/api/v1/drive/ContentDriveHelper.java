@@ -45,6 +45,13 @@ import java.util.stream.Collectors;
  */
 public class ContentDriveHelper {
 
+    /**
+     * The 400 message for search text or filter values the index cannot build a query from. The
+     * listing and the Content Drive export give the same one.
+     */
+    public static final String TOO_COMPLEX_MESSAGE = "The search text or filter values are too "
+            + "complex to search for; simplify or shorten them and try again.";
+
     private final BrowserAPI browserAPI;
     private final ContentDriveFieldFilterResolver fieldFilterResolver =
             new ContentDriveFieldFilterResolver();
@@ -112,9 +119,7 @@ public class ContentDriveHelper {
             return browserAPI.getPaginatedContents(browserQuery);
         } catch (final DotDataException | DotRuntimeException e) {
             if (ExceptionUtil.causedBy(e, ESQueryTooComplexException.class)) {
-                throw new BadRequestException(e,
-                        "The search text or filter values are too complex to search for; simplify "
-                                + "or shorten them and try again.");
+                throw new BadRequestException(e, TOO_COMPLEX_MESSAGE);
             }
             throw e;
         }

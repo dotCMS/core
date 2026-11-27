@@ -3,10 +3,12 @@ package com.dotcms.rest.api.v1.drive.export;
 import com.dotcms.browser.BrowserAPI;
 import com.dotcms.content.export.ContentletCsvWriter;
 import com.dotcms.browser.BrowserQuery;
+import com.dotcms.browser.ESQueryTooComplexException;
 import com.dotcms.browser.ExportCandidates;
 import com.dotcms.browser.ExportRow;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.UtilMethods;
 import io.vavr.control.Try;
@@ -23,6 +25,7 @@ import com.dotcms.rest.exception.NotFoundException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.google.common.annotations.VisibleForTesting;
@@ -195,7 +198,8 @@ public class ContentDriveExportHelper {
      * @param user  the {@link User} the export runs as
      * @return the content type and its readable rows
      * @throws BadRequestException  when there is not exactly one readable type, it is a Form or Host
-     *                              type, or more rows match than the limit
+     *                              type, the search text is too complex for the index, or more
+     *                              rows match than the limit
      * @throws NotFoundException    when the site or folder does not exist or cannot be read
      * @throws DotDataException     if the rows cannot be read
      * @throws DotSecurityException if the user cannot read the site or folder
@@ -214,7 +218,16 @@ public class ContentDriveExportHelper {
         driveHelper.checkSearchable(browserQuery);
 
         final int maxRows = Config.getIntProperty(MAX_ROWS_KEY, MAX_ROWS_DEFAULT);
-        final ExportCandidates candidates = browserAPI.getContentForExport(browserQuery, maxRows);
+        final ExportCandidates candidates;
+        try {
+            candidates = browserAPI.getContentForExport(browserQuery, maxRows);
+        } catch (final DotDataException | DotRuntimeException e) {
+            // Search input the index cannot build a query from is bad input, as in the listing
+            if (ExceptionUtil.causedBy(e, ESQueryTooComplexException.class)) {
+                throw new BadRequestException(e, ContentDriveHelper.TOO_COMPLEX_MESSAGE);
+            }
+            throw e;
+        }
         if (candidates.overLimit()) {
             throw new BadRequestException(overLimitMessage(maxRows));
         }

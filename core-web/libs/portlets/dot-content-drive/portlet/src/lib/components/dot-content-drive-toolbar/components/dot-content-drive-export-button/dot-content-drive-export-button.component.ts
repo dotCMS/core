@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 
 import { MessageService } from 'primeng/api';
@@ -24,6 +24,7 @@ import {
     WARNING_MESSAGE_LIFE
 } from '../../../../shared/constants';
 import { DotContentDriveStatus } from '../../../../shared/models';
+import { DotContentDriveExportStateService } from '../../../../shared/services';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 import { excludeFolders, toFolderAssetPaths } from '../../../../utils/action-center';
 import { isFolder } from '../../../../utils/functions';
@@ -33,8 +34,9 @@ import { isFolder } from '../../../../utils/functions';
  * listing is filtered to one content type (filter mode); with anything selected it downloads the
  * selected contentlets as a zip with one CSV per content type (selection mode).
  *
- * It reads the store and keeps its own in-flight state; it adds nothing to the store, which is at
- * the `signalStore` feature limit.
+ * It reads the store, and shares whether an export is running with the other Export button
+ * through `DotContentDriveExportStateService`; it adds nothing to the store, which is at the
+ * `signalStore` feature limit.
  */
 @Component({
     selector: 'dot-content-drive-export-button',
@@ -47,9 +49,13 @@ export class DotContentDriveExportButtonComponent {
     readonly #contentTypeService = inject(DotContentTypeService);
     readonly #messageService = inject(MessageService);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #exportState = inject(DotContentDriveExportStateService);
 
-    /** True from the click until the export answers, so a second click cannot start another. */
-    protected readonly $exporting = signal(false);
+    /**
+     * True from a click on either Export button until that export answers, so neither button can
+     * start another one meanwhile, even the one that appears when the selection changes.
+     */
+    protected readonly $exporting = this.#exportState.$exporting;
 
     /**
      * Selection mode applies whenever anything is selected, whatever the listing is filtered to:
@@ -168,11 +174,11 @@ export class DotContentDriveExportButtonComponent {
 
         const body = this.#buildRequest();
 
-        this.$exporting.set(true);
+        this.#exportState.start();
 
         this.#exportService
             .export(body)
-            .pipe(finalize(() => this.$exporting.set(false)))
+            .pipe(finalize(() => this.#exportState.end()))
             .subscribe({
                 next: (result) => {
                     if (result.kind !== 'file') {

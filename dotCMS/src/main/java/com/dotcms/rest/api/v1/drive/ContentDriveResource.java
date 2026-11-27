@@ -221,10 +221,11 @@ public class ContentDriveResource {
                 .rejectWhenNoUser(true).init();
         final User user = initDataObject.getUser();
 
+        ExportFile file = null;
         try {
             final DriveExportRequestForm body =
                     form == null ? DriveExportRequestForm.builder().build() : form;
-            final ExportFile file = exportHelper.export(body, user, request);
+            file = exportHelper.export(body, user, request);
             if (file.contentlets() == 0) {
                 return Response.noContent().build();
             }
@@ -241,8 +242,27 @@ public class ContentDriveResource {
         } catch (final Exception e) {
             Logger.error(this, String.format("Content Drive export failed for user '%s': %s",
                     user.getUserId(), e.getMessage()), e);
+            // A file built before the failure is never sent, so nothing else would delete it
+            if (file != null) {
+                deleteQuietly(file.path());
+            }
             return errorResponse(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
                     EXPORT_FAILED_MESSAGE);
+        }
+    }
+
+    /**
+     * Deletes an export file that will not be sent, logging instead of throwing when it cannot be
+     * deleted; the export directory's hourly sweep removes it then.
+     *
+     * @param path the file to delete
+     */
+    private void deleteQuietly(final java.nio.file.Path path) {
+        try {
+            Files.deleteIfExists(path);
+        } catch (final Exception e) {
+            Logger.warn(this, String.format("Unable to delete export file '%s': %s", path,
+                    e.getMessage()));
         }
     }
 
@@ -259,7 +279,10 @@ public class ContentDriveResource {
         final String errorCode = known == null ? String.valueOf(status) : known.name();
         return Response.status(status)
                 .type(MediaType.APPLICATION_JSON)
-                .entity(new ResponseEntityView<>(List.of(new ErrorEntity(errorCode, message, null))))
+                // entity null, as the contract's error body shows; the errors-only constructor
+                // would write ""
+                .entity(new ResponseEntityView<Object>(
+                        List.of(new ErrorEntity(errorCode, message, null)), (Object) null))
                 .build();
     }
 }
