@@ -50,7 +50,16 @@ public class ExportFileBuilder {
      * Creates a builder that writes with the shared CSV writer under the asset temp path.
      */
     public ExportFileBuilder() {
-        this(new ContentletCsvWriter(), Path.of(ConfigUtils.getAssetTempPath(), DIRECTORY_NAME));
+        this(new ContentletCsvWriter(), defaultDirectory());
+    }
+
+    /**
+     * The directory export files are written to: {@link #DIRECTORY_NAME} under the asset temp path.
+     *
+     * @return the export directory
+     */
+    public static Path defaultDirectory() {
+        return Path.of(ConfigUtils.getAssetTempPath(), DIRECTORY_NAME);
     }
 
     /**

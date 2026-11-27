@@ -3,12 +3,15 @@ package com.dotcms.rest.api.v1.drive;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.browser.BrowserAPIImpl.PaginatedContents;
+import com.dotcms.content.export.ContentletCsvWriter;
+import com.dotcms.content.export.HostFolderMode;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -26,6 +29,8 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.rest.api.v1.drive.export.ContentDriveExportHelper;
 import com.dotcms.rest.api.v1.drive.export.DriveExportRequestForm;
 import com.dotcms.rest.api.v1.drive.export.ExportFileBuilder;
 import com.dotcms.rest.api.v1.drive.export.ExportFileNames;
@@ -34,6 +39,8 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -43,6 +50,8 @@ import com.dotmarketing.util.ConfigUtils;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -77,6 +86,9 @@ public class ContentDriveExportFilterModeTest extends IntegrationTestBase {
 
     private static final String ONE_TYPE = "Choose exactly one content type you can read to export.";
     private static final String FORMS_AND_SITES = "Forms and sites can't be exported.";
+    private static final String EXPORT_FAILED =
+            "The export failed. Try again, and contact your administrator if it keeps failing.";
+    private static final String FOLDER_NOT_FOUND = "Folder not found.";
     private static final int MAX_PAGES = 200;
 
     /**
@@ -91,6 +103,8 @@ public class ContentDriveExportFilterModeTest extends IntegrationTestBase {
      */
     private static User adminUser;
     private static User limitedUser;
+    /** A back-end user who can read the site and the Blog type but none of the Blog rows. */
+    private static User siteReader;
 
     private static Host site;
     private static Folder folder;
@@ -172,6 +186,19 @@ public class ContentDriveExportFilterModeTest extends IntegrationTestBase {
         // A back-end user (Drive users are) who can read none of this site's content types.
         limitedUser = new UserDataGen().roles(new RoleDataGen().nextPersisted(),
                 APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        final Role siteReaderRole = new RoleDataGen().nextPersisted();
+        siteReader = new UserDataGen().roles(siteReaderRole,
+                APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        APILocator.getPermissionAPI().save(new Permission(site.getPermissionId(),
+                siteReaderRole.getId(), PermissionAPI.PERMISSION_READ), site, systemUser, false);
+        assertNotNull("Fixture error: the site reader must read the site",
+                APILocator.getHostAPI().find(site.getIdentifier(), siteReader, false));
+        assertNotNull("Fixture error: the site reader must read the Blog type",
+                APILocator.getContentTypeAPI(siteReader).find(blog.variable()));
+        assertFalse("Fixture error: the site reader must not read the Blog rows",
+                APILocator.getPermissionAPI().doesUserHavePermission(inFolder,
+                        PermissionAPI.PERMISSION_READ, siteReader, false));
+
         assertThrows("Fixture error: the limited user must not be able to read this type",
                 DotSecurityException.class,
                 () -> APILocator.getContentTypeAPI(limitedUser).find(unreadableType.variable()));
@@ -222,6 +249,43 @@ public class ContentDriveExportFilterModeTest extends IntegrationTestBase {
     private static Response export(final DriveRequestForm query, final User user) {
         return new ContentDriveResource().export(requestAs(user), mock(HttpServletResponse.class),
                 DriveExportRequestForm.builder().query(query).build());
+    }
+
+    private static Response export(final ContentDriveResource resource,
+            final DriveRequestForm query, final User user) {
+        return resource.export(requestAs(user), mock(HttpServletResponse.class),
+                DriveExportRequestForm.builder().query(query).build());
+    }
+
+    /** The files that appeared in the export directory since {@code before}. */
+    private static Set<Path> newFilesSince(final Set<Path> before) throws Exception {
+        final Set<Path> added = new HashSet<>(exportDirectoryFiles());
+        added.removeAll(before);
+        return added;
+    }
+
+    /** The response entity as the client receives it. */
+    private static String entityJson(final Response response) throws Exception {
+        return DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
+                .writeValueAsString(response.getEntity());
+    }
+
+    /**
+     * Writes the header row and then fails, as a disk or database failure halfway through a file
+     * would.
+     */
+    private static final class FailingWriter extends ContentletCsvWriter {
+
+        static final String SECRET = "internal detail that must never reach the client";
+
+        @Override
+        public int write(final ContentType contentType, final List<String> inodes,
+                final User user, final HttpServletRequest request,
+                final HostFolderMode hostFolderMode, final Writer out)
+                throws DotDataException, IOException {
+            out.write("Identifier,languageCode,countryCode\r\n");
+            throw new DotDataException(SECRET);
+        }
     }
 
     private static Response export(final DriveRequestForm query) {
@@ -507,5 +571,76 @@ public class ContentDriveExportFilterModeTest extends IntegrationTestBase {
 
         assertEquals(400, response.getStatus());
         assertEquals(FORMS_AND_SITES, errorMessage(response));
+    }
+    // ---------------------------------------------------------------------------------------------
+    // outcomes: nothing to export, failure, not found (User Story 7)
+    // ---------------------------------------------------------------------------------------------
+
+    /**
+     * Method to test: {@link ContentDriveResource#export}
+     * Given Scenario: (a) A user who can read the site and the type, exporting the whole site
+     *                 (without System Host), none of whose Blog rows they can read
+     * ExpectedResult: 204 with no body, and no file left in the export directory (FR-027, FR-032)
+     */
+    @Test
+    public void test_nothingReadable_isNoContent() throws Exception {
+        final Set<Path> before = exportDirectoryFiles();
+
+        // The site, not a folder: the site reader's READ is on the site only, which its folders do
+        // not inherit, so a folder path would be a 404 rather than an empty export.
+        final Response response = export(query(sitePath()).browseScope(BrowseScope.ALL)
+                .includeSystemHost(false).build(), siteReader);
+
+        assertEquals(204, response.getStatus());
+        assertNull(response.getEntity());
+        assertEquals("no temp file is left", Set.of(), newFilesSince(before));
+    }
+
+    /**
+     * Method to test: {@link ContentDriveResource#export}
+     * Given Scenario: (b) The CSV writer fails halfway through the file
+     * ExpectedResult: 500 with the generic message; neither the cause nor a stack trace reaches the
+     * client, and no file is left in the export directory (FR-029, FR-031, FR-032)
+     */
+    @Test
+    public void test_writerFailure_isAGenericServerError() throws Exception {
+        final Set<Path> before = exportDirectoryFiles();
+        final ContentDriveResource failing =
+                new ContentDriveResource(new ContentDriveExportHelper(new FailingWriter()));
+
+        final Response response = export(failing, query(folderPath()).build(), adminUser);
+
+        assertEquals(500, response.getStatus());
+        assertEquals(EXPORT_FAILED, errorMessage(response));
+        final String body = entityJson(response);
+        assertFalse("the cause is not returned", body.contains(FailingWriter.SECRET));
+        assertFalse("no stack trace is returned", body.contains("Exception"));
+        assertFalse("no stack trace is returned", body.contains("\tat "));
+        assertEquals("no temp file is left", Set.of(), newFilesSince(before));
+    }
+
+    /**
+     * Method to test: {@link ContentDriveResource#export}
+     * Given Scenario: (c) A site the user cannot read, a site that does not exist, and a folder that
+     *                 does not exist in a real site
+     * ExpectedResult: 404 "Folder not found." each time, with identical bodies, so the response never
+     * tells which applied (FR-014)
+     */
+    @Test
+    public void test_missingOrUnreadableLocation_isNotFound() throws Exception {
+        final Map<String, Response> responses = new LinkedHashMap<>();
+        responses.put("unreadable site", export(query(sitePath()).build(), limitedUser));
+        responses.put("missing site", export(query("//no-such-site-" + System.currentTimeMillis()
+                + ".local/").build(), adminUser));
+        responses.put("missing folder", export(query(sitePath() + "no-such-folder-"
+                + System.currentTimeMillis() + "/").build(), adminUser));
+
+        final Set<String> bodies = new HashSet<>();
+        for (final Map.Entry<String, Response> entry : responses.entrySet()) {
+            assertEquals(entry.getKey(), 404, entry.getValue().getStatus());
+            assertEquals(entry.getKey(), FOLDER_NOT_FOUND, errorMessage(entry.getValue()));
+            bodies.add(entityJson(entry.getValue()));
+        }
+        assertEquals("identical bodies", 1, bodies.size());
     }
 }

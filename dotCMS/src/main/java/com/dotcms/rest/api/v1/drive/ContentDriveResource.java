@@ -53,7 +53,23 @@ public class ContentDriveResource {
             "The export failed. Try again, and contact your administrator if it keeps failing.";
 
     private final ContentDriveHelper helper = ContentDriveHelper.newInstance();
-    private final ContentDriveExportHelper exportHelper = new ContentDriveExportHelper();
+    private final ContentDriveExportHelper exportHelper;
+
+    /**
+     * Creates the resource with the standard export helper.
+     */
+    public ContentDriveResource() {
+        this(new ContentDriveExportHelper());
+    }
+
+    /**
+     * Creates the resource with the given export helper. Tests use it to make an export fail.
+     *
+     * @param exportHelper runs the exports
+     */
+    ContentDriveResource(final ContentDriveExportHelper exportHelper) {
+        this.exportHelper = exportHelper;
+    }
 
     /**
      * Search content assets using drive functionality

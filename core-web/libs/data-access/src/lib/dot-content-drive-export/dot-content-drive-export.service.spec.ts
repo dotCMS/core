@@ -1,8 +1,13 @@
 import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { firstValueFrom } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { HttpClient, provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import {
+    HttpTestingController,
+    provideHttpClientTesting,
+    TestRequest
+} from '@angular/common/http/testing';
 
 import { DotContentDriveSearchRequest } from '@dotcms/dotcms-models';
 
@@ -39,6 +44,26 @@ const FILE_HEADERS = {
     'X-Export-Contentlets': '3',
     'X-Export-Files': '1'
 };
+
+/**
+ * What the export rejects with when the error body carries no message it can read. It is the
+ * same sentence the server sends for an unexpected failure, so the user reads one wording for
+ * "something went wrong" whichever side noticed it.
+ */
+const GENERIC_EXPORT_ERROR =
+    'The export failed. Try again, and contact your administrator if it keeps failing.';
+
+/** An error body as the server writes it (contracts/drive-export-api.md), carrying `message`. */
+const errorBody = (errorCode: string, message: string): Blob =>
+    new Blob(
+        [
+            JSON.stringify({
+                errors: [{ errorCode, message, fieldName: null }],
+                entity: null
+            })
+        ],
+        { type: 'application/json' }
+    );
 
 describe('DotContentDriveExportService', () => {
     let spectator: SpectatorService<DotContentDriveExportService>;
@@ -153,6 +178,95 @@ describe('DotContentDriveExportService', () => {
 
             // Strict equality on numbers: the raw header strings '2500' and '4' do not match.
             expect(result).toMatchObject({ kind: 'file', contentlets: 2500, files: 4 });
+        });
+
+        it('emits { kind: "empty" } for a 204', async () => {
+            const result = firstValueFrom(spectator.service.export(BODY));
+
+            httpMock.expectOne(EXPORT_URL).flush(null, { status: 204, statusText: 'No Content' });
+
+            expect(await result).toEqual({ kind: 'empty' });
+        });
+    });
+
+    describe('a failed export', () => {
+        /**
+         * Runs an export, fails it with `fail`, and returns what the observable errored with.
+         * Reading a Blob body is asynchronous, so the error is awaited rather than caught inline.
+         * An export that succeeds instead resolves to `undefined`, which fails every assertion below.
+         */
+        const exportFailingWith = (fail: (req: TestRequest) => void): Promise<unknown> => {
+            const result = firstValueFrom(spectator.service.export(BODY));
+
+            fail(httpMock.expectOne(EXPORT_URL));
+
+            return result.then(
+                () => undefined,
+                (error: unknown) => error
+            );
+        };
+
+        it.each([
+            { status: 400, statusText: 'Bad Request', errorCode: 'BAD_REQUEST' },
+            { status: 404, statusText: 'Not Found', errorCode: 'NOT_FOUND' },
+            { status: 500, statusText: 'Internal Server Error', errorCode: 'INTERNAL_SERVER_ERROR' }
+        ])(
+            'errors with the server message from the Blob body of a $status',
+            async ({ status, statusText, errorCode }) => {
+                const message = `The server refused the export (${status})`;
+
+                const error = await exportFailingWith((req) =>
+                    req.flush(errorBody(errorCode, message), { status, statusText })
+                );
+
+                expect(error).toBeInstanceOf(Error);
+                expect((error as Error).message).toBe(message);
+            }
+        );
+
+        it.each([
+            {
+                body: 'a Blob body that is not JSON',
+                fail: (req: TestRequest) =>
+                    req.flush(new Blob(['<html>Bad Gateway</html>'], { type: 'text/html' }), {
+                        status: 500,
+                        statusText: 'Internal Server Error'
+                    })
+            },
+            {
+                body: 'a JSON body with no errors array',
+                fail: (req: TestRequest) =>
+                    req.flush(
+                        new Blob([JSON.stringify({ entity: null })], {
+                            type: 'application/json'
+                        }),
+                        { status: 400, statusText: 'Bad Request' }
+                    )
+            },
+            {
+                body: 'a JSON body whose errors array is empty',
+                fail: (req: TestRequest) =>
+                    req.flush(
+                        new Blob([JSON.stringify({ errors: [], entity: null })], {
+                            type: 'application/json'
+                        }),
+                        { status: 404, statusText: 'Not Found' }
+                    )
+            },
+            {
+                body: 'no body at all',
+                fail: (req: TestRequest) =>
+                    req.flush(null, { status: 500, statusText: 'Internal Server Error' })
+            },
+            {
+                body: 'a network error (no response, status 0)',
+                fail: (req: TestRequest) => req.error(new ProgressEvent('error'))
+            }
+        ])(`errors with "${GENERIC_EXPORT_ERROR}" for $body`, async ({ fail }) => {
+            const error = await exportFailingWith(fail);
+
+            expect(error).toBeInstanceOf(Error);
+            expect((error as Error).message).toBe(GENERIC_EXPORT_ERROR);
         });
     });
 });

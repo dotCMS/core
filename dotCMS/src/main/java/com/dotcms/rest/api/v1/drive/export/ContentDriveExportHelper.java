@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.drive.export;
 
 import com.dotcms.browser.BrowserAPI;
+import com.dotcms.content.export.ContentletCsvWriter;
 import com.dotcms.browser.BrowserQuery;
 import com.dotcms.browser.ExportCandidates;
 import com.dotcms.browser.ExportRow;
@@ -17,6 +18,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import java.io.IOException;
 import java.text.DecimalFormat;
@@ -54,6 +56,18 @@ public class ContentDriveExportHelper {
      */
     public ContentDriveExportHelper() {
         this(ContentDriveHelper.newInstance(), APILocator.getBrowserAPI(), new ExportFileBuilder());
+    }
+
+    /**
+     * Creates a helper that writes with the given CSV writer, into the standard export directory.
+     * Tests outside this package use it to make the writing fail.
+     *
+     * @param writer writes each content type's CSV
+     */
+    @VisibleForTesting
+    public ContentDriveExportHelper(final ContentletCsvWriter writer) {
+        this(ContentDriveHelper.newInstance(), APILocator.getBrowserAPI(),
+                new ExportFileBuilder(writer, ExportFileBuilder.defaultDirectory()));
     }
 
     /**

@@ -5,7 +5,7 @@ import {
     Spectator,
     SpyObject
 } from '@openng/spectator/vitest';
-import { of, Subject } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 
 vi.mock('@dotcms/utils', async () => ({
@@ -37,7 +37,12 @@ import {
 
 import { DotContentDriveExportButtonComponent } from './dot-content-drive-export-button.component';
 
-import { DEFAULT_PAGE, SUCCESS_MESSAGE_LIFE } from '../../../../shared/constants';
+import {
+    DEFAULT_PAGE,
+    ERROR_MESSAGE_LIFE,
+    SUCCESS_MESSAGE_LIFE,
+    WARNING_MESSAGE_LIFE
+} from '../../../../shared/constants';
 import {
     DotContentDriveFilters,
     DotContentDrivePage,
@@ -83,6 +88,11 @@ const FILE_RESULT: DotContentDriveExportResult = {
     contentlets: 3,
     files: 1
 };
+
+const EMPTY_RESULT: DotContentDriveExportResult = { kind: 'empty' };
+
+/** The message the service errors with once it has read the server's error body. */
+const SERVER_MESSAGE = 'Server says no';
 
 describe('DotContentDriveExportButtonComponent (filter mode)', () => {
     let spectator: Spectator<DotContentDriveExportButtonComponent>;
@@ -133,7 +143,10 @@ describe('DotContentDriveExportButtonComponent (filter mode)', () => {
                 useValue: new MockDotMessageService({
                     'content-drive.export.button': 'Export',
                     'content-drive.toast.export-success': 'Export ready',
-                    'content-drive.toast.export-success-detail': '{0} items exported in {1} file(s)'
+                    'content-drive.toast.export-success-detail':
+                        '{0} items exported in {1} file(s)',
+                    'content-drive.toast.export-empty': 'There is nothing to export',
+                    'content-drive.toast.export-error': 'Export failed'
                 })
             }
         ],
@@ -316,6 +329,123 @@ describe('DotContentDriveExportButtonComponent (filter mode)', () => {
                     life: SUCCESS_MESSAGE_LIFE
                 })
             );
+        });
+    });
+
+    describe('on empty', () => {
+        beforeEach(() => {
+            exportService.export.mockReturnValue(of(EMPTY_RESULT));
+        });
+
+        it('should show a warning toast that there is nothing to export', async () => {
+            await render();
+
+            spectator.click(exportButton() as HTMLElement);
+
+            expect(messageServiceSpy.add).toHaveBeenCalledTimes(1);
+            expect(messageServiceSpy.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'warn',
+                    summary: 'There is nothing to export',
+                    life: WARNING_MESSAGE_LIFE
+                })
+            );
+        });
+
+        it('should not download anything', async () => {
+            await render();
+
+            spectator.click(exportButton() as HTMLElement);
+
+            expect(getDownloadLink).not.toHaveBeenCalled();
+            expect(anchorClick).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('on error', () => {
+        beforeEach(() => {
+            exportService.export.mockReturnValue(throwError(() => new Error(SERVER_MESSAGE)));
+        });
+
+        it('should show an error toast with the server message', async () => {
+            await render();
+
+            spectator.click(exportButton() as HTMLElement);
+
+            expect(messageServiceSpy.add).toHaveBeenCalledTimes(1);
+            expect(messageServiceSpy.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'error',
+                    summary: 'Export failed',
+                    detail: SERVER_MESSAGE,
+                    life: ERROR_MESSAGE_LIFE
+                })
+            );
+        });
+
+        it('should not download anything', async () => {
+            await render();
+
+            spectator.click(exportButton() as HTMLElement);
+
+            expect(getDownloadLink).not.toHaveBeenCalled();
+            expect(anchorClick).not.toHaveBeenCalled();
+        });
+    });
+
+    // Each case holds the answer back until the button has shown it is loading, so the button is
+    // seen both loading and cleared: an answer that arrived synchronously could not prove that.
+    describe('loading is cleared', () => {
+        let answer: Subject<DotContentDriveExportResult>;
+
+        /** Clicks Export and checks the button is loading while the answer is held back. */
+        const clickAndExpectLoading = async () => {
+            await render();
+
+            spectator.click(exportButton() as HTMLElement);
+            spectator.detectChanges();
+
+            expect(exportButton()).toHaveClass('p-button-loading');
+            expect(exportButton()?.disabled).toBe(true);
+        };
+
+        /** Checks the button is back to its idle state, ready for another export. */
+        const expectNotLoading = () => {
+            spectator.detectChanges();
+
+            expect(exportButton()).not.toHaveClass('p-button-loading');
+            expect(exportButton()?.disabled).toBe(false);
+        };
+
+        beforeEach(() => {
+            answer = new Subject<DotContentDriveExportResult>();
+            exportService.export.mockReturnValue(answer);
+        });
+
+        it('should clear loading after a file is downloaded', async () => {
+            await clickAndExpectLoading();
+
+            answer.next(FILE_RESULT);
+            answer.complete();
+
+            expectNotLoading();
+        });
+
+        it('should clear loading when there is nothing to export', async () => {
+            await clickAndExpectLoading();
+
+            answer.next(EMPTY_RESULT);
+            answer.complete();
+
+            expectNotLoading();
+        });
+
+        it('should clear loading when the export fails', async () => {
+            await clickAndExpectLoading();
+
+            answer.error(new Error(SERVER_MESSAGE));
+
+            expectNotLoading();
         });
     });
 });
