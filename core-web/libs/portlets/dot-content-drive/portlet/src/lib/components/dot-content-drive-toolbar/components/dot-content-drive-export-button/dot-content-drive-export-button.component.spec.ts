@@ -765,5 +765,25 @@ describe('DotContentDriveExportButtonComponent', () => {
                 expect(getDownloadLink).not.toHaveBeenCalled();
             });
         });
+
+        describe('on empty', () => {
+            it('should show the nothing-to-export toast and download nothing (#37900 T095)', async () => {
+                exportService.export.mockReturnValue(of(EMPTY_RESULT));
+                selectedItemsSignal.set([selectedFolder('/locked/')]);
+                await render();
+
+                spectator.click(exportButton() as HTMLElement);
+
+                expect(messageServiceSpy.add).toHaveBeenCalledTimes(1);
+                expect(messageServiceSpy.add).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        severity: 'warn',
+                        summary: 'There is nothing to export',
+                        life: WARNING_MESSAGE_LIFE
+                    })
+                );
+                expect(getDownloadLink).not.toHaveBeenCalled();
+            });
+        });
     });
 });

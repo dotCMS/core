@@ -20,6 +20,8 @@ import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.rest.api.v1.drive.export.DriveExportRequestForm;
+import com.dotcms.rest.api.v1.drive.export.ExportContentletRefForm;
+import com.dotcms.rest.api.v1.drive.export.ExportSelectionForm;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -31,6 +33,7 @@ import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
 import com.dotmarketing.util.ImportUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.io.StringReader;
@@ -41,6 +44,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
@@ -122,6 +127,43 @@ public class ContentDriveExportRoundTripTest extends IntegrationTestBase {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         ((StreamingOutput) response.getEntity()).write(out);
         return out.toString(StandardCharsets.UTF_8);
+    }
+
+    /**
+     * The CSV of the Drive's selection-mode zip for {@code /rt/}, the site-root contentlet and the
+     * System Host contentlet; all three are of one type, so the zip holds one entry.
+     */
+    private static String selectionCsv() throws Exception {
+        final HttpServletRequest request = new MockAttributeRequest(
+                new MockHttpRequestIntegrationTest("localhost", "/api/v1/drive/export").request())
+                .request();
+        request.setAttribute(WebKeys.USER, adminUser);
+        final DriveExportRequestForm form = DriveExportRequestForm.builder()
+                .siteId(site.getIdentifier())
+                .selection(ExportSelectionForm.builder()
+                        .addFolders("//" + site.getHostname() + folder.getPath())
+                        .addContentlets(ExportContentletRefForm.builder()
+                                .identifier(atSiteRoot.getIdentifier())
+                                .languageId(atSiteRoot.getLanguageId()).build())
+                        .addContentlets(ExportContentletRefForm.builder()
+                                .identifier(inSystemHost.getIdentifier())
+                                .languageId(inSystemHost.getLanguageId()).build())
+                        .build())
+                .build();
+
+        final Response response = new ContentDriveResource().export(request,
+                mock(HttpServletResponse.class), form);
+        assertEquals(200, response.getStatus());
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ((StreamingOutput) response.getEntity()).write(out);
+        final List<String> csvs = new ArrayList<>();
+        try (ZipInputStream zip = new ZipInputStream(new ByteArrayInputStream(out.toByteArray()))) {
+            for (ZipEntry entry = zip.getNextEntry(); entry != null; entry = zip.getNextEntry()) {
+                csvs.add(new String(zip.readAllBytes(), StandardCharsets.UTF_8));
+            }
+        }
+        assertEquals("one type, one CSV", 1, csvs.size());
+        return csvs.get(0);
     }
 
     /** Content Search's export of the same contentlets. */
@@ -238,9 +280,15 @@ public class ContentDriveExportRoundTripTest extends IntegrationTestBase {
      */
     @Test
     public void test_exportedCsv_importsBackInPlace() throws Exception {
+        // Titles are read now, not assumed: the other round-trip test edits them too
+        final Map<Contentlet, String> expectedTitles = new LinkedHashMap<>();
+        final Map<String, String> newTitles = new HashMap<>();
+        for (final Contentlet contentlet : List.of(inFolder, atSiteRoot, inSystemHost)) {
+            final String title = working(contentlet).getStringProperty("title");
+            expectedTitles.put(contentlet, title + " edited");
+            newTitles.put(title, title + " edited");
+        }
         final String exported = driveCsv();
-        final Map<String, String> newTitles = Map.of("rt-folder", "rt-folder edited",
-                "rt-root", "rt-root edited", "rt-system", "rt-system edited");
         final String edited = withTitlesChanged(exported, newTitles);
         assertEquals("fixture: the three rows are exported and edited", 3,
                 rowsByKey(edited).values().stream()
@@ -250,10 +298,6 @@ public class ContentDriveExportRoundTripTest extends IntegrationTestBase {
 
         assertEquals("row errors: " + results.get("errors"), 0, results.get("errors").size());
 
-        final Map<Contentlet, String> expectedTitles = new LinkedHashMap<>();
-        expectedTitles.put(inFolder, "rt-folder edited");
-        expectedTitles.put(atSiteRoot, "rt-root edited");
-        expectedTitles.put(inSystemHost, "rt-system edited");
         for (final Map.Entry<Contentlet, String> entry : expectedTitles.entrySet()) {
             final Contentlet before = entry.getKey();
             final Contentlet after = working(before);
@@ -293,6 +337,33 @@ public class ContentDriveExportRoundTripTest extends IntegrationTestBase {
             driveRow.remove(LOCATION);
             contentSearchRow.remove(LOCATION);
             assertEquals(key, contentSearchRow, driveRow);
+        }
+    }
+    /**
+     * Method to test: {@link ContentDriveResource#export} in selection mode, then
+     *                 {@link ImportUtil#importFile}
+     * Given Scenario: The CSV of the zip from selecting {@code /rt/}, the site-root contentlet and
+     *                 the System Host contentlet, with each title changed, imported back
+     * ExpectedResult: No row errors, the new titles, and every contentlet in its host and folder
+     * (SC-003, SC-004)
+     */
+    @Test
+    public void test_selectionZipCsv_importsBackInPlace() throws Exception {
+        final Map<String, String> newTitles = new HashMap<>();
+        for (final Contentlet contentlet : List.of(inFolder, atSiteRoot, inSystemHost)) {
+            final String title = working(contentlet).getStringProperty("title");
+            newTitles.put(title, title + " via selection");
+        }
+        final String edited = withTitlesChanged(selectionCsv(), newTitles);
+
+        final Map<String, List<String>> results = importCsv(edited);
+
+        assertEquals("row errors: " + results.get("errors"), 0, results.get("errors").size());
+        for (final Contentlet before : List.of(inFolder, atSiteRoot, inSystemHost)) {
+            final Contentlet after = working(before);
+            assertTrue(after.getStringProperty("title").endsWith(" via selection"));
+            assertEquals(before.getHost(), after.getHost());
+            assertEquals(before.getFolder(), after.getFolder());
         }
     }
 }

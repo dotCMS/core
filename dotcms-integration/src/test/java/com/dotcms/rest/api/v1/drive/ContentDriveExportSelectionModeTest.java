@@ -27,6 +27,7 @@ import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.rest.api.v1.drive.export.ContentDriveExportHelper;
 import com.dotcms.rest.api.v1.drive.export.DriveExportRequestForm;
 import com.dotcms.rest.api.v1.drive.export.ExportContentletRefForm;
 import com.dotcms.rest.api.v1.drive.export.ExportFileBuilder;
@@ -34,12 +35,18 @@ import com.dotcms.rest.api.v1.drive.export.ExportFileNames;
 import com.dotcms.rest.api.v1.drive.export.ExportSelectionForm;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import io.vavr.control.Try;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.ByteArrayOutputStream;
@@ -126,6 +133,15 @@ public class ContentDriveExportSelectionModeTest extends IntegrationTestBase {
     private static Contentlet blogInFormFolder;
     private static Folder otherSiteFolder;
 
+    // Limits and outcomes (Phase 10)
+    private static Folder fiveRowsFolder;
+    private static Folder sixRowsFolder;
+    /** Holds 61 contentlets: more rows than selection entries allow, as one entry. */
+    private static Folder largeFolder;
+    /** Readable as a folder by {@link #folderReader}, whose content they cannot read. */
+    private static Folder lockedContentFolder;
+    private static User folderReader;
+
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
@@ -202,6 +218,39 @@ public class ContentDriveExportSelectionModeTest extends IntegrationTestBase {
         blogInFormFolder = entryIn(blog, formFolder, "beside the form");
 
         otherSiteFolder = new FolderDataGen().site(otherSite).name("elsewhere").nextPersisted();
+
+        fiveRowsFolder = folderWith("five", 5);
+        sixRowsFolder = folderWith("six", 6);
+        largeFolder = folderWith("large", 61);
+
+        // READ on the site and on the folder itself, which its content does not inherit
+        lockedContentFolder = folderWith("locked", 2);
+        final Role folderReaderRole = new RoleDataGen().nextPersisted();
+        folderReader = new UserDataGen().roles(folderReaderRole,
+                APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        for (final Permissionable permissionable : List.of(site, lockedContentFolder)) {
+            APILocator.getPermissionAPI().save(new Permission(permissionable.getPermissionId(),
+                    folderReaderRole.getId(), PermissionAPI.PERMISSION_READ), permissionable,
+                    APILocator.systemUser(), false);
+        }
+        assertTrue("Fixture error: the folder reader must read the folder",
+                APILocator.getPermissionAPI().doesUserHavePermission(lockedContentFolder,
+                        PermissionAPI.PERMISSION_READ, folderReader, false));
+        assertTrue("Fixture error: the folder reader must read none of its content",
+                APILocator.getContentletAPI().findContentletsByFolder(lockedContentFolder,
+                        APILocator.systemUser(), false).stream()
+                        .noneMatch(contentlet -> Try.of(() -> APILocator.getPermissionAPI()
+                                .doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ,
+                                        folderReader, false)).get()));
+    }
+
+    /** A folder at the site root holding {@code rows} Blog contentlets. */
+    private static Folder folderWith(final String name, final int rows) {
+        final Folder folder = new FolderDataGen().site(site).name(name).nextPersisted();
+        for (int i = 0; i < rows; i++) {
+            entryIn(blog, folder, name + " " + i);
+        }
+        return folder;
     }
 
     private static Contentlet entryIn(final ContentType type, final Folder folder,
@@ -675,6 +724,67 @@ public class ContentDriveExportSelectionModeTest extends IntegrationTestBase {
                     .writeValueAsString(response.getEntity()));
         }
         assertEquals("identical bodies", 1, bodies.size());
+        final Set<Path> added = new HashSet<>(exportDirectoryFiles());
+        added.removeAll(before);
+        assertEquals("no temp file is left", Set.of(), added);
+    }
+    // ---------------------------------------------------------------------------------------------
+    // limits and outcomes in selection mode (Phase 10)
+    // ---------------------------------------------------------------------------------------------
+
+    /**
+     * Method to test: {@link ContentDriveResource#export}
+     * Given Scenario: {@code CONTENT_DRIVE_EXPORT_MAX_ROWS} set to 5; a folder with 6 readable
+     *                 rows, then one with 5
+     * ExpectedResult: 400 with the limit message, then 200 with 5 rows (FR-010)
+     */
+    @Test
+    public void test_folderRows_countTowardTheRowLimit() throws Exception {
+        final int previous = Config.getIntProperty(ContentDriveExportHelper.MAX_ROWS_KEY,
+                ContentDriveExportHelper.MAX_ROWS_DEFAULT);
+        Config.setProperty(ContentDriveExportHelper.MAX_ROWS_KEY, 5);
+        try {
+            final Set<Path> before = exportDirectoryFiles();
+            final Response over = export(folderSelection(List.of(pathOf(sixRowsFolder))));
+            assertEquals(400, over.getStatus());
+            assertEquals(ContentDriveExportHelper.overLimitMessage(5), errorMessage(over));
+            final Set<Path> added = new HashSet<>(exportDirectoryFiles());
+            added.removeAll(before);
+            assertEquals("no temp file is left", Set.of(), added);
+
+            final Response atLimit = export(folderSelection(List.of(pathOf(fiveRowsFolder))));
+            assertEquals("5", header(atLimit, "X-Export-Contentlets"));
+        } finally {
+            Config.setProperty(ContentDriveExportHelper.MAX_ROWS_KEY, previous);
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentDriveResource#export}
+     * Given Scenario: One folder holding 61 contentlets
+     * ExpectedResult: 200 with 61 rows: the folder is one selected item, not 61 (FR-004a)
+     */
+    @Test
+    public void test_largeFolder_countsAsOneSelectedItem() throws Exception {
+        final Response response = export(folderSelection(List.of(pathOf(largeFolder))));
+
+        assertEquals(200, response.getStatus());
+        assertEquals("61", header(response, "X-Export-Contentlets"));
+    }
+
+    /**
+     * Method to test: {@link ContentDriveResource#export}
+     * Given Scenario: A user who can read a folder but none of its content selects it
+     * ExpectedResult: 204, and no file left (FR-027, FR-032)
+     */
+    @Test
+    public void test_readableFolderWithNothingReadable_isNoContent() throws Exception {
+        final Set<Path> before = exportDirectoryFiles();
+
+        final Response response =
+                export(folderSelection(List.of(pathOf(lockedContentFolder))), folderReader);
+
+        assertEquals(204, response.getStatus());
         final Set<Path> added = new HashSet<>(exportDirectoryFiles());
         added.removeAll(before);
         assertEquals("no temp file is left", Set.of(), added);
