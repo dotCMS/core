@@ -55,7 +55,7 @@ This is a **Model Context Protocol (MCP) server** for dotCMS, built with [xmcp](
 
 ### Core Architecture
 
-**Framework**: xmcp auto-discovers tools from `src/tools/`. Each tool exports `schema`, `metadata`, and a default handler function.
+**Framework**: xmcp auto-discovers tools from `src/tools/`. Each tool exports `schema`, `metadata`, and a default handler function. `src/skills/` is served through the MCP Skills extension (`io.modelcontextprotocol/skills`): the files are embedded at build time and read back as `skill://` resources. The one skill today is `dot-ui-vtl-migration`, vendored from `dotCMS/agent-toolkit` (see `scripts/skill-upstream.json`). `scripts/check-skill-drift.mjs` fails the build when that copy drifts.
 
 **Entry Point**: xmcp generates the entry point at build time (`dist/stdio.js`).
 

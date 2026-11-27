@@ -439,6 +439,8 @@ The built server works with both `node` and `bun` — the correct sandbox is sel
 ```
 apps/mcp-server/                  # MCP server (thin xmcp host)
 ├── src/
+│   ├── skills/                   # Agent skills served over the MCP Skills extension
+│   │   └── dot-ui-vtl-migration/ # Vendored from dotCMS/agent-toolkit; see scripts/skill-upstream.json
 │   ├── tools/                    # One 3-line file per tool — xmcp loads every module here
 │   │   ├── search.ts
 │   │   ├── execute.ts

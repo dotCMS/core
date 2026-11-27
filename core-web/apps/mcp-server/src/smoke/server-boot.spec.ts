@@ -1,7 +1,9 @@
 import { vi } from 'vitest';
+import { parse as parseYaml } from 'yaml';
 
 import { execSync, spawn } from 'node:child_process';
-import { existsSync, readdirSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { basename, join, sep } from 'node:path';
 
 /**
@@ -241,4 +243,153 @@ describe('mcp-server boot smoke test', () => {
         expect(packed).toContain('package.json');
         expect(packed).toContain('README.md');
     });
+
+    it('serves the VTL migration skill and nothing that belongs to the core checkout', async () => {
+        const skillFile = join(__dirname, '..', 'skills', 'dot-ui-vtl-migration', 'SKILL.md');
+        const frontmatter = parseYaml(
+            readFileSync(skillFile, 'utf8').match(/^---\r?\n([\s\S]*?)\r?\n---/)?.[1] ?? ''
+        ) as { name: string; description: string };
+
+        const listed = await speak(
+            [
+                {
+                    jsonrpc: '2.0',
+                    id: 1,
+                    method: 'initialize',
+                    params: {
+                        protocolVersion: '2025-06-18',
+                        capabilities: {
+                            extensions: { 'io.modelcontextprotocol/skills': {} }
+                        },
+                        clientInfo: { name: 'boot-smoke-test', version: '0' }
+                    }
+                },
+                { jsonrpc: '2.0', method: 'notifications/initialized' },
+                { jsonrpc: '2.0', id: 2, method: 'skills/list' }
+            ],
+            2
+        );
+        expect({ exitCode: listed.exitCode, stderr: listed.stderr }).toEqual({
+            exitCode: null,
+            stderr: ''
+        });
+
+        const initialize = listed.responses.find((response) => response.id === 1);
+        expect(initialize?.error).toBeUndefined();
+        const capabilities = initialize?.result?.capabilities as
+            | {
+                  resources?: unknown;
+                  extensions?: Record<string, unknown>;
+              }
+            | undefined;
+        expect(capabilities?.extensions?.['io.modelcontextprotocol/skills']).toBeDefined();
+        expect(capabilities?.resources).toBeDefined();
+
+        const skills = (
+            listed.responses.find((response) => response.id === 2)?.result as
+                | { skills?: SkillEntry[]; nextCursor?: string }
+                | undefined
+        )?.skills;
+        expect(listed.responses.find((response) => response.id === 2)?.error).toBeUndefined();
+        // One skill, so a cursor would mean the test did not see the whole catalog.
+        expect(
+            (
+                listed.responses.find((response) => response.id === 2)?.result as {
+                    nextCursor?: string;
+                }
+            )?.nextCursor
+        ).toBeUndefined();
+
+        const skill = skills?.find(
+            (entry) => entry.uri === 'skill://dot-ui-vtl-migration/SKILL.md'
+        );
+        expect(skill?.frontmatter.name).toBe(frontmatter.name);
+        expect(skill?.frontmatter.description).toBe(frontmatter.description);
+        expect(skill?.frontmatter.name).toBe('dot-ui-vtl-migration');
+
+        const manifest = skill?.resources;
+        expect(Array.isArray(manifest)).toBe(true);
+        const uris = (manifest ?? []).map((entry) => entry.uri).sort();
+        expect(uris).toEqual([
+            'skill://dot-ui-vtl-migration/SKILL.md',
+            'skill://dot-ui-vtl-migration/reference/instance-migration.md',
+            'skill://dot-ui-vtl-migration/reference/migration-guide.md',
+            'skill://dot-ui-vtl-migration/scripts/vtl_migration.py'
+        ]);
+
+        const reads = await speak(
+            [
+                {
+                    jsonrpc: '2.0',
+                    id: 1,
+                    method: 'initialize',
+                    params: {
+                        protocolVersion: '2025-06-18',
+                        capabilities: {},
+                        clientInfo: { name: 'boot-smoke-test', version: '0' }
+                    }
+                },
+                { jsonrpc: '2.0', method: 'notifications/initialized' },
+                ...(manifest ?? []).map((entry, index) => ({
+                    jsonrpc: '2.0',
+                    id: index + 2,
+                    method: 'resources/read',
+                    params: { uri: entry.uri }
+                }))
+            ],
+            1 + (manifest ?? []).length
+        );
+        expect({ exitCode: reads.exitCode, stderr: reads.stderr }).toEqual({
+            exitCode: null,
+            stderr: ''
+        });
+
+        for (const [index, entry] of (manifest ?? []).entries()) {
+            const response = reads.responses.find((item) => item.id === index + 2);
+            expect(response?.error, entry.uri).toBeUndefined();
+            const content = (
+                response?.result as
+                    | { contents?: Array<{ text?: string; blob?: string }> }
+                    | undefined
+            )?.contents?.[0];
+            const bytes =
+                typeof content?.text === 'string'
+                    ? Buffer.from(content.text, 'utf8')
+                    : Buffer.from(content?.blob ?? '', 'base64');
+            expect(`sha256:${createHash('sha256').update(bytes).digest('hex')}`, entry.uri).toBe(
+                entry.digest
+            );
+            expect(bytes.byteLength, entry.uri).toBe(entry.size);
+
+            const text = bytes.toString('utf8');
+            for (const forbidden of FORBIDDEN_IN_SERVED_SKILL) {
+                expect(text, `${entry.uri} references ${forbidden.label}`).not.toMatch(
+                    forbidden.pattern
+                );
+            }
+        }
+    });
 });
+
+interface SkillEntry {
+    uri: string;
+    frontmatter: { name: string; description: string };
+    resources: Array<{ uri: string; digest: string; size: number }>;
+}
+
+/**
+ * Markers of the core-checkout skill (uv, a token, REST, a path into this repo).
+ * The MCP-driven copy must not carry them. `uv` is a whole word so it does not
+ * match inside an identifier.
+ */
+const FORBIDDEN_IN_SERVED_SKILL: Array<{ label: string; pattern: RegExp }> = [
+    { label: 'uv', pattern: /(?<![A-Za-z0-9_])uv(?![A-Za-z0-9_])/ },
+    { label: 'DOTCMS_TOKEN', pattern: /DOTCMS_TOKEN/ },
+    { label: 'BASE_URL', pattern: /BASE_URL/ },
+    { label: 'REST basic auth', pattern: /Authorization['":\s]*Basic\b|HTTPBasicAuth/i },
+    {
+        label: 'a core-local path',
+        pattern:
+            /\.claude\/skills|core-web\/|dotCMS\/src|dotCMS\/core|migrate_custom_fields|apps\/mcp-server\//
+    }
+];

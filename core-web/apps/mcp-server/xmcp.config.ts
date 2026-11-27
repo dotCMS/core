@@ -15,10 +15,7 @@ function withAliases(
     extra: Record<string, string>
 ): Record<string, unknown> | Array<Record<string, unknown>> {
     if (Array.isArray(existing)) {
-        return [
-            ...existing,
-            ...Object.entries(extra).map(([name, alias]) => ({ name, alias }))
-        ];
+        return [...existing, ...Object.entries(extra).map(([name, alias]) => ({ name, alias }))];
     }
 
     const record =
@@ -42,12 +39,10 @@ const config: XmcpConfig = {
     paths: {
         tools: './src/tools',
         prompts: false,
-        // Resource modules stay off. Skill files, added later, are resources
-        // the skills extension registers on its own.
+        // Resource modules stay off. Skill files are resources the skills
+        // extension registers on its own, which is what declares `resources`.
         resources: false,
-        // 1.10+ serves `src/skills/` by default. Keep that off until a skill
-        // directory is actually part of this server.
-        skills: false
+        skills: './src/skills'
     },
     bundler: (rspackConfig) => {
         // The published entry stays `dist/apps/mcp-server/stdio.js`. xmcp 1.x
@@ -70,8 +65,7 @@ const config: XmcpConfig = {
         );
         rspackConfig.plugins.push(
             new BannerPlugin({
-                banner:
-                    '#!/usr/bin/env node\nif(process.env.DOTENV_CONFIG_QUIET==null)process.env.DOTENV_CONFIG_QUIET="true";',
+                banner: '#!/usr/bin/env node\nif(process.env.DOTENV_CONFIG_QUIET==null)process.env.DOTENV_CONFIG_QUIET="true";',
                 raw: true,
                 include: /^stdio\.js$/
             })
