@@ -234,6 +234,49 @@ describe('DotRelationshipFieldComponent', () => {
         spectator.detectChanges();
     };
 
+    describe('re-initialisation from the contentlet (R5, #38724)', () => {
+        beforeEach(() => {
+            setup();
+            expect(storeMock.initialize).toHaveBeenCalledTimes(1);
+        });
+
+        it('should keep the unsaved relationship edits when only the lock state changes', () => {
+            // Lock / Unlock / Release Lock replace the contentlet with the same values plus
+            // new lock fields (lock.feature.ts). Re-initialising here would restore the saved
+            // relationships over whatever the user added or removed.
+            spectator.setInput('contentlet', {
+                ...spectator.component.$contentlet(),
+                locked: true,
+                lockedBy: 'other-user',
+                lockedByName: 'Other User',
+                lockedOn: '2026-11-25T10:00:00Z'
+            });
+            spectator.detectChanges();
+
+            expect(storeMock.initialize).toHaveBeenCalledTimes(1);
+        });
+
+        it('should re-initialise when another version of the content is loaded', () => {
+            spectator.setInput('contentlet', {
+                ...spectator.component.$contentlet(),
+                inode: 'another-inode'
+            });
+            spectator.detectChanges();
+
+            expect(storeMock.initialize).toHaveBeenCalledTimes(2);
+        });
+
+        it('should re-initialise when the server changed the relationship on the same version', () => {
+            spectator.setInput('contentlet', {
+                ...spectator.component.$contentlet(),
+                [FIELD_MOCK.variable]: [buildItem({ identifier: 'related-by-the-server' })]
+            });
+            spectator.detectChanges();
+
+            expect(storeMock.initialize).toHaveBeenCalledTimes(2);
+        });
+    });
+
     describe('Locales column', () => {
         beforeEach(() => setup());
 

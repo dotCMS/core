@@ -291,6 +291,90 @@ describe('LockFeature', () => {
             });
         });
 
+        describe('isReadOnly (R4, #38724)', () => {
+            const ACTION = { id: 'publish', name: 'Publish' };
+
+            /** A saved item the backend answered `canLock: false` and an empty action list for. */
+            const readOnlyState = () => {
+                // The onInit hook re-checks `_canlock` on every contentlet change.
+                dotContentletService.canLock.mockReturnValue(
+                    of({ canLock: false, locked: false } as DotContentletCanLock)
+                );
+                store.updateCurrentUser({ userId: '456' });
+                patchState(store, {
+                    contentlet: { inode: 'inode-1', locked: false } as DotCMSContentlet,
+                    initialContentletState: 'existing',
+                    canLock: false,
+                    currentContentActions: {}
+                });
+            };
+
+            it('should be true when the user cannot lock and has no workflow actions', () => {
+                readOnlyState();
+
+                expect(store.isReadOnly()).toBe(true);
+            });
+
+            it('should be false until the backend has answered the canLock check', () => {
+                readOnlyState();
+                patchState(store, { canLock: null });
+
+                expect(store.isReadOnly()).toBe(false);
+            });
+
+            it('should be false when the user has workflow actions to run', () => {
+                readOnlyState();
+                patchState(store, { currentContentActions: { scheme: [ACTION] } as any });
+
+                expect(store.isReadOnly()).toBe(false);
+            });
+
+            it('should be true when the content is locked by another user', () => {
+                // `_canlock` and the action list answer the same for a READ-only user and an
+                // EDIT user blocked by someone else's lock: canLock false, no actions. Neither
+                // can save, so both get the disabled form (#38724 review).
+                readOnlyState();
+                store.updateContent({
+                    inode: 'inode-1',
+                    locked: true,
+                    lockedBy: { userId: '123', firstName: 'John', lastName: 'Doe' }
+                } as unknown as DotCMSContentlet);
+
+                expect(store.isReadOnly()).toBe(true);
+            });
+
+            it('should be false for new content', () => {
+                readOnlyState();
+                patchState(store, { initialContentletState: 'new' });
+
+                expect(store.isReadOnly()).toBe(false);
+            });
+        });
+
+        describe('isPermissionsSettled (no enabled-then-disabled flash, #38724 R4)', () => {
+            it('should be false for an existing content until the backend answered _canlock', () => {
+                dotContentletService.canLock.mockReturnValue(
+                    of({ canLock: false, locked: false } as DotContentletCanLock)
+                );
+                patchState(store, {
+                    contentlet: { inode: 'inode-1', identifier: 'id-1' } as DotCMSContentlet,
+                    canLock: null
+                });
+
+                expect(store.isPermissionsSettled()).toBe(false);
+
+                patchState(store, { canLock: false });
+
+                expect(store.isPermissionsSettled()).toBe(true);
+            });
+
+            it('should be true for new content, which has no lock to check', () => {
+                patchState(store, { contentlet: null, canLock: null });
+
+                expect(store.isPermissionsSettled()).toBe(true);
+            });
+        });
+
         describe('lockedByName', () => {
             it('should return the locker name when locked by another user', () => {
                 store.updateCurrentUser({ userId: '456' });
@@ -574,6 +658,23 @@ describe('LockFeature', () => {
 
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalled();
                 expect(store.canLock()).toBe(false);
+            }));
+
+            it('should ignore a reply that arrives after another contentlet replaced the one it asked about (#38724 review)', fakeAsync(() => {
+                // Item A's slow `_canlock` must not settle item B's permission.
+                const reply = new Subject<DotContentletCanLock>();
+                dotContentletService.canLock.mockReturnValue(reply);
+                patchState(store, { contentlet: { inode: 'inode-a' } as DotCMSContentlet });
+                store.checkCanLock();
+
+                patchState(store, {
+                    contentlet: { inode: 'inode-b' } as DotCMSContentlet,
+                    canLock: null
+                });
+                reply.next({ canLock: true, locked: false } as DotContentletCanLock);
+                tick();
+
+                expect(store.canLock()).toBeNull();
             }));
 
             it('should set canLock to false when no contentlet exists', fakeAsync(() => {

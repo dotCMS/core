@@ -14,8 +14,12 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { DialogService } from 'primeng/dynamicdialog';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
+
+import { defaultIfEmpty } from 'rxjs/operators';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotWysiwygTinymceService } from './service/dot-wysiwyg-tinymce.service';
 
@@ -25,7 +29,7 @@ import { DotWysiwygPluginService } from '../../dot-wysiwyg-plugin/dot-wysiwyg-pl
 
 @Component({
     selector: 'dot-wysiwyg-tinymce',
-    imports: [EditorComponent, ReactiveFormsModule],
+    imports: [DotMessagePipe, EditorComponent, ProgressSpinnerModule, ReactiveFormsModule],
     templateUrl: './dot-wysiwyg-tinymce.component.html',
     styleUrl: './dot-wysiwyg-tinymce.component.scss',
     viewProviders: [
@@ -63,6 +67,13 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
     $isFocused = signal(false);
 
     /**
+     * Whether TinyMCE has finished initialising (`onInit`). Until then — while the
+     * system-wide config loads and while TinyMCE builds its iframe — the field shows a
+     * loading overlay in the editor's place, so the form neither jumps nor looks broken.
+     */
+    $isEditorReady = signal(false);
+
+    /**
      * A computed property that retrieves and parses custom TinyMCE properties that comes from
      * Field Variable with the name `tinymceprops`
      *
@@ -75,9 +86,24 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
     });
 
     /**
-     * Represents a signal that contains the wide configuration properties for the TinyMCE WYSIWYG editor.
+     * System-wide TinyMCE configuration served by `/api/vtl/tinymceprops` (`get.vtl`).
+     * `undefined` while the request is in flight; `null` when it failed (no `get.vtl`,
+     * no scripting permission, server error), which the service maps for us, and also when
+     * the request completes without a value (cancelled), so the editor never waits forever.
      */
-    $wideConfig = toSignal<RawEditorOptions>(this.#dotWysiwygTinymceService.getProps());
+    $wideConfig = toSignal<RawEditorOptions | null>(
+        this.#dotWysiwygTinymceService.getProps().pipe(defaultIfEmpty(null))
+    );
+
+    /**
+     * Whether the system-wide configuration request has settled (answered or failed).
+     *
+     * `<editor>` reads `init` once, when it calls `tinymce.init()`, and never again, so it
+     * must not exist before the system-wide config is known: creating it earlier silently
+     * drops `get.vtl` whenever TinyMCE is already loaded (every in-app navigation and most
+     * full reloads). A failed request still settles, so the editor always opens.
+     */
+    $configReady = computed(() => this.$wideConfig() !== undefined);
 
     /**
      * A computed property that generates the configuration object for the TinyMCE editor.
@@ -103,6 +129,10 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
             // editor unnamed.
             iframe_aria_text: this.$field()?.name,
             iframe_attrs: { title: this.$field()?.name },
+            // TinyMCE 6 shows an "Upgrade" promotion in the toolbar by default. Not in
+            // dotCMS: forced off after the spreads so no system-wide or field config can
+            // turn it back on.
+            promotion: false,
             setup: (editor) => {
                 this.#dotWysiwygPluginService.initializePlugins(editor);
             }
@@ -132,6 +162,7 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
      */
     handleEditorInit(event: { editor: Editor }): void {
         this.#editor = event.editor;
+        this.$isEditorReady.set(true);
         this.#editor.on('focus', () => this.$isFocused.set(true));
         this.#editor.on('blur', () => this.$isFocused.set(false));
     }

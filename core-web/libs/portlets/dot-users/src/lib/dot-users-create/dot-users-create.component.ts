@@ -20,6 +20,7 @@ import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import {
@@ -135,9 +136,22 @@ export class DotUsersCreateComponent {
     readonly #config = inject<DynamicDialogConfig<DialogData>>(DynamicDialogConfig);
     readonly #fb = inject(FormBuilder);
     readonly #store = inject(DotUsersCreateStore);
+    readonly #globalStore = inject(GlobalStore);
 
     readonly user = this.#config.data?.user ?? null;
     readonly isEdit = !!this.user;
+
+    /**
+     * True while this dialog is editing the account of whoever is signed
+     * in. Null until `GlobalStore` resolves the logged user, so this
+     * reads false on the first render and flips once it lands.
+     */
+    protected readonly $isOwnAccount = computed(
+        () =>
+            this.isEdit &&
+            !!this.user?.userId &&
+            this.user.userId === this.#globalStore.loggedUser()?.userId
+    );
 
     /**
      * Template-visible alias so `<dot-users-roles-tab [excludedRoleKeys]>`
@@ -379,6 +393,22 @@ export class DotUsersCreateComponent {
                 untracked(() => this.#dialogRef.close());
             }
         });
+
+        // PUT /v1/users refuses to deactivate the caller's own account
+        // (#38730), and this dialog closes the moment Save is clicked —
+        // the request is sent by the list store afterwards, so a refusal
+        // surfaces as a toast on a screen that no longer holds the form,
+        // discarding every other edit that was typed. Taking the toggle
+        // away for your own account keeps that request from being made.
+        // The server guard stays: this is a convenience, not the rule.
+        effect(() => {
+            const control = this.form.controls.account.controls.active;
+            if (this.$isOwnAccount()) {
+                control.disable({ emitEvent: false });
+            } else {
+                control.enable({ emitEvent: false });
+            }
+        });
     }
 
     protected close(): void {
@@ -557,7 +587,8 @@ export class DotUsersCreateComponent {
      * user never opened the Roles tab.
      *
      * Password and additionalInfo are omitted when empty so the
-     * backend keeps their existing values.
+     * backend keeps their existing values, and `active` is omitted on an
+     * edit the Active toggle was not part of, for the same reason.
      */
     private buildSavePayload(): {
         payload: DotUserFormPayload;
@@ -581,9 +612,18 @@ export class DotUsersCreateComponent {
         const payload: DotUserFormPayload = {
             firstName: account.firstName.trim(),
             lastName: account.lastName.trim(),
-            email: account.email.trim(),
-            active: account.active
+            email: account.email.trim()
         };
+
+        // The backend reads an absent `active` as "leave the status as
+        // it is" (#38730), so on an edit we send it only when the toggle
+        // was actually moved. Otherwise a dialog opened before another
+        // administrator deactivated this user would put them back on the
+        // next unrelated save. `patchValue` on load does not mark a
+        // control dirty, so `dirty` here means the user moved it.
+        if (!this.isEdit || this.form.controls.account.controls.active.dirty) {
+            payload.active = account.active;
+        }
 
         if (this.user?.userId) {
             payload.userId = this.user.userId;

@@ -39,7 +39,14 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { ComponentStatus, DotCMSWorkflowAction, DotLanguage } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    DotCMSContentlet,
+    DotCMSWorkflowAction,
+    DotContentletCanLock,
+    DotCurrentUser,
+    DotLanguage
+} from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 import {
@@ -750,6 +757,99 @@ describe('EditContentLayoutComponent', () => {
                 tick();
             }));
 
+            it('should show the no-edit-permission message when the content is read-only (R4, #38724)', fakeAsync(() => {
+                // READ without EDIT: `_canlock` answers false and the EDITING action list is
+                // empty. The store is patched (not spied) so the OnPush template re-renders.
+                spectator
+                    .inject(DotContentletService, true)
+                    .canLock.mockReturnValue(
+                        of({ canLock: false, locked: false } as DotContentletCanLock)
+                    );
+                workflowActionsService.getByInode.mockReturnValue(of([]));
+                // The information, activities and history hooks also react to the contentlet.
+                const emptyPage = {
+                    entity: [],
+                    pagination: null,
+                    errors: [],
+                    i18nMessagesMap: {},
+                    messages: [],
+                    permissions: []
+                };
+                dotEditContentService.getReferencePages.mockReturnValue(of(0));
+                dotEditContentService.getActivities.mockReturnValue(of([]));
+                dotEditContentService.getVersions.mockReturnValue(of(emptyPage));
+                dotEditContentService.getPushPublishHistory.mockReturnValue(of(emptyPage));
+                patchState(unprotected(store), {
+                    contentlet: MOCK_CONTENTLET_1_TAB,
+                    initialContentletState: 'existing',
+                    canLock: false,
+                    currentContentActions: {}
+                });
+                spectator.detectChanges();
+                tick();
+                spectator.detectChanges();
+
+                const message = spectator.query(byTestId('edit-content-layout__read-only-message'));
+
+                expect(message).toBeTruthy();
+                // DotMessageService is mocked to echo the key.
+                expect(message).toContainText('edit.content.no.edit.permission');
+            }));
+
+            it('should show only the lock banner when another user holds the lock (#38724 review)', fakeAsync(() => {
+                // canLock false + no actions is also what an EDIT user blocked by someone
+                // else's lock gets. The form is read-only either way; the lock banner names
+                // the reason, so the no-edit-permission message is not added on top.
+                spectator
+                    .inject(DotContentletService, true)
+                    .canLock.mockReturnValue(
+                        of({ canLock: false, locked: true } as DotContentletCanLock)
+                    );
+                workflowActionsService.getByInode.mockReturnValue(of([]));
+                const emptyPage = {
+                    entity: [],
+                    pagination: null,
+                    errors: [],
+                    i18nMessagesMap: {},
+                    messages: [],
+                    permissions: []
+                };
+                dotEditContentService.getReferencePages.mockReturnValue(of(0));
+                dotEditContentService.getActivities.mockReturnValue(of([]));
+                dotEditContentService.getVersions.mockReturnValue(of(emptyPage));
+                dotEditContentService.getPushPublishHistory.mockReturnValue(of(emptyPage));
+                patchState(unprotected(store), {
+                    currentUser: { userId: 'viewer' } as DotCurrentUser,
+                    contentlet: {
+                        ...MOCK_CONTENTLET_1_TAB,
+                        locked: true,
+                        lockedBy: { userId: 'someone-else', firstName: 'Ann', lastName: 'Lee' }
+                    } as unknown as DotCMSContentlet,
+                    initialContentletState: 'existing',
+                    canLock: false,
+                    currentContentActions: {}
+                });
+                spectator.detectChanges();
+                tick();
+                spectator.detectChanges();
+
+                expect(store.isReadOnly()).toBe(true);
+                expect(spectator.query(byTestId('edit-content-layout__lock-warning'))).toBeTruthy();
+                expect(
+                    spectator.query(byTestId('edit-content-layout__read-only-message'))
+                ).toBeNull();
+            }));
+
+            it('should not show the no-edit-permission message when the content is editable', fakeAsync(() => {
+                // New content is never read-only.
+                spectator.detectChanges();
+                tick();
+
+                expect(
+                    spectator.query(byTestId('edit-content-layout__read-only-message'))
+                ).toBeNull();
+            }));
+
             it('should show lock warning message when lockWarningMessage signal returns a message', fakeAsync(() => {
                 // Verify the store's lockWarningMessage is used in the template by checking
                 // that the component renders the topBar when lockWarningMessage returns a value.
@@ -1299,10 +1399,103 @@ describe.each([
             spectator.detectChanges();
 
             expect(loading()).not.toBeNull();
+            // The same spinner the side-panel drawer shows while this component's chunk loads,
+            // in the same place, so opening the panel reads as one continuous loading.
+            expect(loading()?.querySelector('p-progressspinner')).not.toBeNull();
 
             loadContentlet();
 
             expect(loading()).toBeNull();
+        });
+
+        it('should keep the loading screen until the lock permission is known (#38724 R4)', () => {
+            // On a slow network the form used to render enabled and flip to disabled when
+            // _canlock answered; the spinner now holds until the answer is in.
+            const canLock$ = new Subject<DotContentletCanLock>();
+            spectator.inject(DotContentletService, true).canLock.mockReturnValue(canLock$);
+            patchState(unprotected(store), {
+                contentlet: MOCK_CONTENTLET_1_TAB,
+                contentType: CONTENT_TYPE_MOCK,
+                state: ComponentStatus.LOADED,
+                canLock: null
+            });
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('edit-content-layout__loading'))).not.toBeNull();
+            expect(spectator.query(byTestId('edit-content-layout__body'))).toBeNull();
+
+            canLock$.next({ canLock: false, locked: false } as DotContentletCanLock);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('edit-content-layout__loading'))).toBeNull();
+            expect(spectator.query(byTestId('edit-content-layout__body'))).not.toBeNull();
+        });
+
+        it('should keep the form mounted while the permission is re-checked after a save (#38724)', () => {
+            // The dialog's first save patches the saved contentlet straight to LOADED (no
+            // reload, no overlay): the brand-new content had no inode to check, so canLock is
+            // still null and only now gets checked. The editor on screen must stay mounted —
+            // dropping to the first-load spinner remounts the sidebar on its first tab.
+            const canLock$ = new Subject<DotContentletCanLock>();
+            spectator.inject(DotContentletService, true).canLock.mockReturnValue(canLock$);
+            patchState(unprotected(store), {
+                contentlet: null,
+                contentType: CONTENT_TYPE_MOCK,
+                state: ComponentStatus.LOADED,
+                canLock: null
+            });
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('edit-content-layout__body'))).not.toBeNull();
+
+            // Saved: the contentlet now has an identifier, its lock not yet checked.
+            patchState(unprotected(store), { contentlet: MOCK_CONTENTLET_1_TAB });
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('edit-content-layout__loading'))).toBeNull();
+            expect(spectator.query(byTestId('edit-content-layout__body'))).not.toBeNull();
+
+            canLock$.next({ canLock: true, locked: false } as DotContentletCanLock);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('edit-content-layout__body'))).not.toBeNull();
+        });
+
+        it('should keep the form mounted under the reload overlay while the permission re-settles (#38724)', () => {
+            // After a save in the dialog (or an in-place reload) the content re-initialises and
+            // forgets canLock. The previous form must stay under the overlay until the answer is
+            // in — dropping to the first-load spinner unmounts the sidebar and resets its tab.
+            const canLock$ = new Subject<DotContentletCanLock>();
+            spectator.inject(DotContentletService, true).canLock.mockReturnValue(canLock$);
+            loadContentlet();
+            patchState(unprotected(store), { canLock: true });
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('edit-content-layout__body'))).not.toBeNull();
+
+            // Reload starts: stale-while-revalidate keeps the form, arms the overlay.
+            patchState(unprotected(store), { state: ComponentStatus.LOADING, canLock: null });
+            spectator.detectChanges();
+            expect(
+                spectator.query(byTestId('edit-content-layout__reloading-overlay'))
+            ).not.toBeNull();
+
+            // Content loaded, permission still unknown.
+            patchState(unprotected(store), {
+                state: ComponentStatus.LOADED,
+                contentlet: { ...MOCK_CONTENTLET_1_TAB, inode: 'new-inode' }
+            });
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('edit-content-layout__loading'))).toBeNull();
+            expect(spectator.query(byTestId('edit-content-layout__body'))).not.toBeNull();
+            expect(
+                spectator.query(byTestId('edit-content-layout__reloading-overlay'))
+            ).not.toBeNull();
+
+            canLock$.next({ canLock: true, locked: false } as DotContentletCanLock);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('edit-content-layout__reloading-overlay'))).toBeNull();
+            expect(spectator.query(byTestId('edit-content-layout__body'))).not.toBeNull();
         });
 
         it('should refresh after the sidebar component is destroyed and recreated', fakeAsync(() => {

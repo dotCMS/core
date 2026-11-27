@@ -318,6 +318,23 @@ describe('ContentFeature', () => {
         }));
     });
 
+    describe('isFullyLoaded', () => {
+        it('should stay false while the lock permission of an existing content is unknown', () => {
+            patchState(store, {
+                state: ComponentStatus.LOADED,
+                contentlet: { inode: 'inode-1', identifier: 'id-1' } as DotCMSContentlet,
+                uiState: { ...store.uiState(), isSidebarOpen: false },
+                canLock: null
+            });
+
+            expect(store.isFullyLoaded()).toBe(false);
+
+            patchState(store, { canLock: true });
+
+            expect(store.isFullyLoaded()).toBe(true);
+        });
+    });
+
     describe('initializeNewContent', () => {
         beforeEach(() => {
             contentTypeService.getContentTypeWithRender.mockReturnValue(of(CONTENT_TYPE_MOCK));
@@ -417,6 +434,47 @@ describe('ContentFeature', () => {
             expect(store.contentType()).toEqual(CONTENT_TYPE_MOCK);
             expect(store.currentContentActions()).toEqual(parseCurrentActions(mockActions));
             expect(store.state()).toBe(ComponentStatus.LOADED);
+        }));
+
+        it('should forget the previous lock permission when the new content lands', fakeAsync(() => {
+            // Otherwise the new item renders with the previous item's permission until its
+            // own _canlock answers (#38724 R4).
+            patchState(store, { canLock: true });
+
+            store.initializeExistingContent({ inode: '123' });
+            tick();
+
+            expect(store.contentlet()).toEqual(mockContentlet);
+            expect(store.canLock()).toBeNull();
+        }));
+
+        it('should keep the previous lock permission while the new content is loading', fakeAsync(() => {
+            // The previous item is still the one on screen until the new one lands.
+            dotEditContentService.getContentById.mockReturnValue(NEVER);
+            patchState(store, { canLock: true });
+
+            store.initializeExistingContent({ inode: '123' });
+
+            expect(store.canLock()).toBe(true);
+            tick();
+        }));
+
+        it('should keep the permission settled when an in-place reload fails (#38724 review)', fakeAsync(() => {
+            // The previous contentlet stays, so its lock is never re-checked: resetting
+            // canLock here left `isPermissionsSettled` false and the loader spinning forever.
+            dotEditContentService.getContentById.mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 500 }))
+            );
+            patchState(store, {
+                contentlet: { inode: 'previous', identifier: 'previous-id' } as DotCMSContentlet,
+                canLock: true
+            });
+
+            store.initializeExistingContent({ inode: '123' });
+            tick();
+
+            expect(store.state()).toBe(ComponentStatus.ERROR);
+            expect(store.canLock()).toBe(true);
         }));
 
         it('should reset hiddenFields immediately when initializing existing content', fakeAsync(() => {

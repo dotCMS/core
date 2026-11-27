@@ -16,6 +16,7 @@ import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { MessageModule } from 'primeng/message';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ToastModule } from 'primeng/toast';
 
 import {
@@ -66,6 +67,7 @@ import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-
         ButtonModule,
         ToastModule,
         MessageModule,
+        ProgressSpinnerModule,
         DynamicDialogModule,
         DotEditContentFormComponent,
         DotEditContentSidebarComponent,
@@ -145,6 +147,17 @@ export class DotEditContentLayoutComponent {
      * in-place reloads; the initial load is unchanged.
      */
     readonly #reloadWait = signal(false);
+
+    /**
+     * Whether the editor has been rendered at least once. The "hold the loading screen
+     * until `_canlock` has answered" rule (#38724 R4) is for the FIRST load only, so the
+     * form never shows enabled and then flips to read-only; once something is on screen the
+     * editor stays mounted while the permission is re-checked — after the first save in the
+     * dialog (the saved contentlet lands directly in LOADED, no reload), or after an in-place
+     * reload (under its overlay). Unmounting would flash the spinner and reset the sidebar tab.
+     */
+    readonly #editorShown = signal(false);
+    protected readonly $editorShown = this.#editorShown.asReadonly();
 
     /** Whether the in-place reload overlay should be shown. */
     readonly $showReloadOverlay = computed(() => this.#reloadWait());
@@ -248,6 +261,13 @@ export class DotEditContentLayoutComponent {
                 untracked(() => this.#reloadWait.set(true));
             } else if (this.$store.isFullyLoaded()) {
                 untracked(() => this.#reloadWait.set(false));
+            }
+        });
+
+        // Latch once the editor has rendered with its permission known (see `#editorShown`).
+        effect(() => {
+            if (this.$store.isLoaded() && this.$store.isPermissionsSettled()) {
+                untracked(() => this.#editorShown.set(true));
             }
         });
 

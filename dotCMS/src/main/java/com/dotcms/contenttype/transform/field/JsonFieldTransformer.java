@@ -6,6 +6,7 @@ import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableCategoryField;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableRelationshipField;
+import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.contenttype.transform.JsonTransformer;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -21,10 +22,13 @@ import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 
+import com.fasterxml.jackson.databind.exc.InvalidTypeIdException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * This transformer is in charge of taking a JSON string and transforming it into a {@link Field}
@@ -52,45 +56,36 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
   }
 
   public JsonFieldTransformer(String json) {
+    // Decide by the first character instead of trying the array form and falling back to the
+    // object form on ANY failure: that fallback re-parsed an array as an object, so the real
+    // error (for instance an unknown field class) was replaced by
+    // "A JSONObject text must begin with '{'".
     List<Field> l = new ArrayList<>();
-    // are we an array?
     try {
-      JSONArray jarr = new JSONArray(json);
-      if (!jarr.isEmpty()) {
-        JSONObject jo = jarr.getJSONObject(0);
-        if (jo.has("fields")) {
-          l = fromJsonArray(jo.getJSONArray("fields"));
-        } else {
-          l = fromJsonArrayStr(json);
+      if (json != null && json.trim().startsWith("[")) {
+        JSONArray jarr = new JSONArray(json);
+        if (!jarr.isEmpty()) {
+          JSONObject jo = jarr.getJSONObject(0);
+          if (jo.has("fields")) {
+            l = fromJsonArray(jo.getJSONArray("fields"));
+          } else {
+            l = fromJsonArray(jarr);
+          }
         }
-      }
-    } catch (Exception e) {
-      try {
+      } else {
         final JSONObject fieldJsonObject = new JSONObject(json);
         if (fieldJsonObject.has("fields")) {
           l = fromJsonArray(fieldJsonObject.getJSONArray("fields"));
         } else {
           l.add(fromJsonStr(json));
         }
-      } catch (Exception ex) {
-        throw new DotStateException(ex);
       }
+    } catch (final DotStateException e) {
+      throw e;
+    } catch (final Exception e) {
+      throw new DotStateException(e);
     }
     this.list = ImmutableList.copyOf(l);
-  }
-
-    /**
-     * Takes a String containing an array of field data, and generates a list of expected
-     * {@link Field} objects.
-     *
-     * @param json The raw JSON string containing the array of field data.
-     *
-     * @return A {@link List} of {@link Field} objects.
-     *
-     * @throws DotStateException An error occurred while parsing the JSON string.
-     */
-  private List<Field> fromJsonArrayStr(final String json) throws JSONException {
-    return fromJsonArray(new JSONArray(json));
   }
 
     /**
@@ -124,8 +119,10 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
      * @throws DotStateException An error occurred while parsing the JSON string.
      */
   private Field fromJsonStr(final String input) throws DotStateException {
+    String clazz = null;
     try {
       final JSONObject jsonObject = new JSONObject(input);
+      clazz = jsonObject.optString("clazz", null);
       if (jsonObject.has(CATEGORIES_PROPERTY_NAME)){
           final JSONObject categories = (JSONObject) jsonObject.get(CATEGORIES_PROPERTY_NAME);
           jsonObject.put(VALUES, categories.get("inode"));
@@ -143,9 +140,30 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
         field.constructFieldVariables(vars);
       }
       return field;
+    } catch (final InvalidTypeIdException e) {
+      final String typeId = UtilMethods.isSet(clazz) ? clazz : e.getTypeId();
+      throw new DotStateException(UtilMethods.isSet(typeId)
+              ? unknownFieldClassMessage(typeId) : MISSING_FIELD_CLASS_MESSAGE, e);
     } catch (final Exception e) {
       throw new DotStateException(e);
     }
+  }
+
+  /** The message for field JSON without a `clazz`, instead of "Unknown field class 'null'". */
+  static final String MISSING_FIELD_CLASS_MESSAGE = "Field JSON needs a 'clazz': a field type name "
+          + "such as TEXT, or a class name such as 'TextField'.";
+
+  /**
+   * The message for a `clazz` that is not a field class: names the value and lists the accepted
+   * field type names, instead of the parser's type-resolution error.
+   */
+  static String unknownFieldClassMessage(final String clazz) {
+    final String types = Arrays.stream(LegacyFieldTypes.values())
+            .map(Enum::name)
+            .collect(Collectors.joining(", "));
+    return String.format("Unknown field class '%s'. Use a field type name (%s), a class name such as "
+            + "'TextField', or a fully qualified Immutable field class. Numbers are stored in a TEXT "
+            + "field with dataType INTEGER or FLOAT.", clazz, types);
   }
 
   @Override
@@ -278,8 +296,18 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
     private void processRelationshipField(Field field, Map<String, Object> fieldMap)
             throws DotDataException, DotSecurityException {
 
-        String cardinality = fieldMap.remove(VALUES).toString();
-        String relationType = fieldMap.remove("relationType").toString();
+        final Object cardinalityValue = fieldMap.remove(VALUES);
+        final Object relationTypeValue = fieldMap.remove("relationType");
+        if (!UtilMethods.isSet(cardinalityValue) || !UtilMethods.isSet(relationTypeValue)) {
+            throw new DotStateException(String.format(
+                    "Relationship field '%s' needs 'relationType' (the related Content Type "
+                            + "variable, e.g. \"Author\") and 'values' (the cardinality: \"0\" one-to-many, "
+                            + "\"1\" many-to-many, \"2\" one-to-one, \"3\" many-to-one). Alternatively send "
+                            + "'relationships': {\"velocityVar\": ..., \"cardinality\": ...}.",
+                    field.name()));
+        }
+        final String cardinality = cardinalityValue.toString();
+        final String relationType = relationTypeValue.toString();
 
         Map<String, Object> relationshipMap = new HashMap<>();
         relationshipMap.put(CARDINALITY_PROPERTY_NAME, Integer.parseInt(cardinality));
