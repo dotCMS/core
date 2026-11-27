@@ -1,0 +1,25 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        # Angular 22 needs Node ^22.22.3 or ^24.15; the runtime in the manifest is nodejs24.x
+        - nvm install 24
+        - nvm use 24
+        - node -v
+        - npm ci
+    build:
+      commands:
+        # Console environment variables reach the build, not the compute runtime.
+        # Write the ones the server needs to .env; the post-build script bundles it
+        # next to the compute entry. The auth token ends up inside the deploy
+        # artifact: use a read-only token (see the README).
+        - env | grep -E '^(DOTCMS_|NG_ALLOWED_HOSTS)' > .env || true
+        - npm run build:amplify
+  artifacts:
+    baseDirectory: .amplify-hosting
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
