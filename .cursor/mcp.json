@@ -15,6 +15,10 @@
         "mcp"
       ],
       "env": {}
+    },
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["chrome-devtools-mcp@1.12.0"]
     }
   }
 }

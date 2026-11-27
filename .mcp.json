@@ -11,6 +11,10 @@
       "command": "npx",
       "args": ["@angular/cli@22.2.5", "mcp"],
       "env": {}
+    },
+    "nx-mcp": {
+      "command": "npx",
+      "args": ["-y", "nx-mcp@0.25.0"]
     }
   }
 }
