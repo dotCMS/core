@@ -5,7 +5,6 @@ import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -45,6 +44,8 @@ public class UpdatePageTemplatePathJob extends DotStatefulJob {
         final JobDataMap jobDataMap = jobContext.getJobDetail().getJobDataMap();
         final String oldHostName = jobDataMap.get("oldHostName").toString();
         final String newHostName = jobDataMap.get("newHostName").toString();
+        final String oldTemplatePath = "//" + oldHostName + Constants.TEMPLATE_FOLDER_PATH;
+        final String newTemplatePath = "//" + newHostName + Constants.TEMPLATE_FOLDER_PATH;
 
         try {
             final List<Map<String, Object>> fields = new DotConnect()
@@ -56,15 +57,15 @@ public class UpdatePageTemplatePathJob extends DotStatefulJob {
                 //Get Contentlets to update, this because we need to remove from cache
                 List<Map<String, Object>> contentlets_list = new DotConnect()
                         .setSQL(String.format(GET_CONTENTLETS_TO_UPDATE,field_contentlet))
-                        .addParam("//"+oldHostName+ Constants.TEMPLATE_FOLDER_PATH+"%")
+                        .addParam(oldTemplatePath + "%")
                         .loadObjectResults();
 
 
                 //UPDATE Fields
                 final DotConnect dc = new DotConnect().setSQL(String.format(UPDATE_QUERY,field_contentlet,field_contentlet,field_contentlet));
-                dc.addParam("//"+oldHostName+ Constants.TEMPLATE_FOLDER_PATH);
-                dc.addParam("//"+newHostName+ Constants.TEMPLATE_FOLDER_PATH);
-                dc.addParam("//"+oldHostName+ Constants.TEMPLATE_FOLDER_PATH+"%");
+                dc.addParam(oldTemplatePath);
+                dc.addParam(newTemplatePath);
+                dc.addParam(oldTemplatePath + "%");
                 dc.loadResult();
 
                 //Flush Cache
@@ -76,7 +77,7 @@ public class UpdatePageTemplatePathJob extends DotStatefulJob {
                 }
                //The following blocks takes care of the json fields
                 if(APILocator.getContentletJsonAPI().isPersistContentAsJson()) {
-                    final Set<Tuple3<String, String, String>> found = findPageContentletToUpdateForJson("//" + oldHostName + Constants.TEMPLATE_FOLDER_PATH, dc);
+                    final Set<Tuple3<String, String, String>> found = findPageContentletToUpdateForJson(oldTemplatePath, dc);
 
                     final Set<String> templates = found.stream().map(Tuple3::_3)
                             .collect(Collectors.toSet());
@@ -84,7 +85,7 @@ public class UpdatePageTemplatePathJob extends DotStatefulJob {
                     for (final String existingTemplate : templates) {
                         try {
                             updateTemplateForJson(
-                                    existingTemplate.replaceAll(oldHostName,newHostName) ,existingTemplate, dc);
+                                    existingTemplate.replace(oldTemplatePath, newTemplatePath), existingTemplate, dc);
                         } catch (Exception e) {
                             Logger.error(UpdatePageTemplatePathJob.class, "", e);
                         }
@@ -112,34 +113,22 @@ public class UpdatePageTemplatePathJob extends DotStatefulJob {
     }
 
     /**
-     * Given a template name we retrieve page info containing (inode, identifier, template)
-     * @param templateName
-     * @param dotConnect
-     * @return
-     * @throws DotDataException
+     * Finds the pages stored as JSON whose file-based template path starts with the given path. The
+     * path is bound as a parameter, so it is matched as data whatever characters the site name holds.
+     *
+     * @param templatePath the start of the template path, such as {@code //old-site/application/templates}
+     * @param dotConnect   the connection to run the query on
+     * @return the matching pages as (inode, identifier, template path)
+     * @throws DotDataException if the query fails
      */
     private Set<Tuple3<String, String, String>> findPageContentletToUpdateForJson(
-            final String templateName, final DotConnect dotConnect)
+            final String templatePath, final DotConnect dotConnect)
             throws DotDataException {
 
-        String select = null;
-        if (DbConnectionFactory.isPostgres()) {
-            select = String
-                    .format("SELECT identifier, inode, contentlet_as_json->'fields'->'template'->>'value' as template FROM contentlet WHERE contentlet_as_json @> '{\"fields\":{\"template\":{\"type\":\"Custom\"}}}' and contentlet_as_json-> 'fields' ->'template'->>'value' LIKE '%s' ",
-                            templateName + "%");
-        }
-        if (DbConnectionFactory.isMsSql()) {
-            select = String
-                    .format("SELECT identifier, inode, JSON_VALUE(contentlet_as_json,'$.fields.template.value') as template FROM contentlet WHERE JSON_VALUE(contentlet_as_json,'$.fields.template.type') = 'Custom' AND JSON_VALUE(contentlet_as_json,'$.fields.template.value') LIKE '%s' ",
-                            templateName + "%");
-        }
-
-        if (null == select) {
-            throw new IllegalStateException(
-                    "Unable to determine what database with json support I am on.");
-        }
-
-        dotConnect.setSQL(select);
+        dotConnect.setSQL("SELECT identifier, inode, contentlet_as_json->'fields'->'template'->>'value' as template "
+                + "FROM contentlet WHERE contentlet_as_json @> '{\"fields\":{\"template\":{\"type\":\"Custom\"}}}' "
+                + "and contentlet_as_json->'fields'->'template'->>'value' LIKE ?");
+        dotConnect.addParam(templatePath + "%");
         return dotConnect.loadObjectResults().stream().map(map ->
                 Tuple.of(map.get("inode").toString(),
                         map.get("identifier").toString(),
@@ -149,34 +138,24 @@ public class UpdatePageTemplatePathJob extends DotStatefulJob {
     }
 
     /**
-     * update the template name for a given old template path
-     * @param newTemplateName
-     * @param oldTemplateName
-     * @param dotConnect
-     * @throws DotDataException
+     * Replaces a file-based template path with a new one in the pages stored as JSON. Both paths are
+     * bound as parameters.
+     *
+     * @param newTemplateName the new template path
+     * @param oldTemplateName the template path to replace
+     * @param dotConnect      the connection to run the update on
+     * @throws DotDataException if the update fails
      */
     private void updateTemplateForJson(
             final String newTemplateName, final String oldTemplateName, final DotConnect dotConnect)
             throws DotDataException {
-        String update = null;
-        if(DbConnectionFactory.isPostgres()) {
-            update = String
-                    .format("UPDATE contentlet SET contentlet_as_json = jsonb_set(contentlet_as_json,'{fields,template}', jsonb '{\"type\":\"Custom\", \"value\":\"%s\" }') WHERE contentlet_as_json @> '{\"fields\":{\"template\":{\"type\":\"Custom\"}}}' and contentlet_as_json-> 'fields' ->'template'->>'value' = '%s' ",
-                            newTemplateName, oldTemplateName);
-        }
-        if(DbConnectionFactory.isMsSql()) {
-            update = String
-                    .format("UPDATE contentlet SET contentlet_as_json = JSON_MODIFY(contentlet_as_json,'$.fields.template.value','%s') WHERE JSON_VALUE(contentlet_as_json,'$.fields.template.type') = 'Custom' AND JSON_VALUE(contentlet_as_json,'$.fields.template.value') = '%s'  ",
-                            newTemplateName, oldTemplateName);
-        }
 
-        if(null == update){
-           throw new IllegalStateException("Unable to determine what database with json support I am on.");
-        }
-
-        Logger.debug(UpdatePageTemplatePathJob.class, update);
-
-        dotConnect.setSQL(update);
+        dotConnect.setSQL("UPDATE contentlet SET contentlet_as_json = jsonb_set(contentlet_as_json, '{fields,template}', "
+                + "jsonb_build_object('type', 'Custom', 'value', ?::text)) "
+                + "WHERE contentlet_as_json @> '{\"fields\":{\"template\":{\"type\":\"Custom\"}}}' "
+                + "and contentlet_as_json->'fields'->'template'->>'value' = ?");
+        dotConnect.addParam(newTemplateName);
+        dotConnect.addParam(oldTemplateName);
         dotConnect.loadResult();
     }
 

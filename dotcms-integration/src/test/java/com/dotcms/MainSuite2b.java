@@ -594,7 +594,6 @@ import org.junit.runners.Suite.SuiteClasses;
         UserServiceFactoryTest.class,
         com.dotmarketing.portlets.contentlet.action.EditContentletActionRetrieveTest.class,
         com.dotmarketing.quartz.job.ContentImportThreadTest.class,
-        com.dotmarketing.portlets.scheduler.action.EditSchedulerActionTest.class,
 })
 
 public class MainSuite2b {

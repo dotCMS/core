@@ -78,6 +78,8 @@ tags:
   name: Publishing
 - description: Content relationship management
   name: Relationships
+- description: Jobs scheduled from the Scheduler portlet
+  name: Scheduler
 - description: "Site management, lifecycle, and configuration endpoints"
   name: Site
 - description: Cache provider management and operations
@@ -17402,6 +17404,102 @@ paths:
       summary: Grant a role to a user
       tags:
       - Roles
+  /v1/scheduler/jobs:
+    post:
+      description: "Schedules a new job in the Scheduler portlet's User Job group.\
+        \ The caller needs the Scheduler portlet. Users who are not CMS Administrators\
+        \ can only schedule a class from the list the Scheduler form offers, and not\
+        \ the content import job (ContentImportThread), whose parameters are file\
+        \ paths on the server. The job runs as the user who saved it."
+      operationId: createSchedulerJob
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SchedulerJobForm"
+        description: The job to schedule
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySchedulerJobView"
+          description: Job scheduled
+        "400":
+          content:
+            application/json: {}
+          description: "A required value is missing, the job name is longer than 72\
+            \ characters, the cron expression longer than 80 or the description longer\
+            \ than 120, or the cron expression, dates or class are not valid"
+        "401":
+          content:
+            application/json: {}
+          description: "Not authenticated as a back-end user, or the user lacks the\
+            \ Scheduler portlet"
+        "403":
+          content:
+            application/json: {}
+          description: "The caller is not a CMS Administrator and chose a class outside\
+            \ the list, or the content import job"
+        "409":
+          content:
+            application/json: {}
+          description: A job with this name already exists
+      summary: Schedule a job
+      tags:
+      - Scheduler
+    put:
+      description: "Saves an existing job in the Scheduler portlet's User Job group\
+        \ with new settings. The job is named in the jobName query parameter, so names\
+        \ with characters a URL path refuses, such as ';', can be updated. The same\
+        \ checks as scheduling a job apply, and the job then runs as the user who\
+        \ saved it."
+      operationId: updateSchedulerJob
+      parameters:
+      - description: The name of the job to update
+        in: query
+        name: jobName
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SchedulerJobForm"
+        description: The job's new settings
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySchedulerJobView"
+          description: Job saved
+        "400":
+          content:
+            application/json: {}
+          description: "A required value is missing, the job name is longer than 72\
+            \ characters, the cron expression longer than 80 or the description longer\
+            \ than 120, or the cron expression, dates or class are not valid"
+        "401":
+          content:
+            application/json: {}
+          description: "Not authenticated as a back-end user, or the user lacks the\
+            \ Scheduler portlet"
+        "403":
+          content:
+            application/json: {}
+          description: "The caller is not a CMS Administrator and chose a class outside\
+            \ the list, or the content import job"
+        "404":
+          content:
+            application/json: {}
+          description: No job with this name in the User Job group
+      summary: Update a scheduled job
+      tags:
+      - Scheduler
   /v1/site:
     get:
       description: "Returns a paginated list of sites that the currently logged-in\
@@ -37581,6 +37679,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntitySchedulerJobView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/SchedulerJobForm"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntitySearchAndReplaceResultView:
       type: object
       properties:
@@ -40024,6 +40145,49 @@ components:
       - cascadeInitiated
       - roleId
       - userId
+    SchedulerJobForm:
+      type: object
+      properties:
+        cronExpression:
+          type: string
+          description: The cron expression that says when the job runs
+          example: 0 0 1 * * ?
+        endDate:
+          type: string
+          description: "The last date and time the job may run, as yyyy-MM-dd HH:mm.\
+            \ It needs a start date and must be later than it and than now."
+          example: 2027-12-01 01:00
+        javaClass:
+          type: string
+          description: "The fully qualified name of the job class to run. Users who\
+            \ are not CMS Administrators can only choose a class from the list the\
+            \ Scheduler form offers, other than the content import job."
+          example: com.dotmarketing.quartz.job.ContentImportThread
+        jobDescription:
+          type: string
+          description: A free-text description of the job
+          example: Imports the product feed
+        jobName:
+          type: string
+          description: "The job's name, unique within the User Job group. When a job\
+            \ is updated, the name in the path is used."
+          example: Nightly import
+        properties:
+          type: object
+          additionalProperties:
+            type: string
+            description: The name and value parameters handed to the job when it runs
+            example: "{\"structure\":\"Product\",\"path\":\"/imports/products.csv\"\
+              }"
+          description: The name and value parameters handed to the job when it runs
+          example:
+            path: /imports/products.csv
+            structure: Product
+        startDate:
+          type: string
+          description: "The first date and time the job may run, as yyyy-MM-dd HH:mm.\
+            \ Leave it out to start now."
+          example: 2026-12-01 01:00
     Scheduling:
       type: object
       properties:

@@ -16,6 +16,7 @@ import org.quartz.JobDetail;
 import org.quartz.JobPersistenceException;
 import org.quartz.ObjectAlreadyExistsException;
 import org.quartz.SchedulerConfigException;
+import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 import org.quartz.core.SchedulingContext;
 import org.quartz.impl.jdbcjobstore.JobStoreCMT;
@@ -32,10 +33,74 @@ import org.quartz.utils.DBConnectionManager;
  */
 public class DotJobStore extends JobStoreCMT {
 
+	/**
+	 * Stores a new job and its trigger in one transaction, so a trigger that cannot be stored (for
+	 * example one whose name is too long) does not leave the job saved without it. The store's managed
+	 * connections run with auto-commit on, which would commit the job before the trigger is written;
+	 * this uses the store's own transaction instead, as Quartz does when it acquires triggers.
+	 *
+	 * @param ctxt       the scheduling context
+	 * @param newJob     the job to store
+	 * @param newTrigger the trigger that fires the job
+	 * @throws ObjectAlreadyExistsException when a job or trigger with the same name and group exists
+	 * @throws JobPersistenceException      when either cannot be stored; nothing is kept
+	 */
 	@Override
-	public void storeJobAndTrigger(SchedulingContext ctxt, JobDetail newJob, Trigger newTrigger) throws ObjectAlreadyExistsException, JobPersistenceException {
-		super.storeJobAndTrigger(ctxt, newJob, newTrigger);
+	public void storeJobAndTrigger(final SchedulingContext ctxt, final JobDetail newJob, final Trigger newTrigger)
+			throws ObjectAlreadyExistsException, JobPersistenceException {
+		if (newJob.isVolatile() && !newTrigger.isVolatile()) {
+			final JobPersistenceException e = new JobPersistenceException(
+					"Cannot associate non-volatile trigger with a volatile job!");
+			e.setErrorCode(SchedulerException.ERR_CLIENT_ERROR);
+			throw e;
+		}
+		executeInNonManagedTXLock(isLockOnInsert() ? LOCK_TRIGGER_ACCESS : null, conn -> {
+			storeJob(conn, ctxt, newJob, false);
+			storeTrigger(conn, ctxt, newTrigger, newJob, false, STATE_WAITING, false, false);
+		});
 	}
+
+	/**
+	 * Saves an existing job with new settings and replaces its trigger, or adds the trigger when the
+	 * job has none, in one transaction. A trigger that cannot be stored (for example one whose cron
+	 * expression is longer than its column) leaves the job as it was instead of keeping the new
+	 * settings with the old schedule. The scheduler is told about the new schedule once the
+	 * transaction commits.
+	 *
+	 * @param job     the job to save, replacing the stored one of the same name and group
+	 * @param trigger the trigger that fires the job; its first fire time must already be computed
+	 * @throws JobPersistenceException when either cannot be stored, or the trigger belongs to another
+	 *                                 job; nothing is kept
+	 */
+	public void replaceJobAndTrigger(final JobDetail job, final Trigger trigger) throws JobPersistenceException {
+		final SchedulingContext ctxt = new SchedulingContext();
+		ctxt.setInstanceId(getInstanceId());
+		executeInNonManagedTXLock(LOCK_TRIGGER_ACCESS, conn -> {
+			storeJob(conn, ctxt, job, true);
+			if (!replaceTrigger(conn, ctxt, trigger.getName(), trigger.getGroup(), trigger)) {
+				storeTrigger(conn, ctxt, trigger, job, false, STATE_WAITING, false, false);
+			}
+			signalSchedulingChangeOnTxCompletion(trigger.getNextFireTime() == null ? 0L : trigger.getNextFireTime().getTime());
+		});
+	}
+
+	/**
+	 * Returns the job store of the running scheduler. Quartz does not expose its job store through
+	 * the {@link org.quartz.Scheduler} interface, so the store records itself when it starts.
+	 *
+	 * @return the job store
+	 * @throws JobPersistenceException when the scheduler has not started its job store
+	 */
+	public static DotJobStore getInstance() throws JobPersistenceException {
+		final DotJobStore store = instance;
+		if (store == null) {
+			throw new JobPersistenceException("The Quartz job store has not been initialized");
+		}
+		return store;
+	}
+
+	// prune: one scheduler per JVM; holds the last initialized store
+	private static volatile DotJobStore instance;
 
 	public static final String TX_DATA_SOURCE_PREFIX = "TxDataSource.";
 
@@ -150,6 +215,7 @@ public class DotJobStore extends JobStoreCMT {
 		}
 
 		super.initialize(loadHelper, signaler);
+		instance = this;
 	}
 
 	protected void closeConnection(final Connection conn) {

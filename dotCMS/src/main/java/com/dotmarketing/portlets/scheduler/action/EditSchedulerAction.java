@@ -7,7 +7,6 @@ import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.scheduler.struts.SchedulerForm;
 import com.dotmarketing.quartz.CronScheduledTask;
@@ -15,15 +14,11 @@ import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.Validator;
-import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
 import com.liferay.util.servlet.SessionMessages;
 import java.net.URLDecoder;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -38,6 +33,18 @@ public class EditSchedulerAction extends DotPortletAction {
 	/** Request attribute with the name of the user a job runs as, shown in the edit form. */
 	static final String SCHEDULED_BY_ATTRIBUTE = "scheduledByUserName";
 
+	/**
+	 * Deletes a job ({@code cmd=delete}) or loads one into the edit form ({@code cmd=edit}), then shows
+	 * the edit form. Saving a job is done by {@link com.dotcms.rest.api.v1.scheduler.SchedulerJobResource}.
+	 *
+	 * @param mapping the Struts mapping
+	 * @param form    the {@link SchedulerForm} naming the job
+	 * @param config  the portlet configuration
+	 * @param req     the request
+	 * @param res     the response
+	 * @throws Exception if the job cannot be read or deleted
+	 */
+	@Override
 	public void processAction(ActionMapping mapping, ActionForm form, PortletConfig config, ActionRequest req, ActionResponse res)
 		throws Exception {
 	
@@ -58,100 +65,10 @@ public class EditSchedulerAction extends DotPortletAction {
 		}
 
 		/*
-		 *  if we are saving, 
-		 *  
+		 * deleting the list, return to listing page. Jobs are saved through
+		 * SchedulerJobResource (/api/v1/scheduler/jobs), not through this action.
 		 */
-		if ((cmd != null) && cmd.equals(Constants.ADD)) {
-			try {
-				
-				SchedulerForm schedulerForm = (SchedulerForm) form;
-				boolean hasErrors = false;
-				
-				if (!UtilMethods.isSet(schedulerForm.getJobName())) {
-					SessionMessages.add(req, "error", "message.Scheduler.invalidJobName");
-					hasErrors = true;
-				} else if (!schedulerForm.isEditMode() && (scheduler != null)) {
-					SessionMessages.add(req, "error", "message.Scheduler.jobAlreadyExists");
-					hasErrors = true;
-				}
-				
-				SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-				
-				Date endDate = null;
-				if (schedulerForm.isHaveEndDate()) {
-					try {
-						endDate = sdf.parse(schedulerForm.getEndDate());
-					} catch (Exception e) {
-					}
-				}
-				
-				if ((endDate != null) && !hasErrors) {
-					Date startDate = null;
-					if (schedulerForm.isHaveStartDate()) {
-						try {
-							startDate = sdf.parse(schedulerForm.getStartDate());
-						} catch (Exception e) {
-						}
-					}
-					
-					if (startDate == null) {
-						SessionMessages.add(req, "error", "message.Scheduler.startDateNeeded");
-						hasErrors = true;
-					} else if (endDate.before(startDate)) {
-						SessionMessages.add(req, "error", "message.Scheduler.endDateBeforeStartDate");
-						hasErrors = true;
-					} else if (endDate.before(new Date())) {
-						SessionMessages.add(req, "error", "message.Scheduler.endDateBeforeActualDate");
-						hasErrors = true;
-					}
-				}
-				
-				if ((!UtilMethods.isSet(schedulerForm.getJavaClass())) && !hasErrors) {
-					SessionMessages.add(req, "error", "message.Scheduler.invalidJavaClass");
-					hasErrors = true;
-				}
-				
-				if (Validator.validate(req,form,mapping) && !hasErrors) {
-			        Logger.debug(this, "I'm Saving the scheduler");
-					if (_saveScheduler(req, res, config, form, user)) {
-						scheduler = _retrieveScheduledJob(req, res, config, form);
-						
-						if (scheduler != null) {
-							_populateForm(form, scheduler);
-							schedulerForm.setMap(withoutScheduledBy(scheduler.getProperties()));
-							setScheduledByAttribute(req, scheduler);
-						}
-						
-						String redirect = req.getParameter("referrer");
-						if (UtilMethods.isSet(redirect)) {
-							redirect = URLDecoder.decode(redirect, "UTF-8") + "&group=" + scheduler.getJobGroup();
-							_sendToReferral(req, res, redirect);
-							return;
-						}
-					} else {
-						SessionMessages.clear(req);
-						SessionMessages.add(req, "error", "message.Scheduler.invalidJobSettings");
-						schedulerForm.setMap(getSchedulerProperties(req, schedulerForm));
-						loadEveryDayForm(form, req);
-					}
-				} else {
-					schedulerForm.setMap(getSchedulerProperties(req, schedulerForm));
-					loadEveryDayForm(form, req);
-				}
-			}
-			catch (Exception ae) {
-				if (!ae.getMessage().equals(WebKeys.UNIQUE_SCHEDULER_EXCEPTION)){
-					SessionMessages.add(req, "error", ae.getMessage());
-					_handleException(ae, req);
-				}
-			}
-		}
-
-		/*
-		 * deleting the list, return to listing page
-		 *  
-		 */
-		else if ((cmd != null) && cmd.equals(Constants.DELETE)) {
+		if ((cmd != null) && cmd.equals(Constants.DELETE)) {
 			try {
 		        Logger.debug(this, "I'm deleting the scheduler");
 				_deleteScheduler(req, res, config, form,user);
@@ -197,67 +114,6 @@ public class EditSchedulerAction extends DotPortletAction {
 		setForward(req, "portlet.ext.scheduler.edit_scheduler");
 	}
 	
-	private void loadEveryDayForm(ActionForm form, ActionRequest req) {
-		String[] everyDay = req.getParameterValues("everyDay");
-		
-		SchedulerForm schedulerForm = (SchedulerForm) form;
-		if (UtilMethods.isSet(everyDay) && schedulerForm.isEveryInfo()) {
-			for (String dayOfWeek: everyDay) {
-				if (dayOfWeek.equals("MON"))
-					schedulerForm.setMonday(true);
-				else if (dayOfWeek.equals("TUE"))
-					schedulerForm.setTuesday(true);
-				else if (dayOfWeek.equals("WED"))
-					schedulerForm.setWednesday(true);
-				else if (dayOfWeek.equals("THU"))
-					schedulerForm.setThusday(true);
-				else if (dayOfWeek.equals("FRI"))
-					schedulerForm.setFriday(true);
-				else if (dayOfWeek.equals("SAT"))
-					schedulerForm.setSaturday(true);
-				else if (dayOfWeek.equals("SUN"))
-					schedulerForm.setSunday(true);
-			}
-			
-			schedulerForm.setEveryInfo(true);
-			schedulerForm.setEvery("isDays");
-		} else {
-			schedulerForm.setEvery("");
-			schedulerForm.setMonday(false);
-			schedulerForm.setTuesday(false);
-			schedulerForm.setWednesday(false);
-			schedulerForm.setThusday(false);
-			schedulerForm.setFriday(false);
-			schedulerForm.setSaturday(false);
-			schedulerForm.setSunday(false);
-		}
-	}
-	
-	private Map<String, String> getSchedulerProperties(ActionRequest req, SchedulerForm schedulerForm) {
-		Map<String, String> properties = new HashMap<>(5);
-		Enumeration<String> propertiesNames = req.getParameterNames();
-
-		if (UtilMethods.isSet(schedulerForm.getMap())) {
-			properties = schedulerForm.getMap();
-		}
-		else {
-			String propertyName;
-			String propertyValue;
-			
-			for (; propertiesNames.hasMoreElements();) {
-				propertyName = propertiesNames.nextElement();
-				if (propertyName.startsWith("propertyName")) {
-					propertyValue = req.getParameter("propertyValue" + propertyName.substring(12));
-					
-					if (UtilMethods.isSet(req.getParameter(propertyName)) && UtilMethods.isSet(propertyValue))
-						properties.put(req.getParameter(propertyName), propertyValue);
-				}
-			}
-		}
-		
-		return properties;
-	}
-	
 	private CronScheduledTask _retrieveScheduledJob(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form) throws Exception {
 		SchedulerForm schedulerForm = (SchedulerForm) form;		
 		try{
@@ -276,188 +132,6 @@ public class EditSchedulerAction extends DotPortletAction {
 		}
 		return null;
 		
-	}
-
-	/**
-	 * Schedules the job described by the form, or updates it when it already exists. The id of the
-	 * user saving it is recorded under {@link ScheduledTask#SCHEDULED_BY_USER_ID}, so jobs that act on
-	 * content run with that user's permissions.
-	 *
-	 * @param req    the request with the job's schedule and parameters
-	 * @param res    the response
-	 * @param config the portlet configuration
-	 * @param form   the {@link SchedulerForm} with the job's name, group, class and parameters
-	 * @param user   the user saving the job
-	 * @return {@code true} once the job is scheduled
-	 * @throws DotRuntimeException if there is no user saving the job, so the job is left as it was
-	 * @throws Exception if the job cannot be scheduled
-	 */
-	public static boolean _saveScheduler(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user) throws Exception {
-		if (user == null) {
-			// Saving without a user would leave the job with nobody to run as
-			throw new DotRuntimeException("The job was not saved because the user saving it could not be identified. Log in again and save it.");
-		}
-		boolean result = false;
-		SchedulerForm schedulerForm = (SchedulerForm) form;
-		
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-		
-		Date startDate = null;
-		if (schedulerForm.isHaveStartDate()) {
-			try {
-				startDate = sdf.parse(schedulerForm.getStartDate());
-			} catch (Exception e) {
-			}
-		}
-		
-		Date endDate = null;
-		if (schedulerForm.isHaveEndDate()) {
-			try {
-				endDate = sdf.parse(schedulerForm.getEndDate());
-			} catch (Exception e) {
-			}
-		}
-		/*
-		String type = req.getParameter("type");
-		
-		boolean schedulerEditable = true;
-		if (req.getParameter("schedulerEditable").equals("false"))
-			schedulerEditable = false;
-		*/
-		Map<String, Object> properties = new HashMap<>(5);
-		Enumeration<String> propertiesNames = req.getParameterNames();
-
-		if (UtilMethods.isSet(schedulerForm.getMap())) {
-			properties = schedulerForm.getMap();
-		}
-		else {
-			String propertyName;
-			String propertyValue;
-			
-			for (; propertiesNames.hasMoreElements();) {
-				propertyName = propertiesNames.nextElement();
-				if (propertyName.startsWith("propertyName")) {
-					propertyValue = req.getParameter("propertyValue" + propertyName.substring(12));
-					
-					if (UtilMethods.isSet(req.getParameter(propertyName)) && UtilMethods.isSet(propertyValue))
-						properties.put(req.getParameter(propertyName), propertyValue);
-				}
-			}
-		}
-		
-		String cronSecondsField = "0";
-		String cronMinutesField = "0";
-		String cronHoursField = "*";
-		String cronDaysOfMonthField = "*";
-		String cronMonthsField = "*";
-		String cronDaysOfWeekField = "?";
-		String cronYearsField = "*";
-
-			if (UtilMethods.isSet(req.getParameter("at")) && req.getParameter("at").equals("isTime")) {
-				String atTime = req.getParameter("atTime");
-				if(UtilMethods.isSet(atTime)){
-					String[] hms =  atTime.split(":");
-					cronSecondsField = hms[2];
-					cronMinutesField = hms[1];
-					cronHoursField = hms[0].replace("T", "");
-					schedulerForm.setAtTimeHour(Integer.valueOf(hms[0].replace("T", "")));
-					schedulerForm.setAtTimeMinute(Integer.valueOf(hms[1]));
-					schedulerForm.setAtTimeSecond(Integer.valueOf(hms[2]));
-				}else{//Git-219 Campaigns
-					if(UtilMethods.isSet(req.getParameter("atTimeSecond")))
-						cronSecondsField = req.getParameter("atTimeSecond");
-					if(UtilMethods.isSet(req.getParameter("atTimeMinute")))
-						cronMinutesField = req.getParameter("atTimeMinute");
-					if(UtilMethods.isSet(req.getParameter("atTimeHour")))
-						cronHoursField = req.getParameter("atTimeHour");
-				}
-			}
-			
-			if (UtilMethods.isSet(req.getParameter("at")) && req.getParameter("at").equals("isBetween")) {
-				//cronSecondsField = req.getParameter("betweenFromSecond") + "-" + req.getParameter("betweenToSecond");
-				//cronMinutesField = req.getParameter("betweenFromMinute") + "-" + req.getParameter("betweenToMinute");
-				cronHoursField = req.getParameter("betweenFromHour") + "-" + req.getParameter("betweenToHour");
-			}
-
-		
-		if (schedulerForm.isEveryInfo()) {
-			if (UtilMethods.isSet(req.getParameter("every")) && req.getParameter("every").equals("isDate")) {
-				cronDaysOfMonthField = req.getParameter("everyDateDay");
-				
-				try {
-					cronMonthsField = "" + (Integer.parseInt(req.getParameter("everyDateMonth")) + 1);
-				} catch (Exception e) {
-//					cronMonthsField = "";
-				}
-				
-				cronYearsField = req.getParameter("everyDateYear");
-			}
-			
-			if (UtilMethods.isSet(req.getParameter("every")) && req.getParameter("every").equals("isDays")) {
-				cronDaysOfMonthField = "?";
-				
-				String[] daysOfWeek = req.getParameterValues("everyDay");
-				
-				cronDaysOfWeekField = "";
-				for(String day: daysOfWeek) {
-					if (cronDaysOfWeekField.length() == 0) {
-						cronDaysOfWeekField = day;
-					} else {
-						cronDaysOfWeekField = cronDaysOfWeekField + "," + day;
-					}
-				}
-			}
-		}
-		
-
-			if (UtilMethods.isSet(req.getParameter("eachHours"))) {
-				try {
-					int eachHours = Integer.parseInt(req.getParameter("eachHours"));
-					cronHoursField = cronHoursField + "/" + eachHours;
-				} catch (Exception e) {
-				}
-			}
-			
-			if (UtilMethods.isSet(req.getParameter("eachMinutes"))) {
-				try {
-					int eachMinutes = Integer.parseInt(req.getParameter("eachMinutes"));
-					cronMinutesField = cronMinutesField + "/" + eachMinutes;
-				} catch (Exception e) {
-				}
-			}
-
-		String cronExpression = "";
-		if(req.getParameter("cronExpression")!=null){
-			cronExpression = req.getParameter("cronExpression");
-		}else{
-			cronExpression =  cronSecondsField + " " + cronMinutesField + " " + cronHoursField + " " + cronDaysOfMonthField + " " + cronMonthsField + " " + cronDaysOfWeekField + " " + cronYearsField;
-		}	
-
-		// Recorded on every save, so the job runs as whoever saved it last; a submitted value is ignored
-		properties.put(ScheduledTask.SCHEDULED_BY_USER_ID, user.getUserId());
-
-		CronScheduledTask job = new CronScheduledTask();
-		job.setJobName(schedulerForm.getJobName());
-		job.setJobGroup(schedulerForm.getJobGroup());
-		job.setJobDescription(schedulerForm.getJobDescription());
-		job.setJavaClassName(schedulerForm.getJavaClass());
-		job.setProperties(properties);
-		job.setStartDate(startDate);
-		job.setEndDate(endDate);
-		job.setCronExpression(cronExpression);
-		
-		try {// DOTCMS - 3897
-			QuartzUtils.scheduleTask(job);
-		} catch (Exception e) {			
-			//e.printStackTrace();
-			Logger.debug(EditSchedulerAction.class, e.getMessage());
-			throw new DotRuntimeException("Error Savining Schedule: " + e, e);
-		
-		}
-		
-		SessionMessages.add(req, "message", "message.Scheduler.saved");
-		
-		return true;
 	}
 
 	/**
