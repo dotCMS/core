@@ -111,6 +111,21 @@ public class Logger {
         }
     }
 
+    /**
+     * Logs a debug message under the logger of the given class. The message is only built when
+     * debug logging is enabled for that class. Without this overload, a {@code Class} argument
+     * would bind to {@link #debug(Object, Supplier)} and the message would be checked against and
+     * written under the logger for {@code java.lang.Class} instead of the given class.
+     *
+     * @param clazz   the class whose logger is used
+     * @param message supplies the message, called only when debug is enabled for {@code clazz}
+     */
+    public static void debug(final Class<?> clazz, final Supplier<String> message) {
+        if (isDebugEnabled(clazz)) {
+            debug(clazz, message.get());
+        }
+    }
+
     public static void debug(final String className, final Supplier<String> message) {
         if (isDebugEnabled(className)) {
             debug(className, message.get());
