@@ -1,1 +1,9 @@
-<!-- Stub: renders nothing until the export button is implemented. -->
+@if ($filterModeVisible()) {
+    <p-button
+        [label]="'content-drive.export.button' | dm"
+        [outlined]="true"
+        [loading]="$exporting()"
+        [disabled]="$filterModeDisabled()"
+        data-testid="content-drive-export-button"
+        (click)="onExport()" />
+}

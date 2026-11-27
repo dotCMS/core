@@ -161,6 +161,9 @@ describe('DotContentDriveExportButtonComponent (filter mode)', () => {
         (getDownloadLink as Mock).mockReturnValue({ click: anchorClick });
         spectator = createComponent();
         exportService = spectator.inject(DotContentDriveExportService);
+        // The mock is shared by every test and clearAllMocks keeps a return value a test set, so
+        // reset it here: otherwise the "while running" Subject leaks into the tests after it.
+        exportService.export.mockReturnValue(of(FILE_RESULT));
         contentTypeService = spectator.inject(DotContentTypeService);
     });
 

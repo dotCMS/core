@@ -38,6 +38,7 @@ import {
     DotUploadButtonComponent
 } from '@dotcms/ui';
 
+import { DotContentDriveExportButtonComponent } from './components/dot-content-drive-export-button/dot-content-drive-export-button.component';
 import { DotContentDriveSearchInputComponent } from './components/dot-content-drive-search-input/dot-content-drive-search-input.component';
 import { DotContentDriveTreeTogglerComponent } from './components/dot-content-drive-tree-toggler/dot-content-drive-tree-toggler.component';
 import { DotContentDriveWorkflowActionsComponent } from './components/dot-content-drive-workflow-actions/dot-content-drive-workflow-actions.component';
@@ -121,6 +122,7 @@ interface ToolbarAnimationState {
         DotMessagePipe,
         DotUploadButtonComponent,
         DotContentDriveTreeTogglerComponent,
+        DotContentDriveExportButtonComponent,
         DotContentTypeFilterChipComponent,
         DotContentDriveSearchInputComponent,
         DotLanguageFilterChipComponent,

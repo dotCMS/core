@@ -113,6 +113,8 @@ tags:
   name: Categories
 - description: Cluster nodes and distributed system management
   name: Cluster Management
+- description: Content Drive browsing and export
+  name: Content Drive
 - description: Content reporting and analytics
   name: Content Report
 - description: Publishing environment management and configuration
@@ -10654,6 +10656,70 @@ paths:
       summary: Save (upsert) the dotAuth configuration for a site
       tags:
       - dotAuth
+  /v1/drive/export:
+    post:
+      description: |-
+        Exports content from Content Drive in the CSV format the Content Search export writes and the content import reads.
+
+        **Filter mode** (no `selection`): send `query`, the same body the Drive listing sends to `/api/v1/drive/search`, filtered to exactly one content type. Every contentlet the listing matches, across all pages, is returned as one CSV. Paging, sorting, `showFolders`, `showLinks` and `live` are ignored.
+
+        **Selection mode** (`selection` with folders or contentlets, at most 60 in all, plus `siteId`): the selected contentlets in their selected language and every contentlet under the selected folders, in every language, as a zip with one CSV per content type.
+
+        Only the working version of each contentlet is exported, and only what the user can read. Forms and sites are never exported. More than `CONTENT_DRIVE_EXPORT_MAX_ROWS` rows (default 100,000) is refused with a 400. The response headers `X-Export-Contentlets` and `X-Export-Files` give the rows and the CSVs written.
+      operationId: postDriveExport
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DriveExportRequestForm"
+        description: "What to export: a listing query (filter mode) or a selection\
+          \ of folders and contentlets"
+        required: true
+      responses:
+        "200":
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+            text/csv:
+              schema:
+                type: string
+                format: binary
+          description: "The export file: one CSV in filter mode, a zip of CSVs in\
+            \ selection mode"
+        "204":
+          description: Nothing readable matched the request; no file
+        "400":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "Error body: errors[0].message holds the reason"
+          description: "Invalid request: nothing to export, not exactly one readable\
+            \ content type, a Form or Host type, too many selected items, an invalid\
+            \ entry, or more rows than the limit"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized access
+        "404":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "Error body: errors[0].message holds the reason"
+          description: The site or a selected folder was not found
+        "500":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "Error body: errors[0].message holds a generic message"
+          description: The export failed
+      summary: Export Content Drive content to CSV
+      tags:
+      - Content Drive
   /v1/ema:
     get:
       operationId: getDetails
@@ -29467,6 +29533,128 @@ components:
           type: string
         thumbnailUrl:
           type: string
+    DriveExportRequestForm:
+      type: object
+      properties:
+        query:
+          $ref: "#/components/schemas/DriveRequestForm"
+        selection:
+          $ref: "#/components/schemas/ExportSelectionForm"
+        siteId:
+          type: string
+    DriveRequestForm:
+      type: object
+      properties:
+        archived:
+          type: boolean
+        assetPath:
+          type: string
+        baseTypes:
+          type: array
+          items:
+            type: string
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+        browseScope:
+          type: string
+          enum:
+          - ALL
+          - ROOT
+          - SYSTEM_HOST
+        contentCursor:
+          type: integer
+          format: int32
+        contentTypes:
+          type: array
+          items:
+            type: string
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+        filters:
+          $ref: "#/components/schemas/QueryFilters"
+        folderCursor:
+          type: integer
+          format: int32
+        includeSystemHost:
+          type: boolean
+        language:
+          type: array
+          items:
+            type: string
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+        linkCursor:
+          type: integer
+          format: int32
+        live:
+          type: boolean
+        maxResults:
+          type: integer
+          format: int32
+        mimeTypes:
+          type: array
+          items:
+            type: string
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+        offset:
+          type: integer
+          format: int32
+        showFolders:
+          type: boolean
+        showLinks:
+          type: boolean
+        sortBy:
+          type: string
+        status:
+          type: array
+          items:
+            type: string
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+        userSearchable:
+          type: object
+          additionalProperties:
+            type: object
+          properties:
+            empty:
+              type: boolean
+        workflow:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkflowFilterForm"
+          properties:
+            empty:
+              type: boolean
+            first:
+              $ref: "#/components/schemas/WorkflowFilterForm"
+            last:
+              $ref: "#/components/schemas/WorkflowFilterForm"
     DropOldVersionsResultView:
       type: object
       properties:
@@ -30040,6 +30228,14 @@ components:
             for the site. Absent when configured.
           enum:
           - analytics_disabled
+    ExportContentletRefForm:
+      type: object
+      properties:
+        identifier:
+          type: string
+        languageId:
+          type: integer
+          format: int64
     ExportSecretForm:
       type: object
       properties:
@@ -30066,6 +30262,31 @@ components:
       - appKeysBySite
       - exportAll
       - password
+    ExportSelectionForm:
+      type: object
+      properties:
+        contentlets:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExportContentletRefForm"
+          properties:
+            empty:
+              type: boolean
+            first:
+              $ref: "#/components/schemas/ExportContentletRefForm"
+            last:
+              $ref: "#/components/schemas/ExportContentletRefForm"
+        folders:
+          type: array
+          items:
+            type: string
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
     ExtraPackagesForm:
       type: object
       properties:
@@ -32196,6 +32417,17 @@ components:
           $ref: "#/components/schemas/EnvironmentDetailView"
         last:
           $ref: "#/components/schemas/EnvironmentDetailView"
+    ImmutableListExportContentletRefForm:
+      type: array
+      items:
+        $ref: "#/components/schemas/ExportContentletRefForm"
+      properties:
+        empty:
+          type: boolean
+        first:
+          $ref: "#/components/schemas/ExportContentletRefForm"
+        last:
+          $ref: "#/components/schemas/ExportContentletRefForm"
     ImmutableListJob:
       type: array
       items:
@@ -32308,6 +32540,17 @@ components:
           $ref: "#/components/schemas/VariantResult"
         last:
           $ref: "#/components/schemas/VariantResult"
+    ImmutableListWorkflowFilterForm:
+      type: array
+      items:
+        $ref: "#/components/schemas/WorkflowFilterForm"
+      properties:
+        empty:
+          type: boolean
+        first:
+          $ref: "#/components/schemas/WorkflowFilterForm"
+        last:
+          $ref: "#/components/schemas/WorkflowFilterForm"
     ImmutableListWorkflowScheme:
       type: array
       description: Workflow schemes associated with the content type
@@ -34496,6 +34739,18 @@ components:
         quantile:
           type: number
           format: double
+    QueryFilters:
+      type: object
+      properties:
+        filterFolders:
+          type: boolean
+        searchScope:
+          type: string
+          enum:
+          - ALL_FIELDS
+          - TITLE
+        text:
+          type: string
     RadioField:
       type: object
       allOf:
@@ -43667,6 +43922,13 @@ components:
           $ref: "#/components/schemas/WorkflowStep"
         scheme:
           $ref: "#/components/schemas/WorkflowScheme"
+    WorkflowFilterForm:
+      type: object
+      properties:
+        scheme:
+          type: string
+        step:
+          type: string
     WorkflowFormEntry:
       type: object
       properties:

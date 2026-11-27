@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.drive;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -30,7 +31,10 @@ import com.dotcms.rest.api.v1.drive.export.ExportFileBuilder;
 import com.dotcms.rest.api.v1.drive.export.ExportFileNames;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -81,6 +85,11 @@ public class ContentDriveExportFilterModeTest extends IntegrationTestBase {
      */
     private static ContentDriveHelper helper;
     private static User systemUser;
+    /**
+     * Calls the endpoint. A REST request never runs as the system user (InteractiveUserPolicy
+     * refuses it), so the export runs as a CMS Administrator, who also reads everything.
+     */
+    private static User adminUser;
     private static User limitedUser;
 
     private static Host site;
@@ -93,6 +102,8 @@ public class ContentDriveExportFilterModeTest extends IntegrationTestBase {
     private static ContentType blog;
     private static ContentType otherType;
     private static ContentType formType;
+    /** A type the limited user cannot read: its only permission is READ for an unrelated role. */
+    private static ContentType unreadableType;
 
     private static Contentlet inFolder;
     private static Contentlet inSubFolder;
@@ -127,6 +138,16 @@ public class ContentDriveExportFilterModeTest extends IntegrationTestBase {
                 .field(new FieldDataGen().defaultValue(null).type(TextField.class).name("title")
                         .velocityVarName("title").next())
                 .nextPersisted();
+        // Content type READ is checked with front-end roles, so a new type inherits a READ any
+        // user passes; an individual permission for another role replaces what it inherits.
+        unreadableType = new ContentTypeDataGen().host(site)
+                .name("Unreadable" + unique).velocityVarName("driveExportUnreadable" + unique)
+                .field(new FieldDataGen().defaultValue(null).type(TextField.class).name("title")
+                        .velocityVarName("title").next())
+                .nextPersisted();
+        APILocator.getPermissionAPI().save(new Permission(unreadableType.getPermissionId(),
+                        new RoleDataGen().nextPersisted().getId(), PermissionAPI.PERMISSION_READ),
+                unreadableType, systemUser, false);
         formType = new ContentTypeDataGen().baseContentType(BaseContentType.FORM).host(site)
                 .name("DriveExportForm" + unique).velocityVarName("driveExportForm" + unique)
                 .nextPersisted();
@@ -146,9 +167,14 @@ public class ContentDriveExportFilterModeTest extends IntegrationTestBase {
         new ContentletDataGen(otherType).host(site).folder(folder).setProperty("title", "other")
                 .nextPersisted();
 
+        adminUser = new UserDataGen().roles(APILocator.getRoleAPI().loadCMSAdminRole(),
+                APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
         // A back-end user (Drive users are) who can read none of this site's content types.
         limitedUser = new UserDataGen().roles(new RoleDataGen().nextPersisted(),
                 APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        assertThrows("Fixture error: the limited user must not be able to read this type",
+                DotSecurityException.class,
+                () -> APILocator.getContentTypeAPI(limitedUser).find(unreadableType.variable()));
     }
 
     private static Contentlet blogEntry(final Folder target, final String title) {
@@ -199,7 +225,7 @@ public class ContentDriveExportFilterModeTest extends IntegrationTestBase {
     }
 
     private static Response export(final DriveRequestForm query) {
-        return export(query, systemUser);
+        return export(query, adminUser);
     }
 
     private static String header(final Response response, final String name) {
@@ -459,7 +485,8 @@ public class ContentDriveExportFilterModeTest extends IntegrationTestBase {
                 .contentTypes(List.of(blog.variable(), otherType.variable())).build()));
         responses.put("unknown type", export(query(sitePath())
                 .contentTypes(List.of("noSuchType" + System.currentTimeMillis())).build()));
-        responses.put("unreadable type", export(query(sitePath()).build(), limitedUser));
+        responses.put("unreadable type", export(query(sitePath())
+                .contentTypes(List.of(unreadableType.variable())).build(), limitedUser));
 
         responses.forEach((label, response) -> {
             assertEquals(label, 400, response.getStatus());

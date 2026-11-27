@@ -73,6 +73,11 @@
                             (click)="menu.toggle($event)"
                             #button />
                     </span>
+
+                    <!-- Filter mode (#37900): exports the listing as a CSV when it is filtered to
+                         one content type. It decides for itself whether to show, so it renders
+                         nothing for any other filter. -->
+                    <dot-content-drive-export-button data-testid="export-button" />
                 }
 
                 @if ($displayActions()) {
