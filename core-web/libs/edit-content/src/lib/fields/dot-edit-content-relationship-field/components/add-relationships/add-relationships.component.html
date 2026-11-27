@@ -7,7 +7,7 @@
      instead of reusing that shell. -->
 <dot-dialog data-testid="add-relationships">
     <dot-dialog-header
-        [title]="'dot.relationship.add.dialog.title' | dm"
+        [title]="$title()"
         [closeLabel]="'dot.relationship.add.dialog.close.aria' | dm"
         data-testid="add-relationships-title"
         (close)="cancel()">
@@ -19,6 +19,7 @@
             type="button"
             [text]="true"
             [rounded]="true"
+            severity="secondary"
             [attr.aria-pressed]="$isFullscreen()"
             [attr.aria-label]="$fullscreenLabel() | dm"
             [pTooltip]="$fullscreenLabel() | dm"
@@ -101,6 +102,7 @@
                         [loading]="store.$isLoading()"
                         [selection]="store.$selectedItems()"
                         [unselectable]="store.$constrainedList()"
+                        [unselectableReasons]="$unselectableReasons()"
                         [totalItems]="store.$totalItems()"
                         [offset]="store.$offset()"
                         [rows]="store.page().limit"

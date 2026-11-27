@@ -54,6 +54,13 @@ describe('DotAssetPickerFullscreenToggleComponent', () => {
         spectator.detectChanges();
     });
 
+    /** Dialog header controls are gray (secondary), never the primary blue. */
+    it('should be gray (secondary)', () => {
+        expect(
+            spectator.query(byTestId('asset-picker-fullscreen-btn'))?.querySelector('button')
+        ).toHaveClass('p-button-secondary');
+    });
+
     it('should ask the store to toggle when clicked', () => {
         clickToggle();
 

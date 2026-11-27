@@ -26,14 +26,17 @@
         (isEnabledNewContentEditor && showBetaMessage) ||
         lockWarningMessage ||
         isReadOnly ||
-        showSelectWorkflowWarning;
+        showSelectWorkflowWarning ||
+        relatingTrail.length >= 2 ||
+        showInvalidMessage;
     <div
-        class="edit-content-layout__topBar flex flex-col [grid-area:topBar]"
+        class="edit-content-layout__topBar flex flex-col divide-y! divide-surface-200! [grid-area:topBar]"
         [class.border-b]="topBarHasMessages"
-        [class.border-gray-300]="topBarHasMessages"
+        [class.border-surface-200]="topBarHasMessages"
         data-testId="edit-content-layout__topBar">
         @if (isEnabledNewContentEditor && showBetaMessage) {
             <p-message
+                [dt]="bannerTokens"
                 [style.animation]="'slideIn 0.15s ease-out'"
                 severity="info"
                 data-testId="edit-content-layout__beta-message">
@@ -78,12 +81,10 @@
              (severity="info") like the sibling banners so it stays theme-aware and
              inherits the top bar's shared banner sizing. -->
         @if (relatingTrail.length >= 2) {
-            @let betaMessageVisible = isEnabledNewContentEditor && showBetaMessage;
             <p-message
+                [dt]="bannerTokens"
                 severity="secondary"
                 class="edit-content-layout__relating-content"
-                [class.border-t]="betaMessageVisible"
-                [class.border-gray-300]="betaMessageVisible"
                 data-testId="edit-content-layout__relating-content">
                 <ng-template #container>
                     <div class="flex w-full items-center gap-3 text-gray-700">
@@ -97,13 +98,13 @@
         }
 
         @if (lockWarningMessage) {
-            <!-- Lock banner styled per the design: amber top/bottom rules (the warn border is
-                 transparent by default), square corners, compact 13.5px text and a bold amber
-                 name. Orange tokens from the design map to the warn palette's yellow primitives
-                 (orange is not in the preset). -->
+            <!-- Lock banner styled per the design: compact 13.5px text and a bold amber name.
+                 Like every top-bar banner it is a flat strip with no outline of its own; the top
+                 bar draws the lines (see the component styles). Orange tokens from the design
+                 map to the warn palette's yellow primitives (orange is not in the preset). -->
             <p-message
+                [dt]="bannerTokens"
                 severity="warn"
-                styleClass="rounded-none! border-x-0! border-y-(--p-yellow-200)!"
                 data-testId="edit-content-layout__lock-warning">
                 <ng-template #container>
                     <div
@@ -124,8 +125,8 @@
              form is disabled, so this one is not added on top. -->
         @if (isReadOnly && !lockWarningMessage) {
             <p-message
+                [dt]="bannerTokens"
                 severity="warn"
-                styleClass="rounded-none! border-x-0! border-y-(--p-yellow-200)!"
                 data-testId="edit-content-layout__read-only-message">
                 <ng-template #container>
                     <div class="flex w-full items-center gap-3 text-(--p-yellow-800)">
@@ -140,6 +141,7 @@
 
         @if (showSelectWorkflowWarning) {
             <p-message
+                [dt]="bannerTokens"
                 [style.animation]="'slideIn 0.15s ease-out'"
                 severity="warn"
                 data-testId="edit-content-layout__select-workflow-warning">
@@ -169,7 +171,10 @@
         }
 
         @if (showInvalidMessage) {
-            <p-message severity="error" data-testId="edit-content-layout__lock-warning">
+            <p-message
+                [dt]="bannerTokens"
+                severity="error"
+                data-testId="edit-content-layout__lock-warning">
                 <ng-template #container>
                     <div class="flex w-full items-center gap-3">
                         <i class="pi pi-times-circle size-4 shrink-0"></i>

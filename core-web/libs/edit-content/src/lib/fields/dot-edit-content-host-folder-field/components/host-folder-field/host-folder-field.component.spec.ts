@@ -1247,4 +1247,54 @@ describe('DotHostFolderFieldComponent', () => {
             vi.useRealTimers();
         });
     });
+
+    /**
+     * The copy action is a small icon-only button with a glyph sized to match, so the InputGroup
+     * keeps the height of the other inputs and the glyph no longer looks too big for its button
+     * (#37958, #38724).
+     */
+    describe('copy button size', () => {
+        beforeEach(() => {
+            const site = TREE_SELECT_SITES_MOCK[0];
+            store.setPendingNode(site);
+            store.commit();
+            spectator.detectChanges();
+        });
+
+        it('should render a small button with a glyph sized to it', () => {
+            const button = spectator.query(byTestId('host-folder-copy'))?.querySelector('button');
+
+            expect(button).toHaveClass('p-button-sm');
+            expect(spectator.query(byTestId('host-folder-copy-icon'))).toHaveClass('text-base!');
+        });
+
+        it('should not size the copy glyph per instance', () => {
+            expect(spectator.query(byTestId('host-folder-copy-icon'))).not.toHaveClass('text-lg');
+        });
+
+        it('should not size the check glyph per instance after copying', () => {
+            vi.useFakeTimers();
+            spectator.component.copyPath();
+            spectator.detectChanges();
+
+            const icon = spectator.query(byTestId('host-folder-copy-icon'));
+
+            expect(icon).toHaveText('check');
+            expect(icon).not.toHaveClass('text-lg');
+            vi.useRealTimers();
+        });
+
+        /**
+         * The copy button is an input-group add-on attached to the field, so the field and its
+         * action read as one control and line up with the other fields' width (#37958).
+         */
+        it('should attach the copy button to the trigger as an input-group add-on', () => {
+            const group = spectator.query(byTestId('host-folder-trigger'))?.parentElement;
+            const addon = spectator.query(byTestId('host-folder-copy'))?.parentElement;
+
+            expect(group?.tagName).toBe('P-INPUTGROUP');
+            expect(addon?.tagName).toBe('P-INPUTGROUP-ADDON');
+            expect(addon?.parentElement).toBe(group);
+        });
+    });
 });

@@ -100,6 +100,21 @@ describe('DotSidePanelComponent', () => {
 
             expect(closeRequested).toHaveBeenCalledTimes(1);
         });
+
+        /**
+         * A full-width line separates the header (title + expand/close) from the content, in the
+         * colour of a tab list's bottom border, at 80% and at full width (#37958).
+         */
+        it('draws a divider under the header', () => {
+            open();
+
+            const header = spectator.query<HTMLElement>('.p-drawer [data-pc-section="header"]', {
+                root: true
+            });
+
+            expect(header).toHaveClass('border-b');
+            expect(header).toHaveClass('border-surface-200');
+        });
     });
 
     describe('Escape', () => {

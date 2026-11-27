@@ -15,6 +15,10 @@
 
     `visible` is always true: the panel is open for as long as it is mounted.
 
+    The header's bottom border is the divider between the panel's title row and its content, in
+    the colour of a tab list's own bottom border. It sits on the drawer's header section, which
+    spans the whole panel, so it runs edge to edge at 80% and at full width.
+
     The header buttons name themselves through PrimeNG's `[ariaLabel]` input, never
     `[attr.aria-label]`: the latter lands on the non-focusable `<p-button>` host, leaving the real
     `<button>` — whose only content is an icon glyph — with no accessible name.
@@ -33,6 +37,7 @@
             class: '!shadow-2xl',
             style: { width: $expanded() ? '100%' : '80%', transition: 'width 250ms ease' }
         },
+        header: { class: 'border-b border-surface-200' },
         content: { class: contentStyleClass() }
     }"
     position="right">

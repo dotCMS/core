@@ -21,7 +21,7 @@ describe('AddRelationshipsFooterComponent (US2)', () => {
 
     const messageServiceMock = new MockDotMessageService({
         'dot.common.dialog.reject': 'Cancel',
-        'dot.relationship.add.dialog.confirm': 'Add Relationships',
+        'dot.relationship.add.dialog.confirm': 'Select',
         'content-drive.field-filter.apply': 'Apply'
     });
 
@@ -100,7 +100,17 @@ describe('AddRelationshipsFooterComponent (US2)', () => {
     it('falls back to its own label when the caller passes none', () => {
         const confirm = spectator.query(byTestId('add-relationships-confirm'));
 
-        expect(confirm?.textContent?.trim()).toBe('Add Relationships');
+        expect(confirm?.textContent?.trim()).toBe('Select');
+    });
+
+    /** Only the confirm action is primary (blue); Cancel is gray (secondary). */
+    it('draws Cancel gray (secondary) and leaves Select primary', () => {
+        const button = (testId: string) =>
+            spectator.query(byTestId(testId))?.querySelector('button');
+
+        expect(button('add-relationships-cancel')).toHaveClass('p-button-secondary');
+        expect(button('add-relationships-cancel')).not.toHaveClass('p-button-primary');
+        expect(button('add-relationships-confirm')).not.toHaveClass('p-button-secondary');
     });
 
     it('emits cancel when the cancel action is pressed', () => {

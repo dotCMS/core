@@ -480,6 +480,7 @@ export class DotRelationshipFieldComponent
             maskStyleClass: 'p-dialog-mask-dynamic p-dialog-relationship-field',
             data: {
                 contentTypeId: contentType.id,
+                contentTypeName: contentType.name,
                 selectionMode: this.store.selectionMode(),
                 // The contentlets, not their ids. The dialog seeds its selection from these and
                 // never rebuilds it from a search response, so an already-related item the search

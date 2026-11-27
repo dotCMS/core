@@ -23,7 +23,7 @@ import { ConfirmationService, ConfirmEventType, MessageService } from 'primeng/a
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
-import { MessageModule } from 'primeng/message';
+import { Message, MessageModule } from 'primeng/message';
 
 import {
     DotContentletService,
@@ -862,6 +862,73 @@ describe('EditContentLayoutComponent', () => {
                 // When lockWarningMessage returns a message, the store value should be used
                 expect(store.lockWarningMessage()).toBe(mockMessage);
             }));
+        });
+    });
+
+    /**
+     * The banners are flat strips and the top bar draws the one line under them, in the tab
+     * list's colour (`surface-200`). A banner's own outline doubled the side panel's header
+     * divider above it and the top bar's line below it (#37958).
+     */
+    describe('Top bar line under the banners (#37958)', () => {
+        const topBar = () => spectator.query(byTestId('edit-content-layout__topBar'));
+
+        beforeEach(fakeAsync(() => {
+            dotContentTypeService.getContentTypeWithRender.mockReturnValue(of(CONTENT_TYPE_MOCK));
+            workflowActionsService.getDefaultActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            store.initializeNewContent('contentTypeName');
+            spectator.detectChanges();
+            tick();
+        }));
+
+        afterEach(() => relatedTrailSignal.set([]));
+
+        it('draws the line in the tab list colour under the beta banner', () => {
+            expect(spectator.query(byTestId('edit-content-layout__beta-message'))).toBeTruthy();
+            expect(topBar()).toHaveClass('border-b');
+            expect(topBar()).toHaveClass('border-surface-200');
+            expect(topBar()).not.toHaveClass('border-gray-300');
+        });
+
+        it('draws the line when only the Relating content banner shows', () => {
+            spectator.component.closeMessage('betaMessage');
+            relatedTrailSignal.set([
+                { inode: 'iA', title: 'TA' },
+                { inode: 'iB', title: 'TB' }
+            ]);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('edit-content-layout__relating-content'))).toBeTruthy();
+            expect(topBar()).toHaveClass('border-b');
+            expect(topBar()).toHaveClass('border-surface-200');
+        });
+
+        it('draws no line when no banner shows', () => {
+            spectator.component.closeMessage('betaMessage');
+            spectator.detectChanges();
+
+            expect(topBar()).not.toHaveClass('border-b');
+        });
+
+        it('separates stacked banners with Tailwind divide, not component CSS', () => {
+            expect(topBar()).toHaveClass('divide-y!');
+            expect(topBar()).toHaveClass('divide-surface-200!');
+        });
+
+        it('flattens every banner through PrimeNG design tokens', () => {
+            relatedTrailSignal.set([
+                { inode: 'iA', title: 'TA' },
+                { inode: 'iB', title: 'TB' }
+            ]);
+            spectator.detectChanges();
+
+            const banners = spectator.queryAll(Message);
+            expect(banners.length).toBe(2);
+            banners.forEach((banner) =>
+                expect(banner.dt()).toEqual({ root: { borderWidth: '0', borderRadius: '0' } })
+            );
         });
     });
 

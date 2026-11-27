@@ -22,6 +22,13 @@ export interface AddRelationshipsInput {
     contentTypeId: string;
 
     /**
+     * The target content type's name, for the dialog title ("Select Activity"). Optional because
+     * the Content Drive filter chip only holds the field, not the target type; without it the
+     * title falls back to "Select Content".
+     */
+    contentTypeName?: string;
+
+    /**
      * The contentlets the field already relates — **the objects, not their ids**.
      *
      * This is the whole reason the dialog can be trusted with server-side paging. The previous

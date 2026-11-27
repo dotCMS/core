@@ -68,7 +68,7 @@ describe('AddRelationshipsStore (US2 — selection)', () => {
 
     beforeEach(() => {
         searchMock.mockReset().mockReturnValue(of(response([item(1), item(2)])));
-        constrainedMock.mockReset().mockReturnValue(of(new Set<string>()));
+        constrainedMock.mockReset().mockReturnValue(of(new Map<string, string>()));
         spectator = createService();
         store = spectator.service;
     });
@@ -247,7 +247,7 @@ describe('AddRelationshipsStore (US2 — selection)', () => {
         });
 
         it('marks what came back as unselectable', () => {
-            constrainedMock.mockReturnValue(of(new Set(['id-1'])));
+            constrainedMock.mockReturnValue(of(new Map([['id-1', '']])));
             store.initialize({ ...baseInput, ...parentContext });
 
             expect(store.$isConstrained()('id-1')).toBe(true);
@@ -277,7 +277,7 @@ describe('AddRelationshipsStore (US2 — selection)', () => {
     describe('content claimed by another parent (FR-008)', () => {
         it('reports a constrained identifier as constrained', () => {
             store.initialize(baseInput);
-            store.setConstrainedIdentifiers(new Set(['id-1']));
+            store.setConstrainedIdentifiers(new Map([['id-1', '']]));
 
             expect(store.$isConstrained()('id-1')).toBe(true);
             expect(store.$isConstrained()('id-2')).toBe(false);
@@ -285,7 +285,7 @@ describe('AddRelationshipsStore (US2 — selection)', () => {
 
         it('refuses to select a constrained item', () => {
             store.initialize(baseInput);
-            store.setConstrainedIdentifiers(new Set(['id-1']));
+            store.setConstrainedIdentifiers(new Map([['id-1', '']]));
             store.toggleSelection(item(1));
 
             expect(store.$isSelected()('id-1')).toBe(false);
@@ -331,7 +331,7 @@ describe('AddRelationshipsStore (US2 — selection)', () => {
         it('never selects a constrained row', () => {
             store.initialize(baseInput);
             store.load();
-            store.setConstrainedIdentifiers(new Set(['id-1']));
+            store.setConstrainedIdentifiers(new Map([['id-1', '']]));
             store.toggleSelectAllVisible(true);
 
             expect(store.$isSelected()('id-1')).toBe(false);
@@ -528,7 +528,7 @@ describe('AddRelationshipsStore (US2 — selection)', () => {
             store.toggleSelection(item(1));
             expect(store.$isSelected()('id-1')).toBe(true);
 
-            store.setConstrainedIdentifiers(new Set(['id-1']));
+            store.setConstrainedIdentifiers(new Map([['id-1', '']]));
 
             expect(store.$isSelected()('id-1')).toBe(false);
         });
@@ -545,7 +545,7 @@ describe('AddRelationshipsStore (US2 — selection)', () => {
             // Deferred on purpose. With a synchronous `of(...)` the set is already populated by the
             // time the row is picked, so `toggleSelection` refuses it and the pruning is never
             // exercised — the first version of this test passed against a broken real path.
-            const claimed = new Subject<Set<string>>();
+            const claimed = new Subject<Map<string, string>>();
             constrainedMock.mockReturnValue(claimed);
 
             store.initialize({
@@ -561,7 +561,7 @@ describe('AddRelationshipsStore (US2 — selection)', () => {
             store.toggleSelection(item(1));
             expect(store.$isSelected()('id-1')).toBe(true);
 
-            claimed.next(new Set(['id-1']));
+            claimed.next(new Map([['id-1', '']]));
 
             expect(store.$isSelected()('id-1')).toBe(false);
         });
@@ -624,7 +624,7 @@ describe('AddRelationshipsStore (US2 — selection)', () => {
             store.toggleSelection(item(1));
             store.toggleSelection(item(2));
 
-            store.setConstrainedIdentifiers(new Set(['id-1']));
+            store.setConstrainedIdentifiers(new Map([['id-1', '']]));
 
             expect(store.$isSelected()('id-1')).toBe(false);
             expect(store.$isSelected()('id-2')).toBe(true);

@@ -32,6 +32,7 @@ import { Paginator, PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { SkeletonModule } from 'primeng/skeleton';
 import { Table, TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { take } from 'rxjs/operators';
 
@@ -128,6 +129,7 @@ let nextListingId = 0;
         PaginatorModule,
         SkeletonModule,
         TableModule,
+        TooltipModule,
         DotLocaleTagPipe,
         NgTemplateOutlet,
         DatePipe
@@ -426,6 +428,19 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * @alias unselectable
      */
     $unselectable = input<string[]>([], { alias: 'unselectable' });
+
+    /**
+     * Why each refused row is refused, keyed like `unselectable`. Optional: a refused row with no
+     * entry shows no reason.
+     *
+     * Shown as the row's tooltip and read out with the row. A greyed-out row with nothing saying
+     * why reads as a fault, and only the caller knows the reason — for the relationship picker,
+     * which other item already holds the child.
+     *
+     * @type {InputSignal<Record<string, string>>}
+     * @alias unselectableReasons
+     */
+    $unselectableReasons = input<Record<string, string>>({}, { alias: 'unselectableReasons' });
 
     /** Refused keys as a set — one lookup per row instead of a scan. */
     protected readonly $unselectableSet = computed(() => new Set(this.$unselectable()));

@@ -101,6 +101,9 @@ import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentLayoutComponent {
+    /** Top-bar banners are flat strips; the top bar draws the lines between and under them. */
+    protected readonly bannerTokens = { root: { borderWidth: '0', borderRadius: '0' } };
+
     /**
      * Controls the visibility of the workflow selection dialog.
      */

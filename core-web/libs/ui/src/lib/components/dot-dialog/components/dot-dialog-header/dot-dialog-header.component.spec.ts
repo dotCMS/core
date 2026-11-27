@@ -46,6 +46,13 @@ describe('DotDialogHeaderComponent', () => {
             expect(spectator.query(byTestId('dialog-close-btn'))).toExist();
         });
 
+        /** Dialog and side-panel header controls are gray (secondary), never the primary blue. */
+        it('should be gray (secondary)', () => {
+            expect(
+                spectator.query(byTestId('dialog-close-btn'))?.querySelector('button')
+            ).toHaveClass('p-button-secondary');
+        });
+
         it('should be dropped when the dialog is not closable', () => {
             spectator.setHostInput({ closable: false });
 

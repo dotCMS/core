@@ -42,11 +42,15 @@ describe('AddRelationshipsComponent — shared surface (US1)', () => {
     let spectator: Spectator<AddRelationshipsComponent>;
 
     const messageServiceMock = new MockDotMessageService({
-        'dot.relationship.add.dialog.title': 'Add Relationships',
+        'dot.relationship.add.dialog.title': 'Select {0}',
+        'dot.asset.picker.header.browse': 'Select Content',
         'dot.relationship.add.dialog.search.placeholder': 'Search by name...',
-        'dot.relationship.add.dialog.confirm': 'Add Relationships',
+        'dot.relationship.add.dialog.confirm': 'Select',
         'dot.common.dialog.reject': 'Cancel',
-        'dot.relationship.add.dialog.empty': 'No content found'
+        'dot.relationship.add.dialog.empty': 'No content found',
+        'dot.file.relationship.dialog.content.already.related':
+            'This content is already related to another item',
+        'dot.file.relationship.dialog.content.already.related.to': 'Already related to {0}'
     });
 
     /**
@@ -139,9 +143,14 @@ describe('AddRelationshipsComponent — shared surface (US1)', () => {
     };
 
     beforeEach(() => {
-        input = { contentTypeId: 'target-type-id', selected: [], selectionMode: 'multiple' };
+        input = {
+            contentTypeId: 'target-type-id',
+            contentTypeName: 'Activity',
+            selected: [],
+            selectionMode: 'multiple'
+        };
         searchMock.mockReset().mockReturnValue(of(emptyResponse));
-        constrainedMock.mockReset().mockReturnValue(of(new Set<string>()));
+        constrainedMock.mockReset().mockReturnValue(of(new Map<string, string>()));
         spectator = createComponent();
         spectator.detectChanges();
     });
@@ -173,9 +182,20 @@ describe('AddRelationshipsComponent — shared surface (US1)', () => {
     });
 
     describe('dialog chrome', () => {
-        it('is titled "Add Relationships"', () => {
-            expect(spectator.query(byTestId('dialog-title'))?.textContent).toContain(
-                'Add Relationships'
+        it('is titled "Select" plus the target content type', () => {
+            expect(spectator.query(byTestId('dialog-title'))?.textContent?.trim()).toBe(
+                'Select Activity'
+            );
+        });
+
+        /** The Content Drive filter chip opens the dialog without knowing the target type. */
+        it('falls back to "Select Content" when no content type name is given', () => {
+            input = { ...input, contentTypeName: undefined };
+            spectator = createComponent();
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('dialog-title'))?.textContent?.trim()).toBe(
+                'Select Content'
             );
         });
 
@@ -188,9 +208,18 @@ describe('AddRelationshipsComponent — shared surface (US1)', () => {
             expect(spectator.query(byTestId('dialog-close-btn'))).toBeTruthy();
         });
 
-        it('offers Cancel and Add Relationships in the footer', () => {
+        /** Dialog header controls are gray (secondary), never the primary blue. */
+        it('draws the full-screen toggle gray (secondary)', () => {
+            expect(
+                spectator.query(byTestId('add-relationships-fullscreen'))?.querySelector('button')
+            ).toHaveClass('p-button-secondary');
+        });
+
+        it('offers Cancel and Select in the footer', () => {
             expect(spectator.query(byTestId('add-relationships-cancel'))).toBeTruthy();
-            expect(spectator.query(byTestId('add-relationships-confirm'))).toBeTruthy();
+            expect(
+                spectator.query(byTestId('add-relationships-confirm'))?.textContent?.trim()
+            ).toBe('Select');
         });
     });
 
@@ -345,7 +374,7 @@ describe('AddRelationshipsComponent — shared surface (US1)', () => {
          * visible.
          */
         it('hands the claimed identifiers to the list as its unselectable rows', () => {
-            constrainedMock.mockReturnValue(of(new Set(['id-1'])));
+            constrainedMock.mockReturnValue(of(new Map([['id-1', '']])));
             input = {
                 ...input,
                 cardinality: 2,
@@ -356,6 +385,35 @@ describe('AddRelationshipsComponent — shared surface (US1)', () => {
             mountWith(withResults);
 
             expect(spectator.query(DotFolderListViewComponent)?.$unselectable()).toEqual(['id-1']);
+        });
+
+        /**
+         * A greyed-out row with nothing saying why reads as a fault (#37958). Each refused row
+         * names the item that already holds it, or says so generically when that item has no
+         * title.
+         */
+        it('tells the list why each claimed row is refused, naming the item that holds it', () => {
+            constrainedMock.mockReturnValue(
+                of(
+                    new Map([
+                        ['id-1', 'Parent A'],
+                        ['id-2', '']
+                    ])
+                )
+            );
+            input = {
+                ...input,
+                cardinality: 2,
+                isParentField: true,
+                parentContentTypeId: 'parent-type',
+                fieldVariable: 'rel'
+            };
+            mountWith(withResults);
+
+            expect(spectator.query(DotFolderListViewComponent)?.$unselectableReasons()).toEqual({
+                'id-1': 'Already related to Parent A',
+                'id-2': 'This content is already related to another item'
+            });
         });
 
         it('leaves every row selectable when nothing is claimed', () => {
