@@ -2807,7 +2807,11 @@
                   "pm.test(\"Three contentlets created\", function () {",
                   "    pm.expect(jsonData.errors.length).to.eql(0);",
                   "    pm.expect(jsonData.entity.results.length).to.eql(3);",
-                  "});"
+                  "});",
+                  "",
+                  "// Kept for the selection-mode requests below",
+                  "var firstResult = jsonData.entity.results[0];",
+                  "pm.collectionVariables.set(\"exportContentlet1Id\", firstResult[Object.keys(firstResult)[0]].identifier);"
                 ],
                 "type": "text/javascript"
               }
@@ -3012,6 +3016,112 @@
                   "language": "json"
                 }
               }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export - Selection Of Two Types Returns A Zip",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code should be 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"The body is a zip\", function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.match(/^application\\/zip/);",
+                  "});",
+                  "",
+                  "pm.test(\"One CSV per content type\", function () {",
+                  "    pm.expect(pm.response.headers.get('X-Export-Files')).to.eql('2');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"siteId\": \"{{testSiteId}}\",\n    \"selection\": {\n        \"contentlets\": [\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{alphaContentlet1Id}}\",\n                \"languageId\": 1\n            }\n        ]\n    }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/drive/export",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "drive",
+                "export"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export - More Than 60 Selected Items Are Rejected",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code should be 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"The message gives the limit\", function () {",
+                  "    pm.expect(pm.response.json().errors[0].message).to.eql('You can export at most 60 items at once.');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"siteId\": \"{{testSiteId}}\",\n    \"selection\": {\n        \"contentlets\": [\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            },\n            {\n                \"identifier\": \"{{exportContentlet1Id}}\",\n                \"languageId\": 1\n            }\n        ]\n    }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/drive/export",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "drive",
+                "export"
+              ]
             }
           },
           "response": []

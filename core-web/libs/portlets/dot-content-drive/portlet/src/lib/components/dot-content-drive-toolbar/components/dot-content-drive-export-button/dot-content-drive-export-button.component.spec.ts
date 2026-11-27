@@ -16,6 +16,7 @@ vi.mock('@dotcms/utils', async () => ({
 import { signal } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
+import { Tooltip } from 'primeng/tooltip';
 
 import {
     DotContentDriveExportResult,
@@ -26,7 +27,8 @@ import {
 import {
     DotCMSBaseTypesContentTypes,
     DotContentDriveItem,
-    DotContentDriveSearchRequest
+    DotContentDriveSearchRequest,
+    DotSite
 } from '@dotcms/dotcms-models';
 import { getDownloadLink } from '@dotcms/utils';
 import {
@@ -94,7 +96,45 @@ const EMPTY_RESULT: DotContentDriveExportResult = { kind: 'empty' };
 /** The message the service errors with once it has read the server's error body. */
 const SERVER_MESSAGE = 'Server says no';
 
-describe('DotContentDriveExportButtonComponent (filter mode)', () => {
+/**
+ * The most items selection mode exports at once (FR-002a).
+ *
+ * Declared here until T082 adds `MAX_SELECTION_ITEMS` to `shared/constants.ts`; once it exists,
+ * import it instead so the spec and the button cannot drift apart.
+ */
+const MAX_SELECTION_ITEMS = 60;
+
+/** The site Content Drive is browsing: selection mode sends its identifier as `siteId`. */
+const CURRENT_SITE: DotSite = {
+    aliases: '',
+    archived: false,
+    hostname: 'demo.dotcms.com',
+    identifier: 'site-001'
+};
+
+/** Copy for the limit tooltip, so the test reads the sentence the user sees. */
+const MAX_ITEMS_TOOLTIP = 'You can export at most 60 items at once';
+
+/** A selected contentlet, carrying the two values selection mode sends for it. */
+const selectedContentlet = (identifier: string, languageId: number): DotContentDriveItem =>
+    createFakeContentlet({ identifier, inode: `inode-${identifier}-${languageId}`, languageId });
+
+/** `count` distinct selected contentlets, all in English. */
+const selectedContentlets = (count: number): DotContentDriveItem[] =>
+    Array.from({ length: count }, (_, index) => selectedContentlet(`contentlet-${index}`, 1));
+
+/** A selection-mode 200: the zip, holding one CSV per content type. */
+const ZIP_RESULT: DotContentDriveExportResult = {
+    kind: 'file',
+    blob: new Blob(['zip']),
+    fileName: 'demo.dotcms.com_export_11_26_2026.zip',
+    contentlets: 3,
+    files: 2
+};
+
+// The describes at this level are filter mode (nothing selected); selection mode has its own block
+// at the end.
+describe('DotContentDriveExportButtonComponent', () => {
     let spectator: Spectator<DotContentDriveExportButtonComponent>;
     let exportService: SpyObject<DotContentDriveExportService>;
     let contentTypeService: SpyObject<DotContentTypeService>;
@@ -106,6 +146,7 @@ describe('DotContentDriveExportButtonComponent (filter mode)', () => {
     const itemsSignal = signal<DotContentDriveItem[]>([CONTENTLET]);
     const pagesSignal = signal<DotContentDrivePage[]>([LAST_PAGE]);
     const requestSignal = signal<DotContentDriveSearchRequest>(REQUEST);
+    const currentSiteSignal = signal<DotSite>(CURRENT_SITE);
 
     const messageServiceSpy = { add: vi.fn(), clear: vi.fn() };
     const anchorClick = vi.fn();
@@ -119,7 +160,8 @@ describe('DotContentDriveExportButtonComponent (filter mode)', () => {
                 status: statusSignal,
                 items: itemsSignal,
                 pages: pagesSignal,
-                $request: requestSignal
+                $request: requestSignal,
+                currentSite: currentSiteSignal
             }),
             mockProvider(DotContentTypeService, {
                 getContentType: vi.fn((variable: string) =>
@@ -146,7 +188,8 @@ describe('DotContentDriveExportButtonComponent (filter mode)', () => {
                     'content-drive.toast.export-success-detail':
                         '{0} items exported in {1} file(s)',
                     'content-drive.toast.export-empty': 'There is nothing to export',
-                    'content-drive.toast.export-error': 'Export failed'
+                    'content-drive.toast.export-error': 'Export failed',
+                    'content-drive.export.tooltip.max-items': MAX_ITEMS_TOOLTIP
                 })
             }
         ],
@@ -188,6 +231,7 @@ describe('DotContentDriveExportButtonComponent (filter mode)', () => {
         itemsSignal.set([CONTENTLET]);
         pagesSignal.set([LAST_PAGE]);
         requestSignal.set(REQUEST);
+        currentSiteSignal.set(CURRENT_SITE);
     });
 
     describe('shown', () => {
@@ -446,6 +490,178 @@ describe('DotContentDriveExportButtonComponent (filter mode)', () => {
             answer.error(new Error(SERVER_MESSAGE));
 
             expectNotLoading();
+        });
+    });
+
+    // Selection mode (#37900, US2): with anything selected, the button exports the selected
+    // contentlets as a zip, whatever the listing is filtered to. Folders are Phase 9's (T085).
+    describe('selection mode', () => {
+        /** The wrapper the limit tooltip hangs off: a disabled button fires no tooltip itself. */
+        const exportTooltipWrapper = () =>
+            spectator.query(byTestId('content-drive-export-tooltip'));
+
+        /** The tooltip directive on that wrapper, read for the text it would show. */
+        // A string selector, not byTestId: Spectator ignores `read` for DOM selectors and would
+        // return the span instead of the Tooltip directive.
+        const exportTooltip = () =>
+            spectator.query('[data-testid="content-drive-export-tooltip"]', { read: Tooltip });
+
+        describe('shown', () => {
+            it('should show when something is selected and no content type is filtered', async () => {
+                filtersSignal.set({});
+                selectedItemsSignal.set([selectedContentlet('blog-1', 1)]);
+                await render();
+
+                expect(exportButtonHost()).toBeTruthy();
+                expect(exportButtonHost()?.textContent).toContain('Export');
+            });
+
+            it('should show when something is selected and several content types are filtered', async () => {
+                filtersSignal.set({ contentType: ['Blog', 'News'] });
+                selectedItemsSignal.set([selectedContentlet('blog-1', 1)]);
+                await render();
+
+                expect(exportButtonHost()).toBeTruthy();
+            });
+
+            it('should show when something is selected and the one filtered type is a Form', async () => {
+                // The Form rule is filter mode's: the server drops Form contentlets from a
+                // selection itself, so the button does not hide over the filter.
+                filtersSignal.set({ contentType: [FORM_VARIABLE] });
+                selectedItemsSignal.set([selectedContentlet('blog-1', 1)]);
+                await render();
+
+                expect(exportButtonHost()).toBeTruthy();
+            });
+        });
+
+        describe('item limit', () => {
+            it(`should be enabled with exactly ${MAX_SELECTION_ITEMS} items selected`, async () => {
+                selectedItemsSignal.set(selectedContentlets(MAX_SELECTION_ITEMS));
+                await render();
+
+                expect(exportButton()).toBeTruthy();
+                expect(exportButton()?.disabled).toBe(false);
+                expect(exportTooltip()?.content ?? '').toBe('');
+            });
+
+            it(`should be disabled with more than ${MAX_SELECTION_ITEMS} items selected`, async () => {
+                selectedItemsSignal.set(selectedContentlets(MAX_SELECTION_ITEMS + 1));
+                await render();
+
+                expect(exportButton()).toBeTruthy();
+                expect(exportButton()?.disabled).toBe(true);
+            });
+
+            it('should say why it is disabled on a wrapper, not on the disabled button', async () => {
+                selectedItemsSignal.set(selectedContentlets(MAX_SELECTION_ITEMS + 1));
+                await render();
+
+                const wrapper = exportTooltipWrapper();
+
+                expect(wrapper?.tagName).toBe('SPAN');
+                expect(wrapper?.contains(exportButtonHost())).toBe(true);
+                expect(exportTooltip()?.content).toBe(MAX_ITEMS_TOOLTIP);
+            });
+        });
+
+        describe('click', () => {
+            it('should send the selected contentlets with the current site, and no query', async () => {
+                // Two language versions of one Blog and a News: each entry is its own row.
+                selectedItemsSignal.set([
+                    selectedContentlet('blog-1', 1),
+                    selectedContentlet('blog-1', 2),
+                    selectedContentlet('news-1', 1)
+                ]);
+                await render();
+
+                spectator.click(exportButton() as HTMLElement);
+
+                expect(exportService.export).toHaveBeenCalledTimes(1);
+                expect(exportService.export).toHaveBeenCalledWith({
+                    siteId: CURRENT_SITE.identifier,
+                    selection: {
+                        folders: [],
+                        contentlets: [
+                            { identifier: 'blog-1', languageId: 1 },
+                            { identifier: 'blog-1', languageId: 2 },
+                            { identifier: 'news-1', languageId: 1 }
+                        ]
+                    }
+                });
+            });
+
+            it('should not send a selected folder as a contentlet', async () => {
+                selectedItemsSignal.set([selectedContentlet('blog-1', 1), FOLDER]);
+                await render();
+
+                spectator.click(exportButton() as HTMLElement);
+
+                expect(exportService.export).toHaveBeenCalledTimes(1);
+                expect(exportService.export).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        siteId: CURRENT_SITE.identifier,
+                        selection: expect.objectContaining({
+                            contentlets: [{ identifier: 'blog-1', languageId: 1 }]
+                        })
+                    })
+                );
+            });
+        });
+
+        describe('on success', () => {
+            beforeEach(() => {
+                exportService.export.mockReturnValue(of(ZIP_RESULT));
+                selectedItemsSignal.set([
+                    selectedContentlet('blog-1', 1),
+                    selectedContentlet('blog-2', 1),
+                    selectedContentlet('news-1', 1)
+                ]);
+            });
+
+            it('should download the zip under the name the server gave', async () => {
+                await render();
+
+                spectator.click(exportButton() as HTMLElement);
+
+                expect(getDownloadLink).toHaveBeenCalledWith(ZIP_RESULT.blob, ZIP_RESULT.fileName);
+                expect(anchorClick).toHaveBeenCalledTimes(1);
+            });
+
+            it('should show a success toast with the exported items and files', async () => {
+                await render();
+
+                spectator.click(exportButton() as HTMLElement);
+
+                expect(messageServiceSpy.add).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        severity: 'success',
+                        summary: 'Export ready',
+                        detail: '3 items exported in 2 file(s)',
+                        life: SUCCESS_MESSAGE_LIFE
+                    })
+                );
+            });
+        });
+
+        describe('on error', () => {
+            it('should show an error toast with the server message and download nothing', async () => {
+                exportService.export.mockReturnValue(throwError(() => new Error(SERVER_MESSAGE)));
+                selectedItemsSignal.set([selectedContentlet('blog-1', 1)]);
+                await render();
+
+                spectator.click(exportButton() as HTMLElement);
+
+                expect(messageServiceSpy.add).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        severity: 'error',
+                        summary: 'Export failed',
+                        detail: SERVER_MESSAGE,
+                        life: ERROR_MESSAGE_LIFE
+                    })
+                );
+                expect(getDownloadLink).not.toHaveBeenCalled();
+            });
         });
     });
 });

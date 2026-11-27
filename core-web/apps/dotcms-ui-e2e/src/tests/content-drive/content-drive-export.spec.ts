@@ -68,4 +68,90 @@ test.describe('Content Drive export', () => {
             await deleteContentType(request, contentType.id);
         }
     });
+
+    /**
+     * Selection mode (US2): selected contentlets of several types export as one zip, named after
+     * the site: `<hostname>_export_<M_d_yyyy>.zip`. Which CSVs the zip holds, and their rows, are
+     * `ContentDriveExportSelectionModeTest`'s; the body the button sends is the component spec's.
+     */
+    test('downloads selected contentlets of two types as <site>_export_<date>.zip @critical', async ({
+        adminPage,
+        request,
+        testSuffix
+    }) => {
+        const suffix = testSuffix.replace(/[^a-zA-Z0-9]/g, '');
+        const typeNames = [`CdExportBlog${suffix}`, `CdExportNews${suffix}`];
+        const contentTypes: { id: string; variable: string }[] = [];
+        const contentletIds: string[] = [];
+        const titles: string[] = [];
+
+        try {
+            for (const typeName of typeNames) {
+                const contentType = await createFakeContentType(request, {
+                    name: typeName,
+                    variable: typeName,
+                    fields: [
+                        createFakePayloadTextField({
+                            name: 'Title',
+                            variable: 'title',
+                            sortOrder: 1
+                        })
+                    ]
+                });
+                contentTypes.push(contentType);
+
+                const title = `${typeName} selected`;
+                const contentlet = await createContentlet(request, {
+                    contentType: contentType.variable,
+                    title
+                });
+                contentletIds.push(contentlet.identifier);
+                titles.push(title);
+            }
+
+            const drive = new ContentDrivePage(adminPage);
+
+            // Narrowed to the two new types so both rows are on the first page; the selection, not
+            // this filter, is what gets exported.
+            await adminPage.goto(
+                `${Portlet.ContentDrive}?filters=${encodeURIComponent(
+                    `contentType:${contentTypes.map((type) => type.variable).join(',')}`
+                )}`
+            );
+            await expect(drive.toolbar).toBeVisible({ timeout: 20000 });
+
+            for (const title of titles) {
+                await drive.expectListContainsTitle(title);
+                await adminPage
+                    .getByTestId('item-row')
+                    .filter({
+                        has: adminPage.getByTestId('item-title-text').getByText(title, {
+                            exact: true
+                        })
+                    })
+                    .getByTestId('item-checkbox')
+                    .click();
+            }
+
+            // With a selection the button sits beside the workflow actions.
+            await expect(drive.toolbar.getByTestId('workflow-actions')).toBeVisible({
+                timeout: 20000
+            });
+            const exportButton = drive.toolbar.getByTestId('export-button').getByRole('button');
+            await expect(exportButton).toBeEnabled({ timeout: 20000 });
+
+            // Armed before the click, or a fast server finishes before anything is listening.
+            const download = adminPage.waitForEvent('download', { timeout: 60000 });
+            await exportButton.click();
+
+            expect((await download).suggestedFilename()).toMatch(
+                /^.+_export_\d{1,2}_\d{1,2}_\d{4}\.zip$/
+            );
+        } finally {
+            await deleteContentlets(request, contentletIds);
+            for (const contentType of contentTypes) {
+                await deleteContentType(request, contentType.id);
+            }
+        }
+    });
 });

@@ -195,7 +195,9 @@ describe('DotContentDriveToolbarComponent', () => {
                 status: signal(DotContentDriveStatus.LOADED),
                 items: signal<DotContentDriveItem[]>([]),
                 pages: signal([DEFAULT_PAGE]),
-                $request: signal({ assetPath: '//demo.dotcms.com/' })
+                $request: signal({ assetPath: '//demo.dotcms.com/' }),
+                // Selection mode sends the browsed site's identifier as `siteId`.
+                currentSite: signal({ identifier: 'site-001', hostname: 'demo.dotcms.com' })
             }),
             mockProvider(DotContentTypeService, {
                 getContentTypes: vi.fn().mockReturnValue(of(MOCK_CONTENT_TYPES)),
@@ -699,6 +701,27 @@ describe('DotContentDriveToolbarComponent', () => {
             expect(block?.contains(spectator.query(byTestId('add-new-tooltip')))).toBe(true);
             expect(exportButton).toBeTruthy();
             expect(block?.contains(exportButton)).toBe(true);
+        });
+
+        // Selection mode (US2): the same button moves beside the workflow actions, since Upload
+        // and Add New are hidden while anything is selected.
+        it('should sit next to the workflow actions when something is selected', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
+            await settleToolbarAnimation(spectator);
+
+            const workflowActions = spectator.query(byTestId('workflow-actions'));
+            const exportButtons = spectator.queryAll(byTestId('export-button'));
+            const exportButton = exportButtons[0];
+
+            expect(workflowActions).toBeTruthy();
+            expect(exportButtons).toHaveLength(1);
+            expect(exportButton.parentElement).toBe(workflowActions?.parentElement);
+            expect([
+                exportButton.previousElementSibling,
+                exportButton.nextElementSibling
+            ]).toContain(workflowActions);
+            // The creation block is gone, so the button cannot be sitting in it.
+            expect(spectator.query(byTestId('upload-asset-tooltip'))).toBeNull();
         });
     });
 
