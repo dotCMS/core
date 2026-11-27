@@ -13,8 +13,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * pass it through {@link #cap(int)} before running a content search. Values up to the maximum are
  * kept, larger values are lowered to it, and zero or negative values are returned unchanged so each
  * caller keeps the meaning it gives them (its default page size, or "no limit given"). A maximum
- * lowered through the property therefore applies to the values callers send, not to those
- * defaults; an index search treats zero or a negative limit as a page of
+ * lowered through the property therefore also lowers a caller's own default page size when that
+ * default is above it, but not zero or negative values: an index search treats those as a page of
  * {@value #DEFAULT_MAX_LIMIT}.
  *
  * <p>The maximum is read from {@value #MAX_LIMIT_PROPERTY} (environment variable
@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * the largest page a single index search returns
  * ({@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#MAX_LIMIT}); the property
  * can lower it but not raise it. A value that is not a positive number is ignored, the default is
- * used, and a warning is logged once for each such value.
+ * used, and a warning is logged when the invalid value changes.
  *
  * <p>Internal callers that read every match on purpose (exports, scheduled jobs) do not go through
  * this class and are not affected.

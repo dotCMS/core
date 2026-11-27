@@ -1153,7 +1153,7 @@ public class ContentResource {
                     "| `lockedContent`                 | Boolean String | Include locked content (\"true\"/\"false\")           |\n" +
                     "| `orderBy`                       | String  | Sort criteria (defaults to \"score,modDate desc\")    |\n" +
                     "| `page`                          | Integer | Page number for pagination                            |\n" +
-                    "| `perPage`                       | Integer | Results per page                                      |\n\n" +
+                    "| `perPage`                       | Integer | Results per page. Values above the configured maximum (10000 by default) are lowered to it |\n\n" +
                     "When using `searchableFieldsByContentType`, different fields may require different string types:\n\n" +
                     "| Field Type                  | Description                                 |\n" +
                     "|-----------------------------|---------------------------------------------|\n" +

@@ -7854,10 +7854,10 @@ paths:
         | `orderBy`                       | String  | Sort criteria (defaults to \"\
         score,modDate desc\")    |\n| `page`                          | Integer |\
         \ Page number for pagination                            |\n| `perPage`   \
-        \                    | Integer | Results per page                        \
-        \              |\n\nWhen using `searchableFieldsByContentType`, different\
-        \ fields may require different string types:\n\n| Field Type             \
-        \     | Description                                 |\n|-----------------------------|---------------------------------------------|\n\
+        \                    | Integer | Results per page. Values above the configured\
+        \ maximum (10000 by default) are lowered to it |\n\nWhen using `searchableFieldsByContentType`,\
+        \ different fields may require different string types:\n\n| Field Type   \
+        \               | Description                                 |\n|-----------------------------|---------------------------------------------|\n\
         | title, textArea, wysiwyg    | Text search                              \
         \   |\n| category                    | Comma-separated category IDs      \
         \          |\n| checkbox, multiSelect       | Comma-separated values (not\
