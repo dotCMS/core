@@ -108,7 +108,6 @@ public class StorageReplicationJob extends DotStatefulJob {
         final StorageType fromStorageType = (StorageType) map.get("fromStorageType");
         final List<StorageType> toStorageTypes = (List<StorageType>) map.get("toStorageTypes");
         final User user = (User) map.get("user");
-        Logger.info(this, "--------------------------------------");
         Logger.info(this, "ReplicateStoragesJob has started");
         Logger.info(this, String.format("-> Initiated by User: %s", user.getUserId()));
         Logger.debug(this, () -> String.format("-> From Storage Type: %s", fromStorageType.name()));

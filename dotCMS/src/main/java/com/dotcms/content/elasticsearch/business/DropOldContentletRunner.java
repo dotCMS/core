@@ -124,7 +124,6 @@ public class DropOldContentletRunner implements Runnable {
         Logger.debug(this, () -> "  CLEAN_DEAD_INODE_FROM_FS: " + CLEAN_DEAD_INODE_FROM_FS);
         Logger.debug(this, () -> "  SLEEP_BETWEEN_RUNS_MS: " + SLEEP_BETWEEN_RUNS_MS);
         Logger.debug(this, () -> "  MAX_RUNTIME_SECONDS: " + MAX_RUNTIME_SECONDS);
-        Logger.info(this, "----------------------------------------------------");
 
         createIndexIfNeeded();
 

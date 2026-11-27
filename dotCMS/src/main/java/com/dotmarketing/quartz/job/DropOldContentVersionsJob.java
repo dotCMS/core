@@ -81,7 +81,6 @@ public class DropOldContentVersionsJob implements StatefulJob {
 
     @Override
     public void execute(final JobExecutionContext jobExecutionContext) throws JobExecutionException {
-        Logger.info(this.getClass(), "--------------------------------------");
         Logger.info(this.getClass(), "DropOldContentVersionsJob has started");
         Logger.debug(this, () -> String.format("-> Deleting Contentlets older than %d days...",
                 OLDER_THAN.get()));
