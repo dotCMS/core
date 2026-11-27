@@ -433,6 +433,13 @@
                     <reuseForks>true</reuseForks>
                     <rerunFailingTestsCount>3</rerunFailingTestsCount>
                     <!--<skipAfterFailureCount>2</skipAfterFailureCount>-->
+                    <environmentVariables>
+                        <!-- Read by AppsUtilTest's env-var override tests: the first is named explicitly
+                             by a param descriptor, the second is the name AppsUtil derives for app
+                             "testApp", param "testParam". -->
+                        <SOME_APP_ENV_VAR>overriddenValue</SOME_APP_ENV_VAR>
+                        <DOT_APP_TEST_APP_PARAM_TEST_PARAM>overriddenValue</DOT_APP_TEST_APP_PARAM_TEST_PARAM>
+                    </environmentVariables>
                     <systemPropertyVariables>
                         <!-- Following is a hack to make Intellij pick up the fork number in systemProperites
                             for tests correctly
