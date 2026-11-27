@@ -49,6 +49,8 @@ import com.dotcms.datagen.UserDataGen;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
 import com.dotcms.rest.EmptyHttpResponse;
+import com.dotcms.util.ContentSearchLimit;
+import com.dotcms.util.PaginationUtil;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
@@ -732,6 +734,56 @@ public class PageResourceTest {
                 .anyMatch(personalizationPersonaPageView ->
                         personalizationPersonaPageView.getPersona().get(PersonaAPI.KEY_TAG_FIELD).equals(personaTag) &&
                                 Boolean.TRUE.equals(personalizationPersonaPageView.getPersona().get("personalized")));
+    }
+
+    /**
+     * methodToTest {@link PageResource#getPersonalizedPersonasOnPage(HttpServletRequest, HttpServletResponse, String, int, int, String, String, String, String, Boolean)}
+     * Given Scenario: four personas on the site and a configured maximum of 2 search results; the second page is
+     * requested with a page size of 5
+     * ExpectedResult: the page size reported is 2, and the page holds the third and fourth personas, so no persona
+     * is skipped between pages
+     */
+    @Test
+    public void getPersonas_perPageAboveTheConfiguredMaximum_pagesWithTheMaximum() throws Exception {
+        final HTMLPageAsset page = PageRenderTestUtil.createPage(1, host).getPage();
+        for (int i = 0; i < 4; i++) {
+            final Persona persona = new PersonaDataGen().keyTag("persona" + i + System.currentTimeMillis())
+                    .hostFolder(host.getIdentifier()).nextPersisted();
+            persona.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            APILocator.getContentletAPI().publish(persona, user, false);
+        }
+        when(request.getRequestURI()).thenReturn(page.getURI());
+
+        final List<Object> allKeyTags = personaKeyTags(pageResource.getPersonalizedPersonasOnPage(request,
+                new EmptyHttpResponse(), null, 1, 4, "title", "ASC", host.getIdentifier(), page.getIdentifier(),
+                null));
+        assertEquals("fixture problem: the first four personas are not all returned", 4, allKeyTags.size());
+
+        final String previous = Config.getStringProperty(ContentSearchLimit.MAX_LIMIT_PROPERTY, null);
+        Config.setProperty(ContentSearchLimit.MAX_LIMIT_PROPERTY, "2");
+        try {
+            final Response response = pageResource.getPersonalizedPersonasOnPage(request, new EmptyHttpResponse(),
+                    null, 2, 5, "title", "ASC", host.getIdentifier(), page.getIdentifier(), null);
+
+            assertEquals("2", String.valueOf(response.getMetadata()
+                    .getFirst(PaginationUtil.PAGINATION_PER_PAGE_HEADER_NAME)));
+            assertEquals(allKeyTags.subList(2, 4), personaKeyTags(response));
+        } finally {
+            Config.setProperty(ContentSearchLimit.MAX_LIMIT_PROPERTY, previous);
+        }
+    }
+
+    /**
+     * Reads the key tag of every persona in a personas response, in the order returned.
+     *
+     * @param response the personas response
+     * @return the key tags
+     */
+    @SuppressWarnings("unchecked")
+    private static List<Object> personaKeyTags(final Response response) {
+        return ((List<PersonalizationPersonaPageView>) ((ResponseEntityView<?>) response.getEntity()).getEntity())
+                .stream().map(view -> view.getPersona().get(PersonaAPI.KEY_TAG_FIELD))
+                .collect(Collectors.toList());
     }
 
     /**

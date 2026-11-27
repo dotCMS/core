@@ -1,5 +1,6 @@
 package com.dotcms.graphql.datafetcher;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -12,15 +13,22 @@ import com.dotcms.datagen.FieldRelationshipDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.graphql.DotGraphQLContext;
 import com.dotcms.graphql.exception.PermissionDeniedGraphQLException;
+import com.dotcms.util.ContentSearchLimit;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import graphql.execution.DataFetcherResult;
 import graphql.schema.DataFetchingEnvironment;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -128,6 +136,75 @@ public class RelationshipFieldDataFetcherTest {
         assertTrue("Fetcher should return a List for anonymous user "
                 + "when CMS Anonymous has READ permission on the content type",
                 result instanceof java.util.List);
+    }
+
+    /**
+     * Given a content related to three live contents and a configured maximum of 2 search results,
+     * When the relationship field is resolved with a query and a limit of 5,
+     * Then 2 related contents are returned.
+     */
+    @Test
+    public void testGet_limitAboveTheConfiguredMaximum_returnsTheMaximum() throws Exception {
+        assertEquals(2, relatedCountFor("+live:true", 5));
+    }
+
+    /**
+     * Given a content related to three live contents and a configured maximum of 2 search results,
+     * When the relationship field is resolved with no query and no limit,
+     * Then all three related contents are returned, as without a limit every related content is.
+     */
+    @Test
+    public void testGet_noLimit_returnsEveryRelatedContentWithAConfiguredMaximum()
+            throws Exception {
+        assertEquals(3, relatedCountFor(null, null));
+    }
+
+    /**
+     * Relates a new parent content to three live child contents, then resolves its relationship
+     * field as the system user with the given query and limit while the maximum number of search
+     * results is set to 2, and returns how many related contents came back.
+     */
+    private static int relatedCountFor(final String query, final Integer limit) throws Exception {
+        final List<Contentlet> children = new ArrayList<>();
+        Contentlet parent = null;
+        final String previous = Config.getStringProperty(ContentSearchLimit.MAX_LIMIT_PROPERTY,
+                null);
+        try {
+            for (int i = 0; i < 3; i++) {
+                children.add(new ContentletDataGen(childType).nextPersistedAndPublish());
+            }
+            final Relationship relationship = APILocator.getRelationshipAPI()
+                    .getRelationshipFromField(relationshipField, systemUser);
+            parent = new ContentletDataGen(parentType).next();
+            parent.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            parent = APILocator.getContentletAPI().checkin(parent,
+                    Map.of(relationship, children), systemUser, false);
+            parent.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            APILocator.getContentletAPI().publish(parent, systemUser, false);
+
+            final DataFetchingEnvironment environment = Mockito.mock(DataFetchingEnvironment.class);
+            Mockito.when(environment.getContext()).thenReturn(
+                    DotGraphQLContext.createServletContext().with(systemUser).build());
+            Mockito.when(environment.getSource()).thenReturn(parent);
+            Mockito.when(environment.getField()).thenReturn(
+                    new graphql.language.Field(relationshipField.variable()));
+            Mockito.when(environment.getArgument("query")).thenReturn(query);
+            Mockito.when(environment.getArgument("limit")).thenReturn(limit);
+            Mockito.when(environment.getArgument("offset")).thenReturn(null);
+            Mockito.when(environment.getArgument("sort")).thenReturn(null);
+
+            Config.setProperty(ContentSearchLimit.MAX_LIMIT_PROPERTY, "2");
+            final Object result = new RelationshipFieldDataFetcher().get(environment);
+            assertTrue("the relationship field should resolve to a list: " + result,
+                    result instanceof List);
+            return ((List<?>) result).size();
+        } finally {
+            Config.setProperty(ContentSearchLimit.MAX_LIMIT_PROPERTY, previous);
+            if (parent != null) {
+                ContentletDataGen.remove(parent);
+            }
+            children.forEach(ContentletDataGen::remove);
+        }
     }
 
     /**

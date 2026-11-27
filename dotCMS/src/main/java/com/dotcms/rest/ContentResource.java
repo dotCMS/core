@@ -19,6 +19,7 @@ import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.rest.filter.UserPropertiesResponseFilter;
 import com.dotcms.variant.business.web.VariantWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotcms.util.ContentSearchLimit;
 import com.dotcms.util.xstream.XStreamHandler;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
@@ -288,7 +289,7 @@ public class ContentResource {
      * @param request request object
      * @param query lucene query
      * @param sortBy field to sortby
-     * @param limit how many results return
+     * @param limit how many results to return, capped by {@link ContentSearchLimit}
      * @param offset how many results skip
      * @return json array of objects. each object with inode and identifier
      */
@@ -326,7 +327,8 @@ public class ContentResource {
             @PathParam("query") String query,
             @Parameter(description = "Field name to sort results by")
             @PathParam("sortby") String sortBy,
-            @Parameter(description = "Maximum number of results to return")
+            @Parameter(description = "Maximum number of results to return. Values above the configured "
+                    + "maximum (10000 by default) are lowered to it")
             @PathParam("limit") int limit,
             @Parameter(description = "Number of results to skip for pagination")
             @PathParam("offset") int offset,
@@ -351,7 +353,7 @@ public class ContentResource {
 
         try {
             List<ContentletSearch> searchIndex = APILocator.getContentletAPI()
-                    .searchIndex(query, limit, offset, sortBy, initData.getUser(), true);
+                    .searchIndex(query, ContentSearchLimit.cap(limit), offset, sortBy, initData.getUser(), true);
             JSONArray array = new JSONArray();
             for (ContentletSearch cs : searchIndex) {
                 array.put(new JSONObject()
@@ -771,10 +773,13 @@ public class ContentResource {
 
 
     /**
+     * Returns content found by identifier, inode, Lucene query or relationship, using the
+     * slash-delimited parameters of the path. The {@code limit} parameter (10 when not given) is
+     * capped by {@link ContentSearchLimit}.
      *
-     * @param request
-     * @param response
-     * @param params
+     * @param request the current request
+     * @param response the current response
+     * @param params the slash-delimited {@code key/value} parameters of the path
      * @return Contentlets that match the search criteria in json or xml format.
      *         When `depth` param is set to:
      *         0 --> The contentlet object will contain the identifiers of the related contentlets
@@ -846,7 +851,7 @@ public class ContentResource {
         final long language = toLong(paramsMap.get(RESTParams.LANGUAGE.getValue()),
                 () -> APILocator.getLanguageAPI().getDefaultLanguage().getId());
         /* Limit and Offset Parameters Handling, if not passed, using default */
-        final int limit = toInt(limitStr, () -> 10);
+        final int limit = ContentSearchLimit.cap(toInt(limitStr, () -> 10));
         final int offset = toInt(offsetStr, () -> 0);
         final boolean live = (paramsMap.get(RESTParams.LIVE.getValue()) == null ||
                 !"false".equals(paramsMap.get(RESTParams.LIVE.getValue())));

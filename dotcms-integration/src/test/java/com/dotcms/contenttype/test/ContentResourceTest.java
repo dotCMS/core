@@ -28,6 +28,7 @@ import com.dotcms.rest.SearchForm;
 import com.dotcms.rest.SearchView;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.ContentSearchLimit;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
@@ -2477,6 +2478,106 @@ public class ContentResourceTest extends IntegrationTestBase {
         assertEquals(String.valueOf(endpointResponse.getEntity()), Status.OK.getStatusCode(),
                 endpointResponse.getStatus());
         return new JSONObject(endpointResponse.getEntity().toString()).getJSONArray("contentlets").length();
+    }
+
+    /**
+     * Method to test: {@link ContentResource#search}
+     * Given scenario: three live items of one type and a configured maximum of 2 search results.
+     * Expected result: a request for 5 of them returns 2.
+     */
+    @Test
+    public void test_search_limitAboveTheConfiguredMaximum_returnsTheMaximum() throws Exception {
+        final ContentType type = new ContentTypeDataGen().host(host).nextPersisted();
+        try {
+            addThreeLiveItems(type);
+            withConfiguredMaximum(2, () -> assertEquals(2, searchHitCount(new ContentResource().search(
+                    createHttpRequest(null, null), mock(HttpServletResponse.class), false,
+                    new SearchForm.Builder().query("+contentType:" + type.variable()).limit(5).build()))));
+        } finally {
+            deleteContentTypes(List.of(type));
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentResource#getContent(HttpServletRequest, HttpServletResponse, String)}
+     * Given scenario: three live items of one type and a configured maximum of 2 search results.
+     * Expected result: a query with a limit of 5 returns 2.
+     */
+    @Test
+    public void test_getContent_queryLimitAboveTheConfiguredMaximum_returnsTheMaximum() throws Exception {
+        final ContentType type = new ContentTypeDataGen().host(host).nextPersisted();
+        try {
+            addThreeLiveItems(type);
+            withConfiguredMaximum(2, () -> {
+                final Response endpointResponse = new ContentResource().getContent(createHttpRequest(null, null),
+                        mock(HttpServletResponse.class), "/query/+contentType:" + type.variable() + "/limit/5");
+                assertEquals(String.valueOf(endpointResponse.getEntity()), Status.OK.getStatusCode(),
+                        endpointResponse.getStatus());
+                assertEquals(2, new JSONObject(endpointResponse.getEntity().toString())
+                        .getJSONArray("contentlets").length());
+            });
+        } finally {
+            deleteContentTypes(List.of(type));
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentResource#indexSearch}
+     * Given scenario: three live items of one type and a configured maximum of 2 search results.
+     * Expected result: an index search with a limit of 5 returns 2 entries.
+     */
+    @Test
+    public void test_indexSearch_limitAboveTheConfiguredMaximum_returnsTheMaximum() throws Exception {
+        final ContentType type = new ContentTypeDataGen().host(host).nextPersisted();
+        try {
+            addThreeLiveItems(type);
+            withConfiguredMaximum(2, () -> {
+                final Response endpointResponse = new ContentResource().indexSearch(createHttpRequest(null, null),
+                        mock(HttpServletResponse.class), "+contentType:" + type.variable(), "modDate", 5, 0,
+                        null, null);
+                assertEquals(String.valueOf(endpointResponse.getEntity()), Status.OK.getStatusCode(),
+                        endpointResponse.getStatus());
+                assertEquals(2, new JSONArray(endpointResponse.getEntity().toString()).length());
+            });
+        } finally {
+            deleteContentTypes(List.of(type));
+        }
+    }
+
+    /**
+     * Adds three live items on the test site to the given content type.
+     *
+     * @param type the content type
+     */
+    private void addThreeLiveItems(final ContentType type) {
+        for (int i = 0; i < 3; i++) {
+            new ContentletDataGen(type.id()).host(host).setPolicy(IndexPolicy.WAIT_FOR)
+                    .nextPersistedAndPublish();
+        }
+    }
+
+    /**
+     * Runs the given check with the maximum number of search results set to the given value,
+     * restoring the previous value afterwards.
+     *
+     * @param maximum the maximum to configure
+     * @param check the check to run
+     * @throws Exception if the check fails
+     */
+    private static void withConfiguredMaximum(final int maximum, final Check check) throws Exception {
+        final String previous = Config.getStringProperty(ContentSearchLimit.MAX_LIMIT_PROPERTY, null);
+        Config.setProperty(ContentSearchLimit.MAX_LIMIT_PROPERTY, String.valueOf(maximum));
+        try {
+            check.run();
+        } finally {
+            Config.setProperty(ContentSearchLimit.MAX_LIMIT_PROPERTY, previous);
+        }
+    }
+
+    /** A check that may throw. */
+    @FunctionalInterface
+    private interface Check {
+        void run() throws Exception;
     }
 
     /**

@@ -15,6 +15,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rendering.velocity.WidgetRenderer;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
+import com.dotcms.util.ContentSearchLimit;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
@@ -299,25 +300,28 @@ public class ContentHelper {
     }
 
     /**
+     * Runs a content search for a REST request and returns the matching contents as JSON, along
+     * with the total number of matches and how long the count and the load took. The requested
+     * {@code limit} is capped by {@link ContentSearchLimit}.
      *
-     * @param request
-     * @param response
-     * @param query
-     * @param resultsSize
-     * @param userForPull
-     * @param pageMode
-     * @param offset
-     * @param limit
-     * @param sort
-     * @param tmDate
-     * @param render
-     * @param user
-     * @param depth
-     * @param language
-     * @param allCategoriesInfo
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * @param request           the current request
+     * @param response          the current response
+     * @param query             the Lucene query to run; nothing is searched when it is empty
+     * @param userForPull       the {@link User} the contents are searched for
+     * @param pageMode          the {@link PageMode} that decides live or working content and
+     *                          whether front-end roles are respected
+     * @param offset            the number of matches to skip
+     * @param limit             the number of matches asked for by the caller
+     * @param sort              the sort clause
+     * @param tmDate            the Time Machine date, or {@code null}
+     * @param render            whether rendered content is included
+     * @param user              the {@link User} the JSON is built for
+     * @param depth             how deep related contents are included, -1 for none
+     * @param language          the language of related contents
+     * @param allCategoriesInfo whether full category information is included
+     * @return the search result
+     * @throws DotDataException     if the search fails
+     * @throws DotSecurityException if the user cannot run the search
      */
     public SearchView pullContent(HttpServletRequest request, HttpServletResponse response,
                                    String query, User userForPull, PageMode pageMode, int offset, int limit,
@@ -335,7 +339,8 @@ public class ContentHelper {
             afterAPISearchPull = Calendar.getInstance().getTimeInMillis();
 
             startAPIPull = Calendar.getInstance().getTimeInMillis();
-            List<Contentlet> contentlets = ContentUtils.pull(query, offset, limit, sort, userForPull, tmDate, pageMode.respectAnonPerms);
+            List<Contentlet> contentlets = ContentUtils.pull(query, offset, ContentSearchLimit.cap(limit), sort,
+                    userForPull, tmDate, pageMode.respectAnonPerms);
             resultJson = getJSONObject(contentlets, request, response, render, user, depth, pageMode.respectAnonPerms, language, pageMode.showLive, allCategoriesInfo);
 
             afterAPIPull = Calendar.getInstance().getTimeInMillis();

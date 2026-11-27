@@ -13,6 +13,7 @@ import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.graphql.business.GraphqlQueryRunner;
+import com.dotcms.util.ContentSearchLimit;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
@@ -22,7 +23,9 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -56,6 +59,8 @@ public class ContentletDataFetcherTest extends IntegrationTestBase {
     private static Contentlet onBothVariants;
     private static Contentlet onBothVariantsNamedVersion;
     private static User limitedBackEndUser;
+    private static ContentType limitType;
+    private static final List<Contentlet> limitItems = new ArrayList<>();
 
     /**
      * Builds one content type holding two live items: one on the default variant and one on a
@@ -100,6 +105,26 @@ public class ContentletDataFetcherTest extends IntegrationTestBase {
             }
         }
         limitedBackEndUser = new UserDataGen().roles(backEndRole).nextPersisted();
+
+        // A separate type with three live items, all readable by the anonymous role, so a query on
+        // it can tell how many results a limit lets through
+        limitType = new ContentTypeDataGen().host(site).nextPersisted();
+        permissionAPI.save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                        limitType.getPermissionId(),
+                        APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
+                        PermissionAPI.PERMISSION_READ, true),
+                limitType, APILocator.systemUser(), false);
+        for (int i = 0; i < 3; i++) {
+            final Contentlet item = new ContentletDataGen(limitType.id()).host(site)
+                    .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+            ContentletDataGen.publish(item);
+            permissionAPI.save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                            item.getPermissionId(),
+                            APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
+                            PermissionAPI.PERMISSION_READ, true),
+                    item, APILocator.systemUser(), false);
+            limitItems.add(item);
+        }
     }
 
     @AfterClass
@@ -108,6 +133,10 @@ public class ContentletDataFetcherTest extends IntegrationTestBase {
                 onBothVariants)) {
             ContentletDataGen.remove(contentlet);
         }
+        for (final Contentlet item : limitItems) {
+            ContentletDataGen.remove(item);
+        }
+        ContentTypeDataGen.remove(limitType);
         ContentTypeDataGen.remove(contentType);
         APILocator.getHostAPI().archive(site, APILocator.systemUser(), false);
         APILocator.getHostAPI().delete(site, APILocator.systemUser(), false);
@@ -206,6 +235,81 @@ public class ContentletDataFetcherTest extends IntegrationTestBase {
                 limitedBackEndUser), "search");
         assertEquals("a back-end caller must still reach the named variant",
                 List.of(onNamedVariant.getIdentifier()), found);
+    }
+
+    /**
+     * Given: three live items readable by the anonymous role, and a configured maximum of 2.
+     * When: the untyped {@code search} field asks for 5 of them.
+     * Then: 2 are returned.
+     */
+    @Test
+    public void test_search_limitAboveTheConfiguredMaximum_returnsTheMaximum() throws Exception {
+        withConfiguredMaximum(2, () -> assertEquals(2,
+                identifiersFromSearch("+contentType:" + limitType.variable(), 5).size()));
+    }
+
+    /**
+     * Given: the same three items and a configured maximum of 2.
+     * When: the typed collection field of their type asks for 5 of them.
+     * Then: 2 are returned.
+     */
+    @Test
+    public void test_typedCollection_limitAboveTheConfiguredMaximum_returnsTheMaximum()
+            throws Exception {
+        withConfiguredMaximum(2, () -> {
+            final String field = limitType.variable() + "Collection";
+            assertEquals(2, identifiersFrom(GraphqlQueryRunner.executeAndExpectSuccess(
+                    String.format("{ %s(limit: 5) { identifier } }", field), anonymous),
+                    field).size());
+        });
+    }
+
+    /**
+     * Given: the same three items and a configured maximum of 2.
+     * When: the untyped {@code search} field asks with a limit of 0.
+     * Then: all three are returned, because a zero limit keeps the meaning it has today.
+     */
+    @Test
+    public void test_search_zeroLimit_keepsItsMeaningWithAConfiguredMaximum() throws Exception {
+        withConfiguredMaximum(2, () -> assertEquals(3,
+                identifiersFromSearch("+contentType:" + limitType.variable() + " +live:true",
+                        0).size()));
+    }
+
+    /**
+     * Runs the given check with the maximum number of search results set to the given value,
+     * restoring the previous value afterwards.
+     */
+    private static void withConfiguredMaximum(final int maximum, final Check check)
+            throws Exception {
+        final String previous = Config.getStringProperty(ContentSearchLimit.MAX_LIMIT_PROPERTY,
+                null);
+        Config.setProperty(ContentSearchLimit.MAX_LIMIT_PROPERTY, String.valueOf(maximum));
+        try {
+            check.run();
+        } finally {
+            Config.setProperty(ContentSearchLimit.MAX_LIMIT_PROPERTY, previous);
+        }
+    }
+
+    /** A check that may throw. */
+    @FunctionalInterface
+    private interface Check {
+        void run() throws Exception;
+    }
+
+    /**
+     * Runs the untyped search root field as the anonymous user with the given limit.
+     *
+     * @param query the Lucene query to run
+     * @param limit the limit to ask for
+     * @return the identifiers the query returned
+     */
+    private static List<String> identifiersFromSearch(final String query, final int limit)
+            throws Exception {
+        return identifiersFrom(GraphqlQueryRunner.executeAndExpectSuccess(
+                String.format("{ search(query: \"%s\", limit: %d) { identifier } }", query, limit),
+                anonymous), "search");
     }
 
     /**

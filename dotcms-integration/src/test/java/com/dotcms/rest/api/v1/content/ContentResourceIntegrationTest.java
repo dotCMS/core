@@ -19,6 +19,7 @@ import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.PersonaDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.StructureDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
@@ -33,9 +34,12 @@ import com.dotcms.rest.CountView;
 import com.dotcms.rest.ResponseEntityCountView;
 import com.dotcms.rest.ResponseEntityPaginatedDataView;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.SearchView;
+import com.dotcms.util.ContentSearchLimit;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -58,8 +62,11 @@ import com.dotmarketing.servlets.ServletTestUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.dotmarketing.util.json.JSONArray;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
@@ -1364,6 +1371,125 @@ public class ContentResourceIntegrationTest {
         final ResponseEntityView<Map<String, Object>> entityView =
                 (ResponseEntityView<Map<String, Object>>) endpointResponse.getEntity();
         return String.valueOf(entityView.getEntity().get("inode"));
+    }
+
+    /**
+     * Method to test: {@link ContentResource#search}
+     * <p>
+     * Given scenario: three live items of one type on a site, and a configured maximum of 2 search
+     * results; the second page is requested with a page size of 5.
+     * <p>
+     * Expected result: the page holds the third item, the one right after the first page of 2, so no
+     * item is skipped between pages.
+     */
+    @Test
+    public void test_search_perPageAboveTheConfiguredMaximum_pagesWithTheMaximum() throws Exception {
+        final Host site = new SiteDataGen().nextPersisted();
+        final ContentType type = new ContentTypeDataGen().host(site).nextPersisted();
+        final String previous = Config.getStringProperty(ContentSearchLimit.MAX_LIMIT_PROPERTY, null);
+        try {
+            for (int i = 0; i < 3; i++) {
+                new ContentletDataGen(type.id()).host(site).setPolicy(IndexPolicy.WAIT_FOR)
+                        .nextPersistedAndPublish();
+            }
+            final List<String> allInodes = searchInodes(site, type, 1, 3);
+            assertEquals("fixture problem: the three items are not all returned", 3, allInodes.size());
+
+            Config.setProperty(ContentSearchLimit.MAX_LIMIT_PROPERTY, "2");
+            assertEquals(allInodes.subList(2, 3), searchInodes(site, type, 2, 5));
+        } finally {
+            Config.setProperty(ContentSearchLimit.MAX_LIMIT_PROPERTY, previous);
+            ContentTypeDataGen.remove(type);
+            APILocator.getHostAPI().archive(site, systemUser, false);
+            APILocator.getHostAPI().delete(site, systemUser, false);
+        }
+    }
+
+    /**
+     * Runs POST /api/v1/content/search on one content type of one site, ordered by identifier so
+     * every call pages in the same order, and returns the inodes of the page.
+     *
+     * @param site the site to search
+     * @param type the content type to search
+     * @param page the page to ask for
+     * @param perPage the page size to ask for
+     * @return the inodes returned
+     */
+    private static List<String> searchInodes(final Host site, final ContentType type, final int page,
+            final int perPage) throws Exception {
+        final Map<String, Object> systemSearchableFields = new HashMap<>();
+        systemSearchableFields.put("siteId", site.getIdentifier());
+        systemSearchableFields.put("systemHostContent", false);
+        final Map<String, Map<String, Object>> byContentType = new HashMap<>();
+        byContentType.put(type.variable(), new HashMap<>());
+        final SearchView searchView = new ContentResource().search(createAuthenticatedRequest(),
+                mock(HttpServletResponse.class), new ContentSearchForm.Builder()
+                        .systemSearchableFields(systemSearchableFields)
+                        .searchableFieldsByContentType(byContentType)
+                        .orderBy("identifier")
+                        .page(page).perPage(perPage).build()).getEntity();
+        final JSONArray contentlets = searchView.getJsonObjectView().getJsonObject()
+                .optJSONArray("contentlets");
+        final List<String> inodes = new ArrayList<>();
+        for (int i = 0; contentlets != null && i < contentlets.length(); i++) {
+            inodes.add(contentlets.getJSONObject(i).getString("inode"));
+        }
+        return inodes;
+    }
+
+    /**
+     * Method to test: {@link ContentResource#pullRelated}
+     * <p>
+     * Given scenario: a content related to three live contents, and a configured maximum of 2
+     * search results.
+     * <p>
+     * Expected result: a request for 5 related contents with a condition returns 2.
+     */
+    @Test
+    public void test_pullRelated_limitAboveTheConfiguredMaximum_returnsTheMaximum()
+            throws Exception {
+        final ContentType childType = new ContentTypeDataGen()
+                .fields(List.of(new FieldDataGen().name("Title").velocityVarName("title").next()))
+                .nextPersisted();
+        final ContentType parentType = new ContentTypeDataGen()
+                .fields(List.of(
+                        new FieldDataGen().name("Title").velocityVarName("title").next(),
+                        new FieldDataGen().type(RelationshipField.class).name("Children")
+                                .velocityVarName("children").relationType(childType.variable())
+                                .values(String.valueOf(RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()))
+                                .next()))
+                .nextPersisted();
+        final String previous = Config.getStringProperty(ContentSearchLimit.MAX_LIMIT_PROPERTY, null);
+        try {
+            final List<Contentlet> children = new ArrayList<>();
+            for (int i = 0; i < 3; i++) {
+                children.add(new ContentletDataGen(childType.id()).setProperty("title", "Child " + i)
+                        .setPolicy(IndexPolicy.WAIT_FOR).nextPersistedAndPublish());
+            }
+            final Relationship relationship = APILocator.getRelationshipAPI().getRelationshipFromField(
+                    parentType.fields(RelationshipField.class).get(0), systemUser);
+            Contentlet parent = new ContentletDataGen(parentType.id()).setProperty("title", "Parent")
+                    .next();
+            parent.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            parent = APILocator.getContentletAPI().checkin(parent, Map.of(relationship, children),
+                    systemUser, false);
+            parent.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            APILocator.getContentletAPI().publish(parent, systemUser, false);
+
+            Config.setProperty(ContentSearchLimit.MAX_LIMIT_PROPERTY, "2");
+            final Response endpointResponse = new ContentResource().pullRelated(
+                    createAuthenticatedRequest(), mock(HttpServletResponse.class),
+                    new PullRelatedForm.Builder().identifier(parent.getIdentifier())
+                            .fieldVariable("children").condition("+live:true").limit(5).build());
+
+            assertEquals(Status.OK.getStatusCode(), endpointResponse.getStatus());
+            assertEquals(2, ((List<?>) ((ResponseEntityView<?>) endpointResponse.getEntity())
+                    .getEntity()).size());
+        } finally {
+            Config.setProperty(ContentSearchLimit.MAX_LIMIT_PROPERTY, previous);
+            ContentTypeDataGen.remove(parentType);
+            ContentTypeDataGen.remove(childType);
+        }
     }
 
     /**

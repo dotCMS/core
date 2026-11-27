@@ -832,7 +832,8 @@ paths:
         required: true
         schema:
           type: string
-      - description: Maximum number of results to return
+      - description: Maximum number of results to return. Values above the configured
+          maximum (10000 by default) are lowered to it
         in: path
         name: limit
         required: true
@@ -14977,7 +14978,8 @@ paths:
         schema:
           type: integer
           format: int32
-      - description: Number of results per page
+      - description: Number of results per page. Values above the configured maximum
+          (10000 by default) are lowered to it
         in: query
         name: per_page
         schema:
@@ -40106,7 +40108,8 @@ components:
           type: integer
           format: int32
           default: 20
-          description: Maximum number of contentlets to return (page size).
+          description: Maximum number of contentlets to return (page size). Values
+            above the configured maximum (10000 by default) are lowered to it.
           example: 20
         offset:
           type: integer

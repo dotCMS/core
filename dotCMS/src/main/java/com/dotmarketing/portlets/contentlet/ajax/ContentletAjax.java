@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.ajax;
 
 import com.dotcms.business.CloseDB;
+import com.dotcms.util.ContentSearchLimit;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.model.field.TagField;
@@ -431,6 +432,7 @@ public class ContentletAjax {
 	 *            The page number to show (starting with 1)
 	 *            If page is 0, this will return all possible contentlets
 	 * @param perPage
+	 *            The number of contents per page, capped by {@link ContentSearchLimit}
 	 * @param orderBy
 	 *            The field name to be used to sort the content
 	 * @return The list of contents that match the parameters at the position 0
@@ -442,6 +444,7 @@ public class ContentletAjax {
 	 */
 	@SuppressWarnings("rawtypes")
 	public List searchContentlet(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, int page, int perPage, String orderBy) throws DotStateException, DotDataException, DotSecurityException {
+		perPage = ContentSearchLimit.cap(perPage);
 
 		HttpSession sess = WebContextFactory.get().getSession();
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
@@ -496,10 +499,34 @@ public class ContentletAjax {
 				VariantAPI.DEFAULT_VARIANT.name());
 	}
 
-		@SuppressWarnings("rawtypes")
+	/**
+	 * Searches contents for the user of the current DWR request; every {@code searchContentlets}
+	 * overload that takes a page size ends here. The page size is capped by
+	 * {@link ContentSearchLimit}; a value below 1 uses the {@code PER_PAGE} default.
+	 *
+	 * @param structureInode the content type inode, or several joined by the type separator
+	 * @param fields         field names and values to filter by, alternating
+	 * @param categories     the category inodes to filter by
+	 * @param showDeleted    whether only archived contents are shown
+	 * @param filterSystemHost whether contents of the system host are left out
+	 * @param filterUnpublish whether only unpublished contents are shown
+	 * @param filterLocked   whether only locked contents are shown
+	 * @param page           the page number, starting with 1
+	 * @param perPage        the number of contents per page
+	 * @param orderBy        the field to sort by
+	 * @param modDateFrom    the earliest modification date, or {@code null}
+	 * @param modDateTo      the latest modification date, or {@code null}
+	 * @param variantName    the variant to search
+	 * @return the counters at position 0, then the headers, the total and one map per content
+	 * @throws DotStateException    if the search cannot be built
+	 * @throws DotDataException     if the search fails
+	 * @throws DotSecurityException if the user cannot run the search
+	 */
+	@SuppressWarnings("rawtypes")
 	public List searchContentlets(String structureInode, List<String> fields, List<String> categories, boolean showDeleted,
 	        boolean filterSystemHost,  boolean filterUnpublish, boolean filterLocked, int page, int perPage,String orderBy, String modDateFrom,
 	        String modDateTo, final String variantName) throws DotStateException, DotDataException, DotSecurityException {
+		perPage = ContentSearchLimit.cap(perPage);
 
 		HttpSession sess = WebContextFactory.get().getSession();
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();

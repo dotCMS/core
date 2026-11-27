@@ -20,6 +20,8 @@ import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.util.ContentSearchLimit;
+import com.dotmarketing.util.Config;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
@@ -478,6 +480,110 @@ public class ContentletAjaxTest {
 		} finally {
 			contentTypeAPI.delete(contentType);
 		}
+	}
+
+	/**
+	 * <b>Method to Test:</b> {@link ContentletAjax#searchContentlets(String, List, List, boolean, boolean,
+	 * boolean, boolean, int, int, String, String, String)}<p>
+	 * <b>When:</b> a page of 5 is asked for three live items of one type, with a configured maximum of 2
+	 * search results<p>
+	 * <b>Should:</b> return 2 rows, while still counting all three matches
+	 */
+	@Test
+	public void test_searchContentlets_perPageAboveTheConfiguredMaximum_returnsTheMaximum() throws Exception {
+		setUpContext();
+		final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+		final String previous = Config.getStringProperty(ContentSearchLimit.MAX_LIMIT_PROPERTY, null);
+		try {
+			addThreeLiveItems(contentType);
+			Config.setProperty(ContentSearchLimit.MAX_LIMIT_PROPERTY, "2");
+
+			final List results = new ContentletAjax().searchContentlets(contentType.inode(),
+					Collections.emptyList(), Collections.emptyList(), false, false, false, false,
+					1, 5, "moddate", null, null);
+
+			assertEquals(2, rowCount(results));
+			assertEquals(3L, ((Map) results.get(0)).get("total"));
+		} finally {
+			Config.setProperty(ContentSearchLimit.MAX_LIMIT_PROPERTY, previous);
+			contentTypeAPI.delete(contentType);
+		}
+	}
+
+	/**
+	 * <b>Method to Test:</b> {@link ContentletAjax#searchContentlet(String, List, List, boolean, boolean, int,
+	 * int, String)}<p>
+	 * <b>When:</b> a page of 5 is asked for three live items of one type, with a configured maximum of 2
+	 * search results<p>
+	 * <b>Should:</b> return 2 rows
+	 */
+	@Test
+	public void test_searchContentlet_perPageAboveTheConfiguredMaximum_returnsTheMaximum() throws Exception {
+		setUpContext();
+		final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+		final String previous = Config.getStringProperty(ContentSearchLimit.MAX_LIMIT_PROPERTY, null);
+		try {
+			addThreeLiveItems(contentType);
+			Config.setProperty(ContentSearchLimit.MAX_LIMIT_PROPERTY, "2");
+
+			final List results = new ContentletAjax().searchContentlet(contentType.inode(),
+					Collections.emptyList(), Collections.emptyList(), false, false, 1, 5, "moddate");
+
+			assertEquals(2, rowCount(results));
+		} finally {
+			Config.setProperty(ContentSearchLimit.MAX_LIMIT_PROPERTY, previous);
+			contentTypeAPI.delete(contentType);
+		}
+	}
+
+	/**
+	 * <b>Method to Test:</b> {@link ContentletAjax#searchContentletsByUser(String, List, List, boolean,
+	 * boolean, boolean, boolean, int, String, int, User, HttpSession, String, String)}<p>
+	 * <b>When:</b> the content export asks for up to 100000 rows of three live items, with a configured
+	 * maximum of 2 search results<p>
+	 * <b>Should:</b> return all three rows, since the maximum applies to requests, not to the export
+	 */
+	@Test
+	public void test_searchContentletsByUser_exportPageSize_isNotLowered() throws Exception {
+		final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+		final String previous = Config.getStringProperty(ContentSearchLimit.MAX_LIMIT_PROPERTY, null);
+		try {
+			addThreeLiveItems(contentType);
+			Config.setProperty(ContentSearchLimit.MAX_LIMIT_PROPERTY, "2");
+
+			final List results = new ContentletAjax().searchContentletsByUser(contentType.inode(),
+					Collections.emptyList(), Collections.emptyList(), false, false, false, false,
+					1, "moddate", 100000, systemUser, null, null, null);
+
+			assertEquals(3, rowCount(results));
+		} finally {
+			Config.setProperty(ContentSearchLimit.MAX_LIMIT_PROPERTY, previous);
+			contentTypeAPI.delete(contentType);
+		}
+	}
+
+	/**
+	 * Adds three live items to the given content type.
+	 *
+	 * @param contentType the content type
+	 */
+	private static void addThreeLiveItems(final ContentType contentType) {
+		for (int i = 0; i < 3; i++) {
+			new ContentletDataGen(contentType.id()).setPolicy(IndexPolicy.WAIT_FOR).nextPersistedAndPublish();
+		}
+	}
+
+	/** Entries a search result holds before its rows: the counters, the headers and the total. */
+	private static final int RESULT_ENTRIES_BEFORE_ROWS = 3;
+
+	/**
+	 * Counts the content rows of a search result.
+	 *
+	 * @param results the search result
+	 * @return the number of rows
+	 */
+	private static int rowCount(final List results) {
+		return results.size() - RESULT_ENTRIES_BEFORE_ROWS;
 	}
 
 	private static void setUpContext() {
