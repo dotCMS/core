@@ -224,9 +224,10 @@ perform audited actions, and confirm that no audit output is produced.
   each request and no session is created, only refused requests are recorded, as `auth.request`
   and not as `auth.login`. A session-based sign-in is recorded once, when the session starts.
 - **A client that keeps retrying a refused credential.** The first refusal is recorded at once.
-  Further refusals of the same credential from the same client address during the following
-  minute are recorded as one summary event at the end of that minute, stating how many
-  refusals it stands for.
+  Further refusals of the same credential from the same client address during the minute that
+  follows the first refusal are recorded as one summary event at the end of that minute,
+  stating how many refusals it stands for. A refusal after that minute starts again as a first
+  refusal.
 - **Sign-in failures that dotCMS does not decide.** A sign-in that fails at the single sign-on
   provider never reaches dotCMS and produces no event. A single sign-on response that dotCMS
   itself rejects is recorded as an `auth.login` failure. An invalid or expired "remember me"
@@ -243,7 +244,8 @@ perform audited actions, and confirm that no audit output is produced.
 - **A password reset requested for an address that matches no account.** The event is still
   recorded, with the address submitted, truncated, and no target account. Unlike a failed
   sign-in, this event deliberately shows whether an account matched, because an operator needs
-  to know whether a reset was actually issued.
+  to know whether a reset was actually issued. That is acceptable because audit events are
+  readable only by those who can already read the application's log files (FR-018).
 - **Malformed or oversized input.** A user name containing line breaks, control characters or
   several thousand characters cannot split, forge or bloat a record: values are encoded and
   truncated to a documented length.
@@ -251,7 +253,8 @@ perform audited actions, and confirm that no audit output is produced.
   written can be lost. The reference states this limit; the next start is identifiable by a
   new per-start identifier.
 - **More than one node.** Each node records its own events with its own node identifier and
-  sequence. Ordering across nodes relies on timestamps.
+  sequence, and summarises repeated refusals on its own. Ordering across nodes relies on
+  timestamps.
 
 ## Requirements *(mandatory)*
 
@@ -336,10 +339,11 @@ perform audited actions, and confirm that no audit output is produced.
   MUST produce at most one `role.grant` event and one `role.revoke` event per sign-in, and none
   when the roles did not change.
 - **FR-016**: The first `auth.request` refusal of a credential from a client address MUST be
-  recorded at once. Further refusals of the same credential from the same address during the
-  following minute MUST be recorded as one summary event at the end of that minute, stating
-  the number of refusals it stands for. A pending summary MUST be written on an orderly
-  shutdown.
+  recorded at once, and starts a one-minute period for that credential and address. Further
+  refusals of the same credential from the same address within that period MUST be recorded
+  as one summary event when the period ends, stating the number of refusals it stands for;
+  when there were none, no summary is written. A refusal after the period has ended is
+  treated as a first refusal again. A pending summary MUST be written on an orderly shutdown.
 - **FR-017**: A token that the product creates for its own internal use while carrying out a
   user's request MUST be recorded with that user as the actor and MUST be marked as an
   internal-use token.
@@ -348,7 +352,8 @@ perform audited actions, and confirm that no audit output is produced.
 
 - **FR-018**: Events MUST be written to a dedicated audit file, separate from the application
   log. The file MUST NOT grow without bound: the product limits its size and the number of
-  older files kept, and the limits are documented and configurable.
+  older files kept, and the limits are documented and configurable. The product MUST NOT make
+  audit events readable to anyone who cannot already read the application's log files.
 - **FR-019**: The platform operator MUST be able to have the events also written to standard
   output, each carrying a field that lets a collector separate audit events from other output.
   This copy is off by default, so that an upgrade adds nothing to standard output.
@@ -372,7 +377,9 @@ perform audited actions, and confirm that no audit output is produced.
   from inside the running application, whether through an admin screen or an API.
 - **FR-025**: The product MUST publish a reference of every event name, its meaning, its
   fields, its reasons and the release that introduced it. The reference MUST match what the
-  product emits, and that match MUST be verified automatically.
+  product emits, and that match MUST be verified automatically. The reference MUST state that
+  a gap in the per-node sequence numbers is the only sign of lost events, and that a summary
+  event (FR-015, FR-016) is one event standing for several actions, not a loss.
 - **FR-026**: Event names and field names are a compatibility contract. A published name MUST
   NOT be renamed, removed or reused for a different meaning. New events and new fields MAY be
   added. Any change a consumer could not ignore MUST change the schema version.
@@ -435,9 +442,10 @@ perform audited actions, and confirm that no audit output is produced.
 - **SC-005**: Under a burst that exceeds what the stream can absorb, events written plus events
   reported as dropped or failed equals events produced, with no unaccounted difference.
 - **SC-006**: A client making 1,000 successful API requests with one valid token produces zero
-  audit events. A client making 1,000 requests in one minute with one expired token produces
-  at most three `auth.request` events whose counts add up to 1,000. A single sign-on user who
-  signs in ten times with unchanged roles produces ten sign-in events and zero role events.
+  audit events. A client making 1,000 requests to one node within 30 seconds with one expired
+  token produces exactly two `auth.request` events, whose counts add up to 1,000. A single
+  sign-on user who signs in ten times with unchanged roles produces ten sign-in events and
+  zero role events.
 - **SC-007**: Across the events produced by the automated tests, zero contain a password, a
   token value, a session identifier or a reset link.
 - **SC-008**: After an orderly shutdown with events pending, zero events are missing from the
