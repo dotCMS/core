@@ -75,6 +75,11 @@
 		<class>com.dotcms.rendering.velocity.viewtools.DotRenderTool</class>
 	</tool>
 	<tool>
+		<key>dotcdn</key>
+		<scope>request</scope>
+		<class>com.dotcms.cdn.viewtool.DotCDNTool</class>
+	</tool>
+	<tool>
 		<key>import</key>
 		<scope>request</scope>
 		<class>org.apache.velocity.tools.view.tools.ImportTool</class>
