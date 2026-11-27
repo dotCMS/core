@@ -781,6 +781,27 @@ describe('DotRelationshipFieldComponent', () => {
      * They matter because the dialog is being replaced wholesale, and "the add button still opens
      * something" is an easy thing to keep while losing the guard in front of it.
      */
+    describe('the picker title', () => {
+        /** The dialog is titled "Select {type}", so it needs the target type's name. */
+        it('hands the picker the target content type name', () => {
+            setup({ contentType: vi.fn().mockReturnValue({ id: 'ct-1', name: 'Activity' }) });
+            const dialogService = spectator.inject(DialogService);
+            (dialogService.open as Mock).mockClear();
+
+            spectator.component.showExistingContentDialog();
+
+            expect(dialogService.open).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.objectContaining({
+                    data: expect.objectContaining({
+                        contentTypeId: 'ct-1',
+                        contentTypeName: 'Activity'
+                    })
+                })
+            );
+        });
+    });
+
     describe('when the picker must not open (US2)', () => {
         it('does not open a dialog when the field is disabled', () => {
             const dialogService = spectator.inject(DialogService);

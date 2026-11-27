@@ -7,7 +7,7 @@
      instead of reusing that shell. -->
 <dot-dialog data-testid="add-relationships">
     <dot-dialog-header
-        [title]="'dot.relationship.add.dialog.title' | dm"
+        [title]="$title()"
         [closeLabel]="'dot.relationship.add.dialog.close.aria' | dm"
         data-testid="add-relationships-title"
         (close)="cancel()">

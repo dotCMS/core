@@ -42,9 +42,10 @@ describe('AddRelationshipsComponent — shared surface (US1)', () => {
     let spectator: Spectator<AddRelationshipsComponent>;
 
     const messageServiceMock = new MockDotMessageService({
-        'dot.relationship.add.dialog.title': 'Add Relationships',
+        'dot.relationship.add.dialog.title': 'Select {0}',
+        'dot.asset.picker.header.browse': 'Select Content',
         'dot.relationship.add.dialog.search.placeholder': 'Search by name...',
-        'dot.relationship.add.dialog.confirm': 'Add Relationships',
+        'dot.relationship.add.dialog.confirm': 'Select',
         'dot.common.dialog.reject': 'Cancel',
         'dot.relationship.add.dialog.empty': 'No content found',
         'dot.file.relationship.dialog.content.already.related':
@@ -142,7 +143,12 @@ describe('AddRelationshipsComponent — shared surface (US1)', () => {
     };
 
     beforeEach(() => {
-        input = { contentTypeId: 'target-type-id', selected: [], selectionMode: 'multiple' };
+        input = {
+            contentTypeId: 'target-type-id',
+            contentTypeName: 'Activity',
+            selected: [],
+            selectionMode: 'multiple'
+        };
         searchMock.mockReset().mockReturnValue(of(emptyResponse));
         constrainedMock.mockReset().mockReturnValue(of(new Map<string, string>()));
         spectator = createComponent();
@@ -176,9 +182,20 @@ describe('AddRelationshipsComponent — shared surface (US1)', () => {
     });
 
     describe('dialog chrome', () => {
-        it('is titled "Add Relationships"', () => {
-            expect(spectator.query(byTestId('dialog-title'))?.textContent).toContain(
-                'Add Relationships'
+        it('is titled "Select" plus the target content type', () => {
+            expect(spectator.query(byTestId('dialog-title'))?.textContent?.trim()).toBe(
+                'Select Activity'
+            );
+        });
+
+        /** The Content Drive filter chip opens the dialog without knowing the target type. */
+        it('falls back to "Select Content" when no content type name is given', () => {
+            input = { ...input, contentTypeName: undefined };
+            spectator = createComponent();
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('dialog-title'))?.textContent?.trim()).toBe(
+                'Select Content'
             );
         });
 
@@ -198,9 +215,11 @@ describe('AddRelationshipsComponent — shared surface (US1)', () => {
             ).toHaveClass('p-button-secondary');
         });
 
-        it('offers Cancel and Add Relationships in the footer', () => {
+        it('offers Cancel and Select in the footer', () => {
             expect(spectator.query(byTestId('add-relationships-cancel'))).toBeTruthy();
-            expect(spectator.query(byTestId('add-relationships-confirm'))).toBeTruthy();
+            expect(
+                spectator.query(byTestId('add-relationships-confirm'))?.textContent?.trim()
+            ).toBe('Select');
         });
     });
 

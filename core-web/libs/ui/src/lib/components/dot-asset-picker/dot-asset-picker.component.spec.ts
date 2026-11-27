@@ -195,7 +195,7 @@ describe('DotAssetPickerComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
-                    'dot.common.dialog.accept': 'Add',
+                    'dot.asset.picker.confirm': 'Select',
                     'dot.common.dialog.reject': 'Cancel',
                     'dot.asset.picker.upload.rejected': "Can't upload this file",
                     'dot.asset.picker.upload.rejected.detail': 'Only {0} can be uploaded here.',
@@ -335,6 +335,11 @@ describe('DotAssetPickerComponent', () => {
             spectator.component['onSelect']([]);
 
             expect(store.clearSelection).toHaveBeenCalled();
+        });
+
+        /** A picker's confirm repeats the header's verb ("Select Image" → Select), never "Accept". */
+        it('should label Confirm "Select"', () => {
+            expect(button('asset-picker-confirm').textContent?.trim()).toBe('Select');
         });
 
         it('should disable Confirm while nothing is selected', () => {

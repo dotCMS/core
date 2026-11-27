@@ -93,6 +93,19 @@ export class AddRelationshipsComponent implements OnInit {
     );
 
     /**
+     * Dialog title. A picker is titled "Select …" after what it picks — the target content type
+     * when the caller knows it, otherwise the generic "Select Content". It no longer repeats the
+     * footer's "Add Relationships" button.
+     */
+    protected readonly $title = computed(() => {
+        const contentTypeName = this.#dialogConfig.data?.contentTypeName;
+
+        return contentTypeName
+            ? this.#dotMessageService.get('dot.relationship.add.dialog.title', contentTypeName)
+            : this.#dotMessageService.get('dot.asset.picker.header.browse');
+    });
+
+    /**
      * Why each claimed row is refused, for the list's tooltip: the item that already holds it, or
      * a generic line when that item has no title. A greyed-out row with nothing saying why reads
      * as a fault (#37958).
