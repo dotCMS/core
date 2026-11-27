@@ -149,6 +149,7 @@ import org.junit.runners.Suite;
         SecretsStoreConcurrentWriteRaceTest.class,
     com.dotcms.rest.api.v1.system.role.RoleResourceCheckRolesIntegrationTest.class,
         RoleResourceIntegrationTest.class,
+    com.dotcms.rest.api.v1.index.ESIndexResourceSiteSearchIntegrationTest.class,
     com.dotmarketing.portlets.workflows.action.EditWorkflowTaskActionTest.class,
     com.dotcms.auth.FailedLoginRecordingTest.class,
         FileAssetContainerPermissionInheritanceTest.class,

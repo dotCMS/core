@@ -636,7 +636,22 @@ public class ESIndexResource {
 
         SystemMessageEventUtil.getInstance().pushMessage(systemMessage, ImmutableList.of(user.getUserId()));
     }
-    
+
+    /**
+     * Activates, deactivates, clears, opens or closes an index, as named by the {@code action}
+     * query parameter (activate when it is missing or unknown). Content indices go through the
+     * content index API; site-search indices go through the site-search subsystem, which does not
+     * support clear. Requires a CMS administrator with the Maintenance portlet.
+     *
+     * @param request   the current request
+     * @param response  the current response
+     * @param indexName the index name, with or without the cluster prefix
+     * @param action    activate, deactivate, clear, open or close
+     * @return the index status on success; 404 when the index does not exist; 400 when the change
+     * is not allowed
+     * @throws DotDataException if the index cannot be changed
+     * @throws IOException      on an index-engine error
+     */
     @CloseDBIfOpened
     @PUT
     @JSONP
@@ -653,6 +668,12 @@ public class ESIndexResource {
         // name (with cluster prefix) so this endpoint stays consistent and does not 404 on the
         // latter (issue #35640, TC-016).
         final String resolvedName = indexAPI.removeClusterIdFromName(indexName);
+
+        // Site-search indices are not in the content index lists and have their own default
+        // pointer, so they are changed through the site-search subsystem, as deleteIndex does.
+        if (IndexType.SITE_SEARCH.is(resolvedName)) {
+            return modSiteSearchIndex(request, response, init, indexAction, resolvedName, indexName);
+        }
 
         if(indexDoesNotExist(resolvedName) ){
             // Readable 404 body, consistent with deleteIndex (issue #35640, TC-017).
@@ -722,6 +743,84 @@ public class ESIndexResource {
     }
 
     /**
+     * Activates, deactivates, opens or closes a site-search index. Activating makes it the
+     * default site-search index and deactivating removes it as the default, through the
+     * site-search subsystem; opening and closing act on the index itself. Clearing is not
+     * supported for site-search indices.
+     *
+     * @param request       the current request
+     * @param response      the current response
+     * @param init          the authenticated request data
+     * @param indexAction   the change to make
+     * @param resolvedName  the index name without the cluster prefix
+     * @param requestedName the index name as the caller sent it, used in error messages
+     * @return the index status on success; 404 when the index does not exist; 400 for a clear;
+     * 500 when the change fails
+     * @throws DotDataException if the index status cannot be read afterwards
+     */
+    private Response modSiteSearchIndex(final HttpServletRequest request,
+            final HttpServletResponse response, final InitDataObject init,
+            final IndexAction indexAction, final String resolvedName, final String requestedName)
+            throws DotDataException {
+
+        final com.dotmarketing.sitesearch.business.SiteSearchAPI siteSearchAPI =
+                APILocator.getSiteSearchAPI();
+
+        if (!siteSearchIndexExists(siteSearchAPI, resolvedName)) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(new ResponseEntityView<>(List.of(
+                            new ErrorEntity("INDEX_NOT_FOUND", "Index not found: " + requestedName)))).build();
+        }
+
+        if (indexAction == IndexAction.CLEAR) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseEntityView<>(List.of(new ErrorEntity("INDEX_NOT_MODIFIABLE",
+                            "Site-search indices cannot be cleared: " + requestedName)))).build();
+        }
+
+        try {
+            switch (indexAction) {
+                case DEACTIVATE:
+                    siteSearchAPI.deactivateIndex(resolvedName);
+                    break;
+                case OPEN:
+                    APILocator.getESIndexAPI().openIndex(resolvedName);
+                    break;
+                case CLOSE:
+                    APILocator.getESIndexAPI().closeIndex(resolvedName);
+                    break;
+                default:
+                    siteSearchAPI.activateIndex(resolvedName);
+            }
+        } catch (final DotDataException | IOException | RuntimeException e) {
+            Logger.error(this, "Error trying to " + indexAction.name().toLowerCase()
+                    + " site-search index '" + resolvedName + "': " + e.getMessage(), e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(new ResponseEntityView<>(List.of(new ErrorEntity("INDEX_MODIFY_ERROR",
+                            "Could not " + indexAction.name().toLowerCase() + " index: " + requestedName)))).build();
+        }
+
+        sendAdminMessage(indexAction.name().toLowerCase() + " " + resolvedName,
+                MessageSeverity.INFO, init.getUser(), 5000);
+        return getIndexStatus(request, response);
+    }
+
+    /**
+     * Tells whether a site-search index exists, open or closed. Both lists are needed: on
+     * OpenSearch the list of indices holds open indices only.
+     *
+     * @param siteSearchAPI the site-search API
+     * @param indexName     the index name without the cluster prefix
+     * @return {@code true} if the index exists
+     */
+    private static boolean siteSearchIndexExists(
+            final com.dotmarketing.sitesearch.business.SiteSearchAPI siteSearchAPI,
+            final String indexName) {
+        return siteSearchAPI.listIndices().contains(indexName)
+                || siteSearchAPI.listClosedIndices().contains(indexName);
+    }
+
+    /**
      * Deletes a site-search index through the site-search subsystem (its own ES/OS-aware router),
      * translating its outcome to REST responses consistently with the content delete path:
      * 404 when the index is unknown, 400 when it is the active index (deactivate first),
@@ -734,7 +833,7 @@ public class ESIndexResource {
         final com.dotmarketing.sitesearch.business.SiteSearchAPI siteSearchAPI =
                 APILocator.getSiteSearchAPI();
 
-        if (!siteSearchAPI.listIndices().contains(resolvedName)) {
+        if (!siteSearchIndexExists(siteSearchAPI, resolvedName)) {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity(new ResponseEntityView<>(List.of(
                             new ErrorEntity("INDEX_NOT_FOUND", "Index not found: " + requestedName)))).build();

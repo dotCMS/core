@@ -23,7 +23,6 @@ import com.dotcms.publisher.environment.ajax.EnvironmentAjaxAction;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.cms.login.factories.LoginFactory;
-import com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction;
 import com.dotmarketing.sitesearch.ajax.SiteSearchAjaxAction;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.WebKeys;
@@ -118,10 +117,10 @@ public class AjaxPasswordAuthenticationTest extends UnitTestBase {
         // Never read while the action behaves: it is here so a regression that hands the URI over
         // fails on the argument below instead of passing quietly.
         when(request.getRequestURI()).thenReturn("/DotAjaxDirector/"
-                + "com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/indexList"
+                + "com.dotmarketing.sitesearch.ajax.SiteSearchAjaxAction/cmd/getJobProgress"
                 + "/user/someone@example.com/password/a-password");
 
-        final AjaxAction action = mock(IndexAjaxAction.class, CALLS_REAL_METHODS);
+        final AjaxAction action = mock(SiteSearchAjaxAction.class, CALLS_REAL_METHODS);
         action.setWebResource(webResource);
         action.setUser(request);
 
@@ -183,14 +182,13 @@ public class AjaxPasswordAuthenticationTest extends UnitTestBase {
     }
 
     private static List<Class<? extends AjaxAction>> allActionTypes() {
-        return List.of(IndexAjaxAction.class, SiteSearchAjaxAction.class,
-                PublishingEndpointAjaxAction.class, EnvironmentAjaxAction.class,
-                RemotePublishAjaxAction.class);
+        return List.of(SiteSearchAjaxAction.class, PublishingEndpointAjaxAction.class,
+                EnvironmentAjaxAction.class, RemotePublishAjaxAction.class);
     }
 
     private static List<Class<? extends AjaxAction>> portletGatedActionTypes() {
-        return List.of(IndexAjaxAction.class, SiteSearchAjaxAction.class,
-                PublishingEndpointAjaxAction.class, EnvironmentAjaxAction.class);
+        return List.of(SiteSearchAjaxAction.class, PublishingEndpointAjaxAction.class,
+                EnvironmentAjaxAction.class);
     }
 
     private static List<Class<? extends AjaxAction>> aliasActionTypes() {
