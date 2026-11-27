@@ -30,6 +30,8 @@ import com.dotmarketing.business.Layout;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.beans.Permission;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -2523,6 +2525,65 @@ public class PublishingResourceIntegrationTest {
     // =========================================================================
     // PUSH BUNDLE HELPER METHODS
     // =========================================================================
+
+    /**
+     * Given: a bundle owned by another user, and an environment the pushing user may use
+     * When:  a non-admin back-end user with the Publishing Queue pushes the bundle
+     * Then:  403, and no environment is saved on the bundle
+     */
+    @Test
+    public void test_pushBundle_bundleOfAnotherUser_isForbidden() throws Exception {
+        final User otherUser = createBackendUserWithPortlets("publishing-queue");
+        final Environment env = createEnvironmentUsableBy(otherUser, "push-non-owner-env");
+        final FilterDescriptor filter = createFilter("push-non-owner-filter");
+        final String bundleId = createBundleForPush("push-non-owner-bundle");
+        final PushBundleForm form = new PushBundleForm("publish",
+                formatISO8601(Instant.now().plusSeconds(60)), null, List.of(env.getId()),
+                filter.getKey());
+
+        assertThrows(ForbiddenException.class, () -> publishingResource.pushBundle(
+                mockAuthenticatedRequest(otherUser), response, bundleId, form));
+
+        assertTrue("No environment should be saved on the bundle", APILocator.getEnvironmentAPI()
+                .findEnvironmentsByBundleId(bundleId).isEmpty());
+    }
+
+    /**
+     * Given: a bundle owned by a non-admin back-end user with the Publishing Queue, and an
+     *        environment that user may use
+     * When:  the owner pushes the bundle
+     * Then:  the bundle is queued for that environment
+     */
+    @Test
+    public void test_pushBundle_ownBundle_isQueued() throws Exception {
+        final User owner = createBackendUserWithPortlets("publishing-queue");
+        final Environment env = createEnvironmentUsableBy(owner, "push-owner-env");
+        final FilterDescriptor filter = createFilter("push-owner-filter");
+        final Bundle bundle = new Bundle("push-owner-bundle_" + System.currentTimeMillis(),
+                null, null, owner.getUserId());
+        APILocator.getBundleAPI().saveBundle(bundle);
+        createdBundleIds.add(bundle.getId());
+        final PushBundleForm form = new PushBundleForm("publish",
+                formatISO8601(Instant.now().plusSeconds(60)), null, List.of(env.getId()),
+                filter.getKey());
+
+        final ResponseEntityPushBundleResultView result = publishingResource.pushBundle(
+                mockAuthenticatedRequest(owner), response, bundle.getId(), form);
+
+        assertEquals(List.of(env.getId()), result.getEntity().environments());
+    }
+
+    /**
+     * Creates an environment and grants USE on it to the user's own role.
+     */
+    private Environment createEnvironmentUsableBy(final User user, final String name) throws Exception {
+        final Environment env = createEnvironmentWithPermission(name);
+        APILocator.getPermissionAPI().save(
+                new Permission(env.getPermissionId(), APILocator.getRoleAPI().getUserRole(user).getId(),
+                        PermissionAPI.PERMISSION_USE, true),
+                env, APILocator.systemUser(), false);
+        return env;
+    }
 
     /**
      * Creates an environment. Admin user has implicit access.

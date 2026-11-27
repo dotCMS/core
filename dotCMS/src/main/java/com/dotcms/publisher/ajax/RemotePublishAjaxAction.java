@@ -57,7 +57,6 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import io.vavr.control.Try;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileItemFactory;
 import org.apache.commons.fileupload.FileUploadException;
@@ -68,13 +67,11 @@ import org.apache.commons.io.FileUtils;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
-import java.nio.file.Files;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -481,141 +478,6 @@ public class RemotePublishAjaxAction extends AjaxAction {
     }
 
     /**
-     * Downloads the compressed file of the bundle named by the {@code bid} URI parameter. The id
-     * must be a plain bundle id; when it is not, or there is no archive for it in the bundles
-     * directory, the response is a 404.
-     *
-     * @param request  HttpRequest
-     * @param response HttpResponse
-     * @throws IOException If fails sending back to the user response information
-     */
-    public void downloadBundle ( HttpServletRequest request, HttpServletResponse response ) throws IOException {
-    	try {
-			if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("publishing-queue", getUser())){
-				response.sendError(401);
-				return;
-			}
-		} catch (DotDataException e1) {
-			Logger.error(RemotePublishAjaxAction.class,e1.getMessage(),e1);
-			response.sendError(401);
-			return;
-		}
-        final Map<String, String> map = getURIParams();
-        final String bid = map.get( "bid" );
-
-        final Optional<File> bundle = BundlerUtil.findBundleArchive( bid );
-        if ( bundle.isEmpty() ) {
-            response.sendError( HttpServletResponse.SC_NOT_FOUND, "No Bundle Found" );
-            return;
-        }
-
-        response.setContentType( "application/x-tgz" );
-        response.setHeader( "Content-Disposition", "attachment; filename=" + bundle.get().getName().replaceAll( "[^\\w.-]", "_" ) );
-        response.setContentLengthLong( bundle.get().length() );
-        try {
-            Files.copy( bundle.get().toPath(), response.getOutputStream() );
-        } catch ( Exception e ) {
-            Logger.warn( this.getClass(), "Error Downloading Bundle.", e );
-        }
-    }
-
-    /**
-     * Generates and flush an Unpublish bundle for a given bundle id and operation (publish/unpublish)
-     *
-     * @param request  HttpRequest
-     * @param response HttpResponse
-     * @throws IOException If fails sending back to the user response information
-     */
-    public void downloadUnpushedBundle ( HttpServletRequest request, HttpServletResponse response )
-            throws IOException, DotDataException {
-    	try {
-			if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("publishing-queue", getUser())){
-				response.sendError(401);
-				return;
-			}
-		} catch (DotDataException e1) {
-			Logger.error(RemotePublishAjaxAction.class,e1.getMessage(),e1);
-			response.sendError(401);
-			return;
-		}
-        //Read the parameters
-        final Map<String, String> map = getURIParams();
-        final String bundleId = map.get( "bundleId" );
-        final String paramOperation = map.get( "operation" );
-        final String bundleFilter = UtilMethods.isSet(map.get("filterKey")) ? map.get("filterKey") : "";
-        if ( bundleId == null || bundleId.isEmpty() ) {
-            Logger.error( this.getClass(), "No Bundle Found with id: " + bundleId );
-            response.sendError( 500, "No Bundle Found with id: " + bundleId );
-            return;
-        }
-
-        //What we want to do with this bundle
-        PushPublisherConfig.Operation operation = PushPublisherConfig.Operation.PUBLISH;
-        if ( paramOperation != null && paramOperation.equalsIgnoreCase( "unpublish" ) ) {
-            operation = PushPublisherConfig.Operation.UNPUBLISH;
-        }
-
-        final Bundle dbBundle = Try.of(()->APILocator.getBundleAPI().getBundleById(bundleId)).getOrElseThrow(e->new DotRuntimeException(e));
-        
-        
-        final String bundleName = dbBundle.getName().replaceAll("[^\\w.-]", "_");
-        
-        
-        File bundle;
-        try {
-            //set Filter to the bundle
-            dbBundle.setFilterKey(bundleFilter);
-            //set ForcePush value of the filter to the bundle
-            dbBundle.setForcePush(
-                    (boolean) APILocator.getPublisherAPI().getFilterDescriptorByKey(bundleFilter).getFilters().getOrDefault(FilterDescriptor.FORCE_PUSH_KEY,false));
-            dbBundle.setOperation(operation.ordinal());
-            //Update Bundle
-            APILocator.getBundleAPI().updateBundle(dbBundle);
-
-            //Generate the bundle file for this given operation
-
-            bundle = APILocator.getBundleAPI().generateTarGzipBundleFile(dbBundle);
-        } catch ( Exception e ) {
-            Logger.error( this.getClass(), "Error trying to generate bundle with id: " + bundleId, e );
-            response.sendError( 500, "Error trying to generate bundle with id: " + bundleId );
-            return;
-        }
-
-        response.setContentType( "application/x-tgz" );
-        response.setHeader( "Content-Disposition", "attachment; filename=" + bundleName + "-" + bundle.getName() );
-        BufferedInputStream in = null;
-        try {
-            in = new BufferedInputStream( Files.newInputStream(bundle.toPath()) );
-            final byte[] buf = new byte[4096];
-            int len;
-
-            while ( (len = in.read( buf, 0, buf.length )) != -1 ) {
-                response.getOutputStream().write( buf, 0, len );
-            }
-        } catch ( Exception e ) {
-            Logger.error( this.getClass(), "Error reading bundle stream for bundle id: " + bundleId, e );
-            response.sendError( 500, "Error reading bundle stream for bundle id: " + bundleId );
-        } finally {
-            try {
-                in.close();
-            } catch ( Exception ex ) {
-                Logger.error( this.getClass(), "Error closing Stream for bundle: " + bundleId, ex );
-            }
-
-            //Clean the just created bundle because on each download we will generate a new bundle file with a new id in order to avoid conflicts with ids
-            final File bundleRoot = BundlerUtil.getBundleRoot( bundleId );
-            final File compressedBundle = new File( ConfigUtils.getBundlePath() + File.separator + bundleId + ".tar.gz" );
-            if ( compressedBundle.exists() ) {
-                compressedBundle.delete();
-                if ( bundleRoot.exists() ) {
-                    com.liferay.util.FileUtil.deltree( bundleRoot );
-                }
-            }
-        }
-    }
-
-
-    /**
      * Publish a given Bundle file
      *
      * @param request  HttpRequest
@@ -868,7 +730,9 @@ public class RemotePublishAjaxAction extends AjaxAction {
     }
 
     /**
-     * Updates the assets in the given bundle with the publish/expire dates and destination environments and set them ready to be pushed
+     * Updates the assets in the given bundle with the publish/expire dates and destination environments and set them ready to be pushed.
+     * Only the owner of the bundle or a CMS Administrator may push it; anyone else gets a 403, and a
+     * bundle that does not exist a 404.
      *
      * @param request  HttpRequest
      * @param response HttpResponse
@@ -893,6 +757,21 @@ public class RemotePublishAjaxAction extends AjaxAction {
         final String timezoneId = request.getParameter( "timezoneId" );
 
         try {
+            final Bundle bundle = bundleAPI.getBundleById(bundleId);
+            if (null == bundle) {
+                response.sendError(HttpServletResponse.SC_NOT_FOUND);
+                return;
+            }
+            try {
+                bundleAPI.checkCanModifyBundle(bundle, getUser());
+            } catch (final DotSecurityException e) {
+                Logger.warn(this.getClass(), String.format(
+                        "Bundle push refused for user '%s' on bundle '%s': only the bundle owner or a CMS Administrator may push it",
+                        getUser().getUserId(), bundleId));
+                response.sendError(HttpStatus.SC_FORBIDDEN);
+                return;
+            }
+
             final boolean forcePush = (boolean) APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey).getFilters().getOrDefault(FilterDescriptor.FORCE_PUSH_KEY,false);
             final List<String> whereToSend = Arrays.asList(whoToSendTmp.split(StringPool.COMMA));
             final List<Environment> envsToSendTo = new ArrayList<>();
@@ -924,7 +803,6 @@ public class RemotePublishAjaxAction extends AjaxAction {
             //Clean up the selected bundle
             request.getSession().removeAttribute( WebKeys.SELECTED_BUNDLE + getUser().getUserId() );
 
-            final Bundle bundle = bundleAPI.getBundleById(bundleId);
             bundle.setForcePush(forcePush);
             bundle.setFilterKey(filterKey);
             bundleAPI.saveBundleEnvironments(bundle, envsToSendTo);

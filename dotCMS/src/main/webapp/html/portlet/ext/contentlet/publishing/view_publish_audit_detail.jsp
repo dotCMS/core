@@ -96,7 +96,7 @@
     <%if (collectedProtocols.size() > 0 &&
             !collectedProtocols.contains("static") &&
             !collectedProtocols.contains(AWSS3Publisher.PROTOCOL_AWS_S3)) {%>
-        <button dojoType="dijit.form.Button" onClick="window.location='/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadBundle/bid/<%=bundleId%>';" iconClass="downloadIcon"><%= LanguageUtil.get(pageContext, "download") %></button>
+        <button dojoType="dijit.form.Button" onClick="window.location='/api/bundle/_download/<%=java.net.URLEncoder.encode(bundleId, "UTF-8")%>';" iconClass="downloadIcon"><%= LanguageUtil.get(pageContext, "download") %></button>
     <%}%>
 
     <%if (ManifestUtil.manifestExists(bundleId)){%>

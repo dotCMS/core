@@ -42,6 +42,7 @@ import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.NotFoundException;
+import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -93,6 +94,8 @@ public class BundleResourceTest {
     private static User adminUser;
     static HttpServletResponse response;
     private static final List<User> createdUsers = new ArrayList<>();
+    private static final List<Layout> createdLayouts = new ArrayList<>();
+    private static final List<String> createdBundleIds = new ArrayList<>();
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -113,6 +116,15 @@ public class BundleResourceTest {
             UserDataGen.remove(user, Boolean.TRUE);
         }
         createdUsers.clear();
+        for (final String bundleId : createdBundleIds) {
+            Try.run(() -> APILocator.getBundleAPI().deleteBundleAndDependencies(bundleId, adminUser));
+        }
+        createdBundleIds.clear();
+        for (final Layout layout : createdLayouts) {
+            Try.run(() -> APILocator.getLayoutAPI().removeLayout(
+                    APILocator.getLayoutAPI().findLayout(layout.getId())));
+        }
+        createdLayouts.clear();
     }
 
     /**
@@ -541,6 +553,246 @@ public class BundleResourceTest {
 
         assertEquals(200, resp.getStatus());
         assertTrue(APILocator.getPushedAssetsAPI().getPushedAssets(contentlet.getIdentifier()).isEmpty());
+    }
+
+    /**
+     * Creates a non-admin back-end user with the Publishing Queue in their layout.
+     */
+    private static User newPublishingQueueUser() throws Exception {
+        final Layout layout = new LayoutDataGen().name("publishing-queue-" + System.nanoTime())
+                .portletIds(PortletID.PUBLISHING_QUEUE.toString()).nextPersisted();
+        createdLayouts.add(layout);
+        final User user = newBackendUser();
+        APILocator.getRoleAPI().addLayoutToRole(layout, APILocator.getRoleAPI().getUserRole(user));
+        return user;
+    }
+
+    private static Bundle newUnsentBundle(final User owner) throws DotDataException {
+        final Bundle bundle = new Bundle("unsent-" + System.nanoTime(), null, null, owner.getUserId());
+        APILocator.getBundleAPI().saveBundle(bundle);
+        createdBundleIds.add(bundle.getId());
+        return bundle;
+    }
+
+    /**
+     * Given: a bundle that has not been sent, owned by one user
+     * When:  another back-end user with the Publishing Queue lists its assets
+     * Then:  403
+     */
+    @Test
+    public void test_getPublishQueueElements_unsentBundleOfAnotherUser_isForbidden() throws Exception {
+        final Bundle bundle = newUnsentBundle(newBackendUser());
+        final User otherUser = newPublishingQueueUser();
+
+        assertThrows(ForbiddenException.class, () -> bundleResource.getPublishQueueElements(
+                bundle.getId(), null, mockRequestFor(otherUser), response));
+    }
+
+    /**
+     * Given: a bundle that has not been sent
+     * When:  its owner, who has the Publishing Queue, lists its assets
+     * Then:  200
+     */
+    @Test
+    public void test_getPublishQueueElements_ownUnsentBundle_isAllowed() throws Exception {
+        final User owner = newPublishingQueueUser();
+        final Bundle bundle = newUnsentBundle(owner);
+
+        final Response resp = bundleResource.getPublishQueueElements(
+                bundle.getId(), null, mockRequestFor(owner), response);
+
+        assertEquals(200, resp.getStatus());
+    }
+
+    /**
+     * Given: a bundle that has been sent, owned by one user
+     * When:  another back-end user with the Publishing Queue lists its assets, as the queue shows
+     *        every sent bundle to its users
+     * Then:  200
+     */
+    @Test
+    public void test_getPublishQueueElements_sentBundleOfAnotherUser_isAllowed() throws Exception {
+        final String bundleId = insertPublishingBundle(newBackendUser().getUserId(), new Date());
+        createdBundleIds.add(bundleId);
+        final User otherUser = newPublishingQueueUser();
+
+        final Response resp = bundleResource.getPublishQueueElements(
+                bundleId, null, mockRequestFor(otherUser), response);
+
+        assertEquals(200, resp.getStatus());
+    }
+
+    /**
+     * Given: a bundle owned by a back-end user without the Publishing Queue
+     * When:  that user lists its assets
+     * Then:  the request is refused because the Publishing Queue is required
+     */
+    @Test
+    public void test_getPublishQueueElements_userWithoutPublishingQueue_isRejected() throws Exception {
+        final User owner = newBackendUser();
+        final Bundle bundle = newUnsentBundle(owner);
+
+        assertThrows(SecurityException.class, () -> bundleResource.getPublishQueueElements(
+                bundle.getId(), null, mockRequestFor(owner), response));
+    }
+
+    /**
+     * Given: a bundle owned by one user
+     * When:  another back-end user renames it
+     * Then:  403 and the name is unchanged
+     */
+    @Test
+    public void test_updateBundle_bundleOfAnotherUser_isForbidden() throws Exception {
+        final Bundle bundle = newUnsentBundle(newBackendUser());
+        final User otherUser = newBackendUser();
+        final HttpServletRequest request = mockRequestFor(otherUser);
+        when(request.getParameter("bundleName")).thenReturn("renamed");
+
+        assertThrows(ForbiddenException.class, () -> bundleResource.updateBundle(
+                request, response, "bundleid/" + bundle.getId()));
+
+        assertEquals(bundle.getName(), APILocator.getBundleAPI().getBundleById(bundle.getId()).getName());
+    }
+
+    /**
+     * Given: a bundle owned by a back-end user
+     * When:  the owner renames it
+     * Then:  the bundle has the new name
+     */
+    @Test
+    public void test_updateBundle_ownBundle_isRenamed() throws Exception {
+        final User owner = newBackendUser();
+        final Bundle bundle = newUnsentBundle(owner);
+        final HttpServletRequest request = mockRequestFor(owner);
+        when(request.getParameter("bundleName")).thenReturn("renamed");
+
+        bundleResource.updateBundle(request, response, "bundleid/" + bundle.getId());
+
+        assertEquals("renamed", APILocator.getBundleAPI().getBundleById(bundle.getId()).getName());
+    }
+
+    /**
+     * Given: a bundle owned by one user
+     * When:  another back-end user with the Publishing Queue generates it
+     * Then:  403, and the bundle keeps its owner
+     */
+    @Test
+    public void test_generateBundle_bundleOfAnotherUser_isForbiddenAndKeepsOwner() throws Exception {
+        final User owner = newBackendUser();
+        final Bundle bundle = newUnsentBundle(owner);
+        final User otherUser = newPublishingQueueUser();
+        final List<Integer> statuses = new ArrayList<>();
+        final AsyncResponse asyncResponse = new MockAsyncResponse(arg -> {
+            statuses.add(((Response) arg).getStatus());
+            return true;
+        }, arg -> {
+            fail("Unexpected failure generating the bundle");
+            return true;
+        });
+
+        bundleResource.generateBundle(mockRequestFor(otherUser), response, asyncResponse,
+                new GenerateBundleForm.Builder().bundleId(bundle.getId()).build());
+
+        assertEquals(List.of(Status.FORBIDDEN.getStatusCode()), statuses);
+        assertEquals(owner.getUserId(),
+                APILocator.getBundleAPI().getBundleById(bundle.getId()).getOwner());
+    }
+
+    /**
+     * Given: a bundle owned by a back-end user
+     * When:  a CMS Administrator generates it
+     * Then:  200, and the bundle keeps its owner
+     */
+    @Test
+    public void test_generateBundle_adminKeepsOwner() throws Exception {
+        final User owner = newBackendUser();
+        final String bundleId = insertPublishingBundle(owner.getUserId(), new Date());
+        createdBundleIds.add(bundleId);
+        createFilter();
+        final AsyncResponse asyncResponse = new MockAsyncResponse(arg -> {
+            assertEquals(Status.OK.getStatusCode(), ((Response) arg).getStatus());
+            return true;
+        }, arg -> {
+            fail("Error generating bundle");
+            return true;
+        });
+
+        try {
+            bundleResource.generateBundle(getHttpRequest(), response, asyncResponse,
+                    new GenerateBundleForm.Builder().bundleId(bundleId).build());
+        } finally {
+            PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).clearFilterDescriptorList();
+        }
+
+        assertEquals(owner.getUserId(), APILocator.getBundleAPI().getBundleById(bundleId).getOwner());
+    }
+
+    /**
+     * Given: a bundle that has not been sent, owned by one user
+     * When:  another back-end user with the Publishing Queue downloads it
+     * Then:  403
+     */
+    @Test
+    public void test_downloadBundle_unsentBundleOfAnotherUser_isForbidden() throws Exception {
+        final Bundle bundle = newUnsentBundle(newBackendUser());
+        final User otherUser = newPublishingQueueUser();
+
+        final Response resp = bundleResource.downloadBundle(mockRequestFor(otherUser), response,
+                bundle.getId());
+
+        assertEquals(Status.FORBIDDEN.getStatusCode(), resp.getStatus());
+    }
+
+    /**
+     * Given: a generated bundle that has not been sent, owned by a back-end user with the
+     *        Publishing Queue
+     * When:  the owner downloads it
+     * Then:  200
+     */
+    @Test
+    public void test_downloadBundle_ownUnsentBundle_isAllowed() throws Exception {
+        final User owner = newPublishingQueueUser();
+        final Bundle bundle = newUnsentBundle(owner);
+        createFilter();
+        try {
+            bundle.setOperation(PushPublisherConfig.Operation.PUBLISH.ordinal());
+            APILocator.getBundleAPI().generateTarGzipBundleFile(bundle);
+        } finally {
+            PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).clearFilterDescriptorList();
+        }
+
+        final Response resp = bundleResource.downloadBundle(mockRequestFor(owner), response,
+                bundle.getId());
+
+        assertEquals(Status.OK.getStatusCode(), resp.getStatus());
+    }
+
+    /**
+     * Given: a bundle that has not been sent, owned by one user
+     * When:  another back-end user with the Publishing Queue downloads its manifest
+     * Then:  403
+     */
+    @Test
+    public void test_downloadManifest_unsentBundleOfAnotherUser_isForbidden() throws Exception {
+        final Bundle bundle = newUnsentBundle(newBackendUser());
+        final User otherUser = newPublishingQueueUser();
+
+        assertThrows(ForbiddenException.class, () -> bundleResource.downloadManifest(
+                bundle.getId(), mockRequestFor(otherUser), response));
+    }
+
+    /**
+     * Given: a bundle owned by a back-end user without the Publishing Queue
+     * When:  that user downloads its manifest
+     * Then:  the request is refused because the Publishing Queue is required
+     */
+    @Test
+    public void test_downloadManifest_userWithoutPublishingQueue_isRejected() throws Exception {
+        final User owner = newBackendUser();
+        final Bundle bundle = newUnsentBundle(owner);
+
+        assertThrows(SecurityException.class, () -> bundleResource.downloadManifest(
+                bundle.getId(), mockRequestFor(owner), response));
     }
 
     private static Contentlet newContentlet() {
