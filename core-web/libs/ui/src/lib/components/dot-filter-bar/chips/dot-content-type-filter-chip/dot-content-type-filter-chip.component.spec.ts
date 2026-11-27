@@ -73,6 +73,16 @@ describe('DotContentTypeFilterChipComponent', () => {
         expect(inner()?.$allowedBaseTypes()).toEqual([DotCMSBaseTypesContentTypes.FILEASSET]);
     });
 
+    it('should pass the caller labels for base types through to the presentational filter', () => {
+        // Content Drive calls the dotAsset base type "Asset"; the AssetPicker keeps "DotAsset".
+        spectator.setInput('baseTypeLabels', { DOTASSET: 'content-drive.base-type.dotasset' });
+        spectator.detectChanges();
+
+        expect(inner()?.$baseTypeLabels()).toEqual({
+            DOTASSET: 'content-drive.base-type.dotasset'
+        });
+    });
+
     it('should survive a single stored string rather than an array', () => {
         // `DotFilterValue` is `string | string[]`, and Content Drive's own status filter documents
         // that a bare string is what a URL decoder produces when it loses the array shape. A cast

@@ -7,7 +7,7 @@ import java.util.Map;
 
 import javax.imageio.ImageIO;
 
-import com.dotmarketing.util.Logger;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotcms.repackage.com.dotmarketing.jhlabs.image.ExposureFilter;
 import com.dotcms.repackage.com.dotmarketing.jhlabs.image.FlipFilter;
 
@@ -38,17 +38,17 @@ public class FlipImageFilter extends ImageFilter {
 			if (flip) {
 				filter.setOperation(FlipFilter.FLIP_H);
 			} 
-            final File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() +".tmp");
+            final File tempResultFile = stagingFileFor(resultFile);
 
 			
-			BufferedImage src = ImageIO.read(file);
+			BufferedImage src = StrictImageReader.read(file);
 			BufferedImage dst = filter.filter(src, null);
 			ImageIO.write(dst, "png", tempResultFile);
 			dst.flush();
-            tempResultFile.renameTo(resultFile);
+            publishRendition(tempResultFile, resultFile);
 			 
 		} catch (IOException e) {
-			Logger.error(this.getClass(), e.getMessage());
+			throw new DotRuntimeException("unable to convert file:" + file + " : " + e.getMessage(), e);
 		}
 
 		return resultFile;

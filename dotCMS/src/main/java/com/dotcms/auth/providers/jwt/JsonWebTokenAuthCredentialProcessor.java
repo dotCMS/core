@@ -19,10 +19,12 @@ public interface JsonWebTokenAuthCredentialProcessor extends Serializable {
     String BEARER = "Bearer ";
 
     /**
-     * Process the authentication credentials based on the jwt authorization header (it should starts with BEARER prefix)
+     * Resolves the user of a JWT authorization header (it should start with the BEARER prefix) without
+     * storing it anywhere: the session is not logged in by a token.
      * @param authorizationHeader {@link String}
-     * @param httpSession {@link HttpSession}
-     * @return User
+     * @param httpSession {@link HttpSession} of the call, may be null; never written to
+     * @param ipAddress the client address the token's network restriction is checked against
+     * @return the token's {@link User}, or null
      */
     User processAuthHeaderFromJWT(final String authorizationHeader, final HttpSession httpSession, final String ipAddress);
 

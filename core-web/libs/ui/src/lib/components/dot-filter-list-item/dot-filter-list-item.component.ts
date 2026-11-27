@@ -4,7 +4,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
     selector: 'dot-filter-list-item',
     standalone: true,
     template: `
-        <span class="text-md truncate font-medium">{{ label() }}</span>
+        <span class="text-md truncate">{{ label() }}</span>
         @if (secondary(); as s) {
             <span class="truncate text-sm text-slate-500">({{ s }})</span>
         }

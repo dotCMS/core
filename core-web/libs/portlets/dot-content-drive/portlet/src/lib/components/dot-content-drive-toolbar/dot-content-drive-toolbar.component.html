@@ -115,7 +115,9 @@
                  than named by a registry, which is what lets the two portlet-local ones — Workflow
                  and the field filters — sit in the same row as the shared ones. -->
             <dot-filter-bar>
-                <dot-content-type-filter-chip data-testid="content-type-filter" />
+                <dot-content-type-filter-chip
+                    [baseTypeLabels]="BASE_TYPE_LABELS"
+                    data-testid="content-type-filter" />
                 <dot-content-drive-workflow-filter data-testid="workflow-filter" />
                 <!-- Sits beside the workflow filter: both ask where content is in its lifecycle. It
                      goes after rather than before, because the workflow filter derives its scheme

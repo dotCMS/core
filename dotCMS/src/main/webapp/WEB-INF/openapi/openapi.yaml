@@ -8608,7 +8608,7 @@ paths:
           - `host` *(string)* — site identifier UUID or the literal `SYSTEM_HOST` (defaults to the default site)
           - `folder` *(string)* — folder identifier UUID or the literal `SYSTEM_FOLDER` (defaults to `SYSTEM_FOLDER`)
           - `description` *(string)*
-          - `workflow` *(array of workflow scheme UUIDs)* — e.g. `["d61a59e1-a49c-46f2-a929-db2b4bfa88b2"]` for System Workflow. ⚠️ **Note:** this is `workflow` (singular) in the request. GET responses return `workflows` (plural, array of objects) — clients round-tripping an object must rename this key.
+          - `workflow` *(array of workflow scheme UUIDs)* — e.g. `["d61a59e1-a49c-46f2-a929-db2b4bfa88b2"]` for System Workflow. GET responses return `workflows` (plural, array of scheme objects); that key is read-only and ignored on write, so send `workflow` to set the schemes. Accepted values: an array of scheme ids, variable names or scheme objects; a string with one id or variable name, or several comma-separated; `null` or `[]` for no schemes. Any other type is rejected with a 400.
           - `fields` *(array of field objects)* — see field schema below (`ContentTypeFieldView`)
           - `metadata` *(object)* — known keys: `CONTENT_EDITOR2_ENABLED` (boolean), `DOT_STYLE_EDITOR_SCHEMA` (JSON string)
           - `systemActionMappings` *(object)* — maps system actions (`NEW`, `EDIT`, `PUBLISH`, `UNPUBLISH`, `ARCHIVE`, `UNARCHIVE`, `DELETE`, `DESTROY`) to workflow action UUIDs
@@ -8902,11 +8902,13 @@ paths:
       description: |-
         Updates the content type based on the given ID or Velocity variable name.
 
-        ⚠️ **Destructive semantics.** (with one exception). This endpoint treats the request body as the full desired state. Any editable property (including items in `fields[]`) absent from the body will be removed. **Exception: `metadata`** — if the `metadata` key is absent from the request body, the server preserves the existing metadata unchanged. To explicitly clear all metadata, send `"metadata": null`.
+        ⚠️ **Destructive semantics.** (with two exceptions). This endpoint treats the request body as the full desired state. Any editable property (including items in `fields[]`) absent from the body will be removed. **Exception: `metadata`** — if the `metadata` key is absent from the request body, the server preserves the existing metadata unchanged. To explicitly clear all metadata, send `"metadata": null`.
+
+        **Exception: workflow schemes** — only `workflow` (array of scheme UUIDs or scheme objects) sets them. If `workflow` is absent, the existing schemes are preserved unchanged; the `workflows` array GET returns is read-only and ignored on write. Accepted `workflow` values: an array of scheme ids, variable names or scheme objects; a string with one id or variable name, or several comma-separated (`"a,b"`); `null` or `[]` to remove every scheme. Any other type (number, boolean, object) is rejected with a 400.
 
         **Recommended update pattern:**
         1. `GET /api/v1/contenttype/id/{idOrVar}` to fetch the current object.
-        2. Mutate the returned object in place. Rename `workflows` (array of objects) → `workflow` (array of UUIDs) before sending.
+        2. Mutate the returned object in place. To change the schemes, send `workflow` (see accepted values above); editing `workflows` has no effect.
         3. PUT the entire mutated object back.
 
         This is also the only supported way to add, remove, or modify individual fields — the `/api/v1/contenttype/{typeId}/fields/**` family is deprecated in favor of this full-CT PUT.
@@ -8950,7 +8952,7 @@ paths:
           | Property | Value | Description |
           |-|-|-|
           | `systemActionMappings` | JSON Object | Maps [Default Workflow Actions](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) (as keys) to workflow action identifiers (as values) for this content type.|
-          | `workflow` | List of Strings | A list of identifiers of workflow schemes to be associated with the content type.
+          | `workflow` | List of Strings, String or null | A list of identifiers of workflow schemes to be associated with the content type. When absent, the current schemes are kept; `workflows` (the scheme objects GET returns) is ignored. Also accepts a single id or variable name, a comma-separated string of them, or `null` (no schemes); any other type is rejected with a 400.|
         required: true
       responses:
         "200":
@@ -11050,12 +11052,17 @@ paths:
       tags:
       - Search Index
     get:
+      deprecated: true
+      description: "Deprecated: use GET /api/v1/index/failed. Returns every failed\
+        \ reindex record together with the full contentlet, including all field values,\
+        \ so the response grows with the size of the failed content."
       operationId: downloadRemainingRecordsAsCsv
       responses:
         default:
           content:
             application/json: {}
           description: default response
+      summary: List failed reindex records with their content (deprecated)
       tags:
       - Search Index
   /v1/esindex/indexlist/{params}:
@@ -12194,6 +12201,34 @@ paths:
       summary: Get system status summary
       tags:
       - Health
+  /v1/index/failed:
+    get:
+      description: "Returns every reindex journal entry that exhausted its retries,\
+        \ with the index-document limits and retry policy they are measured against.\
+        \ Each record identifies the content (identifier, inode, title, content type\
+        \ variable, language), what the index still owes for it (reindex or delete),\
+        \ how many attempts failed, the last failure reason and, when the document\
+        \ exceeded a document limit, which limit, field, actual value and allowed\
+        \ value. Unknown values are explicit nulls. Content field values are never\
+        \ included, so the response size does not depend on the size of the failed\
+        \ content. Requires the CMS Administrator role and access to the Maintenance\
+        \ portlet. Replaces the deprecated GET /api/v1/esindex/failed."
+      operationId: listFailedReindexRecords
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityFailedReindexRecordsView"
+          description: Failed records listed
+        "401":
+          content:
+            application/json: {}
+          description: "Unauthorized - not authenticated, or the user lacks the CMS\
+            \ Administrator role or access to the Maintenance portlet"
+      summary: List failed reindex records
+      tags:
+      - Search Index
   /v1/jobs:
     get:
       description: "Fetches a paginated list of jobs regardless of state. Returns\
@@ -16119,7 +16154,8 @@ paths:
         "401":
           content:
             application/json: {}
-          description: Unauthorized - authentication required
+          description: "Unauthorized - authentication required, or no access to the\
+            \ Publishing Queue portlet"
         "403":
           content:
             application/json: {}
@@ -16165,7 +16201,8 @@ paths:
         "401":
           content:
             application/json: {}
-          description: Unauthorized - authentication required
+          description: "Unauthorized - authentication required, or no access to the\
+            \ Publishing Queue portlet"
         "403":
           content:
             application/json: {}
@@ -16210,7 +16247,8 @@ paths:
         "401":
           content:
             application/json: {}
-          description: Unauthorized - authentication required
+          description: "Unauthorized - authentication required, or no access to the\
+            \ Publishing Queue portlet"
         "403":
           content:
             application/json: {}
@@ -16250,7 +16288,8 @@ paths:
         "401":
           content:
             application/json: {}
-          description: Unauthorized - authentication required
+          description: "Unauthorized - authentication required, or no access to the\
+            \ Publishing Queue portlet"
         "403":
           content:
             application/json: {}
@@ -16284,7 +16323,8 @@ paths:
         "401":
           content:
             application/json: {}
-          description: Unauthorized - authentication required
+          description: "Unauthorized - authentication required, or no access to the\
+            \ Publishing Queue portlet"
         "403":
           content:
             application/json: {}
@@ -16328,7 +16368,8 @@ paths:
         "401":
           content:
             application/json: {}
-          description: Unauthorized - authentication required
+          description: "Unauthorized - authentication required, or no access to the\
+            \ Publishing Queue portlet"
         "403":
           content:
             application/json: {}
@@ -17657,7 +17698,8 @@ paths:
     put:
       description: Switches the current user's active site to the specified site.
         The 'id' path parameter represents the site identifier (also referred to as
-        'siteId' or 'hostId' in the API).
+        'siteId' or 'hostId' in the API). The user needs READ permission on the site
+        as a back-end user.
       operationId: switchSiteById
       parameters:
       - description: Identifier of the site to switch to (siteId/hostId are used interchangeably)
@@ -19966,7 +20008,9 @@ paths:
   /v1/users:
     post:
       description: "Creates a new user. Requires a CMS Administrator. FirstName, LastName,\
-        \ Email and Password are required"
+        \ Email and Password are required. The optional active flag sets the new user's\
+        \ status; omit it to create an active user. The optional male flag is applied\
+        \ the same way; omit it to take the default."
       operationId: createUser
       requestBody:
         content:
@@ -20016,7 +20060,12 @@ paths:
         \ the user's individual role) are never modified, keys that resolve to no\
         \ role are ignored, and null or blank entries are rejected with 400. Note\
         \ that roles without a key cannot be expressed in this list — manage those\
-        \ through the role-centric /v1/roles/{roleId}/users endpoints instead."
+        \ through the role-centric /v1/roles/{roleId}/users endpoints instead. The\
+        \ optional active flag activates or deactivates the user; omit it to leave\
+        \ the status untouched. Deactivating a user invalidates their login tokens\
+        \ and ends their sessions, which is why deactivating your own account is refused\
+        \ with a 400. The optional male flag follows the same rule: omit it to leave\
+        \ the stored value untouched."
       operationId: updateUser
       requestBody:
         content:
@@ -20040,7 +20089,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseSiteVariablesEntityView"
-          description: If the user information is not valid
+          description: "If the user information is not valid, or the payload asks\
+            \ to deactivate the calling user's own account"
         "403":
           content:
             application/json:
@@ -20156,6 +20206,8 @@ paths:
       - Users
   /v1/users/deactivate/{userId}:
     patch:
+      description: "Deactivates a user, which invalidates their login tokens and ends\
+        \ their sessions. Deactivating your own account is refused with a 400."
       operationId: deactivateUser
       parameters:
       - description: "Identifier of an user.\n\nExample value: `b9d89c80-3d88-4311-8365-187323c96436` "
@@ -20176,7 +20228,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseUserMapEntityView"
-          description: If the user information is not valid
+          description: "If the user id is the calling user's own, which cannot be\
+            \ deactivated"
         "403":
           content:
             application/json:
@@ -29318,6 +29371,15 @@ components:
           items:
             type: number
             format: double
+    DocumentLimits:
+      type: object
+      description: Index-document limits enforced before a document is sent to the
+        engine
+      properties:
+        maxNestingDepth:
+          $ref: "#/components/schemas/Limit"
+        maxStringLength:
+          $ref: "#/components/schemas/Limit"
     DoesNotExistException:
       type: object
       properties:
@@ -30294,6 +30356,82 @@ components:
           type: string
       required:
       - packages
+    FailedReindexRecordView:
+      type: object
+      description: "A reindex journal entry that exhausted its retries, without content\
+        \ values"
+      properties:
+        archived:
+          type: boolean
+          description: True when every version of the content is archived; null if
+            the content could not be resolved
+          nullable: true
+        contentTypeVariable:
+          type: string
+          description: Content type variable; null if it cannot be resolved
+          example: Blog
+          nullable: true
+        failedAttempts:
+          type: integer
+          format: int32
+          description: How many times indexing the entry failed
+          example: 6
+        failureReason:
+          type: string
+          description: "Last failure recorded for the entry, as stored by the reindex\
+            \ journal (truncated to 300 characters); null if no message was recorded"
+          nullable: true
+        identifier:
+          type: string
+          description: Contentlet identifier
+          example: d5edd758f166259247356e7ea2deca4e
+        inode:
+          type: string
+          description: Inode of the withheld version when the failure is a document-limit
+            violation; otherwise of a version of the content resolved only to show
+            it. Null if unknown
+          nullable: true
+        languageId:
+          type: integer
+          format: int64
+          description: Language of that version; null if unknown
+          example: 1
+          nullable: true
+        operation:
+          type: string
+          description: What the index still owes for the identifier
+          enum:
+          - reindex
+          - delete
+        priority:
+          type: integer
+          format: int32
+          description: Raw journal priority; encodes the failed attempts
+          example: 505
+        title:
+          type: string
+          description: Stored title of that version; null if unknown or no title is
+            stored
+          nullable: true
+        violation:
+          $ref: "#/components/schemas/ViolationView"
+    FailedReindexRecordsView:
+      type: object
+      description: Failed reindex records with the limits they are measured against
+      properties:
+        failedRecordCount:
+          type: integer
+          format: int32
+          description: Number of failed records
+          example: 4
+        failedRecords:
+          type: array
+          items:
+            $ref: "#/components/schemas/FailedReindexRecordView"
+        limits:
+          $ref: "#/components/schemas/DocumentLimits"
+        retryPolicy:
+          $ref: "#/components/schemas/RetryPolicy"
     FailedResultView:
       type: object
       properties:
@@ -33258,6 +33396,21 @@ components:
       required:
       - text
       - title
+    Limit:
+      type: object
+      description: A limit and the unit it is measured in
+      properties:
+        unit:
+          type: string
+          description: Unit of the limit
+          enum:
+          - chars
+          - levels
+        value:
+          type: integer
+          format: int32
+          description: The limit
+          example: 20000000
     LineDividerField:
       type: object
       allOf:
@@ -36121,6 +36274,29 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ExperimentView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityFailedReindexRecordsView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/FailedReindexRecordsView"
         errors:
           type: array
           items:
@@ -39412,6 +39588,17 @@ components:
           example: false
       required:
       - bundleIds
+    RetryPolicy:
+      type: object
+      description: How the reindex journal retries an entry
+      properties:
+        maxRetries:
+          type: integer
+          format: int32
+          description: Retries after the first attempt before an entry stops being
+            retried (RETRY_FAILED_INDEX_TIMES); an exhausted entry failed maxRetries
+            + 1 times
+          example: 5
     Role:
       type: object
       properties:
@@ -42865,6 +43052,12 @@ components:
       properties:
         active:
           type: boolean
+          description: "Whether the user account is active. Absent = the status is\
+            \ left as it is on update, and a new user is created active. An explicit\
+            \ value activates or deactivates the user; deactivating invalidates their\
+            \ login tokens and ends their sessions."
+          example: true
+          nullable: true
         additionalInfo:
           type: object
           additionalProperties:
@@ -42881,6 +43074,11 @@ components:
           type: string
         male:
           type: boolean
+          description: "Whether the user is male. Absent = the stored value is left\
+            \ as it is on update, and a new user is created with false. An explicit\
+            \ value sets it."
+          example: false
+          nullable: true
         middleName:
           type: string
         nickName:
@@ -43269,6 +43467,27 @@ components:
           type: string
         visitor:
           $ref: "#/components/schemas/Visitor"
+    ViolationView:
+      type: object
+      description: A document limit exceeded by the index document
+      nullable: true
+      properties:
+        actual:
+          type: integer
+          format: int64
+          description: "The document's value, in the unit of limits[type]"
+          example: 42000792
+        fieldPath:
+          type: string
+          description: Path of the offending field in the index document
+          example: catchall
+        type:
+          type: string
+          description: Which limit was exceeded; names the root limits entry that
+            holds its value and unit
+          enum:
+          - maxStringLength
+          - maxNestingDepth
     Visitor:
       type: object
       properties:

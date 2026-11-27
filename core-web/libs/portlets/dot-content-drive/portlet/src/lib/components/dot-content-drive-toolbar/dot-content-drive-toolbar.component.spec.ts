@@ -30,6 +30,7 @@ import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import {
     DOT_FIELD_FILTER_HOST,
     DOT_FILTER_FACADE,
+    DotContentTypeFilterChipComponent,
     DotFieldFilterHost,
     DotFilterFacade,
     DotFilterValue,
@@ -309,6 +310,16 @@ describe('DotContentDriveToolbarComponent', () => {
     it('should render the content type filter', () => {
         const field = spectator.query('[data-testid="content-type-filter"]');
         expect(field).toBeTruthy();
+    });
+
+    // The New menu and the upload dialog call the dotAsset base type "Asset"; the filter has to say
+    // the same, through Content Drive's own label rather than the server's "DotAsset" (#38379).
+    it("should name the dotAsset base type with Content Drive's own label in the type filter", () => {
+        const chip = spectator.query(DotContentTypeFilterChipComponent);
+
+        expect(chip?.$baseTypeLabels()).toEqual({
+            DOTASSET: 'content-drive.base-type.dotasset'
+        });
     });
 
     it('should render the search input', () => {

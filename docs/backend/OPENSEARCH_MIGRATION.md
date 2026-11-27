@@ -79,9 +79,13 @@ consistently.
 
 ### Definition
 
-The **shadow index** is the OpenSearch index during the dual-write phases (1 and 2).
-It receives every write that goes to ES, acting as a continuously-updated replica.
-It is called "shadow" because it follows ES writes rather than owning them.
+The **shadow index** is the OpenSearch index in Phase 1, the dual-write phase in which
+nothing reads from it yet. It receives every write that goes to ES, acting as a
+continuously-updated replica. It is called "shadow" because it follows ES writes rather than
+owning them.
+
+OpenSearch is still written alongside ES in Phase 2, but it is no longer a shadow for content
+writes: it serves reads, so a write it loses is visible to users (#37276).
 
 This is a **transitional state**: once Phase 3 is reached, the shadow index is promoted
 to the **primary index** — OS becomes the source of truth and ES is decommissioned.
@@ -92,10 +96,16 @@ to the **primary index** — OS becomes the source of truth and ES is decommissi
 |-------|---------------|-----------------|------------------|-----------------------|
 | 0     | absent        | absent          | —                | —                     |
 | 1     | shadow        | absent (ES)     | fire-and-forget  | n/a                   |
-| 2     | shadow        | **primary**     | fire-and-forget  | fallback to ES        |
+| 2     | dual-write    | **primary**     | not ignored ¹    | fallback to ES        |
 | 3     | **primary**   | **primary**     | propagates       | propagates            |
 
-### Fire-and-forget writes (Phases 1 and 2)
+¹ Content writes only. Through the reindex journal (full reindex and `IndexPolicy.DEFER` saves)
+the entry is marked failed and retried, as for ES. A `FORCE` / `WAIT_FOR` save indexes
+synchronously after the database commit (`putToIndex`): the OS error is thrown instead of
+logged, and nothing retries it — the same as an ES primary failure in Phase 0. Index management
+is different, see [Index management operations](#index-management-operations).
+
+### Fire-and-forget writes (Phase 1)
 
 When OS is a shadow, a write failure must **never** affect the ES write or the caller:
 
@@ -104,8 +114,13 @@ When OS is a shadow, a write failure must **never** affect the ES write or the c
 - No `BulkProcessor` rebuild is triggered
 - The caller receives a successful result based on ES
 
-Rationale: ES remains the source of truth through Phases 1 and 2. An OS failure is a
+Rationale: in Phase 1 ES is the source of truth and nothing reads from OS. An OS failure is a
 consistency concern, not a data-loss event — ES still holds the authoritative state.
+
+From Phase 2 on this no longer holds for content writes: users read from OS, so an ignored
+OS failure would leave the queried index out of sync with the database with nothing left to
+retry it. That is why `createBulkProcessor` and `putToIndex` stop treating OS as a shadow once
+reads move to it (#37276).
 
 ### Read fallback (Phase 2 only)
 
@@ -168,9 +183,24 @@ fire-and-forget contract: it logs failures but never calls `handleFailure()` on 
 reindex queue and never triggers a rebuild.
 
 ```
-Phase 0 / 3  →  isDualWrite = false  →  shadow = false  →  failures propagate
-Phase 1 / 2  →  isDualWrite = true, ops == operationsOS  →  shadow = true  →  fire-and-forget
+shadow = isDualWrite && ops == operationsOS && !isReadEnabled()
+
+Phase 0 / 3  →  isDualWrite = false                     →  shadow = false  →  failures propagate
+Phase 1      →  isDualWrite = true,  isReadEnabled = false  →  OS shadow = true  →  fire-and-forget
+Phase 2      →  isDualWrite = true,  isReadEnabled = true   →  OS shadow = false →  failures propagate
 ```
+
+In Phase 1, an OS failure while a document is being *added* to the processor (the OS adapter
+parses each document at that point) is caught per document and logged; the rest of the entry
+still reaches ES (#37269).
+
+#### Index management operations
+
+Creating and deleting content indices follow a different rule: the engine that serves reads
+(`router.readProvider()`) is the primary and the other write provider is best-effort. That is
+OS in Phase 1 but **ES** in Phase 2. An OpenSearch failure while bootstrapping the index set in
+Phases 1 and 2 halts the migration back to ES-only instead of failing startup (see
+`handleOsBootstrapFailure`).
 
 ### Accepted limitation
 

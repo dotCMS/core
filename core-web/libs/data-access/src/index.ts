@@ -24,6 +24,7 @@ export * from './lib/dot-content-drive-export/dot-content-drive-export.service';
 export * from './lib/dot-content-search/dot-content-search.service';
 export * from './lib/dot-content-type/dot-content-type.service';
 export * from './lib/dot-content-types-info/dot-content-types-info.service';
+export * from './lib/dot-content-change/dot-content-change.service';
 export * from './lib/dot-contentlet-edit-url/dot-contentlet-edit-url.service';
 export * from './lib/dot-contentlet-locker/dot-contentlet-locker.service';
 export * from './lib/dot-contentlet/dot-contentlet.service';
