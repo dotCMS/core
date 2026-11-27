@@ -1,6 +1,6 @@
 import { LayoutRow } from './shared/page-common';
 import { normalizePagePath } from './shared/page-path';
-import { RESOLVE_ENDPOINTS, resolveSite } from './shared/resolve';
+import { RESOLVE_ENDPOINTS, resolveSite, unpublishedSiteNote } from './shared/resolve';
 
 import { HttpError, ValidationError, type DotCMSRuntime } from '../../runtime';
 import { CONTEXT_ENDPOINTS, type Endpoint } from '../toolkit/endpoints';
@@ -197,6 +197,10 @@ export async function placeContent(
             changed: !sameOrder(before, after)
         };
     });
+    const siteNote = unpublishedSiteNote(target.hostname, target.live);
+    if (siteNote) {
+        warnings.push(siteNote);
+    }
 
     return {
         pageId,
@@ -215,7 +219,7 @@ async function resolvePageTarget(
     dotcms: DotCMSRuntime,
     rawPath: string,
     explicitSite?: string
-): Promise<{ path: string; siteId: string; hostname: string }> {
+): Promise<{ path: string; siteId: string; hostname: string; live?: boolean }> {
     const trimmed = rawPath.trim();
     const qualified = /^\/\/([^/]+)(\/.*)?$/.exec(trimmed);
     const qualifiedHost = qualified?.[1];
@@ -253,7 +257,12 @@ async function resolvePageTarget(
     // The manifest must echo the path actually operated on, not the raw input.
     const normalizedPath = normalizePagePath(pagePath);
 
-    return { path: normalizedPath, siteId: site.identifier, hostname: site.hostname };
+    return {
+        path: normalizedPath,
+        siteId: site.identifier,
+        hostname: site.hostname,
+        live: site.live
+    };
 }
 
 /**

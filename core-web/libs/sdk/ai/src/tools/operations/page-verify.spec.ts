@@ -366,6 +366,84 @@ describe('verifyPage', () => {
         expect(m.diagnosis).toMatch(/HTTP 404/);
     });
 
+    describe('on an unpublished site', () => {
+        // The render endpoint answers LIVE with a 404 for every page on a stopped site, even a
+        // published page; the generic "check the path, site, and that the page exists" sent the
+        // agent after a page that was fine.
+        const DRAFT_SITE = {
+            identifier: 'site-uuid-3',
+            hostname: 'draft.example.com',
+            isDefault: false,
+            archived: false,
+            live: false
+        };
+        const NOTE =
+            'Site draft.example.com is unpublished: its pages are not publicly reachable until the site is started.';
+
+        it('explains a LIVE 404 by the unpublished site and points to WORKING', async () => {
+            const { runtime, calls } = fakeRuntime({
+                sites: [DEMO_SITE, DRAFT_SITE],
+                renderThrows: new HttpError(404, 'Not Found', '')
+            });
+
+            const m = await verifyPage({
+                dotcms: runtime,
+                path: '/about-us',
+                site: 'draft.example.com'
+            });
+
+            expect(m.diagnosis).toBe(
+                'Render returned HTTP 404 because site draft.example.com is unpublished: LIVE mode cannot render its pages until the site is started. Next: re-run with mode "WORKING" to check the content.'
+            );
+            expect(m.warnings).toContain(NOTE);
+            // No automatic retry in another mode: the agent picks WORKING.
+            expect(calls.filter((c) => c.path.startsWith('/api/v1/page/render'))).toHaveLength(1);
+        });
+
+        it('keeps the WORKING verdict, adds the note and drops the re-verify-in-LIVE advice', async () => {
+            // LIVE 404s on an unpublished site and its diagnosis points back to WORKING, so
+            // advising a LIVE re-check here would send the agent round in a loop.
+            const { runtime } = fakeRuntime({ sites: [DEMO_SITE, DRAFT_SITE] });
+
+            const m = await verifyPage({
+                dotcms: runtime,
+                path: '/about-us',
+                site: 'draft.example.com',
+                mode: 'WORKING'
+            });
+            const onLiveSite = await verifyPage({
+                dotcms: runtime,
+                path: '/about-us',
+                site: 'demo.dotcms.com',
+                mode: 'WORKING'
+            });
+
+            const reVerifyLive = (w: string) => /Re-verify with mode "LIVE"/.test(w);
+
+            expect(m.diagnosis).toBe(onLiveSite.diagnosis);
+            expect(onLiveSite.warnings.some(reVerifyLive)).toBe(true);
+            expect(m.warnings).toEqual([
+                ...onLiveSite.warnings.filter((w) => !reVerifyLive(w)),
+                NOTE
+            ]);
+        });
+
+        it('keeps the generic 404 diagnosis when the site is live', async () => {
+            const { runtime } = fakeRuntime({
+                renderThrows: new HttpError(404, 'Not Found', '')
+            });
+
+            const m = await verifyPage({
+                dotcms: runtime,
+                path: '/missing',
+                site: 'other.example.com'
+            });
+
+            expect(m.diagnosis).toMatch(/check the path, site, and that the page exists/);
+            expect(m.warnings.join(' ')).not.toMatch(/unpublished/);
+        });
+    });
+
     it('rethrows a transport failure instead of inventing a status from its text', async () => {
         // The status used to be scraped as the first three-digit run in the message, so
         // `connect ETIMEDOUT 10.0.0.5:443` became status 443 — and the manifest then stated

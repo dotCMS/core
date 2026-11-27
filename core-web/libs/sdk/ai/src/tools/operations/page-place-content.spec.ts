@@ -114,6 +114,13 @@ function fakeRuntime(overrides?: {
                 isDefault: false,
                 archived: false,
                 live: true
+            },
+            {
+                identifier: 'site-draft',
+                hostname: 'draft.dotcms.site',
+                isDefault: false,
+                archived: false,
+                live: false
             }
         ],
         languages: [],
@@ -160,6 +167,34 @@ describe('placeContent', () => {
         expect(read?.path).toBe('/api/v1/page/json/about-us');
         expect(read?.query).toMatchObject({ host_id: 'site-awazon' });
         expect(manifest.site).toBe('awazon.dotcms.site');
+    });
+
+    it('notes when the site is unpublished, so the page is not reported as reachable', async () => {
+        const { runtime } = fakeRuntime();
+
+        const manifest = await placeContentImpl({
+            dotcms: runtime,
+            path: '/about-us',
+            site: 'draft.dotcms.site',
+            slots: [{ slot: 1, contentlets: ['x'] }]
+        });
+
+        expect(manifest.warnings).toContain(
+            'Site draft.dotcms.site is unpublished: its pages are not publicly reachable until the site is started.'
+        );
+    });
+
+    it('adds no site note when the site is live', async () => {
+        const { runtime } = fakeRuntime();
+
+        const manifest = await placeContentImpl({
+            dotcms: runtime,
+            path: '/about-us',
+            site: 'demo.dotcms.com',
+            slots: [{ slot: 1, contentlets: ['x'] }]
+        });
+
+        expect(manifest.warnings.join(' ')).not.toMatch(/unpublished/);
     });
 
     it('rejects conflicting explicit and host-qualified sites before reading the page', async () => {

@@ -1,6 +1,6 @@
 import { LayoutRow } from './shared/page-common';
 import { normalizePagePath } from './shared/page-path';
-import { RESOLVE_ENDPOINTS, resolveSite } from './shared/resolve';
+import { RESOLVE_ENDPOINTS, resolveSite, unpublishedSiteNote } from './shared/resolve';
 
 import { HttpError, type DotCMSRuntime } from '../../runtime';
 import { CONTEXT_ENDPOINTS, type Endpoint } from '../toolkit/endpoints';
@@ -180,6 +180,7 @@ export async function verifyPage(options: VerifyPageOptions): Promise<VerifyPage
         path: options.path,
         uri,
         siteLabel: resolvedSite?.hostname ?? '(default)',
+        siteLive: resolvedSite?.live,
         mode,
         languageId,
         status,
@@ -209,6 +210,8 @@ export function buildManifest(input: {
     path: string;
     uri: string;
     siteLabel: string;
+    /** Whether the site is live; undefined when unknown (or no site was given). */
+    siteLive?: boolean;
     mode: VerifyMode;
     languageId: number;
     status: number;
@@ -240,8 +243,27 @@ export function buildManifest(input: {
     }
 
     const urlMap = resolveUrlMap(entity.urlContentMap);
-    const warnings = collectWarnings(slots, pageRendered, input.status, urlMap, input.mode);
-    const diagnosis = diagnose(slots, pageRendered, input.status, urlMap, input.mode);
+    const warnings = collectWarnings(
+        slots,
+        pageRendered,
+        input.status,
+        urlMap,
+        input.mode,
+        input.siteLive
+    );
+    let diagnosis = diagnose(slots, pageRendered, input.status, urlMap, input.mode);
+    const siteNote = unpublishedSiteNote(input.siteLabel, input.siteLive);
+    if (siteNote) {
+        warnings.push(siteNote);
+        // The render endpoint answers LIVE with a 404 for every page on an unpublished site, so
+        // the generic "check the path, site, and that the page exists" is the wrong lead here.
+        if (input.mode === 'LIVE' && input.status === 404) {
+            diagnosis =
+                `Render returned HTTP 404 because site ${input.siteLabel} is unpublished: LIVE mode ` +
+                `cannot render its pages until the site is started. Next: re-run with mode ` +
+                `"WORKING" to check the content.`;
+        }
+    }
 
     const manifest: VerifyPageManifest = {
         path: input.path,
@@ -328,7 +350,8 @@ function collectWarnings(
     pageRendered: boolean,
     status: number,
     urlMap: UrlMapResult | null,
-    mode: VerifyMode
+    mode: VerifyMode,
+    siteLive?: boolean
 ): string[] {
     const warnings: string[] = [];
 
@@ -373,7 +396,9 @@ function collectWarnings(
         );
     }
 
-    if (mode === 'WORKING' && pageRendered) {
+    // On a site known to be unpublished, LIVE answers 404 and its diagnosis points back to
+    // WORKING, so advising a LIVE re-check would send the agent round in a loop.
+    if (mode === 'WORKING' && pageRendered && siteLive !== false) {
         warnings.push(
             'Rendered in WORKING mode — this reflects unpublished edits. Re-verify with mode "LIVE" ' +
                 'to confirm what the public actually sees.'
