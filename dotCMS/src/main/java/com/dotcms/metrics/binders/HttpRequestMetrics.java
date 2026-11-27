@@ -112,7 +112,7 @@ public class HttpRequestMetrics implements MeterBinder {
                 // Request rate (requests per second)
                 Gauge.builder(METRIC_PREFIX + ".requests.rate.rps", this,
                     metrics -> getRequestRate(processor))
-                    .description("HTTP requests per second")
+                    .description("Average HTTP requests per second over JVM uptime")
                     .tag("processor", processorName)
                     .register(registry);
             }
@@ -269,7 +269,7 @@ public class HttpRequestMetrics implements MeterBinder {
         // Throughput (requests per minute)
         Gauge.builder(METRIC_PREFIX + ".performance.throughput_rpm", this,
             metrics -> getThroughputRPM())
-            .description("Request throughput in requests per minute")
+            .description("Average HTTP requests per minute over JVM uptime")
             .register(registry);
     }
     
@@ -298,12 +298,12 @@ public class HttpRequestMetrics implements MeterBinder {
         }
     }
     
-    private double getRequestRate(ObjectName processor) {
+    /** Returns the processor request count averaged over JVM uptime in seconds. */
+    private double getRequestRate(final ObjectName processor) {
         try {
-            // Simple approximation - would need time tracking for accurate rate
-            double requestCount = getRequestProcessorAttribute(processor, "requestCount");
-            // Assuming server uptime, this is very rough - ideally track over time windows
-            return requestCount > 0 ? requestCount / 3600 : 0.0; // Very rough RPS estimate
+            final double requestCount = getRequestProcessorAttribute(processor, "requestCount");
+            final double seconds = ManagementFactory.getRuntimeMXBean().getUptime() / 1000.0;
+            return seconds > 0 ? requestCount / seconds : 0.0;
         } catch (Exception e) {
             Logger.debug(this, "Failed to calculate request rate: " + e.getMessage());
             return 0.0;
@@ -330,6 +330,7 @@ public class HttpRequestMetrics implements MeterBinder {
         }
     }
     
+    /** Returns all processor request counts averaged over JVM uptime in minutes. */
     private double getThroughputRPM() {
         try {
             Set<ObjectName> processors = mBeanServer.queryNames(
@@ -340,8 +341,8 @@ public class HttpRequestMetrics implements MeterBinder {
                 totalRequests += getRequestProcessorAttribute(processor, "requestCount");
             }
             
-            // Very rough estimate - would need proper time tracking
-            return totalRequests / 60; // Rough RPM estimate
+            final double minutes = ManagementFactory.getRuntimeMXBean().getUptime() / 60000.0;
+            return minutes > 0 ? totalRequests / minutes : 0.0;
         } catch (Exception e) {
             Logger.debug(this, "Failed to calculate throughput: " + e.getMessage());
             return 0.0;

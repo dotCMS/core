@@ -38,12 +38,15 @@ The dotCMS metrics system provides deep observability into all aspects of your d
 #### **`DatabaseMetrics`** - Database Health & Connection Pool
 ```java
 // Key Metrics:
-dotcms_database_connection_available          // Database connectivity (1=up, 0=down)
+dotcms_database_health_available              // Managed cached status (1=healthy, 0=unhealthy, NaN=unknown)
 dotcms_database_hikari_connections_active     // Active connections
 dotcms_database_hikari_connections_max        // Max pool size
 dotcms_database_hikari_threads_awaiting       // Threads waiting for connections
-dotcms_database_health_query_test             // Query execution health
 ```
+
+Database health reads the existing health manager's cached result. Scrapes never construct a
+standalone database health check or borrow/validate a database connection; missing/unknown health
+state reports `NaN` until the background health system publishes a result.
 
 #### **`CacheMetrics`** - Cache Performance & Memory
 ```java
@@ -52,12 +55,37 @@ dotcms_cache_hit_rate_overall                 // Overall cache hit rate %
 dotcms_cache_region_hit_rate{region="content"} // Hit rate by cache region
 dotcms_cache_region_size{region="X"}          // Number of objects per region
 dotcms_cache_region_hits{region="X"}          // Hit count per region
-dotcms_cache_region_memory_bytes{region="X"}  // Memory usage per region (H22 only)
+dotcms_cache_region_memory_bytes{region="X"}  // Provider-reported memory, excluding H22 write totals
 dotcms_cache_region_evictions{region="X"}     // Evictions per region (Caffeine/Guava)
 dotcms_cache_region_configured_size{region="X"} // Max configured size per region
 dotcms_cache_region_loads{region="X"}         // Load count per region
 dotcms_cache_region_avg_load_time_ms{region="X"} // Average load time per region
 ```
+
+Aggregate and region gauges share one current provider snapshot for `metrics.cache.ttl-seconds`
+(default: 30 seconds), then refresh on the next read. H22 SQL/missing-shard failures and Redis
+collection failures mark the snapshot unavailable rather than returning healthy empty totals.
+Providers that throw or return null remain in the collection as unavailable; they are not silently
+dropped. Statistics use strict Redis membership lookups and key scans that signal a missing/closed
+connection. Existing storage/cache callers retain their empty-set/no-op fallbacks during outages,
+so Redis failures do not prevent later providers in a storage chain from receiving writes.
+Missing regions or failed collections report
+`NaN`, not stale or zero values. Overall hit rate is request-weighted from native Caffeine/Guava
+hit and request counts, never inferred from provider-specific "loads". Providers without native
+counters are excluded from that rate; no observed requests produces `NaN`.
+Guava region aliases retain their individual gauges and labels, but shared backing-cache counters
+and sizes contribute only once to aggregate rates and totals.
+Region identities are registered at startup; discovering regions created later still requires a restart.
+Provider-formatted numeric statistics use the JVM formatting locale, including grouped counts and
+fractional percentages and locale-specific percent signs. H22 discovers and counts all regions
+with one grouped query per shard table (18 queries with the default layout), not a query per
+region/table pair. Lettuce Redis region sizes use one cluster-scoped, streamed keyspace scan per
+snapshot collection, not one full scan per region. The legacy Jedis provider collects with one
+borrowed connection, explicit `INFO memory`, and one cursor pass over cache keys, without blocking
+`KEYS` or nested group/key lookups that hide failures. This still costs a keyspace traversal per TTL;
+collection is not constant-time, and Redis size counts remain approximate during concurrent writes.
+H22 serialized-write totals are deliberately excluded from memory gauges because they are not
+resident-memory measurements.
 
 #### **`TomcatMetrics`** - Web Server Performance
 ```java
@@ -97,7 +125,14 @@ dotcms_http_requests_duration_avg_ms{processor="X"}   // Average response time
 dotcms_http_responses_error_rate              // Error rate percentage
 dotcms_http_endpoints_api_requests            // API endpoint usage
 dotcms_http_requests_active                   // Currently active requests
+dotcms_http_requests_rate_rps{processor="X"}   // Average requests/second over JVM uptime
+dotcms_http_performance_throughput_rpm        // Average requests/minute over JVM uptime
 ```
+
+The RPS and RPM gauges divide cumulative Tomcat request counts by JVM uptime; they are
+lifetime averages, not rolling traffic rates. Processor counter resets or late connector startup
+shorten the counted interval without resetting JVM uptime. For a rolling rate, use Prometheus
+`rate(dotcms_http_requests_total[5m])` instead.
 
 #### **`FileAssetMetrics`** - Storage & File Operations
 ```java
@@ -168,12 +203,16 @@ private double parseMetricValue(String value) {
 
 ### **Core Settings**
 ```properties
-# Enable/disable metrics system
+# Collection and Prometheus default to enabled; no enablement flags are required.
+# Set DOT_METRICS_ENABLED=false to disable collection at startup.
 metrics.enabled=true
 
+# Set DOT_METRICS_PROMETHEUS_ENABLED=false to disable the scrape endpoint.
 # Prometheus endpoint (management port only)
 metrics.prometheus.enabled=true
 metrics.prometheus.endpoint=/dotmgt/metrics
+# Require normal dotCMS back-end authentication for GET and HEAD (default: false)
+metrics.prometheus.require-authentication=false
 
 # Performance tuning
 metrics.cache.ttl-seconds=30           # Cache expensive calculations
@@ -229,20 +268,25 @@ metrics.sampling.rate=1.0             # No sampling
 
 ### **Security & Performance**
 - **Endpoint**: `/dotmgt/metrics` on port 8090 (management port)
-- **Security**: Protected by `InfrastructureManagementFilter`
-- **Performance**: Bypasses expensive application filters
-- **Response Time**: Sub-5ms for metrics scraping
+- **Security**: With default strict checking, `InfrastructureManagementFilter` requires the actual management connector for metrics; forwarded-port headers cannot grant access from an application connector. The existing `management.port.strict.check.enabled=false` override permits a single-connector development setup; do not disable strict checking in production.
+- **Authentication**: Set `DOT_METRICS_PROMETHEUS_REQUIRE_AUTHENTICATION=true` to require normal dotCMS back-end authentication for GET and HEAD. Front-end-only users are denied; the request thread's prior principal is restored after authentication. Scrapers can send a persisted API JWT in `Authorization: Bearer <token>`; a login token is not an API JWT. The default remains false for isolated monitoring networks; restrict network access and use verified TLS for remote scraping.
+- **Startup**: The existing metrics initializer runs through the normal startup service loader. Disabled metrics do not resolve the service; initialization failures remain non-fatal.
+- **Availability**: Disabled metrics/Prometheus or a missing registry return 503, not an empty successful scrape. GET and HEAD share the same access and availability checks.
+- **Performance**: Bypasses expensive application filters; measure collection and optional authentication time in the deployed environment.
+
+The deployed servlet path is `/dotmgt/metrics`; changing `metrics.prometheus.endpoint` alone does not change the deployment descriptor's mapping.
 
 ### **Access Examples**
 ```bash
 # Direct access (local)
 curl http://localhost:8090/dotmgt/metrics
 
-# Through load balancer with proxy headers
-curl -H "X-Forwarded-Port: 8090" http://dotcms.example.com/dotmgt/metrics
+# A Docker host mapping of 9020:8090 still reaches the real management connector
+curl http://localhost:9020/dotmgt/metrics
 
-# Kubernetes service
-curl http://dotcms-service:8090/dotmgt/metrics
+# Application connectors do not grant metrics access through forwarding headers.
+# For remote monitoring, route to the management connector over verified TLS,
+# with narrow network permissions and authentication where required.
 ```
 
 ## 📈 **Monitoring Integration**

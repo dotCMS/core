@@ -2,6 +2,7 @@ package com.dotmarketing.business.cache.provider;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.OptionalLong;
 import java.util.Set;
 
 /**
@@ -29,7 +30,41 @@ public class CacheStats {
 
     Map<String, String> stats = new LinkedHashMap<>();
 
-    public CacheStats(){}
+    // Native counters are metadata, not UI columns; REGION_LOAD has provider-specific meanings.
+    private final Long hitCount;
+    private final Long requestCount;
+    private boolean aggregateSource = true;
+
+    public CacheStats() {
+        hitCount = null;
+        requestCount = null;
+    }
+
+    /** Creates stats with the provider's native hits and total requests (hits plus misses). */
+    public CacheStats(final long hitCount, final long requestCount) {
+        this.hitCount = hitCount;
+        this.requestCount = requestCount;
+    }
+
+    /** Returns native hits, or empty when this provider does not report request counters. */
+    public OptionalLong getHitCount() {
+        return hitCount == null ? OptionalLong.empty() : OptionalLong.of(hitCount);
+    }
+
+    /** Returns native total requests, or empty when this provider does not report them. */
+    public OptionalLong getRequestCount() {
+        return requestCount == null ? OptionalLong.empty() : OptionalLong.of(requestCount);
+    }
+
+    /** Returns whether this row contributes distinct backing-cache facts to aggregate metrics. */
+    public boolean isAggregateSource() {
+        return aggregateSource;
+    }
+
+    /** Keeps alias display rows intact while preventing repeated backing-cache facts in totals. */
+    public void excludeFromAggregates() {
+        aggregateSource = false;
+    }
 
     public CacheStats addStat(String statName, String value) {
         stats.put(statName, value);
