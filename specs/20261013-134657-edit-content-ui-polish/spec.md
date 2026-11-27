@@ -130,8 +130,9 @@ copy button that looks like every other icon-only button.
   add and remove buttons as `add` / `close` at the default, rounded icon-only button size, and
   the empty-state folder as `folder_open`.
 - The Host / Folder copy button as an input-group add-on attached to the field's trigger
-  (`p-inputgroup` / `p-inputgroup-addon`), not small, its glyph at the default button icon size
-  (removing `text-lg`), and `check` the same size as `content_copy`.
+  (`p-inputgroup` / `p-inputgroup-addon`), a small icon-only button whose glyph is the same size
+  as the trigger's site / folder icon (`text-base!` instead of `text-lg`), and `check` the same
+  size as `content_copy`.
 - Unit specs for each point.
 
 **Explicitly out of scope / non-goals**:
@@ -198,11 +199,11 @@ copy button that looks like every other icon-only button.
 
 **4. Host / Folder copy button**
 
-- **AC-012**: The copy button is not small (no `size="small"`) and is attached to the field as
-  an input-group add-on, so field and button together are as wide and as tall as the other
-  fields.
-- **AC-013**: Its glyph renders at the default button icon size, with no per-instance size
-  override such as `text-lg`.
+- **AC-012**: The copy button is a small icon-only button attached to the field as an
+  input-group add-on, so field and button together are as wide and as tall as the other fields.
+- **AC-013**: Its glyph is the same size as the trigger's site / folder icon (`text-base!`), so
+  the field's icons line up in size; no `text-lg`. (Changed from "default button size" when this
+  PR took the #38724 Host / Folder field, which keeps the small button and sizes the glyph to it.)
 - **AC-014**: The copied state (`check`) is the same size as `content_copy`.
 - **AC-015**: Tooltip, accessible name and disabled state behave as today.
 
@@ -216,8 +217,8 @@ copy button that looks like every other icon-only button.
   drawer header carries `border-b border-surface-200`; the date picker's popup wrapper
   (`p-motion`) carries `min-w-0!`; the drag handle renders one `drag_indicator` and still has
   `pReorderableRowHandle` / is absent when disabled; the add/remove buttons render `add` /
-  `close`, not small, rounded; the empty state renders `folder_open`; the copy button has no
-  `size="small"`, its glyph has no `text-lg`, and it is an input-group add-on of the trigger.
+  `close`, not small, rounded; the empty state renders `folder_open`; the copy button is
+  small, its glyph is `text-base!` (no `text-lg`), and it is an input-group add-on of the trigger.
   Run: `pnpm nx test edit-content` (`-- <file>` while iterating).
 - Manual, in the browser against the local instance (widths, viewport placement and pixel
   sizes can't be proven in jsdom): AC-001–AC-006, AC-008, AC-010, AC-012–AC-014, plus
