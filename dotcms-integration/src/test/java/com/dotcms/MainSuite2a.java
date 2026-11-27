@@ -148,6 +148,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.enterprise.publishing.remote.handler.OSGIHandlerTest.class,
         com.dotcms.publisher.receiver.BundlePluginDeploymentTest.class,
         com.dotcms.rest.api.v1.drive.export.ContentDriveExportPermissionTest.class,
+        com.dotcms.rest.api.v1.drive.ContentDriveExportRoundTripTest.class,
         com.dotmarketing.portlets.contentlet.transform.ContentMapWidgetFieldRenderTest.class,
         ApiTokenResourceTest.class,
         AuthCredentialPushPublishUtilTest.class,
