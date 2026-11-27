@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { signal } from '@angular/core';
@@ -24,7 +24,6 @@ import { GlobalStore } from '@dotcms/store';
 import { DotMyAccountComponent } from './dot-my-account.component';
 
 import { DotAccountService } from '../../../../../api/services/dot-account-service';
-import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 
 describe('DotMyAccountComponent', () => {
     let spectator: Spectator<DotMyAccountComponent>;
@@ -53,9 +52,6 @@ describe('DotMyAccountComponent', () => {
             mockProvider(DotMessageService, {
                 get: (key) => key
             }),
-            mockProvider(DotMenuService, {
-                isPortletInMenu: () => of(true)
-            }),
             mockProvider(LoginService, {
                 auth$: of(mockAuth),
                 watchUser: (callback) => callback(mockAuth),
@@ -73,6 +69,8 @@ describe('DotMyAccountComponent', () => {
             {
                 provide: GlobalStore,
                 useValue: {
+                    ensureLoaded: () => of(undefined),
+                    hasPortlet: vi.fn().mockReturnValue(true),
                     waitForSessionReady: vi.fn(() => of(void 0)),
                     systemConfig: signal({
                         emailRegex: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$'
@@ -100,7 +98,12 @@ describe('DotMyAccountComponent', () => {
                 providers: [
                     {
                         provide: GlobalStore,
-                        useValue: { systemConfig: $systemConfig, waitForSessionReady }
+                        useValue: {
+                            ensureLoaded: () => of(undefined),
+                            hasPortlet: () => true,
+                            systemConfig: $systemConfig,
+                            waitForSessionReady
+                        }
                     }
                 ]
             });
@@ -161,6 +164,48 @@ describe('DotMyAccountComponent', () => {
             $systemConfig.set({ emailRegex: regex } as DotSystemConfig);
             spectator.flushEffects();
             expect(component.emailRegex).toBe('');
+        });
+    });
+
+    describe('Getting started checkbox initial state', () => {
+        beforeEach(initializeComponent);
+
+        // The checkbox is always rendered; it starts checked only when the `starter` portlet is in the
+        // user's menu (issue #38078). The answer comes from the one menu snapshot in the store.
+        it('starts checked when the starter portlet is in the menu', () => {
+            const store = spectator.inject(GlobalStore);
+            vi.spyOn(store, 'hasPortlet').mockReturnValue(true);
+
+            spectator.component.ngOnInit();
+
+            expect(store.hasPortlet).toHaveBeenCalledWith('starter');
+            expect(spectator.component.showStarter()).toBe(true);
+        });
+
+        it('starts unchecked when the starter portlet is not in the menu', () => {
+            const store = spectator.inject(GlobalStore);
+            vi.spyOn(store, 'hasPortlet').mockReturnValue(false);
+
+            spectator.component.ngOnInit();
+
+            expect(spectator.component.showStarter()).toBe(false);
+        });
+
+        it('waits for the menu to be ready before it decides', () => {
+            const store = spectator.inject(GlobalStore);
+            const ready = new Subject<void>();
+            vi.spyOn(store, 'ensureLoaded').mockReturnValue(ready.asObservable());
+            vi.spyOn(store, 'hasPortlet').mockReturnValue(true);
+            spectator.component.showStarter.set(false);
+
+            spectator.component.ngOnInit();
+
+            expect(spectator.component.showStarter()).toBe(false);
+
+            ready.next();
+            ready.complete();
+
+            expect(spectator.component.showStarter()).toBe(true);
         });
     });
 

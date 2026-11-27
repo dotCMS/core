@@ -4,16 +4,18 @@ import {
     mockProvider,
     Spectator
 } from '@openng/spectator/vitest';
-import { of } from 'rxjs';
 import { vi } from 'vitest';
+
+import { signal } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
 import { InputTextModule } from 'primeng/inputtext';
 import { SkeletonModule } from 'primeng/skeleton';
 
-import { DotCurrentUserService, DotMessageService, DotRouterService } from '@dotcms/data-access';
+import { DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotIsoCodePipe, DotMessagePipe } from '@dotcms/ui';
 import { createFakeLanguage, MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -46,7 +48,13 @@ const ENHANCED_LOCALES: DotLanguage[] = [
 const DEFAULT_LOCALE = SIMPLE_LOCALES[0];
 const CURRENT_LOCALE = SIMPLE_LOCALES[0];
 
-function makeFactory(canManage = false) {
+/**
+ * Whether the `locales` portlet is in the user's menu. It is a signal read through the store's
+ * `hasPortlet`, the way the real snapshot is, so a later layout update reaches the component.
+ */
+const localesInMenu = signal(false);
+
+function makeFactory() {
     return createComponentFactory({
         component: DotEditContentSidebarLocalesSelectorComponent,
         imports: [
@@ -59,8 +67,8 @@ function makeFactory(canManage = false) {
         ],
         providers: [
             { provide: DotMessageService, useValue: new MockDotMessageService(MOCK_MESSAGES) },
-            mockProvider(DotCurrentUserService, {
-                isPortletInMenu: vi.fn().mockReturnValue(of(canManage))
+            mockProvider(GlobalStore, {
+                hasPortlet: vi.fn((portletId: string) => portletId === 'locales' && localesInMenu())
             }),
             mockProvider(DotRouterService, { gotoPortlet: vi.fn() })
         ]
@@ -345,9 +353,10 @@ describe('DotEditContentSidebarLocalesSelectorComponent', () => {
 
     describe('Manage locales button', () => {
         describe('when user has no access', () => {
-            const createComponent = makeFactory(false);
+            const createComponent = makeFactory();
 
             beforeEach(() => {
+                localesInMenu.set(false);
                 spectator = createComponent({
                     props: {
                         locales: SIMPLE_LOCALES,
@@ -361,12 +370,20 @@ describe('DotEditContentSidebarLocalesSelectorComponent', () => {
             it('should not show the manage locales button', () => {
                 expect(spectator.query(byTestId('manage-locales-link'))).toBeNull();
             });
+
+            it('should show the button when a later layout update adds the locales portlet', () => {
+                localesInMenu.set(true);
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('manage-locales-link'))).toBeTruthy();
+            });
         });
 
         describe('when user has access', () => {
-            const createComponent = makeFactory(true);
+            const createComponent = makeFactory();
 
             beforeEach(() => {
+                localesInMenu.set(true);
                 spectator = createComponent({
                     props: {
                         locales: SIMPLE_LOCALES,
@@ -379,6 +396,13 @@ describe('DotEditContentSidebarLocalesSelectorComponent', () => {
 
             it('should show the manage locales button', () => {
                 expect(spectator.query(byTestId('manage-locales-link'))).toBeTruthy();
+            });
+
+            it('should hide the button when a later layout update removes the locales portlet', () => {
+                localesInMenu.set(false);
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('manage-locales-link'))).toBeNull();
             });
 
             it('should call gotoPortlet when clicking manage locales', () => {

@@ -13,7 +13,7 @@
         <li class="dot-nav-sub__item">
             <a
                 (click)="onItemClick($event, subItem)"
-                [class.dot-nav-sub__link--active]="subItem.active"
+                [class.dot-nav-sub__link--active]="isActive(subItem)"
                 [routerLink]="subItem.menuLink"
                 [state]="{ menuId: data.id }"
                 class="dot-nav-sub__link">

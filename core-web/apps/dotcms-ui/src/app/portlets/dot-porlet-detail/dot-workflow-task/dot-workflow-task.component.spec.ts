@@ -55,7 +55,6 @@ import { DotWorkflowTaskComponent } from './dot-workflow-task.component';
 
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '../../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import { DotMenuService } from '../../../api/services/dot-menu.service';
 import { MockDotUiColorsService } from '../../../test/dot-test-bed';
 import { IframeOverlayService } from '../../../view/components/_common/iframe/service/iframe-overlay.service';
 import { DotWorkflowTaskDetailComponent } from '../../../view/components/dot-workflow-task-detail/dot-workflow-task-detail.component';
@@ -132,7 +131,6 @@ describe('DotWorkflowTaskComponent', () => {
                 },
                 DotCustomEventHandlerService,
                 DotLicenseService,
-                DotMenuService,
                 IframeOverlayService,
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 DotIframeService,

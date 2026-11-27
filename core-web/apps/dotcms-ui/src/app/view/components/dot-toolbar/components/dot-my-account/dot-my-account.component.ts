@@ -43,7 +43,6 @@ import { GlobalStore } from '@dotcms/store';
 import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { DotAccountService, DotAccountUser } from '../../../../../api/services/dot-account-service';
-import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 
 enum FormStatus {
     INIT = 'init',
@@ -122,7 +121,6 @@ export class DotMyAccountComponent implements OnInit {
     readonly #globalStore = inject(GlobalStore);
     private readonly loginService = inject(LoginService);
     private readonly dotRouterService = inject(DotRouterService);
-    private readonly dotMenuService = inject(DotMenuService);
     private readonly httpErrorManagerService = inject(DotHttpErrorManagerService);
     private readonly dotAlertConfirmService = inject(DotAlertConfirmService);
 
@@ -156,11 +154,12 @@ export class DotMyAccountComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        this.dotMenuService
-            .isPortletInMenu('starter')
+        // The "Show Getting Started" checkbox starts checked when the starter portlet is in the menu.
+        this.#globalStore
+            .ensureLoaded()
             .pipe(take(1))
-            .subscribe((showStarter: boolean) => {
-                this.showStarter.set(showStarter);
+            .subscribe(() => {
+                this.showStarter.set(this.#globalStore.hasPortlet('starter'));
             });
     }
 

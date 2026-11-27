@@ -44,6 +44,7 @@ import {
 } from '@dotcms/data-access';
 import { LoggerService, LoginService } from '@dotcms/dotcms-js';
 import { DotCMSContentType, FeaturedFlags } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import {
     DotApiLinkComponent,
     DotCopyButtonComponent,
@@ -61,7 +62,6 @@ import {
 import { ContentTypesLayoutComponent } from './content-types-layout.component';
 
 import { DotAddToMenuService } from '../../../../../api/services/add-to-menu/add-to-menu.service';
-import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { DotInlineEditComponent } from '../../../../../view/components/_common/dot-inline-edit/dot-inline-edit.component';
 import { IframeComponent } from '../../../../../view/components/_common/iframe/iframe-component/iframe.component';
 import { IframeOverlayService } from '../../../../../view/components/_common/iframe/service/iframe-overlay.service';
@@ -184,24 +184,28 @@ describe('ContentTypesLayoutComponent', () => {
                 DotEventsService,
                 DotAddToMenuService,
                 {
-                    provide: DotMenuService,
+                    // "Add to menu" lists the groups of the navigation snapshot kept in the store.
+                    provide: GlobalStore,
                     useValue: {
-                        loadMenu: vi.fn().mockReturnValue(
-                            of([
-                                {
-                                    id: '123',
-                                    name: 'Menu 1',
-                                    label: 'Menu 1',
-                                    tabName: 'Name',
-                                    tabDescription: 'Description',
-                                    tabIcon: 'icon',
-                                    url: '/url/index',
-                                    active: false,
-                                    isOpen: false,
-                                    menuItems: []
-                                }
-                            ])
-                        )
+                        ensureLoaded: () => of(undefined),
+                        menuGroup: () => [
+                            {
+                                id: '123',
+                                label: 'Name',
+                                icon: 'icon',
+                                menuItems: [],
+                                isOpen: false,
+                                tabOrder: 0
+                            },
+                            {
+                                id: '456',
+                                label: 'Name 2',
+                                icon: 'icon2',
+                                menuItems: [],
+                                isOpen: false,
+                                tabOrder: 1
+                            }
+                        ]
                     }
                 },
                 {

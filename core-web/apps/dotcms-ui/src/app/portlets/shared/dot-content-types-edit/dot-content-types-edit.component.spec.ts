@@ -54,8 +54,6 @@ import {
 import { DotEditContentTypeCacheService } from './components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
 import { DotContentTypesEditComponent } from './dot-content-types-edit.component';
 
-import { DotMenuService } from '../../../api/services/dot-menu.service';
-
 @Component({
     selector: 'dot-content-type-fields-drop-zone',
     template: '',
@@ -185,7 +183,6 @@ describe('DotContentTypesEditComponent', () => {
                 DotCrudService,
                 DotEditContentTypeCacheService,
                 DotHttpErrorManagerService,
-                DotMenuService,
                 DotEventsService,
                 DotFieldService,
                 Location,
@@ -542,7 +539,6 @@ describe('DotContentTypesEditComponent', () => {
                     DotCrudService,
                     DotEditContentTypeCacheService,
                     DotHttpErrorManagerService,
-                    DotMenuService,
                     DotEventsService,
                     DotFieldService,
                     Location

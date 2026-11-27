@@ -4,6 +4,7 @@ import {
     ElementRef,
     EventEmitter,
     HostBinding,
+    inject,
     Input,
     Output,
     ViewChild,
@@ -11,7 +12,8 @@ import {
 } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
-import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
+import { DotMenu, DotMenuItem, getMenuItemKey } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 
 @Component({
     animations: [
@@ -40,6 +42,8 @@ import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
     imports: [RouterModule]
 })
 export class DotSubNavComponent {
+    readonly #globalStore = inject(GlobalStore);
+
     @ViewChild('ul', { static: true }) ul: ElementRef;
 
     @Input() data: DotMenu;
@@ -51,6 +55,17 @@ export class DotSubNavComponent {
 
     @HostBinding('@expandAnimation') get getAnimation(): string {
         return !this.collapsed && this.data.isOpen ? 'expanded' : 'collapsed';
+    }
+
+    /**
+     * Whether a menu item is the highlighted one. The highlight is the store's `activeKey`, not a
+     * flag on the item, so replacing the menu does not erase it.
+     *
+     * @param item the menu item to check
+     * @returns true when the item is the highlighted one
+     */
+    isActive(item: DotMenuItem): boolean {
+        return getMenuItemKey(item) === this.#globalStore.activeKey();
     }
 
     /**

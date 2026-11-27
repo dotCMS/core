@@ -1,15 +1,15 @@
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, Router, RouterStateSnapshot } from '@angular/router';
 
 import { DotRouterService } from '@dotcms/data-access';
+import { GlobalStore } from '@dotcms/store';
 
 import { DefaultGuardService } from './default-guard.service';
 
 import { DOTTestBed } from '../../../test/dot-test-bed';
-import { DotMenuService } from '../dot-menu.service';
 import { DynamicRouteService } from '../dynamic-route.service';
 
 describe('DefaultGuardService', () => {
@@ -17,31 +17,7 @@ describe('DefaultGuardService', () => {
     let dotRouterService: DotRouterService;
     let router: Router;
     let dynamicRouteService: DynamicRouteService;
-    let dotMenuService: DotMenuService;
-
-    const mockMenus = [
-        {
-            id: 'menu-1',
-            name: 'Test Menu',
-            tabDescription: '',
-            tabName: '',
-            tabOrder: 0,
-            url: '',
-            menuItems: [
-                {
-                    id: 'my-dynamic-portlet',
-                    label: 'Dynamic Portlet',
-                    url: '/my-dynamic-portlet',
-                    ajax: false,
-                    angular: true,
-                    initParams: {
-                        'angular-module':
-                            'remote:http://localhost:4201/remoteEntry.js|myPlugin|./Routes'
-                    }
-                }
-            ]
-        }
-    ];
+    let globalStore: { ensureLoaded: Mock };
 
     const mockRoute = {} as ActivatedRouteSnapshot;
 
@@ -50,10 +26,9 @@ describe('DefaultGuardService', () => {
             providers: [
                 DefaultGuardService,
                 {
-                    provide: DotMenuService,
-                    useValue: {
-                        loadMenu: vi.fn().mockReturnValue(of(mockMenus))
-                    }
+                    // The guard waits for the menu snapshot; loading it registers the plugin routes.
+                    provide: GlobalStore,
+                    useValue: { ensureLoaded: vi.fn().mockReturnValue(of(undefined)) }
                 },
                 {
                     provide: DynamicRouteService,
@@ -69,7 +44,7 @@ describe('DefaultGuardService', () => {
         dotRouterService = TestBed.inject(DotRouterService);
         router = TestBed.inject(Router);
         dynamicRouteService = TestBed.inject(DynamicRouteService);
-        dotMenuService = TestBed.inject(DotMenuService);
+        globalStore = TestBed.inject(GlobalStore) as unknown as typeof globalStore;
 
         vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
     });
@@ -80,10 +55,8 @@ describe('DefaultGuardService', () => {
             const state = { url: '/my-dynamic-portlet' } as RouterStateSnapshot;
 
             guard.canActivate(mockRoute, state).subscribe((result) => {
-                expect(dotMenuService.loadMenu).toHaveBeenCalled();
-                expect(dynamicRouteService.registerRoutesFromMenuItems).toHaveBeenCalledWith(
-                    mockMenus[0].menuItems
-                );
+                expect(globalStore.ensureLoaded).toHaveBeenCalled();
+                expect(dynamicRouteService.registerRoutesFromMenuItems).not.toHaveBeenCalled();
                 expect(dynamicRouteService.isRouteRegistered).toHaveBeenCalledWith(
                     'my-dynamic-portlet'
                 );
@@ -100,8 +73,8 @@ describe('DefaultGuardService', () => {
             const state = { url: '/some-unknown-path' } as RouterStateSnapshot;
 
             guard.canActivate(mockRoute, state).subscribe((result) => {
-                expect(dotMenuService.loadMenu).toHaveBeenCalled();
-                expect(dynamicRouteService.registerRoutesFromMenuItems).toHaveBeenCalled();
+                expect(globalStore.ensureLoaded).toHaveBeenCalled();
+                expect(dynamicRouteService.registerRoutesFromMenuItems).not.toHaveBeenCalled();
                 expect(dynamicRouteService.isRouteRegistered).toHaveBeenCalledWith(
                     'some-unknown-path'
                 );
@@ -111,4 +84,25 @@ describe('DefaultGuardService', () => {
                 done();
             });
         }));
+
+    it('decides only after the menu is ready, so the routes it registers already exist', () => {
+        const ready = new Subject<void>();
+        let result: boolean | undefined;
+        globalStore.ensureLoaded.mockReturnValue(ready.asObservable());
+        (dynamicRouteService.isRouteRegistered as Mock).mockReturnValue(true);
+
+        guard
+            .canActivate(mockRoute, { url: '/my-dynamic-portlet' } as RouterStateSnapshot)
+            .subscribe((value) => (result = value));
+
+        expect(dynamicRouteService.isRouteRegistered).not.toHaveBeenCalled();
+        expect(result).toBeUndefined();
+
+        ready.next();
+        ready.complete();
+
+        expect(dynamicRouteService.isRouteRegistered).toHaveBeenCalledWith('my-dynamic-portlet');
+        expect(router.navigateByUrl).toHaveBeenCalledWith('/my-dynamic-portlet');
+        expect(result).toBe(false);
+    });
 });

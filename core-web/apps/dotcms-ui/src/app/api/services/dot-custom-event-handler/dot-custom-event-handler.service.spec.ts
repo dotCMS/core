@@ -62,7 +62,6 @@ import { DotCustomEventHandlerService } from './dot-custom-event-handler.service
 
 import { MockDotUiColorsService } from '../../../test/dot-test-bed';
 import { DotDownloadBundleDialogService } from '../dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import { DotMenuService } from '../dot-menu.service';
 
 /** The handler once it can be told which injector the panels it opens live under (#38303). */
 type WithInjector = DotCustomEventHandlerService & { setInjector?: (injector: Injector) => void };
@@ -94,7 +93,6 @@ describe('DotCustomEventHandlerService', () => {
             providers: [
                 DotCustomEventHandlerService,
                 DotLoadingIndicatorService,
-                DotMenuService,
                 DotPushPublishDialogService,
                 DotWorkflowEventHandlerService,
                 DotRouterService,

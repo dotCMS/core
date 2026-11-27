@@ -7,7 +7,6 @@ import {
     output,
     signal
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
 import { BadgeModule } from 'primeng/badge';
@@ -21,8 +20,9 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TagModule } from 'primeng/tag';
 
-import { DotCurrentUserService, DotRouterService } from '@dotcms/data-access';
+import { DotRouterService } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotIsoCodePipe, DotMessagePipe } from '@dotcms/ui';
 
 import { LocaleTab } from '../../../../../models/dot-edit-content.model';
@@ -61,12 +61,11 @@ export class DotEditContentSidebarLocalesSelectorComponent {
     readonly switchLocale = output<DotLanguage>();
     readonly tabChange = output<LocaleTab>();
 
-    readonly #currentUserService = inject(DotCurrentUserService);
+    readonly #globalStore = inject(GlobalStore);
     readonly #dotRouterService = inject(DotRouterService);
 
-    readonly $canManageLocales = toSignal(this.#currentUserService.isPortletInMenu('locales'), {
-        initialValue: false
-    });
+    /** The manage control shows while `locales` is in the user's menu, including after a layout update. */
+    readonly $canManageLocales = computed(() => this.#globalStore.hasPortlet('locales'));
 
     readonly $searchQuery = signal('');
 

@@ -189,4 +189,61 @@ describe('DynamicRouteService', () => {
             expect(service.getRegisteredRoutes()).toEqual([]);
         });
     });
+    /**
+     * Characterization of how a menu becomes runtime routes (issue #38078): plugin portlets declare
+     * `initParams['angular-module']`, and the shell registers one route per such item. The menu
+     * consolidation reuses this registration from a single path, so it must stay idempotent.
+     */
+    describe('registerRoutesFromMenuItems', () => {
+        const REMOTE = 'remote:http://localhost:4201/remoteEntry.js|myPlugin|./Routes';
+
+        const pluginItem = {
+            id: 'my-plugin',
+            label: 'My Plugin',
+            url: '/my-plugin',
+            angular: true,
+            ajax: false,
+            initParams: { 'angular-module': REMOTE }
+        } as never;
+
+        it('registers one route for an Angular item that declares a module-federation module', () => {
+            const registered = service.registerRoutesFromMenuItems([pluginItem]);
+
+            expect(registered).toBe(1);
+            expect(service.isRouteRegistered('my-plugin')).toBe(true);
+            expect(service.getRegisteredRoutes()).toEqual(['my-plugin']);
+        });
+
+        it('registers the same items only once when called again', () => {
+            service.registerRoutesFromMenuItems([pluginItem]);
+
+            const second = service.registerRoutesFromMenuItems([pluginItem]);
+
+            expect(second).toBe(0);
+            expect(service.getRegisteredRoutes()).toEqual(['my-plugin']);
+        });
+
+        it('ignores items that are not Angular portlets or declare no module', () => {
+            const registered = service.registerRoutesFromMenuItems([
+                { ...(pluginItem as object), angular: false } as never,
+                { id: 'plain', label: 'Plain', url: '/plain', angular: true, ajax: false } as never,
+                { id: 'jsp', label: 'Jsp', url: '/c/jsp', angular: false, ajax: false } as never
+            ]);
+
+            expect(registered).toBe(0);
+            expect(service.getRegisteredRoutes()).toEqual([]);
+        });
+
+        it('does not register a remote module whose descriptor is malformed', () => {
+            const registered = service.registerRoutesFromMenuItems([
+                {
+                    ...(pluginItem as object),
+                    initParams: { 'angular-module': 'remote:only-one-part' }
+                } as never
+            ]);
+
+            expect(registered).toBe(0);
+            expect(service.isRouteRegistered('my-plugin')).toBe(false);
+        });
+    });
 });
