@@ -23,7 +23,7 @@ import { ConfirmationService, ConfirmEventType, MessageService } from 'primeng/a
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
-import { MessageModule } from 'primeng/message';
+import { Message, MessageModule } from 'primeng/message';
 
 import {
     DotContentletService,
@@ -910,6 +910,25 @@ describe('EditContentLayoutComponent', () => {
             spectator.detectChanges();
 
             expect(topBar()).not.toHaveClass('border-b');
+        });
+
+        it('separates stacked banners with Tailwind divide, not component CSS', () => {
+            expect(topBar()).toHaveClass('divide-y!');
+            expect(topBar()).toHaveClass('divide-surface-200!');
+        });
+
+        it('flattens every banner through PrimeNG design tokens', () => {
+            relatedTrailSignal.set([
+                { inode: 'iA', title: 'TA' },
+                { inode: 'iB', title: 'TB' }
+            ]);
+            spectator.detectChanges();
+
+            const banners = spectator.queryAll(Message);
+            expect(banners.length).toBe(2);
+            banners.forEach((banner) =>
+                expect(banner.dt()).toEqual({ root: { borderWidth: '0', borderRadius: '0' } })
+            );
         });
     });
 

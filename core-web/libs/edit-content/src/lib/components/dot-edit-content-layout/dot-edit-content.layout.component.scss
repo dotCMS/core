@@ -61,22 +61,6 @@
     // button (~32px) that would otherwise stretch its row taller than the text-only lock banner.
     // Font is set in px (not rem) because the app root is 14px, so a rem value would not land
     // on the intended 13.5px.
-    // Banners are flat full-width strips: no outline, square corners. The lines around them come
-    // from outside, one per edge: the side panel's header divider above, the top bar's own bottom
-    // border below, and the rule below between two stacked banners — all surface-200, the tab
-    // list's colour. A banner's own outline doubled the line above it and the line below it.
-    ::ng-deep .p-message {
-        border: 0;
-        border-radius: 0;
-    }
-
-    // `.p-message` is the `<p-message>` host itself (PrimeNG puts the root class on the host), so
-    // two stacked banners are adjacent `.p-message` siblings. Two classes also outrank the
-    // `border: 0` above.
-    ::ng-deep .p-message + .p-message {
-        border-top: 1px solid var(--p-surface-200);
-    }
-
     ::ng-deep .p-message-content {
         display: flex;
         align-items: center;

@@ -25,26 +25,10 @@
         $isExpireDateField() ? ('edit.content.form.field.calendar.never.expires' | dm) : ''
     "
     [ariaLabelledBy]="$inputLabelledBy()">
-    <!--
-        Popup width: on open, PrimeNG writes the input's width as an inline `min-width` on the
-        popup's wrapper (the `p-motion` element around the panel), so with `fluid` a full-width
-        field gave a full-width calendar. `pt.motion.root` is the one pass-through that reaches
-        that wrapper (`panelStyleClass` lands on the panel inside it), and the `!` makes the class
-        win over the inline value, so the popup keeps the date picker's own width.
-    -->
-    <!--
-        Replaces PrimeNG's stock footer (Today on the left, Clear on the right). Clear leaves
-        entirely — emptying the field is the on-field X above. The layout is our own flex row
-        rather than the theme's default justification, so the Date-only case, which renders no
-        timezone at all, still puts the action flush right with no empty slot holding its place.
-    -->
+    <!-- `min-w-0!` beats the input-width min-width PrimeNG puts on the popup, so it keeps its own width. -->
+    <!-- Custom footer: Today (and the timezone) only; clearing is the field's own X. -->
     <ng-template #buttonbar>
-        <!--
-            Tailwind utilities, not component SCSS: the overlay is appended to body, so a
-            ':host ::ng-deep' rule never matches it — the selector requires the element to be a
-            descendant of the host. Tailwind's classes are global, so they apply wherever
-            PrimeNG moves these nodes.
-        -->
+        <!-- Tailwind, not component CSS: the overlay is appended to body. -->
         <div class="flex w-full items-center justify-between gap-2">
             @if ($showFooterTimezone()) {
                 <span class="text-sm text-gray-500" data-testid="calendar-field-timezone">
