@@ -54,6 +54,12 @@
                 <artifactId>jsoup</artifactId>
                 <version>1.23.2</version>
             </dependency>
+            <!-- junrar: pin above the version Tika pulls in transitively (7.6.0 is flagged; fixed in 7.6.1) -->
+            <dependency>
+                <groupId>com.github.junrar</groupId>
+                <artifactId>junrar</artifactId>
+                <version>7.6.1</version>
+            </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcjmail-jdk18on</artifactId>

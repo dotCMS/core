@@ -71,7 +71,6 @@
 <%@ page import="com.dotcms.contenttype.model.field.*" %>
 <%@ page import="io.vavr.control.Try" %>
 <%@ page import="com.dotcms.contenttype.transform.contenttype.StructureTransformer" %>
-<%@ page import="org.apache.poi.ss.usermodel.Row" %>
 <%@ page import="com.dotcms.contenttype.transform.field.FieldTransformer" %>
 <%@ page import="com.dotmarketing.util.Logger" %>
 <%@ page import="com.dotmarketing.util.ConfigUtils" %>
