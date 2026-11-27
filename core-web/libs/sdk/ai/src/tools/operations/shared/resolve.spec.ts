@@ -67,8 +67,62 @@ describe('resolveSite', () => {
 
         const site = await resolveSite(runtime, 'demo.dotcms.com');
 
-        expect(site).toEqual({ identifier: DEMO_SITE.identifier, hostname: 'demo.dotcms.com' });
+        expect(site).toEqual({
+            identifier: DEMO_SITE.identifier,
+            hostname: 'demo.dotcms.com',
+            live: true
+        });
         expect(calls).toHaveLength(0);
+    });
+
+    describe('the site live state', () => {
+        // The page tools tell the agent when a site is unpublished, so an unpublished site is not
+        // reported as reachable. Unknown stays unknown: no field, no claim.
+        it('carries live=false from the session cache', async () => {
+            const { runtime } = fakeRuntime({ cachedSites: [{ ...DEMO_SITE, live: false }] });
+
+            const site = await resolveSite(runtime, 'demo.dotcms.com');
+
+            expect(site.live).toBe(false);
+        });
+
+        it('carries live=false from the hostname lookup', async () => {
+            const { runtime } = fakeRuntime({
+                cachedSites: [],
+                onRequest: (opts) =>
+                    opts.path === '/api/v1/site' ? { entity: [{ ...DEMO_SITE, live: false }] } : {}
+            });
+
+            const site = await resolveSite(runtime, 'demo.dotcms.com');
+
+            expect(site.live).toBe(false);
+        });
+
+        it('carries live=false from the identifier lookup', async () => {
+            const { runtime } = fakeRuntime({
+                cachedSites: [],
+                onRequest: (opts) =>
+                    opts.path === `/api/v1/site/${DEMO_SITE.identifier}`
+                        ? { entity: { ...DEMO_SITE, live: false } }
+                        : {}
+            });
+
+            const site = await resolveSite(runtime, DEMO_SITE.identifier);
+
+            expect(site.live).toBe(false);
+        });
+
+        it('leaves live unknown when the payload has no live field', async () => {
+            const withoutLive = { identifier: DEMO_SITE.identifier, hostname: DEMO_SITE.hostname };
+            const { runtime } = fakeRuntime({
+                cachedSites: [],
+                onRequest: (opts) => (opts.path === '/api/v1/site' ? { entity: [withoutLive] } : {})
+            });
+
+            const site = await resolveSite(runtime, 'demo.dotcms.com');
+
+            expect(site.live).toBeUndefined();
+        });
     });
 
     describe('when the session cache is empty (the reported failure)', () => {
@@ -102,6 +156,29 @@ describe('resolveSite', () => {
             expect(site.identifier).toBe(DEMO_SITE.identifier);
         });
 
+        it('resolves an unpublished site by hostname', async () => {
+            // As the instance answers: without `archive`, the list holds only live sites;
+            // `archive=false` adds the unpublished (stopped) ones.
+            const unpublished = { ...DEMO_SITE, live: false };
+            const { runtime, calls } = fakeRuntime({
+                cachedSites: [],
+                onRequest: (opts) =>
+                    opts.path === '/api/v1/site' && opts.query?.archive === false
+                        ? { entity: [unpublished] }
+                        : { entity: [] }
+            });
+
+            const site = await resolveSite(runtime, 'demo.dotcms.com');
+
+            expect(site.identifier).toBe(DEMO_SITE.identifier);
+            expect(calls[0].query).toEqual({
+                filter: 'demo.dotcms.com',
+                archive: false,
+                per_page: 50,
+                page: 1
+            });
+        });
+
         it('still resolves when loadContext itself throws', async () => {
             const { runtime } = fakeRuntime({
                 contextThrows: true,
@@ -110,7 +187,8 @@ describe('resolveSite', () => {
 
             await expect(resolveSite(runtime, 'demo.dotcms.com')).resolves.toEqual({
                 identifier: DEMO_SITE.identifier,
-                hostname: 'demo.dotcms.com'
+                hostname: 'demo.dotcms.com',
+                live: true
             });
         });
 

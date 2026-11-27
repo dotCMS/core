@@ -113,19 +113,21 @@ async function loadSites(request: RequestFn): Promise<SiteSummary[]> {
     const pageSize = 200;
     const all: unknown[] = [];
 
-    // Two listings, merged below by identifier. On a live instance the plain listing returns
-    // the active sites and `archive=true` returns ONLY archived ones — asking with
-    // `archive=true` alone (as this once did, reading it as "include archived") left `sites`
-    // empty on any instance without an archived site. Each is paged until a short page, so
-    // the injected global is a catalog, not the first 200 sites.
-    for (const archived of [false, true]) {
-        for (let page = 0; page < 100; page += 1) {
+    // Two listings, merged below by identifier. `GET /api/v1/site` answers three ways: with no
+    // `archive` param it returns only live sites, `archive=false` returns live AND unpublished
+    // (stopped) sites, and `archive=true` returns ONLY archived ones. So the first listing
+    // sends `archive=false` (a site kept unpublished for review must still resolve), and the
+    // second `archive=true` — asking with `archive=true` alone (as this once did, reading it
+    // as "include archived") left `sites` empty on any instance without an archived site.
+    // Each is paged until a short page, so the injected global is a catalog, not the first
+    // 200 sites. Pages start at 1: the endpoint serves `page=0` as page 1, so starting at 0
+    // fetched the first page twice.
+    for (const archive of [false, true]) {
+        for (let page = 1; page <= 100; page += 1) {
             const raw = await request({
                 method: 'GET',
                 path: CONTEXT_PATHS.sites,
-                query: archived
-                    ? { per_page: pageSize, page, archive: true }
-                    : { per_page: pageSize, page }
+                query: { per_page: pageSize, page, archive }
             });
             const batch = asArray(unwrapEntity(raw));
             all.push(...batch);

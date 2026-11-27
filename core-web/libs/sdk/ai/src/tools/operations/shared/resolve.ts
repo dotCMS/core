@@ -38,6 +38,26 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 export interface ResolvedSite {
     identifier: string;
     hostname: string;
+    /** Whether the site is live (started). Undefined when the response did not say. */
+    live?: boolean;
+}
+
+/**
+ * The line a page tool adds to its result when the site is known to be unpublished, so the agent
+ * does not report the page as published or hand out a URL nobody can reach. Undefined when the
+ * site is live or its state is unknown.
+ *
+ * @param hostname the site's hostname, as the tool reports it
+ * @param live whether the site is live; undefined when unknown
+ * @returns the note, or undefined when there is nothing to say
+ */
+export function unpublishedSiteNote(
+    hostname: string,
+    live: boolean | undefined
+): string | undefined {
+    return live === false
+        ? `Site ${hostname} is unpublished: its pages are not publicly reachable until the site is started.`
+        : undefined;
 }
 
 function looksLikeIdentifier(value: string): boolean {
@@ -68,13 +88,18 @@ function toResolvedSite(raw: unknown): ResolvedSite | undefined {
         return undefined;
     }
 
+    // The same fields the session context reads (`live`, older payloads `isLive`). Anything
+    // that is not a boolean leaves the state unknown rather than reading as unpublished.
+    const live = record?.['live'] ?? record?.['isLive'];
+
     return {
         identifier,
         hostname:
             readString(record, 'hostname') ??
             readString(record, 'hostName') ??
             readString(record, 'siteName') ??
-            identifier
+            identifier,
+        ...(typeof live === 'boolean' ? { live } : {})
     };
 }
 
@@ -145,7 +170,9 @@ async function siteFromCache(
             entry.identifier === wanted || entry.hostname?.toLowerCase() === wanted.toLowerCase()
     );
 
-    return match ? { identifier: match.identifier, hostname: match.hostname } : undefined;
+    return match
+        ? { identifier: match.identifier, hostname: match.hostname, live: match.live }
+        : undefined;
 }
 
 async function siteFromApi(
@@ -176,7 +203,9 @@ async function siteFromApi(
         const raw = entityOf(
             await dotcms.request({
                 path: '/api/v1/site',
-                query: { filter: wanted, per_page: 50, page: 1 }
+                // `archive=false` returns live AND unpublished sites; without it the endpoint
+                // returns only live ones, so a site kept unpublished could not be resolved.
+                query: { filter: wanted, archive: false, per_page: 50, page: 1 }
             })
         );
         const candidates = Array.isArray(raw) ? raw : [];

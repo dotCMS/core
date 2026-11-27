@@ -136,6 +136,7 @@ describe('createPage', () => {
             hostname: string;
             isDefault: boolean;
             archived: boolean;
+            live?: boolean;
         }>;
     }) {
         const contentTypes = handlers.contentTypes ?? [HTMLPAGE_ASSET];
@@ -457,6 +458,46 @@ describe('createPage', () => {
         expect(manifest.live).toBe(false);
         expect(manifest.warnings.length).toBeGreaterThan(0);
         expect(manifest.warnings[0]).toMatch(/blank|content/i);
+    });
+
+    it('notes when the site is unpublished, so the page is not reported as reachable', async () => {
+        const { runtime } = fakeRuntime({
+            sites: [{ ...DEMO_SITE, live: false }],
+            onCreateFolders: () => ({ entity: [{ path: '/p', identifier: 'f' }] }),
+            onFire: () => ({ entity: { identifier: 'page-1', live: true } })
+        });
+
+        const manifest = await createPage({
+            dotcms: runtime,
+            site: 'demo.dotcms.com',
+            urlPath: '/p/index',
+            title: 'P',
+            template: 't'
+        });
+
+        expect(manifest.warnings).toEqual([
+            'Site demo.dotcms.com is unpublished: its pages are not publicly reachable until the site is started.'
+        ]);
+    });
+
+    it('adds no site note when the site is live or its state is unknown', async () => {
+        for (const site of [{ ...DEMO_SITE, live: true }, DEMO_SITE]) {
+            const { runtime } = fakeRuntime({
+                sites: [site],
+                onCreateFolders: () => ({ entity: [{ path: '/p', identifier: 'f' }] }),
+                onFire: () => ({ entity: { identifier: 'page-1', live: true } })
+            });
+
+            const manifest = await createPage({
+                dotcms: runtime,
+                site: 'demo.dotcms.com',
+                urlPath: '/p/index',
+                title: 'P',
+                template: 't'
+            });
+
+            expect(manifest.warnings).toEqual([]);
+        }
     });
 
     describe('content type resolution', () => {

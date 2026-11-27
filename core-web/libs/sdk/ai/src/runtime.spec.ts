@@ -381,27 +381,34 @@ describe('createRuntime context freshness', () => {
         global.fetch = fetchMock as unknown as typeof fetch;
     });
 
-    it('loads active and archived sites, and reuses the snapshot within one runtime', async () => {
-        // As a live instance answers: the plain listing holds the active sites, and
-        // `archive=true` holds ONLY archived ones. Asking only with `archive=true` — as the
-        // loader did — left `sites` empty on an instance with no archived site.
+    it('loads active, unpublished and archived sites, and reuses the snapshot within one runtime', async () => {
+        // As a live instance answers: without `archive` the listing holds only live sites,
+        // `archive=false` holds live and unpublished (stopped) ones, and `archive=true` holds
+        // ONLY archived ones. Asking only with `archive=true` — as the loader once did — left
+        // `sites` empty on an instance with no archived site.
+        const live = {
+            identifier: 'demo',
+            siteName: 'demo.dotcms.com',
+            isDefault: true,
+            isLive: true
+        };
+        const unpublished = { identifier: 'draft', siteName: 'draft.dotcms.com', isLive: false };
+        const archivedSite = { identifier: 'old', siteName: 'old.dotcms.com', isArchived: true };
+        const archiveParams: (string | null)[] = [];
         let siteLoads = 0;
         fetchMock.mockImplementation(async (url: string) => {
             const parsed = new URL(url);
             if (parsed.pathname === '/api/v1/site') {
                 siteLoads += 1;
-                const archived = parsed.searchParams.get('archive') === 'true';
+                const archive = parsed.searchParams.get('archive');
+                archiveParams.push(archive);
                 return jsonResponse({
-                    entity: archived
-                        ? [{ identifier: 'old', siteName: 'old.dotcms.com', isArchived: true }]
-                        : [
-                              {
-                                  identifier: 'demo',
-                                  siteName: 'demo.dotcms.com',
-                                  isDefault: true,
-                                  isLive: true
-                              }
-                          ]
+                    entity:
+                        archive === 'true'
+                            ? [archivedSite]
+                            : archive === 'false'
+                              ? [live, unpublished]
+                              : [live]
                 });
             }
             return jsonResponse({ entity: [] });
@@ -412,22 +419,32 @@ describe('createRuntime context freshness', () => {
         const loadsAfterFirst = siteLoads;
         const cached = await dotcms.loadContext();
 
+        expect(archiveParams).toEqual(['false', 'true']);
         expect(first.sites).toEqual([
             expect.objectContaining({ identifier: 'demo', isDefault: true, archived: false }),
+            expect.objectContaining({ identifier: 'draft', live: false, archived: false }),
             expect.objectContaining({ identifier: 'old', archived: true })
         ]);
         expect(cached.sites).toBe(first.sites);
         expect(siteLoads).toBe(loadsAfterFirst);
     });
 
-    it('paginates and de-duplicates the complete site catalog', async () => {
+    it('paginates the complete site catalog from page 1 and de-duplicates it', async () => {
+        // As `PaginationUtil.getPage` answers: pages start at 1 and `page <= 0` is served as
+        // page 1, so starting the walk at 0 fetched the first page twice.
+        const requested: string[] = [];
         fetchMock.mockImplementation(async (url: string) => {
             const parsed = new URL(url);
             if (parsed.pathname !== '/api/v1/site') {
                 return jsonResponse({ entity: [] });
             }
-            const page = Number(parsed.searchParams.get('page'));
-            if (page === 0) {
+            const archive = parsed.searchParams.get('archive');
+            requested.push(`archive=${archive}&page=${parsed.searchParams.get('page')}`);
+            if (archive === 'true') {
+                return jsonResponse({ entity: [] });
+            }
+            const page = Math.max(1, Number(parsed.searchParams.get('page')));
+            if (page === 1) {
                 return jsonResponse({
                     entity: Array.from({ length: 200 }, (_, index) => ({
                         identifier: `site-${index}`,
@@ -437,10 +454,21 @@ describe('createRuntime context freshness', () => {
                 });
             }
             return jsonResponse({
-                entity: [
-                    { identifier: 'site-199', siteName: 'duplicate.example.com', isLive: false },
-                    { identifier: 'site-200', siteName: 'last.example.com', isLive: false }
-                ]
+                entity:
+                    page === 2
+                        ? [
+                              {
+                                  identifier: 'site-199',
+                                  siteName: 'duplicate.example.com',
+                                  isLive: false
+                              },
+                              {
+                                  identifier: 'site-200',
+                                  siteName: 'last.example.com',
+                                  isLive: false
+                              }
+                          ]
+                        : []
             });
         });
 
@@ -449,6 +477,11 @@ describe('createRuntime context freshness', () => {
             token: 't'
         }).loadContext();
 
+        expect(requested).toEqual([
+            'archive=false&page=1',
+            'archive=false&page=2',
+            'archive=true&page=1'
+        ]);
         expect(context.sites).toHaveLength(201);
         expect(context.sites.find((site) => site.identifier === 'site-199')?.hostname).toBe(
             'duplicate.example.com'

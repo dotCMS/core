@@ -1,6 +1,11 @@
 import { isContentLive } from './shared/page-common';
 import { splitUrlPath } from './shared/page-path';
-import { RESOLVE_ENDPOINTS, resolveLanguageId, resolveSite } from './shared/resolve';
+import {
+    RESOLVE_ENDPOINTS,
+    resolveLanguageId,
+    resolveSite,
+    unpublishedSiteNote
+} from './shared/resolve';
 
 import {
     HttpError,
@@ -142,7 +147,8 @@ export async function createPage(options: CreatePageOptions): Promise<CreatePage
     // Resolve the site to its identifier UUID up front. `contentHost` on the fire body MUST be a
     // site UUID — a bare hostname makes the fire NPE ("Host.getIdentifier() because host is null"),
     // which is exactly the root-page (`/`) trap where there is no folder to anchor the page on.
-    const siteId = await resolveSiteId(options.dotcms, options.site);
+    const site = await resolveSite(options.dotcms, options.site);
+    const siteId = site.identifier;
 
     // Resolve the page content type and validate it BEFORE creating anything. A wrong type (not a
     // page) or a missing user-required field would otherwise 400 the fire opaquely — and only after
@@ -210,6 +216,10 @@ export async function createPage(options: CreatePageOptions): Promise<CreatePage
             `Page created but not confirmed live. It may render blank until content is placed and the page is re-published.`
         );
     }
+    const siteNote = unpublishedSiteNote(site.hostname, site.live);
+    if (siteNote) {
+        warnings.push(siteNote);
+    }
 
     return {
         identifier,
@@ -251,19 +261,6 @@ interface ContentTypeField {
 type ContentTypeDefinition = Pick<ContentTypeSummary, 'id' | 'variable' | 'baseType'> & {
     fields: ContentTypeField[];
 };
-
-/**
- * Resolve a site (given as a hostname OR an identifier UUID) to its identifier UUID.
- *
- * The fire body's `contentHost` must be a site UUID. Passing a bare hostname works for pages under
- * a folder (the folder anchors the host) but NPEs for a root page, where there is no folder — dotCMS
- * then can't resolve the host and throws "Host.getIdentifier() because host is null". Resolving to
- * the UUID here makes every page (root included) fire cleanly. Uses the runtime's cached site
- * context (already loaded), mirroring how resolvePageContentType uses cached content types.
- */
-async function resolveSiteId(dotcms: DotCMSRuntime, site: string): Promise<string> {
-    return (await resolveSite(dotcms, site)).identifier;
-}
 
 /**
  * Resolve the page content type by variable or id and confirm it is actually a page type.
