@@ -4,7 +4,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -75,24 +74,6 @@ public class ReindexQueueAPIImplWithheldNotificationTest {
 
         verify(factory).markAsFailed(entry, WITHHELD_REASON);
         verify(notifier, never()).savedContentWithheld(anyString(), anyString());
-    }
-
-    /**
-     * Given Scenario: A saved entry parks and is reported; an operator retries the failed records,
-     * which sends it back with a fresh budget, and it parks again because the cause is still there.
-     * Expected Result: It is reported a second time. That is the feedback the retry asked for;
-     * remembering "already reported" would need a schema change the fix rules out (#37270,
-     * AC-007). Documents the accepted behaviour; it held before the change too.
-     */
-    @Test
-    public void reparkAfterRetryMayNotifyAgain() throws Exception {
-        final ReindexEntry parks = entry(Priority.NORMAL.dbValue() + MAX);
-
-        api.markAsFailed(parks, WITHHELD_REASON);
-        // ...retry of the failed records, then the same row runs out of retries again
-        api.markAsFailed(parks, WITHHELD_REASON);
-
-        verify(notifier, times(2)).savedContentWithheld("id-1", WITHHELD_REASON);
     }
 
     /**

@@ -22,6 +22,7 @@
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
+<%@page import="org.apache.commons.lang.StringEscapeUtils"%>
 <%@page import="com.liferay.portal.util.ReleaseInfo"%>
 <%@ page import="com.dotmarketing.db.DbConnectionFactory" %>
 
@@ -137,7 +138,7 @@ function retryFailedRecords () {
     fetch('/api/v1/index/failed/retry', {method:'POST', cache:'no-cache'})
     .then(response => {
         if (response.status === 409) {
-            alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"Retry-Failed-Reindex-Records-Refused")) %>');
+            alert('<%= StringEscapeUtils.escapeJavaScript(LanguageUtil.get(pageContext,"Retry-Failed-Reindex-Records-Refused")) %>');
             return null;
         }
         if (!response.ok) {
@@ -147,13 +148,13 @@ function retryFailedRecords () {
     })
     .then(data => {
         if (data && data.entity) {
-            alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"Retry-Failed-Reindex-Records-Done")) %>'
+            alert('<%= StringEscapeUtils.escapeJavaScript(LanguageUtil.get(pageContext,"Retry-Failed-Reindex-Records-Done")) %>'
                 .replace('{0}', data.entity.requeued));
         }
     })
     .catch(error => {
         // A 401, a 500 or a body that is not JSON: tell the admin instead of failing silently.
-        alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"Retry-Failed-Reindex-Records-Failed")) %>'
+        alert('<%= StringEscapeUtils.escapeJavaScript(LanguageUtil.get(pageContext,"Retry-Failed-Reindex-Records-Failed")) %>'
             .replace('{0}', error.message));
     })
     .finally(() => checkReindexation());

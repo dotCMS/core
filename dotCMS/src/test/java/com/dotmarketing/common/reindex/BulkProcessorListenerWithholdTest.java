@@ -1,5 +1,6 @@
 package com.dotmarketing.common.reindex;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -97,7 +98,8 @@ public class BulkProcessorListenerWithholdTest {
 
         // Rows are acknowledged at the end of the batch, by ReindexThread (#37270).
         final List<ReindexEntry> rows = listener.entriesToAcknowledge();
-        assertTrue(rows.contains(otherEntry) && !rows.contains(withheldEntry));
+        assertTrue("the sibling's row must be acknowledged", rows.contains(otherEntry));
+        assertFalse("the withheld row must not be acknowledged", rows.contains(withheldEntry));
     }
 
     /**
@@ -141,7 +143,8 @@ public class BulkProcessorListenerWithholdTest {
 
         // Rows are acknowledged at the end of the batch, by ReindexThread (#37270).
         final List<ReindexEntry> rows = listener.entriesToAcknowledge();
-        assertTrue(rows.contains(otherEntry) && rows.contains(withheldEntry));
+        assertTrue("the sibling's row must be acknowledged", rows.contains(otherEntry));
+        assertTrue("without a withhold, the row must be acknowledged", rows.contains(withheldEntry));
     }
 
     /**

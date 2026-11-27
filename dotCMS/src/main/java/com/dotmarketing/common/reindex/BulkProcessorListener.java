@@ -253,6 +253,10 @@ public class BulkProcessorListener implements IndexBulkListener {
             return;
         }
         Logger.error(ReindexThread.class, "Bulk process failed entirely: " + msg, failure);
+        // Deliberate (#37270): the failure carries no request contents, so every entry of the
+        // batch is marked failed, including entries an earlier response already indexed. Those
+        // stay in the journal and are charged one spurious retry, which is cheaper than erasing
+        // a real failure.
         workingRecords.forEach((id, idx) -> failOnce(id, idx, msg));
     }
 

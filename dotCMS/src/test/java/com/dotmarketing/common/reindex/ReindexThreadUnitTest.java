@@ -281,6 +281,8 @@ public class ReindexThreadUnitTest extends UnitTestBase {
             ReindexThread.stopThread();
             loop.join(3_000);
         }
+        // Verify only once the loop is gone: a loop still running could still acknowledge.
+        assertFalse("the reindex loop should stop within 3 s", loop.isAlive());
 
         final InOrder order = inOrder(proc, queueApi);
         order.verify(proc).close();
@@ -325,6 +327,8 @@ public class ReindexThreadUnitTest extends UnitTestBase {
             ReindexThread.stopThread();
             loop.join(3_000);
         }
+        // Verify only once the loop is gone: a loop still running could still acknowledge.
+        assertFalse("the reindex loop should stop within 3 s", loop.isAlive());
 
         verify(queueApi, never()).deleteReindexEntry(anyList());
     }

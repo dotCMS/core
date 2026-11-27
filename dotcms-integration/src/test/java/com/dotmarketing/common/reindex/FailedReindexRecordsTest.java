@@ -77,6 +77,12 @@ public class FailedReindexRecordsTest {
     /** Every contentlet the class created, destroyed at the end. */
     private static final List<Contentlet> createdContentlets = new ArrayList<>();
 
+    /** Value of {@code ALLOW_MANUAL_REINDEX_UNPAUSE} when the class started, put back at the end. */
+    private static boolean manualUnpauseAllowedBefore;
+
+    /** Whether the reindex thread was running when the class started; only then is it unpaused. */
+    private static boolean reindexThreadWasWorking;
+
     /** Identifier of every row a test inserted, removed after each test. */
     private final List<String> inserted = new ArrayList<>();
 
@@ -86,6 +92,8 @@ public class FailedReindexRecordsTest {
         reindexQueueAPI = APILocator.getReindexQueueAPI();
         indexAPI = APILocator.getContentletIndexAPI();
         systemUser = APILocator.systemUser();
+        manualUnpauseAllowedBefore = Config.getBooleanProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false);
+        reindexThreadWasWorking = ReindexThread.isWorking();
         Config.setProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", true);
         ReindexThread.pause();
         setJournalAside();
@@ -94,21 +102,32 @@ public class FailedReindexRecordsTest {
                 .nextPersisted();
     }
 
+    /**
+     * Removes the test data and restores the state found at class start. The journal goes back
+     * first and on its own, so a failing data cleanup cannot leave the journal empty for the
+     * classes that run after this one.
+     */
     @AfterClass
     public static void restore() throws Exception {
         try {
-            for (final Contentlet contentlet : createdContentlets) {
-                // Silently: one of them had its versions deleted by hand.
-                ContentletDataGen.destroy(contentlet, true);
-            }
-            createdContentlets.clear();
-            if (contentType != null) {
-                ContentTypeDataGen.remove(contentType, true);
-            }
             putJournalBack();
         } finally {
-            Config.setProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false);
-            ReindexThread.unpause();
+            try {
+                for (final Contentlet contentlet : createdContentlets) {
+                    // Silently: one of them had its versions deleted by hand.
+                    ContentletDataGen.destroy(contentlet, true);
+                }
+                createdContentlets.clear();
+                if (contentType != null) {
+                    ContentTypeDataGen.remove(contentType, true);
+                }
+            } finally {
+                // Unpause while the manual unpause is still allowed, so it takes effect now.
+                if (reindexThreadWasWorking) {
+                    ReindexThread.unpause();
+                }
+                Config.setProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", manualUnpauseAllowedBefore);
+            }
         }
     }
 
@@ -150,10 +169,10 @@ public class FailedReindexRecordsTest {
         final long parkedBefore = reindexQueueAPI.parkedRecordCount();
 
         final Map<Integer, String> byPriority = new HashMap<>();
-        for (final int priority : new int[]{0, 100, 101, 200, 201, 300, 301, 305, 401, 505, 705}) {
+        for (final int priority : new int[]{0, 100, 101, 200, 201, 300, 301, 305, 399, 400, 401, 505, 705}) {
             byPriority.put(priority, insertRow(priority));
         }
-        final Set<String> expectedFailed = Set.of(101, 201, 301, 305, 401, 505, 705).stream()
+        final Set<String> expectedFailed = Set.of(101, 201, 301, 305, 399, 400, 401, 505, 705).stream()
                 .map(byPriority::get).collect(Collectors.toSet());
 
         final Set<String> listed = reindexQueueAPI.getFailedReindexRecords().stream()
@@ -164,9 +183,10 @@ public class FailedReindexRecordsTest {
         assertEquals("the listing must return every row that failed at least once",
                 expectedFailed, listed);
         assertEquals("the count must describe the same rows as the listing",
-                7, reindexQueueAPI.failedRecordCount() - countBefore);
+                9, reindexQueueAPI.failedRecordCount() - countBefore);
+        // 399 is the last value still being retried and 400 the first parked one.
         assertEquals("only rows at or above ERROR (400) are parked",
-                3, reindexQueueAPI.parkedRecordCount() - parkedBefore);
+                4, reindexQueueAPI.parkedRecordCount() - parkedBefore);
     }
 
     /**
@@ -182,17 +202,21 @@ public class FailedReindexRecordsTest {
         final Date longAgo = new Date(0);
         final long reindexRow = insertRow(newContentlet("a").getIdentifier(), 705, longAgo);
         final long saveRow = insertRow(newContentlet("b").getIdentifier(), 505, longAgo);
+        final long structureRow = insertRow(newContentlet("e").getIdentifier(), 605, longAgo);
         final long asapRow = insertRow(newContentlet("c").getIdentifier(), 401, longAgo);
+        final long firstParkedRow = insertRow(newContentlet("f").getIdentifier(), 400, longAgo);
         final long retryingRow = insertRow(newContentlet("d").getIdentifier(), 302, longAgo);
         final Date beforeRetry = new Date(DbConnectionFactory.now().getTime() - 1_000);
 
         final ParkedRecordsRetry retried = reindexQueueAPI.retryParkedRecords(systemUser);
 
-        assertTrue("at least the three parked rows are requeued: " + retried,
-                retried.requeued() >= 3);
+        assertTrue("at least the five parked rows are requeued: " + retried,
+                retried.requeued() >= 5);
         assertRow(reindexRow, 300, beforeRetry);
         assertRow(saveRow, 100, beforeRetry);
+        assertRow(structureRow, 200, beforeRetry);
         assertRow(asapRow, 0, beforeRetry);
+        assertRow(firstParkedRow, 0, beforeRetry);
         final Map<String, Object> untouched = row(retryingRow);
         assertEquals(302, ((Number) untouched.get("priority")).intValue());
         assertEquals(longAgo.getTime(), ((Date) untouched.get("time_entered")).getTime());
