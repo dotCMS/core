@@ -15,7 +15,11 @@ import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { getDownloadLink } from '@dotcms/utils';
 
-import { SUCCESS_MESSAGE_LIFE } from '../../../../shared/constants';
+import {
+    ERROR_MESSAGE_LIFE,
+    SUCCESS_MESSAGE_LIFE,
+    WARNING_MESSAGE_LIFE
+} from '../../../../shared/constants';
 import { DotContentDriveStatus } from '../../../../shared/models';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 import { isFolder } from '../../../../utils/functions';
@@ -100,7 +104,9 @@ export class DotContentDriveExportButtonComponent {
 
     /**
      * Exports the listing request the store holds and downloads the file under the name the server
-     * gave it, then confirms with a toast that carries the number of exported items.
+     * gave it, then confirms with a toast that carries the number of exported items. When nothing
+     * readable matched, a warning toast says so; when the export fails, an error toast shows the
+     * server's message. Neither downloads anything.
      *
      * The request is not tied to this component's lifetime: the user may select a row while the
      * file is being built, which removes the button, and the download should still arrive.
@@ -115,23 +121,42 @@ export class DotContentDriveExportButtonComponent {
         this.#exportService
             .export({ query: this.#store.$request() })
             .pipe(finalize(() => this.$exporting.set(false)))
-            .subscribe((result) => {
-                if (result.kind !== 'file') {
-                    return;
+            .subscribe({
+                next: (result) => {
+                    if (result.kind !== 'file') {
+                        this.#messageService.add({
+                            severity: 'warn',
+                            summary: this.#dotMessageService.get(
+                                'content-drive.toast.export-empty'
+                            ),
+                            life: WARNING_MESSAGE_LIFE
+                        });
+
+                        return;
+                    }
+
+                    getDownloadLink(result.blob, result.fileName).click();
+
+                    this.#messageService.add({
+                        severity: 'success',
+                        summary: this.#dotMessageService.get('content-drive.toast.export-success'),
+                        detail: this.#dotMessageService.get(
+                            'content-drive.toast.export-success-detail',
+                            String(result.contentlets),
+                            String(result.files)
+                        ),
+                        life: SUCCESS_MESSAGE_LIFE
+                    });
+                },
+                // The service already turned the response into the server's message
+                error: (error: Error) => {
+                    this.#messageService.add({
+                        severity: 'error',
+                        summary: this.#dotMessageService.get('content-drive.toast.export-error'),
+                        detail: error.message,
+                        life: ERROR_MESSAGE_LIFE
+                    });
                 }
-
-                getDownloadLink(result.blob, result.fileName).click();
-
-                this.#messageService.add({
-                    severity: 'success',
-                    summary: this.#dotMessageService.get('content-drive.toast.export-success'),
-                    detail: this.#dotMessageService.get(
-                        'content-drive.toast.export-success-detail',
-                        String(result.contentlets),
-                        String(result.files)
-                    ),
-                    life: SUCCESS_MESSAGE_LIFE
-                });
             });
     }
 }

@@ -1,14 +1,21 @@
-import { Observable } from 'rxjs';
+import { from, Observable, throwError } from 'rxjs';
 
-import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders, HttpResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { map } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
 
 import { DotContentDriveSearchRequest } from '@dotcms/dotcms-models';
 
 /** The endpoint that builds the export file. */
 const EXPORT_URL = '/api/v1/drive/export';
+
+/**
+ * Shown when an error carries no message the user can read: the same sentence the server sends for
+ * an unexpected failure, so the user reads one wording whichever side noticed it.
+ */
+const GENERIC_EXPORT_ERROR =
+    'The export failed. Try again, and contact your administrator if it keeps failing.';
 
 /**
  * Body of `POST /api/v1/drive/export` in filter mode: the same request the listing sends to
@@ -56,12 +63,23 @@ export class DotContentDriveExportService {
      * headers. A 204 (nothing readable matched) resolves to `{ kind: 'empty' }`.
      *
      * @param body The export request, carrying the listing query in filter mode.
+     * An error response (400, 404, 500) arrives as a blob too, so its JSON body is read to error
+     * with the server's `errors[0].message`; a body with no readable message errors with a generic
+     * one.
+     *
      * @returns The file and its counts once the server has built it, or `empty` when there is none.
      */
     export(body: DotContentDriveExportRequest): Observable<DotContentDriveExportResult> {
         return this.#http
             .post(EXPORT_URL, body, { observe: 'response', responseType: 'blob' })
-            .pipe(map((response) => toExportResult(response)));
+            .pipe(
+                map((response) => toExportResult(response)),
+                catchError((error: unknown) =>
+                    from(readErrorMessage(error)).pipe(
+                        switchMap((message) => throwError(() => new Error(message)))
+                    )
+                )
+            );
     }
 }
 
@@ -116,4 +134,26 @@ function readCount(headers: HttpHeaders, name: string): number {
     const value = Number(headers.get(name));
 
     return Number.isFinite(value) ? value : 0;
+}
+
+/**
+ * Reads the message out of an export error: the `errors[0].message` of the JSON body the server
+ * sends as a blob. A network error, a body that is not JSON, or JSON without a message gives the
+ * generic message.
+ */
+async function readErrorMessage(error: unknown): Promise<string> {
+    if (!(error instanceof HttpErrorResponse) || !(error.error instanceof Blob)) {
+        return GENERIC_EXPORT_ERROR;
+    }
+
+    try {
+        const parsed = JSON.parse(await error.error.text()) as {
+            errors?: { message?: unknown }[];
+        };
+        const message = parsed?.errors?.[0]?.message;
+
+        return typeof message === 'string' && message.trim() ? message : GENERIC_EXPORT_ERROR;
+    } catch {
+        return GENERIC_EXPORT_ERROR;
+    }
 }
