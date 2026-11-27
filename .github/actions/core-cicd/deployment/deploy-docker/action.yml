@@ -32,9 +32,6 @@ inputs:
   version:
     description: 'The version or tag to apply to the image unless building a snapshot'
     required: false
-  latest:
-    description: 'If true, the image will be tagged as latest, usually reserved for the agile release e.g. dotcms/dotcms:latest'
-    default: 'false'
   do_deploy:
     description: 'Actually do the final deploy, set to false for testing'
     required: true
@@ -124,7 +121,6 @@ runs:
       shell: bash
       id: set-common-vars
       env:
-        LATEST: ${{ inputs.latest }}
         REF: ${{ inputs.ref }}
         USE_REF: ${{ inputs.docker-use-ref }}
         VERSION: ${{ inputs.version }}
@@ -133,8 +129,6 @@ runs:
         EXTRA_TAGS: ${{ inputs.extra-tags }}
       run: |
         
-        # Set defaults for flags
-        enable_latest=false
         RESULT=""
         
         # Determine REF_TO_USE based on USE_REF
@@ -155,15 +149,9 @@ runs:
           exit 1
         fi
         
-        # Conditional for setting latest version flag
-        if [[ -n "$VERSION" && "$USE_REF" != "true" && "$LATEST" == "true" ]]; then
-          enable_latest=true
-        fi
-        
         echo "FULL_TAGS_OUTPUT<<EOF" >> $GITHUB_ENV
           echo "type=raw,value=${RESULT}_{{sha}},enable=true" >> $GITHUB_ENV
           echo "type=raw,value=${RESULT},enable=true" >> $GITHUB_ENV
-          echo "type=raw,value=latest,enable=${enable_latest}" >> $GITHUB_ENV
           [[ -n "${IDENTIFIER_TAG}" ]] && echo "type=raw,value=${IDENTIFIER_TAG},enable=true" >> $GITHUB_ENV
           [[ -n "${CUSTOM_TAG}" ]] && echo "type=raw,value=${CUSTOM_TAG},enable=true" >> $GITHUB_ENV
           if [[ -n "${EXTRA_TAGS}" ]]; then

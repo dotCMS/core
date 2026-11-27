@@ -1,0 +1,48 @@
+name: 'Promote latest'
+description: >-
+  Moves the floating `latest` Docker tag through evergreen-tracks, the single controller of
+  latest/standard/trailing. Forward-only by CalVer: a release older than the one on `latest`
+  (a backport) is a no-op, and a `latest` hold is honoured. Every workflow that publishes a
+  GA image calls this instead of tagging `latest` itself.
+
+  Callers must check out the repo first and should run the calling job under
+  `concurrency: { group: evergreen-tracks-registry, cancel-in-progress: false }` so it never
+  races a promote/admin apply (concurrency cannot be set from inside a composite action).
+
+inputs:
+  repos:
+    description: 'Space-separated Docker Hub repos to promote latest on'
+    required: false
+    default: 'dotcms/dotcms dotcms/dotcms-dev'
+  docker_username:
+    description: 'Docker Hub username'
+    required: true
+  docker_token:
+    description: 'Docker Hub token'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: astral-sh/setup-uv@v5
+    - uses: docker/setup-buildx-action@v3
+    - name: Docker login
+      uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+      with:
+        username: ${{ inputs.docker_username }}
+        password: ${{ inputs.docker_token }}
+    - name: Promote latest
+      shell: bash
+      working-directory: ${{ github.action_path }}/..
+      env:
+        # The engine reads the Hub tag list before it moves anything, and Hub refuses
+        # anonymous pagination past offset 1000 (these repos are well past it).
+        # docker/login-action above does not cover the Hub API.
+        DOCKER_USERNAME: ${{ inputs.docker_username }}
+        DOCKER_TOKEN: ${{ inputs.docker_token }}
+        REPOS: ${{ inputs.repos }}
+      run: |
+        for repo in ${REPOS}; do
+          echo "--- promoting latest on ${repo} ---"
+          uv run evergreen-tracks promote --repo "${repo}" --tracks latest --apply
+        done
