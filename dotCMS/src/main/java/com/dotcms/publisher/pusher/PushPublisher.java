@@ -66,7 +66,6 @@ import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
-import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.ThreadContext;
 import org.glassfish.jersey.client.ClientProperties;
 import org.quartz.JobDetail;
@@ -82,7 +81,10 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -122,6 +124,8 @@ public class PushPublisher extends Publisher {
 
 	private static final String BUNDLE_ID      = "BundleId";
 	private static final String ENDPOINT_NAME  = "EndpointName";
+	/** A key file larger than this is not a key, and is not read further. */
+	static final int MAX_KEY_FILE_BYTES = 64 * 1024;
 
 	@Override
 	public PublisherConfig init ( PublisherConfig config ) throws DotPublishingException {
@@ -231,7 +235,10 @@ public class PushPublisher extends Publisher {
 						ThreadContext.put(ENDPOINT_NAME, ENDPOINT_NAME + "=" + endpoint.getServerName());
 						ThreadContext.put(BUNDLE_ID, BUNDLE_ID + "=" + bundle.getName());
 
-						if (endpoint.hasAuthKey()) {
+						final Optional<String> requestToken = endpoint.hasAuthKey()
+								? AuthCredentialPushPublishUtil.INSTANCE.getRequestToken(endpoint)
+								: Optional.empty();
+						if (requestToken.isPresent()) {
 							PushPublishLogger.log(this.getClass(), "Status Update: Sending Bundle");
 							final String filterKey = bundle.getFilterKey();
 							WebTarget webTarget = client.target(endpoint.toURL() + "/api/bundlePublisher/publish")
@@ -240,7 +247,7 @@ public class PushPublisher extends Publisher {
 
 							Response response = webTarget.request(MediaType.APPLICATION_JSON)
 									.header("Content-Disposition", contentDisposition)
-									.header("Authorization", AuthCredentialPushPublishUtil.INSTANCE.getRequestToken(endpoint).get())
+									.header("Authorization", requestToken.get())
 									.post(Entity.entity(bundleStream, MediaType.APPLICATION_OCTET_STREAM_TYPE));
 
 							if (response.getStatus() == HttpStatus.SC_OK) {
@@ -275,6 +282,22 @@ public class PushPublisher extends Publisher {
 								failureDetails.add(buildFailureDetail(environment, endpoint, detail,
 										response.getStatus(), null));
 							}
+						} else if (endpoint.hasAuthKey()) {
+							// A key is configured but none could be loaded: the key file is missing,
+							// unreadable or blank, or the key is only spaces. Fail this attempt without
+							// touching the stored key or the queue, so the bundle is retried once the
+							// key is fixed.
+							if (currentStatusHistory.getNumTries() >= PublisherQueueJob.MAX_NUM_TRIES) {
+								APILocator.getPushedAssetsAPI().deletePushedAssets(this.config.getId(), environment.getId());
+							}
+							detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
+							detail.setInfo("No usable push publishing key could be loaded for the endpoint "
+									+ endpoint.getServerName() + " with address " + endpoint.getAddress()
+									+ getFormattedPort(endpoint.getPort()));
+							PushPublishLogger.log(this.getClass(), "Status Update: Failed to send bundle. " + detail.getInfo());
+							failedEnvironment = true;
+							errorCounter++;
+							failureDetails.add(buildFailureDetail(environment, endpoint, detail, null, null));
 						} else {
 							markAsInValidToken(environment, endpoint, detail, AuthCredentialPushPublishUtil.INVALID_TOKEN_ERROR_KEY);
 							failedEnvironment = true;
@@ -481,21 +504,62 @@ public class PushPublisher extends Publisher {
 		return key.isPresent() ? Optional.of(PublicEncryptionFactory.digestString(key.get())) : Optional.empty();
 	}
 
+	/**
+	 * Returns the key configured for an endpoint: the stored value itself, or the content of the
+	 * file it names when it is a path. An endpoint whose key (or key file) is empty or made only of
+	 * spaces has no key, and neither has one whose key file is larger than
+	 * {@link #MAX_KEY_FILE_BYTES}, nor one whose key contains a path separator but is not a valid
+	 * path, nor one whose key was replaced by the expired or invalid marker after the receiver
+	 * refused it, so push publishing neither sends a token for it nor accepts one from it.
+	 *
+	 * @param endpoint the endpoint, may be {@code null}
+	 * @return the key, or empty when the endpoint has none
+	 * @throws IOException the key file could not be read
+	 */
 	public static Optional<String> retriveEndpointKey(final PublishingEndPoint endpoint) throws IOException { // todo: create a method that allows to receives a key and use the com.dotcms.util.security.Encryptor instead PublicEncryptionFactory
 
 		if(endpoint==null || endpoint.getAuthKey() ==null) {
 			Logger.warn(PushPublisher.class,"Endpoint or endpoint key is null:" + endpoint);
 			return Optional.empty();
 		}
+		if (!endpoint.hasAuthKey()) {
+			// empty, or the unencrypted expired/invalid marker stored after the receiver refused the key
+			return Optional.empty();
+		}
 
 		String token = PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString());
 		String key = null;
 		if(token.contains(File.separator)) {
-			File tokenFile = new File(token);
-			if(tokenFile != null && tokenFile.exists())
-				key = FileUtils.readFileToString(tokenFile, "UTF-8").trim();
+			final Path keyPath;
+			try {
+				keyPath = Path.of(token);
+			} catch (final InvalidPathException e) {
+				// not logged: the exception message carries the stored key
+				Logger.warn(PushPublisher.class, String.format(
+						"The key of push publishing endpoint '%s' (id %s) looks like a file path but is not a valid one, so it is not used as a key.",
+						endpoint.getServerName(), endpoint.getId()));
+				return Optional.empty();
+			}
+			if (Files.isRegularFile(keyPath)) {
+				try (InputStream input = Files.newInputStream(keyPath)) {
+					final byte[] bytes = input.readNBytes(MAX_KEY_FILE_BYTES + 1);
+					if (bytes.length > MAX_KEY_FILE_BYTES) {
+						Logger.warn(PushPublisher.class, String.format(
+								"The key file of push publishing endpoint '%s' (id %s) is larger than %d bytes, so it is not used as a key.",
+								endpoint.getServerName(), endpoint.getId(), MAX_KEY_FILE_BYTES));
+						return Optional.empty();
+					}
+					key = new String(bytes, StandardCharsets.UTF_8).trim();
+				}
+			}
 		} else {
 			key = token;
+		}
+		if (key != null && key.isBlank()) {
+			Logger.debug(PushPublisher.class, String.format(
+					"Push publishing endpoint '%s' (id %s) has no key, so it is not used to send or receive bundles. Save a key for it to use it again.",
+					endpoint.getServerName(), endpoint.getId()));
+			return Optional.empty();
 		}
 		return key==null ? Optional.empty() : Optional.of(key);
 	}

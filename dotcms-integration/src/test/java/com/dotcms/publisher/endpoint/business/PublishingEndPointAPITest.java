@@ -8,14 +8,17 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.bean.factory.PublishingEndPointFactory;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.PublishingEndPointValidationException;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.AfterClass;
@@ -230,6 +233,78 @@ public class PublishingEndPointAPITest extends IntegrationTestBase{
 		}finally{
 			// Delete endpoint
 			api.deleteEndPointById(endPoint.getId());
+		}
+	}
+
+	/**
+	 * Method to test: {@link PublishingEndPoint#validatePublishingEndPoint()} for a push publishing
+	 * endpoint, which every save path (the REST endpoint resource and the Environments screen) runs
+	 * before storing the endpoint.
+	 * Given scenario: the key is empty, or made only of spaces.
+	 * Expected result: validation fails with the key-required message, so the endpoint is not stored.
+	 */
+	@Test
+	public void validatePublishingEndPoint_pushEndpointWithoutKey_isRejected() {
+		for (final String key : new String[]{"", "   "}) {
+			final PublishingEndPoint endPoint = createPublishingEndPoint(null, "G04", "No key",
+					"192.0.2.110", "80", "http", true, PublicEncryptionFactory.encryptString(key), true);
+			try {
+				endPoint.validatePublishingEndPoint();
+				fail("A push publishing endpoint without a key must not validate");
+			} catch (PublishingEndPointValidationException e) {
+				assertEquals(List.of("publisher_Endpoint_authKey_required"), e.getI18nmessages());
+			}
+		}
+	}
+
+	/**
+	 * Method to test: {@link PublishingEndPoint#validatePublishingEndPoint()} for a push publishing
+	 * endpoint.
+	 * Given scenario: the endpoint has a key.
+	 * Expected result: validation passes.
+	 */
+	@Test
+	public void validatePublishingEndPoint_pushEndpointWithKey_isAccepted() throws Exception {
+		createPublishingEndPoint(null, "G04", "With key", "192.0.2.111", "80", "http", true,
+				PublicEncryptionFactory.encryptString("a-key"), true).validatePublishingEndPoint();
+	}
+
+	/**
+	 * Method to test: {@link PublishingEndPoint#validatePublishingEndPoint()} for a push publishing
+	 * endpoint whose key is the path of a key file.
+	 * Given scenario: the file does not exist, or holds only spaces.
+	 * Expected result: validation fails with the key-required message, since push publishing could
+	 * not load a key from that file at run time.
+	 */
+	@Test
+	public void validatePublishingEndPoint_pushEndpointWithUnusableKeyFile_isRejected() throws Exception {
+		final java.nio.file.Path dir = java.nio.file.Files.createTempDirectory("pp-key");
+		final java.nio.file.Path blankFile = java.nio.file.Files.writeString(dir.resolve("blank.key"), "   ");
+		for (final String path : new String[]{dir.resolve("missing.key").toString(), blankFile.toString()}) {
+			final PublishingEndPoint endPoint = createPublishingEndPoint(null, "G04", "Key file",
+					"192.0.2.112", "80", "http", true, PublicEncryptionFactory.encryptString(path), true);
+			try {
+				endPoint.validatePublishingEndPoint();
+				fail("A push publishing endpoint whose key file gives no key must not validate: " + path);
+			} catch (PublishingEndPointValidationException e) {
+				assertEquals(List.of("publisher_Endpoint_authKey_required"), e.getI18nmessages());
+			}
+		}
+	}
+
+	/**
+	 * Method to test: {@link PublishingEndPoint#validatePublishingEndPoint()} for a push publishing
+	 * endpoint.
+	 * Given scenario: the key is the path of a file holding a key, or the literal text "null".
+	 * Expected result: validation passes. Only an empty or blank key counts as none.
+	 */
+	@Test
+	public void validatePublishingEndPoint_pushEndpointWithKeyFileOrNullText_isAccepted() throws Exception {
+		final java.nio.file.Path keyFile = java.nio.file.Files.writeString(
+				java.nio.file.Files.createTempDirectory("pp-key").resolve("good.key"), "a-key");
+		for (final String key : new String[]{keyFile.toString(), "null"}) {
+			createPublishingEndPoint(null, "G04", "Key " + key, "192.0.2.113", "80", "http", true,
+					PublicEncryptionFactory.encryptString(key), true).validatePublishingEndPoint();
 		}
 	}
 

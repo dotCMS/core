@@ -1,5 +1,6 @@
 package com.dotcms.publisher.pusher;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -8,15 +9,22 @@ import static org.mockito.Mockito.when;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
+import com.dotcms.datagen.EnvironmentDataGen;
+import com.dotcms.datagen.PushPublishingEndPointDataGen;
 import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.endpoint.bean.impl.PushPublishingEndPoint;
+import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.pusher.AuthCredentialPushPublishUtil.PushPublishAuthenticationToken;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.liferay.portal.model.User;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -28,20 +36,49 @@ public class AuthCredentialPushPublishUtilTest extends IntegrationTestBase {
 
     private static final String LOCAL_IP = "127.0.0.1";
 
+    private static Environment environment;
+
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
+        environment = new EnvironmentDataGen().nextPersisted();
+    }
+
+    @AfterClass
+    public static void cleanUp() throws Exception {
+        APILocator.getEnvironmentAPI().deleteEnvironment(environment.getId());
     }
 
     /**
      * Builds the request a sender makes against a receiver, carrying the given bearer token.
      */
     private static HttpServletRequest requestWithBearer(final String jwt) {
+        return requestWithBearer(jwt, LOCAL_IP);
+    }
+
+    /**
+     * Builds the request a sender at {@code address} makes against a receiver, carrying the given
+     * bearer value.
+     */
+    private static HttpServletRequest requestWithBearer(final String bearer, final String address) {
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        when(request.getHeader("Authorization")).thenReturn("Bearer " + jwt);
-        when(request.getRemoteAddr()).thenReturn(LOCAL_IP);
-        when(request.getRemoteHost()).thenReturn(LOCAL_IP);
+        when(request.getHeader("Authorization")).thenReturn("Bearer " + bearer);
+        when(request.getRemoteAddr()).thenReturn(address);
+        when(request.getRemoteHost()).thenReturn(address);
         return request;
+    }
+
+    /**
+     * Stores an enabled sending endpoint for {@code address} with the given key, the way a record
+     * saved before keys were required is stored: straight through the API, with no validation.
+     */
+    private static PublishingEndPoint sendingEndpoint(final String address, final String key) {
+        return new PushPublishingEndPointDataGen()
+                .environment(environment)
+                .address(address)
+                .authKey(key)
+                .sending(true)
+                .nextPersisted();
     }
 
     /**
@@ -122,5 +159,175 @@ public class AuthCredentialPushPublishUtilTest extends IntegrationTestBase {
 
         assertTrue("An unknown token must be reported as invalid", result.isTokenInvalid());
         assertFalse("An unknown token must not be reported as expired", result.isTokenExpired());
+    }
+
+    /**
+     * Method to test: {@link AuthCredentialPushPublishUtil#processAuthHeader(HttpServletRequest)}
+     * Given Scenario: A sending endpoint is stored with an empty key, and a request from its
+     *                 address presents the digest of an empty key.
+     * ExpectedResult: The request is refused. An endpoint without a key never authenticates.
+     */
+    @Test
+    public void test_processAuthHeader_endpointWithEmptyKey_isRefused() throws Exception {
+        assertKeyIsRefused("192.0.2.101", "");
+    }
+
+    /**
+     * Method to test: {@link AuthCredentialPushPublishUtil#processAuthHeader(HttpServletRequest)}
+     * Given Scenario: A sending endpoint is stored with a key made only of spaces, and a request
+     *                 from its address presents the digest of that key.
+     * ExpectedResult: The request is refused, as for an empty key.
+     */
+    @Test
+    public void test_processAuthHeader_endpointWithBlankKey_isRefused() throws Exception {
+        assertKeyIsRefused("192.0.2.102", "   ");
+    }
+
+    /**
+     * Method to test: {@link AuthCredentialPushPublishUtil#processAuthHeader(HttpServletRequest)}
+     * Given Scenario: A sending endpoint is stored with a real key, and a request from its address
+     *                 presents the digest of that key.
+     * ExpectedResult: The request is authenticated as that endpoint.
+     */
+    @Test
+    public void test_processAuthHeader_endpointWithKey_isAccepted() throws Exception {
+        final String address = "192.0.2.103";
+        final PublishingEndPoint endpoint = sendingEndpoint(address, "pp-receiver-test-key");
+        try {
+            final PushPublishAuthenticationToken result = AuthCredentialPushPublishUtil.INSTANCE
+                    .processAuthHeader(requestWithBearer(
+                            PublicEncryptionFactory.digestString("pp-receiver-test-key"), address));
+
+            assertFalse("The endpoint's own key must be accepted", result.isTokenInvalid());
+            assertEquals(endpoint.getId(), result.getPublishingEndPoint().getId());
+        } finally {
+            APILocator.getPublisherEndPointAPI().deleteEndPointById(endpoint.getId());
+        }
+    }
+
+    /**
+     * Method to test: {@link AuthCredentialPushPublishUtil#getRequestToken(PublishingEndPoint)}
+     * Given Scenario: The sender's record of a receiver is stored with an empty key.
+     * ExpectedResult: No token is produced, so nothing is sent for that receiver.
+     */
+    @Test
+    public void test_getRequestToken_endpointWithEmptyKey_isEmpty() throws Exception {
+        final PublishingEndPoint endpoint = sendingEndpoint("192.0.2.104", "");
+        try {
+            assertTrue("An endpoint without a key must not produce a token",
+                    AuthCredentialPushPublishUtil.INSTANCE.getRequestToken(endpoint).isEmpty());
+        } finally {
+            APILocator.getPublisherEndPointAPI().deleteEndPointById(endpoint.getId());
+        }
+    }
+
+    /**
+     * Method to test: {@link AuthCredentialPushPublishUtil#getRequestToken(PublishingEndPoint)}
+     * Given Scenario: The sender's record of a receiver is stored with the literal key "null".
+     * ExpectedResult: A token is produced. Only an empty or blank key counts as none, so a key
+     *                 that happens to read "null" keeps working.
+     */
+    @Test
+    public void test_getRequestToken_endpointWithNullTextKey_isPresent() throws Exception {
+        final PublishingEndPoint endpoint = sendingEndpoint("192.0.2.105", "null");
+        try {
+            assertEquals(java.util.Optional.of("Bearer " + PublicEncryptionFactory.digestString("null")),
+                    AuthCredentialPushPublishUtil.INSTANCE.getRequestToken(endpoint));
+        } finally {
+            APILocator.getPublisherEndPointAPI().deleteEndPointById(endpoint.getId());
+        }
+    }
+
+    /**
+     * Stores a sending endpoint for {@code address} with {@code key}, presents the digest of that
+     * key from that address, and checks the request is refused.
+     */
+    private static void assertKeyIsRefused(final String address, final String key) throws Exception {
+        final PublishingEndPoint endpoint = sendingEndpoint(address, key);
+        try {
+            final PushPublishAuthenticationToken result = AuthCredentialPushPublishUtil.INSTANCE
+                    .processAuthHeader(requestWithBearer(PublicEncryptionFactory.digestString(key), address));
+
+            assertTrue("An endpoint without a key must not authenticate anyone", result.isTokenInvalid());
+        } finally {
+            APILocator.getPublisherEndPointAPI().deleteEndPointById(endpoint.getId());
+        }
+    }
+
+    /**
+     * Method to test: {@link AuthCredentialPushPublishUtil#getRequestToken(PublishingEndPoint)}
+     * Given Scenario: The sender's record of a receiver stores the path of a small key file.
+     * ExpectedResult: The token is built from the file's trimmed content.
+     */
+    @Test
+    public void test_getRequestToken_keyFile_isRead() throws Exception {
+        final java.nio.file.Path keyFile = java.nio.file.Files.createTempDirectory("pp-key").resolve("ok.key");
+        java.nio.file.Files.writeString(keyFile, "pp-file-key\n");
+        final PublishingEndPoint endpoint = sendingEndpoint("192.0.2.106", keyFile.toString());
+        try {
+            assertEquals(java.util.Optional.of("Bearer " + PublicEncryptionFactory.digestString("pp-file-key")),
+                    AuthCredentialPushPublishUtil.INSTANCE.getRequestToken(endpoint));
+        } finally {
+            APILocator.getPublisherEndPointAPI().deleteEndPointById(endpoint.getId());
+            java.nio.file.Files.delete(keyFile);
+            java.nio.file.Files.delete(keyFile.getParent());
+        }
+    }
+
+    /**
+     * Method to test: {@link AuthCredentialPushPublishUtil#getRequestToken(PublishingEndPoint)}
+     * Given Scenario: The sender's record of a receiver stores the path of a key file one byte
+     *                 larger than {@link PushPublisher#MAX_KEY_FILE_BYTES}.
+     * ExpectedResult: No token is produced. The file is not a key and is not read whole.
+     */
+    @Test
+    public void test_getRequestToken_oversizedKeyFile_isEmpty() throws Exception {
+        final java.nio.file.Path keyFile = java.nio.file.Files.createTempDirectory("pp-key").resolve("big.key");
+        java.nio.file.Files.writeString(keyFile, "k".repeat(PushPublisher.MAX_KEY_FILE_BYTES + 1));
+        final PublishingEndPoint endpoint = sendingEndpoint("192.0.2.107", keyFile.toString());
+        try {
+            assertTrue("A key file over the size limit must not produce a token",
+                    AuthCredentialPushPublishUtil.INSTANCE.getRequestToken(endpoint).isEmpty());
+        } finally {
+            APILocator.getPublisherEndPointAPI().deleteEndPointById(endpoint.getId());
+            java.nio.file.Files.delete(keyFile);
+            java.nio.file.Files.delete(keyFile.getParent());
+        }
+    }
+
+    /**
+     * Method to test: {@link AuthCredentialPushPublishUtil#getRequestToken(PublishingEndPoint)}
+     * Given Scenario: The sender's record of a receiver stores a key that contains a path
+     *                 separator but is not a valid path (it holds a NUL character).
+     * ExpectedResult: No token is produced and no exception escapes, so audit polling of the
+     *                 other endpoints carries on.
+     */
+    @Test
+    public void test_getRequestToken_invalidKeyPath_isEmpty() throws Exception {
+        final PublishingEndPoint endpoint = sendingEndpoint("192.0.2.108", "/pp-key\u0000/bad.key");
+        try {
+            assertTrue("A key that is not a valid path must not produce a token",
+                    AuthCredentialPushPublishUtil.INSTANCE.getRequestToken(endpoint).isEmpty());
+        } finally {
+            APILocator.getPublisherEndPointAPI().deleteEndPointById(endpoint.getId());
+        }
+    }
+
+    /**
+     * Method to test: {@link AuthCredentialPushPublishUtil#getRequestToken(PublishingEndPoint)}
+     * Given Scenario: The sender's record of a receiver holds the unencrypted expired or invalid
+     *                 marker that push publishing stores after the receiver refused its key.
+     * ExpectedResult: No token is produced and no exception escapes, so audit polling of the
+     *                 other endpoints carries on.
+     */
+    @Test
+    public void test_getRequestToken_tokenMarkerKey_isEmpty() {
+        for (final String marker : new String[]{AuthCredentialPushPublishUtil.EXPIRED_TOKEN_ERROR_KEY,
+                AuthCredentialPushPublishUtil.INVALID_TOKEN_ERROR_KEY}) {
+            final PublishingEndPoint endpoint = new PushPublishingEndPoint();
+            endpoint.setAuthKey(new StringBuilder(marker));
+            assertTrue("An endpoint holding " + marker + " must not produce a token",
+                    AuthCredentialPushPublishUtil.INSTANCE.getRequestToken(endpoint).isEmpty());
+        }
     }
 }

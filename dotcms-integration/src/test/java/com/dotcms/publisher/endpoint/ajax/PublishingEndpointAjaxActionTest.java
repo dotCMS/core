@@ -188,6 +188,42 @@ public class PublishingEndpointAjaxActionTest extends IntegrationTestBase {
         assertEquals("replaced-secret", storedKey(existing.getId()));
     }
 
+    /**
+     * Method to test: {@link PublishingEndpointAjaxAction#addEndpoint}
+     * When: an administrator registers a push publishing endpoint with an empty key, or a key made
+     *       only of spaces
+     * Should: not register the endpoint.
+     */
+    @Test
+    public void test_addEndpoint_withoutKey_isRejected() throws Exception {
+        final Environment environment = new EnvironmentDataGen().nextPersisted();
+
+        for (final String key : new String[]{"", "   "}) {
+            final String name = uniqueName("ajax_nokey_" + key.length());
+            action(adminUser).addEndpoint(
+                    endpointRequest(name, key, environment.getId(), null), responseWithWriter());
+
+            assertNull("an endpoint without a key must not be registered",
+                    APILocator.getPublisherEndPointAPI().findEndPointByName(name));
+        }
+    }
+
+    /**
+     * Method to test: {@link PublishingEndpointAjaxAction#editEndpoint}
+     * When: an administrator clears the key of an existing push publishing endpoint
+     * Should: keep the stored key.
+     */
+    @Test
+    public void test_editEndpoint_withoutKey_keepsStoredKey() throws Exception {
+        final PushPublishingEndPoint existing = existingEndpoint("original-secret");
+
+        action(adminUser).editEndpoint(endpointRequest(
+                existing.getServerName().toString(), "",
+                existing.getGroupId(), existing.getId()), responseWithWriter());
+
+        assertEquals("original-secret", storedKey(existing.getId()));
+    }
+
     private static User backendUserWithLayout(final Layout layout) throws Exception {
         final User user = new UserDataGen().nextPersisted();
         APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadBackEndUserRole(), user);

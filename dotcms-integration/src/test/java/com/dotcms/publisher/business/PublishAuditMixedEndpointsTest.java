@@ -10,6 +10,7 @@ import com.dotcms.publisher.business.PublisherTestUtil.MixedEndpointEnvironment;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
 import com.dotcms.util.IntegrationTestInitService;
@@ -303,6 +304,37 @@ public class PublishAuditMixedEndpointsTest {
                     endpointsOf(fixture).get(fixture.staticEndpoint.getId()).getStatus());
             assertEquals(PublishAuditStatus.Status.BUNDLE_SAVED_SUCCESSFULLY,
                     auditAPI.getPublishAuditStatus(fixture.bundle.getId()).getStatus());
+        } finally {
+            fixture.cleanUp();
+        }
+    }
+
+    /**
+     * Method to test: {@link PushPublisher#process(com.dotcms.publishing.PublishStatus)}
+     * Given scenario: the {@code http} endpoint's key is the path of a key file that cannot be read
+     * (it does not exist), so no key can be loaded when the bundle is sent
+     * Expected result: the endpoint is recorded as FAILED_TO_SENT, so the bundle is retried, and the
+     * stored key is left as it was. Before the fix the stored key was overwritten with the invalid
+     * token marker and the bundle was removed from the queue, so restoring the file did not help.
+     */
+    @Test
+    public void test_push_unreadableKeyFile_failsWithoutTouchingStoredKey() throws Exception {
+        final MixedEndpointEnvironment fixture = PublisherTestUtil.createMixedEndpointEnvironment(
+                order(PushPublisher.class), false);
+        try {
+            final String keyFile = java.nio.file.Files.createTempDirectory("pp-key")
+                    .resolve("missing.key").toString();
+            final String storedKey = PublicEncryptionFactory.encryptString(keyFile);
+            fixture.httpEndpoint.setAuthKey(new StringBuilder(storedKey));
+            APILocator.getPublisherEndPointAPI().updateEndPoint(fixture.httpEndpoint);
+
+            new PublisherAPIImpl().publish(fixture.config);
+
+            assertEquals(PublishAuditStatus.Status.FAILED_TO_SENT.getCode(),
+                    endpointsOf(fixture).get(fixture.httpEndpoint.getId()).getStatus());
+            assertEquals("The stored key must not be replaced", keyFile,
+                    PublicEncryptionFactory.decryptString(APILocator.getPublisherEndPointAPI()
+                            .findEndPointById(fixture.httpEndpoint.getId()).getAuthKey().toString()));
         } finally {
             fixture.cleanUp();
         }

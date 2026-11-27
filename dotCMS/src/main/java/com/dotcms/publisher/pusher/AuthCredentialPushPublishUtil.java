@@ -6,6 +6,7 @@ import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -35,26 +36,26 @@ public enum AuthCredentialPushPublishUtil {
     public static String EXPIRED_TOKEN_ERROR_KEY = "__expired_token__";
     public static String INVALID_TOKEN_ERROR_KEY = "__invalid_token__";
 
+    /**
+     * Builds the {@code Authorization} header value a sender presents to the receiver behind
+     * {@code endpoint}: the endpoint's key itself when it is an API token and tokens are in use,
+     * otherwise the key's digest.
+     *
+     * @param endpoint the receiving endpoint
+     * @return the header value, or empty when the endpoint has no key or it could not be read
+     */
     public Optional<String> getRequestToken(final PublishingEndPoint endpoint)  {
-        final boolean useJWTToken = isJWTAvailable();
-
         try {
-            String token;
-
-            if (useJWTToken) {
-                final Optional<String> optionalToken = PushPublisher.retriveEndpointKey(endpoint);
-                //here we're validating a token that comes from a different dotCMS instance
-                //The token should be signed with the same key on the remote instance as this one for this to make sense
-                if (optionalToken.isPresent() && APILocator.getApiTokenAPI().isWellFormedToken(optionalToken.get())) {
-                    token = optionalToken.get();
-                } else {
-                    token = PushPublisher.retriveEndpointKeyDigest(endpoint).get();
-                }
-
-            } else {
-                token = PushPublisher.retriveEndpointKeyDigest(endpoint).get();
-
+            final Optional<String> key = PushPublisher.retriveEndpointKey(endpoint);
+            if (key.isEmpty()) {
+                return Optional.empty();
             }
+
+            //here we're validating a token that comes from a different dotCMS instance
+            //The token should be signed with the same key on the remote instance as this one for this to make sense
+            final String token = isJWTAvailable() && APILocator.getApiTokenAPI().isWellFormedToken(key.get())
+                    ? key.get()
+                    : PublicEncryptionFactory.digestString(key.get());
 
             return Optional.of(JsonWebTokenAuthCredentialProcessor.BEARER + token);
         } catch (IOException e) {

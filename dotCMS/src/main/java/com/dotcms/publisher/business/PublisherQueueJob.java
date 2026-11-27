@@ -101,6 +101,9 @@ public class PublisherQueueJob implements StatefulJob {
 
 	public static final Integer MAX_NUM_TRIES = Config.getIntProperty("PUBLISHER_QUEUE_MAX_TRIES", 3);
 	public static final int MAX_SIZE_PP_AUDIT_PAYLOAD = Config.getIntProperty("MAX_SIZE_PP_AUDIT_PAYLOAD", 10000);
+	/** Endpoint results that only the receiver can turn into a final one. */
+	private static final Set<Integer> IN_FLIGHT_STATUSES = Set.of(Status.BUNDLE_SENT_SUCCESSFULLY.getCode(),
+			Status.RECEIVED_BUNDLE.getCode(), Status.PUBLISHING_BUNDLE.getCode());
 
 	private final PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
 	private final PublishingEndPointAPI endpointAPI = APILocator.getPublisherEndPointAPI();
@@ -164,6 +167,19 @@ public class PublisherQueueJob implements StatefulJob {
 						// Skip it so PushPublisher cannot resurrect it back to FAILED_TO_SEND_TO_ALL_GROUPS.
 						if (!UtilMethods.isSet(tempBundleContents)) {
 							PushPublishLogger.log(this.getClass(), "Pre-publish skipped: bundle already finalized.");
+							continue;
+						}
+						// The audit pass may also have learned that a receiver is still installing this
+						// bundle, for example once its key is back after a poll that could not ask it.
+						// Re-check the status the queue query filters on, so a bundle in progress is not
+						// sent again while the receiver is still reading the first copy.
+						final PublishAuditStatus currentAudit = pubAuditAPI.getPublishAuditStatus(tempBundleId);
+						// A null or unknown status column loads as a null status, which the queue query
+						// admits; List.contains(null) would throw, so such a bundle stays eligible
+						if (null != currentAudit && null != currentAudit.getStatus()
+								&& PublisherAPIImpl.STATUSES_NOT_TO_PROCESS.contains(currentAudit.getStatus())) {
+							PushPublishLogger.log(this.getClass(), "Pre-publish skipped: bundle is "
+									+ currentAudit.getStatus() + " after the audit update.");
 							continue;
 						}
 
@@ -314,6 +330,28 @@ public class PublisherQueueJob implements StatefulJob {
 	private boolean hasQueueRows(final String bundleId) {
 		try {
 			return !pubAPI.getQueueElementsByBundleId(bundleId).isEmpty();
+		} catch (final Exception e) {
+			Logger.warn(this, "Unable to read the publishing queue for bundle '" + bundleId + "': "
+					+ ExceptionUtil.getErrorMessage(e));
+			return true;
+		}
+	}
+
+	/**
+	 * Tells whether the bundle has queue rows and none of them is due yet, that is, it was pushed
+	 * again for a later date. A row is due when its publish date is now or earlier, as in
+	 * {@link PublisherAPI#getQueueBundleIdsToProcess()}. If the queue cannot be read, the bundle is
+	 * treated as scheduled, so nothing is counted or finalized on a guess.
+	 *
+	 * @param bundleId the bundle to look for
+	 * @return {@code true} if the bundle has queue rows and none is due, or the queue could not be read
+	 */
+	private boolean hasOnlyFutureQueueRows(final String bundleId) {
+		try {
+			final List<PublishQueueElement> rows = pubAPI.getQueueElementsByBundleId(bundleId);
+			final Date now = new Date();
+			return !rows.isEmpty() && rows.stream()
+					.noneMatch(row -> row.getPublishDate() != null && !row.getPublishDate().after(now));
 		} catch (final Exception e) {
 			Logger.warn(this, "Unable to read the publishing queue for bundle '" + bundleId + "': "
 					+ ExceptionUtil.getErrorMessage(e));
@@ -508,7 +546,10 @@ public class PublisherQueueJob implements StatefulJob {
 
 	/**
 	 * Asks a remote endpoint for the audit of the given bundles and merges each answer into the
-	 * local history.
+	 * local history. An endpoint with no usable key is not asked, since the receiver would refuse
+	 * the request. If its bundle is still in flight there, it is recorded as failed instead, so the
+	 * bundle counts a try and is sent again (which fails until the key is fixed) rather than
+	 * waiting forever for an answer that cannot come. A final result is kept as it is.
 	 *
 	 * @param bundleIds      the bundles to ask about
 	 * @param targetEndpoint the endpoint to ask
@@ -521,9 +562,23 @@ public class PublisherQueueJob implements StatefulJob {
 							Client client, PublishAuditHistory localHistory)
 			throws DotDataException {
 
+			final Optional<String> requestToken = AuthCredentialPushPublishUtil.INSTANCE.getRequestToken(targetEndpoint);
+			if (requestToken.isEmpty()) {
+				Logger.debug(this, () -> "Not polling endpoint " + targetEndpoint.getId() + ": it has no usable key");
+				final EndpointDetail previous = localHistory.getEndpointsMap()
+						.getOrDefault(groupID, Map.of()).get(targetEndpoint.getId());
+				if (previous != null && IN_FLIGHT_STATUSES.contains(previous.getStatus())) {
+					final EndpointDetail failure = new EndpointDetail();
+					failure.setStatus(Status.FAILED_TO_PUBLISH.getCode());
+					failure.setInfo("Cannot check the remote publish status: the endpoint has no usable key.");
+					localHistory.addOrUpdateEndpoint(groupID, targetEndpoint.getId(), failure);
+				}
+				return;
+			}
+
 			// Try to get the status of the remote end-points to
 			// update the local history
-			 getRemoteHistoryFromEndpoint(bundleIds, targetEndpoint, client)
+			 getRemoteHistoryFromEndpoint(bundleIds, targetEndpoint, client, requestToken.get())
 					 .stream()
 					 .filter(Objects::nonNull)
 					 .forEach(remoteHistory -> {
@@ -567,7 +622,11 @@ public class PublisherQueueJob implements StatefulJob {
 
 	/**
 	 * Updates the local Publish Audit History with the information retrieved from a remote
-	 * end-point.
+	 * end-point. When the tracking map is empty there is nothing to aggregate, and the status is
+	 * left as it is. A bundle a receiver refused that only has queue rows for a later date keeps its
+	 * status and attempts, so its scheduled push is not given up before it runs. A refused bundle
+	 * with no queue rows counts an attempt on every pass that leaves it failed, since nothing will
+	 * send it again.
 	 *
 	 * @param bundleAudit         The {@link PublishAuditStatus} object that contains the audit
 	 *                            status of the bundle in the local environment.
@@ -588,8 +647,22 @@ public class PublisherQueueJob implements StatefulJob {
 			throws DotDataException, DotPublisherException, LanguageException {
 		Status bundleStatus;
 		final int totalEndpoints = countEndpoints(endpointTrackingMap);
+		if (totalEndpoints == 0) {
+			// No endpoint left to ask (all were deleted or switched to sending). Zero of zero would read
+			// as "publishing on all endpoints" and keep the retry from going to their replacements.
+			return;
+		}
 		final PublishAuditHistory localHistory = bundleAudit.getStatusPojo();
 		final String auditedBundleId = bundleAudit.getBundleId();
+		// A refused bundle that was pushed again for a later date is not due yet. Counting this pass as
+		// an attempt would finalize it and delete the scheduled push; the send counts the attempt
+		// instead, as in the failed-poll path of updateAuditStatus (#35764). The rows' dates are read
+		// rather than the due list, which also leaves out a due bundle whose status is
+		// WAITING_FOR_PUBLISHING: that one must be aggregated, or it would never be sent again
+		if (isRefusedByAReceiver(localHistory) && hasOnlyFutureQueueRows(auditedBundleId)) {
+			pubAuditAPI.updatePublishAuditStatus(auditedBundleId, bundleAudit.getStatus(), localHistory);
+			return;
+		}
 		// Info needed to generate the Growl Notification
 		final Bundle bundle = APILocator.getBundleAPI().getBundleById(auditedBundleId);
 		if (null == bundle) {
@@ -690,7 +763,10 @@ public class PublisherQueueJob implements StatefulJob {
 			Logger.info(this, String.format("-> Re-publish attempts: %d out of %d", totalAttemptsFromHistory,
 					MAX_NUM_TRIES));
 
-			if(!UtilMethods.isSet(bundlesInQueue)) {
+			// A refused bundle with no queue rows is never sent again, so this pass is its attempt even
+			// while unrelated bundles are due; otherwise a busy queue would keep it pending
+			if (!UtilMethods.isSet(bundlesInQueue)
+					|| (isRefusedByAReceiver(localHistory) && !hasQueueRows(auditedBundleId))) {
 				localHistory.addNumTries();
 				pubAuditAPI.updatePublishAuditStatus(auditedBundleId, bundleStatus, localHistory);
 			}
@@ -849,19 +925,22 @@ public class PublisherQueueJob implements StatefulJob {
 	/**
 	 * Obtains the bundle history that has been created in the specified end-point.
 	 *
-	 * @param bundleAudit - The {@link PublishAuditStatus} object containing bundle data.
+	 * @param bundleIds - The bundles to ask about.
 	 * @param targetEndpoint - The {@link PublishingEndPoint} whose bundle history will be
 	 *        retrieved.
+	 * @param client - The REST client used for the call.
+	 * @param requestToken - The value of the {@code Authorization} header for the endpoint.
 	 * @return The {@link PublishAuditHistory} of the bundle in the specified end-point.
 	 */
 	private List<PublishAuditHistory> getRemoteHistoryFromEndpoint(final  List<String> bundleIds,
 															 final PublishingEndPoint targetEndpoint,
-															 final Client client) throws DotDataException {
+															 final Client client,
+															 final String requestToken) throws DotDataException {
 		final WebTarget webTarget = client.target(targetEndpoint.toURL() + "/api/auditPublishing/getAll");
 
 		final String responseBody = webTarget
 				.request(MediaType.APPLICATION_JSON)
-				.header("Authorization", AuthCredentialPushPublishUtil.INSTANCE.getRequestToken(targetEndpoint).orElse(""))
+				.header("Authorization", requestToken)
 				.post(Entity.entity(bundleIds, MediaType.APPLICATION_JSON))
 				.readEntity(String.class);
 

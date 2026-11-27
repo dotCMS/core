@@ -61,6 +61,14 @@
 			dijit.byId("port").setAttribute('required',false);
 		}
 
+		// Push publishing endpoints need a key; the static and AWS S3 types have their own checks.
+		var protocol = dijit.byId("protocol") ? dijit.byId("protocol").get("value") : currentProtocol;
+		if (protocol !== "awss3" && protocol !== "static"
+				&& dijit.byId("authKey").get("value").trim().length == 0) {
+			alert("<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "publisher_Endpoint_authKey_required")) %>");
+			return;
+		}
+
 		if (form.validate()) {
 
 			dijit.byId("save").setAttribute('disabled',true);
@@ -461,7 +469,7 @@
 			<dl id="authPropertiesRow">
 				<dt>
 					<span id="authKeyHttpSpan">
-						<label for="authKey"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Auth_key_type_http") %></label>
+						<label for="authKey" class="required"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Auth_key_type_http") %></label>
 					</span>
 					<span id="authKeyStaticSpan" style="display:none;">
 						<label for="authKey"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Auth_key_type_static") %></label>

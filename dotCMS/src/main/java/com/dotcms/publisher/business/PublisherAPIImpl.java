@@ -753,6 +753,14 @@ public class PublisherAPIImpl extends PublisherAPI{
 		}
 	}
 
+	/**
+	 * Bundle statuses the publishing queue job does not send: the bundle is on its way to a
+	 * receiver, being installed there, waiting for a result, or failed its integrity check.
+	 * {@link #SQLGETBUNDLESTOPROCESS} has one placeholder for each of them.
+	 */
+	static final List<Status> STATUSES_NOT_TO_PROCESS = List.of(Status.BUNDLE_SENT_SUCCESSFULLY,
+			Status.PUBLISHING_BUNDLE, Status.WAITING_FOR_PUBLISHING, Status.FAILED_INTEGRITY_CHECK);
+
 	private String SQLGETBUNDLESTOPROCESS =
 			"select distinct(p.bundle_id) as bundle_id, " +
 			"publish_date, operation, a.status "+
@@ -764,16 +772,20 @@ public class PublisherAPIImpl extends PublisherAPI{
 			"and p.publish_date is not null and p.publish_date <= ? "+
 			"order by publish_date ASC,operation ASC";
 
+	/**
+	 * Returns the queued bundles that are due and whose audit status is not one of
+	 * {@link #STATUSES_NOT_TO_PROCESS}, oldest publish date first.
+	 *
+	 * @return one row per bundle, with its id, publish date, operation and audit status
+	 * @throws DotPublisherException the queue could not be read
+	 */
 	@Override
 	@CloseDBIfOpened
 	public List<Map<String, Object>> getQueueBundleIdsToProcess() throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
 			dc.setSQL(SQLGETBUNDLESTOPROCESS);
-			dc.addParam(Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
-			dc.addParam(Status.PUBLISHING_BUNDLE.getCode());
-			dc.addParam(Status.WAITING_FOR_PUBLISHING.getCode());
-			dc.addParam(Status.FAILED_INTEGRITY_CHECK.getCode());
+			STATUSES_NOT_TO_PROCESS.forEach(status -> dc.addParam(status.getCode()));
 			dc.addParam(new Date());
 			return dc.loadObjectResults();
 		}catch(Exception e){
