@@ -75,7 +75,7 @@ public class CategoriesWebAPI implements ViewTool {
 		try {
 			return categoryAPI.findByKey(key, user, true);
 		} catch (DotSecurityException se) {
-			Logger.info(this, "The logged in user cannot access the category");
+			Logger.debug(this, "The logged in user cannot access the category");
 			return null;
 		} catch (DotDataException de) {
 			Logger.error(this, "An error happening while trying to retrieve category : ", de);
@@ -100,7 +100,7 @@ public class CategoriesWebAPI implements ViewTool {
 		try {
 			return categoryAPI.findByName(name, user, true);
 		} catch (DotSecurityException se) {
-			Logger.info(this, "The logged in user cannot access the category");
+			Logger.debug(this, "The logged in user cannot access the category");
 			return null;
 		} catch (DotDataException de) {
 			Logger.error(this, "An error happening while trying to retrieve the category : ", de);
@@ -115,7 +115,7 @@ public class CategoriesWebAPI implements ViewTool {
 		try {
 			return categoryAPI.getChildren(cat, user, true);
 		} catch (DotSecurityException se) {
-			Logger.info(this, "The logged in user cannot access the categories");
+			Logger.debug(this, "The logged in user cannot access the categories");
 			return null;
 		} catch (DotDataException de) {
 			Logger.error(this, "An error happening while trying to retrieve categories : ", de);
@@ -204,7 +204,7 @@ public class CategoriesWebAPI implements ViewTool {
 		try {
 			return categoryAPI.getChildren(cat, true, user, true);
 		} catch (DotSecurityException se) {
-			Logger.info(this, "The logged in user cannot access the categories");
+			Logger.debug(this, "The logged in user cannot access the categories");
 			return null;
 		} catch (DotDataException de) {
 			Logger.error(this, "An error happening while trying to retrieve categories : ", de);
@@ -227,7 +227,7 @@ public class CategoriesWebAPI implements ViewTool {
 			}
 			return categoryAPI.getChildren(cat, true, user, true);
 		} catch (DotSecurityException se) {
-			Logger.info(this, "The logged in user cannot access the categories");
+			Logger.debug(this, "The logged in user cannot access the categories");
 			return null;
 		} catch (DotDataException de) {
 			Logger.error(this, "An error happening while trying to retrieve categories : ", de);
@@ -243,7 +243,7 @@ public class CategoriesWebAPI implements ViewTool {
 		try {
 			return categoryAPI.getChildren(inode, true, user, true);
 		} catch (DotSecurityException se) {
-			Logger.info(this, "The logged in user cannot access the categories");
+			Logger.debug(this, "The logged in user cannot access the categories");
 			return null;
 		} catch (DotDataException de) {
 			Logger.error(this, "An error happening while trying to retrieve categories : ", de);
@@ -260,7 +260,7 @@ public class CategoriesWebAPI implements ViewTool {
 			inodeObj.setInode(inode);
 			return categoryAPI.getChildren(inodeObj, true, user, true);
 		} catch (DotSecurityException se) {
-			Logger.info(this, "The logged in user cannot access the categories");
+			Logger.debug(this, "The logged in user cannot access the categories");
 			return null;
 		} catch (DotDataException de) {
 			Logger.error(this, "An error happening while trying to retrieve categories : ", de);
@@ -275,7 +275,7 @@ public class CategoriesWebAPI implements ViewTool {
 		try {
 			return categoryAPI.getChildren(cat, true, "category_name", user, true);
 		} catch (DotSecurityException se) {
-			Logger.info(this, "The logged in user cannot access the categories");
+			Logger.debug(this, "The logged in user cannot access the categories");
 			return null;
 		} catch (DotDataException de) {
 			Logger.error(this, "An error happening while trying to retrieve categories : ", de);
@@ -290,7 +290,7 @@ public class CategoriesWebAPI implements ViewTool {
 		try {
 			return categoryAPI.getChildren(inode, true, "category_name", user, true);
 		} catch (DotSecurityException se) {
-			Logger.info(this, "The logged in user cannot access the categories");
+			Logger.debug(this, "The logged in user cannot access the categories");
 			return null;
 		} catch (DotDataException de) {
 			Logger.error(this, "An error happening while trying to retrieve categories : ", de);
@@ -307,7 +307,7 @@ public class CategoriesWebAPI implements ViewTool {
 			inodeObj.setInode(inode);
 			return categoryAPI.getChildren(inodeObj, true, "category_name", user, true);
 		} catch (DotSecurityException se) {
-			Logger.info(this, "The logged in user cannot access the categories");
+			Logger.debug(this, "The logged in user cannot access the categories");
 			return null;
 		} catch (DotDataException de) {
 			Logger.error(this, "An error happening while trying to retrieve categories : ", de);
@@ -332,7 +332,7 @@ public class CategoriesWebAPI implements ViewTool {
 			}
 			return children;
 		} catch (DotSecurityException se) {
-			Logger.info(this, "The logged in user cannot access the categories");
+			Logger.debug(this, "The logged in user cannot access the categories");
 			return null;
 		} catch (DotDataException de) {
 			Logger.error(this, "An error happening while trying to retrieve categories : ", de);
@@ -385,7 +385,7 @@ public class CategoriesWebAPI implements ViewTool {
 			List<Category> children = categoryAPI.getChildren(cat, true, user, true);
 			return getAllActiveChildrenCategories(children, 1);
 		} catch (DotSecurityException se) {
-			Logger.info(this, "The logged in user cannot access the categories");
+			Logger.debug(this, "The logged in user cannot access the categories");
 			return null;
 		} catch (DotDataException de) {
 			Logger.error(this, "An error happening while trying to retrieve categories : ", de);
@@ -414,7 +414,7 @@ public class CategoriesWebAPI implements ViewTool {
 			List<Category> children = categoryAPI.getChildren(inode, true, user, true);
 			return getAllActiveChildrenCategories(children, 1);
 		} catch (DotSecurityException se) {
-			Logger.info(this, "The logged in user cannot access the categories");
+			Logger.debug(this, "The logged in user cannot access the categories");
 			return null;
 		} catch (DotDataException de) {
 			Logger.error(this, "An error happening while trying to retrieve categories : ", de);
@@ -444,7 +444,7 @@ public class CategoriesWebAPI implements ViewTool {
 			List<Category> children = categoryAPI.getChildren(parent, true, user, true);
 			return getAllActiveChildrenCategories(children, 1);
 		} catch (DotSecurityException se) {
-			Logger.info(this, "The logged in user cannot access the categories");
+			Logger.debug(this, "The logged in user cannot access the categories");
 			return null;
 		} catch (DotDataException de) {
 			Logger.error(this, "An error happening while trying to retrieve categories : ", de);
@@ -461,7 +461,7 @@ public class CategoriesWebAPI implements ViewTool {
 			inodeObj.setInode(inode);
 			return categoryAPI.getParents(inodeObj, user, true);
 		} catch (DotSecurityException se) {
-			Logger.info(this, "The logged in user cannot access the categories");
+			Logger.debug(this, "The logged in user cannot access the categories");
 			return null;
 		} catch (DotDataException de) {
 			Logger.error(this, "An error happening while trying to retrieve categories : ", de);
@@ -476,7 +476,7 @@ public class CategoriesWebAPI implements ViewTool {
 		try {
 			return categoryAPI.getParents(inodeObj, user, true);
 		} catch (DotSecurityException se) {
-			Logger.info(this, "The logged in user cannot access the categories");
+			Logger.debug(this, "The logged in user cannot access the categories");
 			return null;
 		} catch (DotDataException de) {
 			Logger.error(this, "An error happening while trying to retrieve categories : ", de);
@@ -491,7 +491,7 @@ public class CategoriesWebAPI implements ViewTool {
 		try {
 			return (Category) categoryAPI.find(inode, user, true);
 		} catch (DotSecurityException se) {
-			Logger.info(this, "The logged in user cannot access the category");
+			Logger.debug(this, "The logged in user cannot access the category");
 			return null;
 		} catch (DotDataException de) {
 			Logger.error(this, "An error happening while trying to retrieve category : ", de);
@@ -534,7 +534,7 @@ public class CategoriesWebAPI implements ViewTool {
 			String key = category.get(0).getKey();
 			return key;
 		} catch (DotSecurityException se) {
-			Logger.info(this, "The logged in user cannot access the category");
+			Logger.debug(this, "The logged in user cannot access the category");
 			return null;
 		} catch (DotDataException de) {
 			Logger.error(this, "An error happening while trying to retrieve category : ", de);

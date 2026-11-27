@@ -515,7 +515,7 @@ public class RulesAPIImpl implements RulesAPI {
         Rule rule = rulesFactory.getRuleById(id);
 
         if(!UtilMethods.isSet(rule)) {
-            Logger.info(this, "There is no rule with the given id: " + id);
+            Logger.debug(this, "There is no rule with the given id: " + id);
             return null;
         }
 
@@ -652,7 +652,7 @@ public class RulesAPIImpl implements RulesAPI {
         Rule rule = rulesFactory.getRuleById(ruleId);
 
         if(!UtilMethods.isSet(rule)) {
-            Logger.info(this, "There is no rule with the given id: " + ruleId);
+            Logger.debug(this, "There is no rule with the given id: " + ruleId);
             return new ArrayList<>();
         }
 
@@ -674,7 +674,7 @@ public class RulesAPIImpl implements RulesAPI {
         Rule rule = rulesFactory.getRuleById(conditionGroup.getRuleId());
 
         if(rule==null){
-            Logger.info(this, "There is no rule with the given id: " + conditionGroup.getRuleId());
+            Logger.debug(this, "There is no rule with the given id: " + conditionGroup.getRuleId());
             return null;
         }
 
@@ -693,7 +693,7 @@ public class RulesAPIImpl implements RulesAPI {
         Rule rule = rulesFactory.getRuleById(ruleId);
 
         if(!UtilMethods.isSet(rule)) {
-            Logger.info(this, "There is no rule with the given id: " + ruleId);
+            Logger.debug(this, "There is no rule with the given id: " + ruleId);
             return new ArrayList<>();
         }
 
@@ -715,7 +715,7 @@ public class RulesAPIImpl implements RulesAPI {
         Rule rule = rulesFactory.getRuleById(action.getRuleId());
 
         if(rule==null) {
-            Logger.info(this, "There is no rule with the given id: " + action.getRuleId());
+            Logger.debug(this, "There is no rule with the given id: " + action.getRuleId());
             return null;
         }
 
@@ -741,7 +741,7 @@ public class RulesAPIImpl implements RulesAPI {
         Rule rule = rulesFactory.getRuleById(conditionGroup.getRuleId());
 
         if(rule==null) {
-            Logger.info(this, "There is no rule with the given id: " + conditionGroup.getRuleId());
+            Logger.debug(this, "There is no rule with the given id: " + conditionGroup.getRuleId());
             return null;
         }
 
@@ -765,7 +765,7 @@ public class RulesAPIImpl implements RulesAPI {
         Rule rule = rulesFactory.getRuleById(group.getRuleId());
 
         if(rule==null) {
-            Logger.info(this, "There is no rule with the given id: " + group.getRuleId());
+            Logger.debug(this, "There is no rule with the given id: " + group.getRuleId());
             return null;
         }
 
@@ -965,12 +965,12 @@ public class RulesAPIImpl implements RulesAPI {
         Rule rule = rulesFactory.getRuleById(ruleAction.getRuleId());
 
         if(rule==null) {
-            Logger.info(this, "There is no rule with the given id: " + ruleAction.getRuleId());
+            Logger.debug(this, "There is no rule with the given id: " + ruleAction.getRuleId());
             throw new DotDataException("There is no Rule with the provided ruleId: "+ruleAction.getRuleId());
         }
 
         if(!Config.getBooleanProperty("BYPASS_RULE_ACTIONLET_VALIDATION", false) && findActionlet(ruleAction.getActionlet())==null) {
-            Logger.info(this, "There is no actionlet with the given id: " + ruleAction.getActionlet());
+            Logger.debug(this, "There is no actionlet with the given id: " + ruleAction.getActionlet());
             throw new DotDataException("There is no actionlet with the provided actionletId: "+ruleAction.getActionlet());
         }
 

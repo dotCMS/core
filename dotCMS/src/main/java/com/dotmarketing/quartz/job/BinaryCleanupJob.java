@@ -63,7 +63,7 @@ public class BinaryCleanupJob implements StatefulJob {
 
   @Override
   public void execute(final JobExecutionContext ctx) throws JobExecutionException {
-    Logger.info(this.getClass(), "STARTING TMP/TRASH FILE CLEANUP");
+    Logger.debug(this.getClass(), "STARTING TMP/TRASH FILE CLEANUP");
 
     cleanUpTmpUploadedFiles();
     cleanUpDotGeneratedSharedStaging();
@@ -72,7 +72,7 @@ public class BinaryCleanupJob implements StatefulJob {
     cleanUpLocalBackupDirectory();
     cleanUpJavaIoTmpFiles();
 
-    Logger.info(this.getClass(), "ENDING TMP/TRASH FILE CLEANUP");
+    Logger.debug(this.getClass(), "ENDING TMP/TRASH FILE CLEANUP");
   }
 
   /**
@@ -110,7 +110,7 @@ public class BinaryCleanupJob implements StatefulJob {
         return;
       }
       final Date olderThan =  Date.from(Instant.now().minus(Duration.ofDays(days)));
-      Logger.info(this.getClass(), String.format(FILE_DELETION_STATUS_MSG, days, DAYS, ConfigUtils.getBundlePath()));
+      Logger.debug(this.getClass(), String.format(FILE_DELETION_STATUS_MSG, days, DAYS, ConfigUtils.getBundlePath()));
       final File bundleFolder = new File(ConfigUtils.getBundlePath());
       FileUtil.cleanTree(bundleFolder, olderThan);
   }

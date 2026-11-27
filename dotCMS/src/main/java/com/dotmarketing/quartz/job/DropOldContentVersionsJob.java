@@ -90,14 +90,14 @@ public class DropOldContentVersionsJob implements StatefulJob {
         Logger.info(this, String.format("Looking for Contentlets with more than %d versions per " +
                 "language...", GREATER_THAN.get()));
         for (final Language language : languageIds) {
-            Logger.info(this, String.format("Searching for Contentlets in language '%s' [ %s ] ...",
+            Logger.debug(this, String.format("Searching for Contentlets in language '%s' [ %s ] ...",
                     language, language.getId()));
             while (true) {
                 final List<String> oldContentlets =
                         helper.findContentsWithTotalVersionsGreaterThan(GREATER_THAN.get(),
                                 language.getId(), PULL_BATCH_SIZE.get());
                 if (oldContentlets.isEmpty()) {
-                    Logger.info(this, String.format("No more Contentlets in language '%s' [ %s ] " +
+                    Logger.debug(this, String.format("No more Contentlets in language '%s' [ %s ] " +
                             "have been found", language, language.getId()));
                     break;
                 }
@@ -143,7 +143,7 @@ public class DropOldContentVersionsJob implements StatefulJob {
                 Logger.info(this, String.format("-> %d Contentlets older than %d days were " +
                         "deleted", deleteContents, OLDER_THAN.get()));
             } else {
-                Logger.info(this, "-> No Contentlets were found");
+                Logger.debug(this, "-> No Contentlets were found");
             }
         } catch (final DotDataException e) {
             Logger.warnAndDebug(this.getClass(), String.format("An error occurred when deleting " +

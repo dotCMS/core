@@ -176,7 +176,7 @@ public class SystemActionApiFireCommandFactory {
         public Contentlet fire(final Contentlet contentlet, final boolean needSave, final ContentletDependencies dependencies)
                 throws DotDataException, DotSecurityException {
 
-            Logger.info(this, "The contentlet : " + contentlet.getTitle()
+            Logger.debug(this, "The contentlet : " + contentlet.getTitle()
                     + ", was fired by default action: " + dependencies.getWorkflowActionId() +
                     ", however this action has not any save content actionlet, so the checkin is being triggered as part of the request");
 
@@ -211,7 +211,7 @@ public class SystemActionApiFireCommandFactory {
         public Contentlet fire(final Contentlet contentlet, final boolean needSave, final ContentletDependencies dependencies)
                 throws DotDataException, DotSecurityException {
 
-            Logger.info(this, String.format("Contentlet '%s' was fired by Default Action ID '%s'" +
+            Logger.debug(this, String.format("Contentlet '%s' was fired by Default Action ID '%s'" +
                     ". However, it doesn't have any 'Publish content' actionlet, so the Publish API call is being triggered as part of the request", contentlet.getTitle(), dependencies.getWorkflowActionId()));
 
             final String actionId       = UtilMethods.isSet(dependencies.getWorkflowActionId())?
@@ -235,7 +235,7 @@ public class SystemActionApiFireCommandFactory {
                 return firePublishWithSave(contentlet, dependencies, actionId, user);
             }
 
-            Logger.info(this, "The contentlet : " + contentlet.getTitle()
+            Logger.debug(this, "The contentlet : " + contentlet.getTitle()
                     + ", on the action id: " + actionId +
                     ", will do a publish");
 
@@ -255,13 +255,13 @@ public class SystemActionApiFireCommandFactory {
             // we do not want auto assign this checkin
             if (!hasPublishActionlet) {
 
-                Logger.info(this, "The contentlet : " + contentlet.getTitle()
+                Logger.debug(this, "The contentlet : " + contentlet.getTitle()
                         + ", on the action id: " + actionId +
                         ", does not have publish, and has changes, so a checkin will be fired without assign to any step");
                 contentlet.setBoolProperty(disableWorkflow, true);
             }
 
-            Logger.info(this, "The contentlet : " + contentlet.getTitle() + ", will do a checkin");
+            Logger.debug(this, "The contentlet : " + contentlet.getTitle() + ", will do a checkin");
             final Contentlet checkoutContentlet = new SaveContentActionlet()
                     .checkout(contentlet, dependencies.getModUser());
             final Contentlet checkinContentlet = contentletAPI.checkin(checkoutContentlet, dependencies); 
@@ -276,7 +276,7 @@ public class SystemActionApiFireCommandFactory {
                     checkinContentlet.setActionId(actionId);
                 }
 
-                Logger.info(this, "The contentlet : " + contentlet.getTitle()
+                Logger.debug(this, "The contentlet : " + contentlet.getTitle()
                         + ", on the action id: " + actionId +
                         ", was checkin but does not have publish, so a publish will be fired (could autoassign if needed)");
 
@@ -299,7 +299,7 @@ public class SystemActionApiFireCommandFactory {
         public Contentlet fire(final Contentlet contentlet, final boolean needSave, final ContentletDependencies dependencies)
                 throws DotDataException, DotSecurityException {
 
-            Logger.info(this, "The contentlet : " + contentlet.getTitle()
+            Logger.debug(this, "The contentlet : " + contentlet.getTitle()
                     + ", was fired by default action: " + dependencies.getWorkflowActionId() +
                     ", however this action has not any unpublish content actionlet, so the unpublish api call is being triggered as part of the request");
 
@@ -324,7 +324,7 @@ public class SystemActionApiFireCommandFactory {
                 return fireUnPublishWithSave(contentlet, dependencies, actionId, user);
             }
 
-            Logger.info(this, "The contentlet : " + contentlet.getTitle()
+            Logger.debug(this, "The contentlet : " + contentlet.getTitle()
                     + ", on the action id: " + actionId +
                     ", will do an unpublish");
 
@@ -344,13 +344,13 @@ public class SystemActionApiFireCommandFactory {
             // we do not want auto assign this checkin
             if (!hasUnpublishActionlet) {
 
-                Logger.info(this, "The contentlet : " + contentlet.getTitle()
+                Logger.debug(this, "The contentlet : " + contentlet.getTitle()
                         + ", on the action id: " + actionId +
                         ", does not have unpublish, and has changes, so a checkin will be fired without assign to any step");
                 contentlet.setBoolProperty(disableWorkflow, true);
             }
 
-            Logger.info(this, "The contentlet : " + contentlet.getTitle() + ", will do a checkin");
+            Logger.debug(this, "The contentlet : " + contentlet.getTitle() + ", will do a checkin");
             final Contentlet checkoutContentlet = new SaveContentActionlet()
                     .checkout(contentlet, dependencies.getModUser());
             final Contentlet checkinContentlet = contentletAPI.checkin(checkoutContentlet, dependencies);
@@ -365,7 +365,7 @@ public class SystemActionApiFireCommandFactory {
                     checkinContentlet.setActionId(actionId);
                 }
 
-                Logger.info(this, "The contentlet : " + contentlet.getTitle()
+                Logger.debug(this, "The contentlet : " + contentlet.getTitle()
                         + ", on the action id: " + actionId +
                         ", was checkin but does not have unpublish, so a unpublish will be fired (could autoassign if needed)");
 
@@ -388,7 +388,7 @@ public class SystemActionApiFireCommandFactory {
         public Contentlet fire(final Contentlet contentlet, final boolean needSave, final ContentletDependencies dependencies)
                 throws DotDataException, DotSecurityException {
 
-            Logger.info(this, "The contentlet : " + contentlet.getTitle()
+            Logger.debug(this, "The contentlet : " + contentlet.getTitle()
                     + ", was fired by default action: " + dependencies.getWorkflowActionId() +
                     ", however this action has not any archive content actionlet, so the archive api call is being triggered as part of the request");
 
@@ -413,7 +413,7 @@ public class SystemActionApiFireCommandFactory {
                 return fireArchiveWithSave(contentlet, dependencies, actionId, user);
             }
 
-            Logger.info(this, "The contentlet : " + contentlet.getTitle()
+            Logger.debug(this, "The contentlet : " + contentlet.getTitle()
                     + ", on the action id: " + actionId +
                     ", will do an archive");
 
@@ -434,13 +434,13 @@ public class SystemActionApiFireCommandFactory {
         // we do not want auto assign this checkin
         if (!hasArchiveActionlet) {
 
-            Logger.info(this, "The contentlet : " + contentlet.getTitle()
+            Logger.debug(this, "The contentlet : " + contentlet.getTitle()
                     + ", on the action id: " + actionId +
                     ", does not have archive, and has changes, so a checkin will be fired without assign to any step");
             contentlet.setBoolProperty(disableWorkflow, true);
         }
 
-        Logger.info(this, "The contentlet : " + contentlet.getTitle() + ", will do a checkin");
+        Logger.debug(this, "The contentlet : " + contentlet.getTitle() + ", will do a checkin");
         final Contentlet checkoutContentlet = new SaveContentActionlet()
                 .checkout(contentlet, dependencies.getModUser());
         final Contentlet checkinContentlet = contentletAPI.checkin(checkoutContentlet, dependencies);
@@ -455,7 +455,7 @@ public class SystemActionApiFireCommandFactory {
                 checkinContentlet.setActionId(actionId);
             }
 
-            Logger.info(this, "The contentlet : " + contentlet.getTitle()
+            Logger.debug(this, "The contentlet : " + contentlet.getTitle()
                     + ", on the action id: " + actionId +
                     ", was checkin but does not have archive, so an archive will be fired (could autoassign if needed)");
 
@@ -478,7 +478,7 @@ public class SystemActionApiFireCommandFactory {
         public Contentlet fire(final Contentlet contentlet, final boolean needSave, final ContentletDependencies dependencies)
                 throws DotDataException, DotSecurityException {
 
-            Logger.info(this, "The contentlet : " + contentlet.getTitle()
+            Logger.debug(this, "The contentlet : " + contentlet.getTitle()
                     + ", was fired by default action: " + dependencies.getWorkflowActionId() +
                     ", however this action has not any unarchive content actionlet, so the unarchive api call is being triggered as part of the request");
 
@@ -503,7 +503,7 @@ public class SystemActionApiFireCommandFactory {
                 return fireUnarchiveWithSave(contentlet, dependencies, actionId, user);
             }
 
-            Logger.info(this, "The contentlet : " + contentlet.getTitle()
+            Logger.debug(this, "The contentlet : " + contentlet.getTitle()
                     + ", on the action id: " + actionId +
                     ", will do an unarchive");
 
@@ -527,7 +527,7 @@ public class SystemActionApiFireCommandFactory {
 
         if (!hasUnarchiveActionlet) {
 
-            Logger.info(this, "The contentlet : " + contentlet.getTitle()
+            Logger.debug(this, "The contentlet : " + contentlet.getTitle()
                     + ", on the action id: " + actionId +
                     ", does not have unarchive, so an unarchive will be fired (could autoassign if needed)");
 
@@ -538,7 +538,7 @@ public class SystemActionApiFireCommandFactory {
             workflowAPI.fireContentWorkflow(contentlet, dependencies);
         }
 
-        Logger.info(this, "The contentlet : " + contentlet.getTitle() + " has been unarchive, will do a checkin to save the body");
+        Logger.debug(this, "The contentlet : " + contentlet.getTitle() + " has been unarchive, will do a checkin to save the body");
 
         // the contentlet is already unarchive, now we can do a save but not need to run a workflow.
         contentlet.setBoolProperty(disableWorkflow, true);
@@ -559,7 +559,7 @@ public class SystemActionApiFireCommandFactory {
         public Contentlet fire(final Contentlet contentlet, final boolean needSave, final ContentletDependencies dependencies)
                 throws DotDataException, DotSecurityException {
 
-            Logger.info(this, "The contentlet : " + contentlet.getTitle()
+            Logger.debug(this, "The contentlet : " + contentlet.getTitle()
                     + ", was fired by default action: " + dependencies.getWorkflowActionId() +
                     ", however this action has not any delete content actionlet, so the delete api call is being triggered as part of the request");
 
@@ -579,7 +579,7 @@ public class SystemActionApiFireCommandFactory {
                 contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, dependencies.getWorkflowAssignKey());
             }
 
-            Logger.info(this, "The contentlet : " + contentlet.getTitle()
+            Logger.debug(this, "The contentlet : " + contentlet.getTitle()
                     + ", on the action id: " + actionId +
                     ", will do an delete");
 
@@ -601,7 +601,7 @@ public class SystemActionApiFireCommandFactory {
         public Contentlet fire(final Contentlet contentlet, final boolean needSave, final ContentletDependencies dependencies)
                 throws DotDataException, DotSecurityException {
 
-            Logger.info(this, "The contentlet : " + contentlet.getTitle()
+            Logger.debug(this, "The contentlet : " + contentlet.getTitle()
                     + ", was fired by default action: " + dependencies.getWorkflowActionId() +
                     ", however this action has not any destroy content actionlet, so the delete api call is being triggered as part of the request");
 
@@ -621,7 +621,7 @@ public class SystemActionApiFireCommandFactory {
                 contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, dependencies.getWorkflowAssignKey());
             }
 
-            Logger.info(this, "The contentlet : " + contentlet.getTitle()
+            Logger.debug(this, "The contentlet : " + contentlet.getTitle()
                     + ", on the action id: " + actionId +
                     ", will do an destroy");
 
@@ -658,7 +658,7 @@ public class SystemActionApiFireCommandFactory {
 
             final User user = dependencies.getModUser();
 
-            Logger.info(this, () -> "The contentlet: " + contentlet.getIdentifier()
+            Logger.debug(this, () -> "The contentlet: " + contentlet.getIdentifier()
                     + ", will be locked for the user: " + user.getUserId());
 
             contentletAPI.lock(contentlet, user, dependencies.isRespectAnonymousPermissions());
@@ -690,7 +690,7 @@ public class SystemActionApiFireCommandFactory {
 
             final User user = dependencies.getModUser();
 
-            Logger.info(this, () -> "The contentlet: " + contentlet.getIdentifier()
+            Logger.debug(this, () -> "The contentlet: " + contentlet.getIdentifier()
                     + ", will be unlocked by the user: " + user.getUserId());
 
             contentletAPI.unlock(contentlet, user, dependencies.isRespectAnonymousPermissions());

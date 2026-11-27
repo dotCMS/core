@@ -27,7 +27,7 @@ public class ContentReindexerThread implements Runnable, Job {
         Logger.info(this, "Trying to reindex all the content");
         try{
         	conAPI.reindex();
-            Logger.info(this, "Reindexation is in progress");
+            Logger.debug(this, "Reindexation is in progress");
         }catch (Exception e) {
 			Logger.info(this,
 					"Unable to reindex. Probably because another reindexation is in progress");
