@@ -25,7 +25,7 @@ import {
 } from '../../../../shared/constants';
 import { DotContentDriveStatus } from '../../../../shared/models';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
-import { excludeFolders } from '../../../../utils/action-center';
+import { excludeFolders, toFolderAssetPaths } from '../../../../utils/action-center';
 import { isFolder } from '../../../../utils/functions';
 
 /**
@@ -154,7 +154,7 @@ export class DotContentDriveExportButtonComponent {
      * readable matched, a warning toast says so; when the export fails, an error toast shows the
      * server's message. Neither downloads anything.
      *
-     * In selection mode the request carries the browsed site and the selected contentlets; in
+     * In selection mode the request carries the browsed site and the selected folders and contentlets; in
      * filter mode, the listing request the store holds.
      *
      * The request is not tied to this component's lifetime: the user may change the selection
@@ -213,21 +213,26 @@ export class DotContentDriveExportButtonComponent {
     }
 
     /**
-     * The export body for the current mode. Selection mode sends contentlets only, one entry per
-     * selected language version; selected folders are not exported yet, so `folders` stays empty.
+     * The export body for the current mode. Selection mode sends the selected folders as asset
+     * paths on the browsed site, such as `//demo.dotcms.com/blog/`, so each exports everything
+     * below it, and the selected contentlets with one entry per selected language version.
      */
     #buildRequest(): DotContentDriveExportRequest {
         if (!this.$selectionMode()) {
             return { query: this.#store.$request() };
         }
 
+        const site = this.#store.currentSite();
+        const selectedItems = this.#store.selectedItems();
+
         return {
-            siteId: this.#store.currentSite()?.identifier ?? '',
+            siteId: site?.identifier ?? '',
             selection: {
-                folders: [],
-                contentlets: excludeFolders(this.#store.selectedItems()).map(
-                    ({ identifier, languageId }) => ({ identifier, languageId })
-                )
+                folders: toFolderAssetPaths(selectedItems, site?.hostname ?? ''),
+                contentlets: excludeFolders(selectedItems).map(({ identifier, languageId }) => ({
+                    identifier,
+                    languageId
+                }))
             }
         };
     }
