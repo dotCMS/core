@@ -2253,9 +2253,21 @@ public class ContentTypeResource implements Serializable {
 		typeVarNames.sort(ascending ? comparator : comparator.reversed());
 	}
 
-	/*
-	 * This method retrieves the page by path or ID, then extracts the content types from the containers
-	 * Matching the filter criteria and removing the repeated ones and the ones from the blacklist.
+	/**
+	 * Finds the content types the page's containers accept, without repeats and without the
+	 * types hidden from the content palette, keeping those whose name or variable contains the
+	 * filter, ignoring case. The name counts as well as the variable because the palette is
+	 * searched by the name it shows, and a variable drops the spaces and punctuation a name
+	 * keeps (#38742).
+	 *
+	 * @param pagePathOrId the page's path, identifier or inode; a URL-mapped detail path also works
+	 * @param site         the site to resolve a path against
+	 * @param languageId   the page's language
+	 * @param pageMode     the mode the page is read in (live or working)
+	 * @param user         the user reading the page
+	 * @param filter       the text to search for; {@code null} keeps every type
+	 * @return the matching content types the page's containers accept
+	 * @throws BadRequestException when no page matches {@code pagePathOrId}
 	 */
 	private List<ContentType> findPageContainersContentTypesVarNamesByPathOrIdAndFilter(final String pagePathOrId,
 																				   final Host site,
@@ -2322,9 +2334,11 @@ public class ContentTypeResource implements Serializable {
 				.filter(Objects::nonNull)
 				.filter(Predicate.not(this.contentPaletteHiddenTypes.get()::contains))
                 .distinct()
-				.filter(varName -> filter == null || varName.toLowerCase().contains(filter.toLowerCase()))
                 .map(varName -> Try.of(()->contentTypeAPI.find(varName)).getOrNull() )
                 .filter(Objects::nonNull)
+				.filter(contentType -> filter == null
+						|| contentType.name().toLowerCase().contains(filter.toLowerCase())
+						|| contentType.variable().toLowerCase().contains(filter.toLowerCase()))
 				.collect(Collectors.toList());
 	} // findPageContainersContentTypesVarnamesByPathOrIdAndFilter
 }

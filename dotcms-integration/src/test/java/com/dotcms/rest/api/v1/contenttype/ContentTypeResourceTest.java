@@ -688,6 +688,67 @@ public class ContentTypeResourceTest {
         }
     }
 
+    /**
+     * Method to test: {@link ContentTypeResource#getPagesContentTypes}
+     * Given Scenario: a page's container accepts a type whose display name has a space and a
+     * hyphen, which its variable name drops, and another type; the palette searches by the first
+     * type's display name, then by its variable name (#38742)
+     * ExpectedResult: both searches find that type alone, and the total counts only the match
+     */
+    @Test
+    public void test_getPagesContentTypes_filterMatchesTheDisplayName() throws Exception {
+
+        final User adminUser = APILocator.getUserAPI().loadUserById("dotcms.org.1");
+        final String suffix = String.valueOf(System.currentTimeMillis());
+        final String displayName = "Palette Search " + suffix + "-by name";
+
+        final ContentType searchedType = new ContentTypeDataGen().name(displayName).nextPersisted();
+        final ContentType otherType = new ContentTypeDataGen().nextPersisted();
+
+        try {
+            assertFalse("The variable must drop the space and hyphen the name keeps",
+                    searchedType.variable().toLowerCase().contains(displayName.toLowerCase()));
+
+            final Container container = new ContainerDataGen()
+                    .withContentType(searchedType, "")
+                    .withContentType(otherType, "")
+                    .nextPersisted();
+            ContainerDataGen.publish(container);
+
+            final Template template = new TemplateDataGen()
+                    .withContainer(container.getIdentifier())
+                    .nextPersisted();
+            APILocator.getVersionableAPI().setLive(template);
+
+            final Host systemHost = APILocator.getHostAPI().findSystemHost(adminUser, false);
+            final Folder folder = new FolderDataGen().site(systemHost).nextPersisted();
+            final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+            APILocator.getContentletAPI().publish(page, adminUser, false);
+
+            final ContentTypeResource resource = new ContentTypeResource();
+
+            for (final String filter : List.of(displayName.toUpperCase(), searchedType.variable())) {
+                final ResponseEntityPaginatedDataView response = resource.getPagesContentTypes(
+                        getHttpRequest(), new EmptyHttpResponse(),
+                        page.getIdentifier(), "-1", filter, 1, 10, "name", "ASC", null, null);
+
+                @SuppressWarnings("unchecked") final List<Map<String, Object>> contentTypes =
+                        (List<Map<String, Object>>) response.getEntity();
+                final List<String> variables = contentTypes.stream()
+                        .map(ct -> (String) ct.get(ContentTypesPaginator.VARIABLE))
+                        .collect(Collectors.toList());
+
+                assertEquals("Searching for '" + filter + "'",
+                        List.of(searchedType.variable()), variables);
+                assertEquals("Total entries when searching for '" + filter + "'",
+                        1L, response.getPagination().getTotalEntries());
+            }
+        } finally {
+            ContentTypeDataGen.remove(searchedType);
+            ContentTypeDataGen.remove(otherType);
+        }
+    }
+
 	private static class TestHashMap<K, V> extends HashMap<K, V> {
 		@Override
 		public boolean equals(Object o) {
