@@ -5,7 +5,7 @@ import {
     createComponentFactory,
     mockProvider
 } from '@openng/spectator/vitest';
-import { EMPTY, of } from 'rxjs';
+import { EMPTY, of, Subject } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -18,6 +18,7 @@ import { Tooltip } from 'primeng/tooltip';
 import {
     DotCategoriesService,
     DotContentTypeService,
+    DotContentDriveExportResult,
     DotContentDriveExportService,
     DotContentletService,
     DotHttpErrorManagerService,
@@ -49,7 +50,10 @@ import {
     DotContentDriveStatus,
     DotContentDriveViewType
 } from '../../shared/models';
-import { DotContentDriveNavigationService } from '../../shared/services';
+import {
+    DotContentDriveExportStateService,
+    DotContentDriveNavigationService
+} from '../../shared/services';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import { hasNonDefaultFilters } from '../../utils/functions';
 
@@ -219,6 +223,9 @@ describe('DotContentDriveToolbarComponent', () => {
             mockProvider(DotContentDriveExportService, {
                 export: vi.fn().mockReturnValue(EMPTY)
             }),
+            // The real flag both Export buttons share, provided per test so an export a test leaves
+            // running cannot disable the next test's buttons.
+            DotContentDriveExportStateService,
             // The shared DotLanguageFilterComponent fetches the language list on init, so without
             // this the toolbar's render reaches for /api/v2/languages and the spec fails on a
             // NetworkError rather than on anything it is testing.
@@ -264,6 +271,9 @@ describe('DotContentDriveToolbarComponent', () => {
         messageServiceSpy.clear.mockClear();
         spectator = createComponent();
         store = spectator.inject(DotContentDriveStore, true);
+        // The mock is shared by every test and clearAllMocks keeps a return value a test set, so
+        // reset it here: otherwise a test's never-answering export leaks into the tests after it.
+        spectator.inject(DotContentDriveExportService).export.mockReturnValue(EMPTY);
         spectator.detectChanges();
     });
 
@@ -733,6 +743,90 @@ describe('DotContentDriveToolbarComponent', () => {
             ]).toContain(workflowActions);
             // The creation block is gone, so the button cannot be sitting in it.
             expect(spectator.query(byTestId('upload-asset-tooltip'))).toBeNull();
+        });
+
+        // Changing the selection swaps one Export button for the other while an export may still
+        // be running; the one that appears must not start a second export until the first ends
+        // (#37900 T106, FR-036, US1 scenario 10).
+        describe('while an export runs and the selection changes', () => {
+            let answer: Subject<DotContentDriveExportResult>;
+            let exportService: SpyObject<DotContentDriveExportService>;
+
+            /** The native button of the Export button showing now: the toolbar shows one at a time. */
+            const exportButton = () =>
+                spectator
+                    .query(byTestId('content-drive-export-button'))
+                    ?.querySelector('button') as HTMLButtonElement | null;
+
+            /** Settles the toolbar and lets the Export button's content type fetch answer. */
+            const settle = async () => {
+                await settleToolbarAnimation(spectator);
+                await spectator.fixture.whenStable();
+                spectator.detectChanges();
+            };
+
+            /** Checks the Export button showing now is loading and cannot be clicked. */
+            const expectExportBlocked = () => {
+                expect(exportButton()).toBeTruthy();
+                expect(exportButton()).toHaveClass('p-button-loading');
+                expect(exportButton()?.disabled).toBe(true);
+            };
+
+            beforeEach(() => {
+                // Filtered to one non-Form type, so the button shows with nothing selected too.
+                filtersSignal.set({ contentType: [MOCK_CONTENT_TYPES[0].variable] });
+                exportService = spectator.inject(DotContentDriveExportService);
+                answer = new Subject<DotContentDriveExportResult>();
+                exportService.export.mockReturnValue(answer);
+            });
+
+            it('should block the button beside the workflow actions when something is selected', async () => {
+                await settle();
+                expect(exportButton()?.disabled).toBe(false);
+                spectator.click(exportButton() as HTMLElement);
+
+                selectedItemsSignal.set([MOCK_ITEMS[0]]);
+                await settle();
+
+                expect(spectator.query(byTestId('workflow-actions'))).toBeTruthy();
+                expectExportBlocked();
+
+                spectator.click(exportButton() as HTMLElement);
+
+                expect(exportService.export).toHaveBeenCalledTimes(1);
+            });
+
+            it('should block the button in the Upload / Add New block when the selection is cleared', async () => {
+                selectedItemsSignal.set([MOCK_ITEMS[0]]);
+                await settle();
+                expect(exportButton()?.disabled).toBe(false);
+                spectator.click(exportButton() as HTMLElement);
+
+                selectedItemsSignal.set([]);
+                await settle();
+
+                expect(spectator.query(byTestId('upload-asset-tooltip'))).toBeTruthy();
+                expectExportBlocked();
+
+                spectator.click(exportButton() as HTMLElement);
+
+                expect(exportService.export).toHaveBeenCalledTimes(1);
+            });
+
+            it('should enable the button again once the export ends', async () => {
+                await settle();
+                spectator.click(exportButton() as HTMLElement);
+                selectedItemsSignal.set([MOCK_ITEMS[0]]);
+                await settle();
+                expectExportBlocked();
+
+                answer.next({ kind: 'empty' });
+                answer.complete();
+                spectator.detectChanges();
+
+                expect(exportButton()).not.toHaveClass('p-button-loading');
+                expect(exportButton()?.disabled).toBe(false);
+            });
         });
     });
 

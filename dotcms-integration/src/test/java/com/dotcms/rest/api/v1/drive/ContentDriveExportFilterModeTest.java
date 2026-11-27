@@ -32,6 +32,7 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.api.v1.drive.export.ContentDriveExportHelper;
 import com.dotcms.rest.api.v1.drive.export.DriveExportRequestForm;
+import com.dotcms.rest.api.v1.drive.export.ExportFile;
 import com.dotcms.rest.api.v1.drive.export.ExportFileBuilder;
 import com.dotcms.rest.api.v1.drive.export.ExportFileNames;
 import com.dotcms.util.IntegrationTestInitService;
@@ -92,6 +93,9 @@ public class ContentDriveExportFilterModeTest extends IntegrationTestBase {
     private static final String EXPORT_FAILED =
             "The export failed. Try again, and contact your administrator if it keeps failing.";
     private static final String FOLDER_NOT_FOUND = "Folder not found.";
+    /** The message {@code /search} gives for a search text the index cannot build a query from. */
+    private static final String TOO_COMPLEX = "The search text or filter values are too complex to "
+            + "search for; simplify or shorten them and try again.";
     private static final int MAX_PAGES = 200;
 
     /**
@@ -779,5 +783,85 @@ public class ContentDriveExportFilterModeTest extends IntegrationTestBase {
         assertEquals("This export has more than 100,000 rows; 100,000 is the limit. Narrow the "
                         + "filters or the selection and try again.",
                 ContentDriveExportHelper.overLimitMessage(100_000));
+    }
+    // ---------------------------------------------------------------------------------------------
+    // convergence (Phase 12)
+    // ---------------------------------------------------------------------------------------------
+
+    /**
+     * Method to test: {@link ContentDriveResource#export}
+     * Given Scenario: A search text the index cannot build a query from (a long, self-repeating
+     *                 term, as {@code ContentDriveFieldFilterTest#testTooComplexSearchTermIsRejected}
+     *                 uses), over a type with rows, so the index narrowing runs (T104)
+     * ExpectedResult: 400 with the same message {@code /search} gives, not the generic 500
+     * (contract § 400, FR-028)
+     */
+    @Test
+    public void test_tooComplexSearchText_isABadRequestLikeSearch() throws Exception {
+        final Response response = export(query(sitePath()).browseScope(BrowseScope.ALL)
+                .filters(QueryFilters.builder().text("x".repeat(501)).build()).build());
+
+        assertEquals(400, response.getStatus());
+        assertEquals(TOO_COMPLEX, errorMessage(response));
+    }
+
+    /**
+     * Returns a real, finished file in the export directory, with no file name, so building the
+     * response fails after the file exists, the way a failure while sending the headers would.
+     */
+    private static final class FileThenFailingHelper extends ContentDriveExportHelper {
+
+        Path built;
+
+        @Override
+        public ExportFile export(final DriveExportRequestForm form, final User user,
+                final HttpServletRequest request) throws IOException {
+            Files.createDirectories(ExportFileBuilder.defaultDirectory());
+            built = Files.createTempFile(ExportFileBuilder.defaultDirectory(), "export-", ".csv");
+            Files.writeString(built, "Identifier,languageCode,countryCode\r\nx,en,US\r\n");
+            return new ExportFile(built, null, "text/csv; charset=UTF-8", 1, 1);
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentDriveResource#export}
+     * Given Scenario: The file is built, then building the response fails (T105)
+     * ExpectedResult: 500 with the generic message, and the built file is deleted at once rather
+     * than left for the hourly sweep (FR-032, SC-008)
+     */
+    @Test
+    public void test_failureAfterTheFileIsBuilt_deletesIt() throws Exception {
+        final FileThenFailingHelper helper = new FileThenFailingHelper();
+
+        final Response response = export(new ContentDriveResource(helper),
+                query(folderPath()).build(), adminUser);
+
+        assertEquals(500, response.getStatus());
+        assertEquals(EXPORT_FAILED, errorMessage(response));
+        assertNotNull("fixture: the helper built a file", helper.built);
+        assertFalse("the built file is deleted", Files.exists(helper.built));
+    }
+
+    /**
+     * Method to test: {@link ContentDriveResource#export}
+     * Given Scenario: A 400, a 404 and a 500 (T108)
+     * ExpectedResult: Each error body carries {@code "entity": null}, as the contract's error body
+     * shows
+     */
+    @Test
+    public void test_errorBodies_carryANullEntity() throws Exception {
+        final List<Response> errors = List.of(
+                export(query(sitePath()).contentTypes(List.of()).build()),
+                export(query("//no-such-site-" + System.currentTimeMillis() + ".local/").build()),
+                export(new ContentDriveResource(new ContentDriveExportHelper(new FailingWriter())),
+                        query(folderPath()).build(), adminUser));
+
+        for (final Response response : errors) {
+            assertTrue(response.getEntity() instanceof ResponseEntityView);
+            assertNull("status " + response.getStatus(),
+                    ((ResponseEntityView<?>) response.getEntity()).getEntity());
+            assertTrue("status " + response.getStatus(),
+                    entityJson(response).contains("\"entity\":null"));
+        }
     }
 }

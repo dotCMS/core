@@ -14,6 +14,7 @@ vi.mock('@dotcms/utils', async () => ({
 }));
 
 import { signal } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { MessageService } from 'primeng/api';
 import { Tooltip } from 'primeng/tooltip';
@@ -50,6 +51,7 @@ import {
     DotContentDrivePage,
     DotContentDriveStatus
 } from '../../../../shared/models';
+import { DotContentDriveExportStateService } from '../../../../shared/services/dot-content-drive-export-state.service';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
 /** A Form type's variable: fetching it answers with the FORM base type. */
@@ -167,6 +169,9 @@ describe('DotContentDriveExportButtonComponent', () => {
     const createComponent = createComponentFactory({
         component: DotContentDriveExportButtonComponent,
         providers: [
+            // The real shared in-flight flag, provided per test so a test that leaves an export
+            // running cannot leave the next test's buttons disabled.
+            DotContentDriveExportStateService,
             mockProvider(DotContentDriveStore, {
                 selectedItems: selectedItemsSignal,
                 filters: filtersSignal,
@@ -503,6 +508,98 @@ describe('DotContentDriveExportButtonComponent', () => {
             answer.error(new Error(SERVER_MESSAGE));
 
             expectNotLoading();
+        });
+    });
+
+    // The toolbar renders one Export button with nothing selected and another beside the workflow
+    // actions. Selecting while an export runs removes the first and mounts the second, which must
+    // not offer a second export until the first one ends (#37900 T106, FR-036, US1 scenario 10).
+    describe('while another Export button is exporting', () => {
+        let answer: Subject<DotContentDriveExportResult>;
+        let otherFixture: ComponentFixture<DotContentDriveExportButtonComponent>;
+
+        /** The native button of the instance mounted after the selection changed. */
+        const otherExportButton = () =>
+            otherFixture.nativeElement.querySelector(
+                '[data-testid="content-drive-export-button"] button'
+            ) as HTMLButtonElement | null;
+
+        /**
+         * Starts a filter-mode export from this instance, then does what the toolbar does when the
+         * user selects something meanwhile: removes this instance and mounts a new one, which is
+         * in selection mode. The answer is held back, so the export is still running afterwards.
+         */
+        const exportThenSelect = async () => {
+            await render();
+            spectator.click(exportButton() as HTMLElement);
+
+            selectedItemsSignal.set([selectedContentlet('blog-1', 1)]);
+            spectator.fixture.destroy();
+
+            otherFixture = TestBed.createComponent(DotContentDriveExportButtonComponent);
+            otherFixture.detectChanges();
+            await otherFixture.whenStable();
+            otherFixture.detectChanges();
+        };
+
+        /** Checks the new instance shows the running export: loading, and not clickable. */
+        const expectOtherLoading = () => {
+            expect(otherExportButton()).toBeTruthy();
+            expect(otherExportButton()).toHaveClass('p-button-loading');
+            expect(otherExportButton()?.disabled).toBe(true);
+        };
+
+        beforeEach(() => {
+            answer = new Subject<DotContentDriveExportResult>();
+            exportService.export.mockReturnValue(answer);
+        });
+
+        it('should show the new button loading and disabled while the export runs', async () => {
+            await exportThenSelect();
+
+            expectOtherLoading();
+        });
+
+        it('should not start a second export when the new button is clicked', async () => {
+            await exportThenSelect();
+
+            spectator.click(otherExportButton() as HTMLElement);
+
+            expect(exportService.export).toHaveBeenCalledTimes(1);
+        });
+
+        // Each case first sees the new button loading, so an instance that was never blocked
+        // cannot pass by being enabled from the start.
+        describe('once the export ends', () => {
+            it.each([
+                {
+                    outcome: 'a file is downloaded',
+                    end: () => {
+                        answer.next(FILE_RESULT);
+                        answer.complete();
+                    }
+                },
+                {
+                    outcome: 'there is nothing to export',
+                    end: () => {
+                        answer.next(EMPTY_RESULT);
+                        answer.complete();
+                    }
+                },
+                {
+                    outcome: 'the export fails',
+                    end: () => answer.error(new Error(SERVER_MESSAGE))
+                }
+            ])('should enable the new button again when $outcome', async ({ end }) => {
+                await exportThenSelect();
+                expectOtherLoading();
+
+                end();
+                otherFixture.detectChanges();
+
+                expect(otherExportButton()).not.toHaveClass('p-button-loading');
+                expect(otherExportButton()?.disabled).toBe(false);
+            });
         });
     });
 
