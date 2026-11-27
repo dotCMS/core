@@ -865,6 +865,54 @@ describe('EditContentLayoutComponent', () => {
         });
     });
 
+    /**
+     * The banners are flat strips and the top bar draws the one line under them, in the tab
+     * list's colour (`surface-200`). A banner's own outline doubled the side panel's header
+     * divider above it and the top bar's line below it (#37958).
+     */
+    describe('Top bar line under the banners (#37958)', () => {
+        const topBar = () => spectator.query(byTestId('edit-content-layout__topBar'));
+
+        beforeEach(fakeAsync(() => {
+            dotContentTypeService.getContentTypeWithRender.mockReturnValue(of(CONTENT_TYPE_MOCK));
+            workflowActionsService.getDefaultActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            store.initializeNewContent('contentTypeName');
+            spectator.detectChanges();
+            tick();
+        }));
+
+        afterEach(() => relatedTrailSignal.set([]));
+
+        it('draws the line in the tab list colour under the beta banner', () => {
+            expect(spectator.query(byTestId('edit-content-layout__beta-message'))).toBeTruthy();
+            expect(topBar()).toHaveClass('border-b');
+            expect(topBar()).toHaveClass('border-surface-200');
+            expect(topBar()).not.toHaveClass('border-gray-300');
+        });
+
+        it('draws the line when only the Relating content banner shows', () => {
+            spectator.component.closeMessage('betaMessage');
+            relatedTrailSignal.set([
+                { inode: 'iA', title: 'TA' },
+                { inode: 'iB', title: 'TB' }
+            ]);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('edit-content-layout__relating-content'))).toBeTruthy();
+            expect(topBar()).toHaveClass('border-b');
+            expect(topBar()).toHaveClass('border-surface-200');
+        });
+
+        it('draws no line when no banner shows', () => {
+            spectator.component.closeMessage('betaMessage');
+            spectator.detectChanges();
+
+            expect(topBar()).not.toHaveClass('border-b');
+        });
+    });
+
     describe('relatedNavItems (Relating content breadcrumb)', () => {
         const A: DotRelatedContentCrumb = { inode: 'iA', title: 'TA' };
         const B: DotRelatedContentCrumb = { inode: 'iB', title: 'TB' };
