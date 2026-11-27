@@ -550,12 +550,20 @@ export class DotFileFieldComponent
         // unsaved draft that has no uploaded file yet fall back to the parent.
         const inode =
             uploaded?.source === 'contentlet' ? uploaded.file.inode : this.$contentlet()?.inode;
-        // For a standalone contentlet (e.g. AI-generated image) the image lives in
-        // its own field (titleImage), not in the parent binary field variable.
+        // A saved Binary field is hydrated with the PARENT contentlet, tagged with the
+        // field it was loaded for (`fieldVariable`, see FileFieldStore.setFileFromContentlet).
+        // That tag wins: the parent's `titleImage` names the item's title image, which on a
+        // type with several image fields is a different field than the one clicked.
+        // Without the tag the contentlet is a standalone asset (dotAsset / AI-generated
+        // image) whose binary lives in its own field, named by its `titleImage`.
         // The JSP uses this as fieldName to load /contentAsset/image/{inode}/{field}/.
+        const hydratedField =
+            uploaded?.source === 'contentlet' && typeof uploaded.file['fieldVariable'] === 'string'
+                ? (uploaded.file['fieldVariable'] as string)
+                : undefined;
         const editorVariable =
             uploaded?.source === 'contentlet'
-                ? String(uploaded.file['titleImage'] ?? variable)
+                ? (hydratedField ?? String(uploaded.file['titleImage'] ?? variable))
                 : variable;
 
         // Prefer the new Angular image editor when its launcher is provided (Angular
@@ -570,7 +578,7 @@ export class DotFileFieldComponent
             // exposes it on assetMetaData/fileAssetMetaData; an inline binary temp on metaData.
             const focalPoint = parseFocalPoint(
                 uploaded?.source === 'contentlet'
-                    ? focalPointFromContentlet(uploaded.file)
+                    ? focalPointFromContentlet(uploaded.file, hydratedField)
                     : focalPointFromMetadata(metadata)
             );
 

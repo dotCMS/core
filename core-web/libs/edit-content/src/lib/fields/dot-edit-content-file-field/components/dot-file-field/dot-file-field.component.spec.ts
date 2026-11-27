@@ -227,6 +227,89 @@ describe('DotFileFieldComponent', () => {
             spectator.detectChanges();
         };
 
+        it('should edit the clicked binary field, not the title image, when the parent has two image fields', () => {
+            mockImageEditorLauncher.isAvailable.mockReturnValue(true);
+
+            // Saved item with two image binaries. `imageOne` is the title image and carries
+            // its own focal point; the field under test (`binaryField`) carries another one.
+            const parent = createFakeContentlet({
+                inode: 'parent-inode',
+                titleImage: 'imageOne',
+                imageOne: 'one.png',
+                imageOneMetaData: {
+                    isImage: true,
+                    contentType: 'image/png',
+                    name: 'one.png',
+                    focalPoint: '0.2,0.3'
+                },
+                [BINARY_FIELD_MOCK.variable]: 'two.png',
+                [`${BINARY_FIELD_MOCK.variable}MetaData`]: {
+                    isImage: true,
+                    contentType: 'image/png',
+                    name: 'two.png',
+                    focalPoint: '0.7,0.8'
+                }
+            });
+
+            spectator = createComponent({
+                props: { field: BINARY_FIELD_MOCK, contentlet: parent, hasError: false } as never
+            });
+            // ngAfterViewInit hydrates the preview from the parent contentlet
+            // (FileFieldStore.setFileFromContentlet) tagged with the field it belongs to.
+            spectator.detectChanges();
+            vi.spyOn(spectator.component.store, 'applyEditedImage').mockImplementation(
+                () => undefined
+            );
+
+            spectator.component.onEditImage();
+
+            expect(mockImageEditorLauncher.open).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    inode: 'parent-inode',
+                    variable: BINARY_FIELD_MOCK.variable,
+                    fieldName: BINARY_FIELD_MOCK.variable,
+                    focalPoint: { x: 0.7, y: 0.8 }
+                })
+            );
+        });
+
+        it('should keep editing a standalone dotAsset through its own titleImage field', () => {
+            mockImageEditorLauncher.isAvailable.mockReturnValue(true);
+            setupBinaryWithImage();
+
+            // "Select existing file" / AI image: the previewed contentlet is the dotAsset
+            // itself, whose binary lives in the field named by its `titleImage`.
+            spectator.component.store.setPreviewFile({
+                source: 'contentlet',
+                file: {
+                    ...createFakeContentlet({}),
+                    inode: 'asset-inode',
+                    titleImage: 'asset',
+                    assetMetaData: {
+                        isImage: true,
+                        contentType: 'image/png',
+                        name: 'asset.png',
+                        focalPoint: '0.4,0.6'
+                    }
+                }
+            } as never);
+            spectator.detectChanges();
+            vi.spyOn(spectator.component.store, 'applyEditedImage').mockImplementation(
+                () => undefined
+            );
+
+            spectator.component.onEditImage();
+
+            expect(mockImageEditorLauncher.open).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    inode: 'asset-inode',
+                    variable: 'asset',
+                    fieldName: 'asset',
+                    focalPoint: { x: 0.4, y: 0.6 }
+                })
+            );
+        });
+
         it('should open the new Angular editor when its launcher is available', () => {
             mockImageEditorLauncher.isAvailable.mockReturnValue(true);
             mockImageEditorLauncher.open.mockReturnValue(of(EDITED_TEMP_FILE));

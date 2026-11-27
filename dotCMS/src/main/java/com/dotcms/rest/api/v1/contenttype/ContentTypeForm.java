@@ -178,21 +178,38 @@ public class ContentTypeForm  {
         }
 
         /**
-         * Extracts the workflows from the json object found in the form
+         * Reads the workflow schemes of one content type from the request's {@code workflow} key,
+         * for both create and update. Accepted values:
+         * <ul>
+         *     <li>an array whose entries are scheme ids or variable names, or objects with an
+         *     {@code id} or a {@code variableName};</li>
+         *     <li>a string holding one scheme id or variable name, or several separated by commas
+         *     (each part is trimmed and blank parts are dropped, so a blank string means none);</li>
+         *     <li>{@code null}, which means none.</li>
+         * </ul>
+         * A missing key also gives an empty list; the update endpoint then leaves the current
+         * schemes alone. Other value types are rejected with a 400 by the resource before this
+         * list is used. The {@code workflows} key that GET returns is read-only and ignored here.
          *
-         * @param fieldJsonObject the json object found in the form
-         * @return a list of workflow entries
+         * @param fieldJsonObject the content type's JSON object from the request
+         * @return the workflow entries, empty when none were sent
          * @throws JSONException if the json object is not well-formed
          */
-        private static List<WorkflowFormEntry> getWorkflows(JSONObject fieldJsonObject)
+        private static List<WorkflowFormEntry> getWorkflows(final JSONObject fieldJsonObject)
                 throws JSONException {
 
-            List<WorkflowFormEntry> workflowsArray = new ArrayList<>();
+            final List<WorkflowFormEntry> workflowsArray = new ArrayList<>();
 
-            if (fieldJsonObject.has(WORKFLOW_ATTRIBUTE_NAME)) {
+            final Object workflowValue = fieldJsonObject.opt(WORKFLOW_ATTRIBUTE_NAME);
 
-                final JSONArray workflowsJSONArray = (JSONArray) fieldJsonObject.get(
-                        WORKFLOW_ATTRIBUTE_NAME);
+            if (workflowValue instanceof String) { // One id or variable name, or several comma-separated
+                for (final String part : ((String) workflowValue).split(",")) {
+                    if (UtilMethods.isSet(part.trim())) {
+                        workflowsArray.add(WorkflowFormEntry.builder().id(part.trim()).build());
+                    }
+                }
+            } else if (workflowValue instanceof JSONArray) {
+                final JSONArray workflowsJSONArray = (JSONArray) workflowValue;
 
                 for (Object entry : workflowsJSONArray) {
 
