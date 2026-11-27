@@ -4,7 +4,9 @@
 package com.dotmarketing.common.reindex;
 
 import com.dotcms.contenttype.model.type.ContentType;
+import com.liferay.portal.model.User;
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +35,9 @@ import com.google.common.collect.ImmutableList;
  *
  */
 public class ReindexQueueAPIImpl implements ReindexQueueAPI {
+
+    /** Most identifiers per log line of a clear, so a large clear does not produce one huge line. */
+    private static final int CLEARED_IDENTIFIERS_PER_LINE = 500;
 
     private final ReindexQueueFactory reindexQueueFactory;
     private final Supplier<FailedIndexingNotifier> notifier;
@@ -101,6 +106,58 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
     public long failedRecordCount() throws DotDataException {
         return reindexQueueFactory.failedRecordCount();
     }
+
+    @Override
+    @WrapInTransaction
+    public int clearParkedRecords(final User user) throws DotDataException {
+        final List<String> cleared = reindexQueueFactory.clearParkedRecords();
+        // The user id only: an email is personal data and does not belong in the log.
+        clearLogLines(user != null ? user.getUserId() : "unknown", cleared)
+                .forEach(line -> Logger.info(ReindexQueueAPIImpl.class, line));
+        return cleared.size();
+    }
+
+    /**
+     * Builds the log of a clear: one line with who cleared and how many records, then the dropped
+     * identifiers in lines of at most {@value #CLEARED_IDENTIFIERS_PER_LINE}. The clear deletes
+     * the only record that this content is missing from the index, so the log is where an
+     * operator finds it afterwards.
+     *
+     * @param userId      the id of the user who cleared
+     * @param identifiers the identifiers of the deleted rows
+     * @return the lines to log, the summary first
+     */
+    static List<String> clearLogLines(final String userId, final List<String> identifiers) {
+        final List<String> lines = new ArrayList<>();
+        lines.add(String.format("User '%s' cleared %d parked reindex record(s); their content is"
+                + " not in the index until it is saved again or a full reindex runs", userId,
+                identifiers.size()));
+        for (int from = 0; from < identifiers.size(); from += CLEARED_IDENTIFIERS_PER_LINE) {
+            final List<String> chunk = identifiers.subList(from,
+                    Math.min(identifiers.size(), from + CLEARED_IDENTIFIERS_PER_LINE));
+            lines.add("Cleared parked reindex records (" + (from + 1) + "-" + (from + chunk.size())
+                    + " of " + identifiers.size() + "): " + String.join(", ", chunk));
+        }
+        return lines;
+    }
+
+    @Override
+    @WrapInTransaction
+    public ParkedRecordsRetry retryParkedRecords(final User user) throws DotDataException {
+        final ParkedRecordsRetry retried = reindexQueueFactory.retryParkedRecords();
+        Logger.info(this, String.format("User '%s' retried %d parked reindex record(s), %d of them"
+                        + " as removals because their content no longer exists",
+                user != null ? user.getUserId() : "unknown", retried.requeued(),
+                retried.requeuedAsDelete()));
+        return retried;
+    }
+
+    @Override
+    @CloseDBIfOpened
+    public long parkedRecordCount() throws DotDataException {
+        return reindexQueueFactory.parkedRecordCount();
+    }
+
     @CloseDBIfOpened
     @Override
     public boolean hasReindexRecords() throws DotDataException {

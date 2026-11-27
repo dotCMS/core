@@ -42,9 +42,12 @@ import javax.annotation.Nullable;
  *                            recorded
  * @param violation           the document limit that was exceeded; {@code null} when the failure
  *                            was not a document-limit violation
+ * @param state               {@code parked} when the entry gave up and only a retry or a new save
+ *                            brings it back; {@code retrying} when the queue will try it again
  */
 @JsonInclude(JsonInclude.Include.ALWAYS)
-@Schema(description = "A reindex journal entry that exhausted its retries, without content values")
+@Schema(description = "A reindex journal entry that failed at least once, parked or still being"
+        + " retried, without content values")
 public record FailedReindexRecordView(
         @Schema(description = "Contentlet identifier", example = "d5edd758f166259247356e7ea2deca4e")
         String identifier,
@@ -76,7 +79,11 @@ public record FailedReindexRecordView(
         @Nullable String failureReason,
         @Schema(description = "The document limit that was exceeded; null if the failure was not a"
                 + " document-limit violation", nullable = true)
-        @Nullable ViolationView violation) {
+        @Nullable ViolationView violation,
+        @Schema(description = "parked: the entry gave up and only a retry of the failed records or"
+                + " a new save brings it back; retrying: the reindex queue will try it again",
+                allowableValues = {"parked", "retrying"})
+        String state) {
 
     /**
      * A document limit that the withheld version's index document exceeded (#37269). The limit
@@ -137,7 +144,8 @@ public record FailedReindexRecordView(
                 failedAttempts(row),
                 row.getPriority(),
                 reason,
-                withheld.map(ViolationView::of).orElse(null));
+                withheld.map(ViolationView::of).orElse(null),
+                row.isParked() ? "parked" : "retrying");
     }
 
     /**

@@ -1,9 +1,10 @@
 package com.dotmarketing.common.reindex;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -95,9 +96,10 @@ public class BulkProcessorListenerWithholdTest {
         listener.afterBulk(1L, List.of(succeeded(WITHHELD + "_1_DEFAULT"),
                 succeeded(OTHER + "_1_DEFAULT")));
 
-        verify(queue).deleteReindexEntry(argThat(
-                (List<ReindexEntry> rows) -> rows.contains(otherEntry)
-                        && !rows.contains(withheldEntry)));
+        // Rows are acknowledged at the end of the batch, by ReindexThread (#37270).
+        final List<ReindexEntry> rows = listener.entriesToAcknowledge();
+        assertTrue("the sibling's row must be acknowledged", rows.contains(otherEntry));
+        assertFalse("the withheld row must not be acknowledged", rows.contains(withheldEntry));
     }
 
     /**
@@ -112,6 +114,7 @@ public class BulkProcessorListenerWithholdTest {
         listener.afterBulk(1L, List.of(succeeded(WITHHELD + "_2_DEFAULT")));
 
         verify(queue, never()).deleteReindexEntry(anyList());
+        assertTrue(listener.entriesToAcknowledge().isEmpty());
     }
 
     /**
@@ -138,9 +141,10 @@ public class BulkProcessorListenerWithholdTest {
         listener.afterBulk(1L, List.of(succeeded(WITHHELD + "_1_DEFAULT"),
                 succeeded(OTHER + "_1_DEFAULT")));
 
-        verify(queue).deleteReindexEntry(argThat(
-                (List<ReindexEntry> rows) -> rows.contains(otherEntry)
-                        && rows.contains(withheldEntry)));
+        // Rows are acknowledged at the end of the batch, by ReindexThread (#37270).
+        final List<ReindexEntry> rows = listener.entriesToAcknowledge();
+        assertTrue("the sibling's row must be acknowledged", rows.contains(otherEntry));
+        assertTrue("without a withhold, the row must be acknowledged", rows.contains(withheldEntry));
     }
 
     /**

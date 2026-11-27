@@ -22,6 +22,7 @@
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
+<%@page import="org.apache.commons.lang.StringEscapeUtils"%>
 <%@page import="com.liferay.portal.util.ReleaseInfo"%>
 <%@ page import="com.dotmarketing.db.DbConnectionFactory" %>
 
@@ -131,6 +132,34 @@ function checkReindexation () {
     .then(data =>checkReindexationCallback(data));
 
 }
+/** Sends the skipped (parked) records back to the reindex queue (#37270). Refused with 409
+    while a full reindex is running. */
+function retryFailedRecords () {
+    fetch('/api/v1/index/failed/retry', {method:'POST', cache:'no-cache'})
+    .then(response => {
+        if (response.status === 409) {
+            alert('<%= StringEscapeUtils.escapeJavaScript(LanguageUtil.get(pageContext,"Retry-Failed-Reindex-Records-Refused")) %>');
+            return null;
+        }
+        if (!response.ok) {
+            throw new Error(response.status);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data && data.entity) {
+            alert('<%= StringEscapeUtils.escapeJavaScript(LanguageUtil.get(pageContext,"Retry-Failed-Reindex-Records-Done")) %>'
+                .replace('{0}', data.entity.requeued));
+        }
+    })
+    .catch(error => {
+        // A 401, a 500 or a body that is not JSON: tell the admin instead of failing silently.
+        alert('<%= StringEscapeUtils.escapeJavaScript(LanguageUtil.get(pageContext,"Retry-Failed-Reindex-Records-Failed")) %>'
+            .replace('{0}', error.message));
+    })
+    .finally(() => checkReindexation());
+}
+
 function deleteFailedRecords () {
 
     fetch('/api/v1/esindex/failed', {method:'DELETE',cache: 'no-cache'} )
@@ -1618,6 +1647,10 @@ dd.leftdl {
 
                    <button dojoType="dijit.form.Button"  onClick="downloadFailedAsJson();">
                        <%= LanguageUtil.get(pageContext,"Download-Failed-Records-As-JSON") %>
+                   </button>
+                    &nbsp; &nbsp;
+                   <button dojoType="dijit.form.Button"  onClick="retryFailedRecords();">
+                       <%= LanguageUtil.get(pageContext,"Retry-Failed-Reindex-Records") %>
                    </button>
                     &nbsp; &nbsp;
                    <button dojoType="dijit.form.Button"  onClick="deleteFailedRecords();">

@@ -1052,7 +1052,15 @@ curl -su admin:<pass> https://<host>/api/v1/esindex/reindex
 **When it finishes, check for failures:**
 
 ```bash
-curl -su admin:<pass> https://<host>/api/v1/esindex/failed
+curl -su admin:<pass> https://<host>/api/v1/index/failed
+```
+
+Each record has a `state`: `retrying` records will be tried again on their own; `parked` ones gave
+up and stay out of the index. Fix the cause named in `failureReason` (or `violation`), then send
+the parked records back to the queue — not while a full reindex is running, which answers `409`:
+
+```bash
+curl -su admin:<pass> -X POST https://<host>/api/v1/index/failed/retry
 ```
 
 ---
@@ -2423,7 +2431,8 @@ curl -su admin:<pass> -X POST    https://<host>/api/v1/esindex/reindex
 curl -su admin:<pass> -X POST   "https://<host>/api/v1/esindex/reindex?contentType=Blog"
 curl -su admin:<pass>            https://<host>/api/v1/esindex/reindex          # progress
 curl -su admin:<pass> -X DELETE "https://<host>/api/v1/esindex/reindex?switch=true"
-curl -su admin:<pass>            https://<host>/api/v1/esindex/failed
+curl -su admin:<pass>            https://<host>/api/v1/index/failed             # failed records
+curl -su admin:<pass> -X POST    https://<host>/api/v1/index/failed/retry       # retry parked ones
 ```
 
 ### Site Search

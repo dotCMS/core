@@ -329,6 +329,11 @@ public class BulkBatchDiscardTest {
         try (final IndexBulkProcessor processor = api.createBulkProcessor(listener)) {
             api.appendToBulkProcessor(processor, entries.values());
         } // close() flushes and waits for afterBulk
+        // As runReindexLoop does: acknowledge once every response of the batch reported (#37270).
+        final List<ReindexEntry> acknowledged = listener.entriesToAcknowledge();
+        if (!acknowledged.isEmpty()) {
+            reindexQueueAPI.deleteReindexEntry(acknowledged);
+        }
     }
 
     /**

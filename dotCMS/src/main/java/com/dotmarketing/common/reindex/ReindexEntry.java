@@ -82,6 +82,20 @@ public abstract class ReindexEntry {
         return getPriority() % 100;
     }
 
+    /**
+     * Tells whether this entry gave up: its retries ran out and it was moved to
+     * {@code ERROR (400)} plus the priority of its last attempt, where the reindex queue never reads
+     * it again. Only a retry of the failed records or a new save of the content brings it back.
+     *
+     * <p>The threshold reads correctly only while {@code RETRY_FAILED_INDEX_TIMES} is below 100;
+     * past that, a row still being retried would reach 400 on its own.</p>
+     *
+     * @return {@code true} when the entry is parked
+     */
+    public boolean isParked() {
+        return getPriority() >= ReindexQueueFactory.Priority.ERROR.dbValue();
+    }
+
     @Override
     public String toString() {
         return "IndexJournal [id=" + getId() + ", identToIndex=" + getIdentToIndex()

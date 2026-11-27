@@ -61,6 +61,18 @@ public class ReindexQueueFactory {
 
     private static final ConcurrentLinkedQueue<ReindexEntry> queue = new ConcurrentLinkedQueue<>();
 
+    /**
+     * Rows that failed at least once: every priority except the four fresh band values (0, 100,
+     * 200, 300). Parked rows (at or above {@code ERROR}) are included. Written as ranges, not as
+     * {@code MOD(priority, 100) <> 0}, so PostgreSQL can use the index on {@code priority}: the
+     * Maintenance screen polls the count every few seconds while a full reindex holds millions of
+     * rows. Holds while {@code RETRY_FAILED_INDEX_TIMES} is below 100 (#37270).
+     */
+    private static final String FAILED_PREDICATE = "((priority > 0 AND priority < 100)"
+            + " OR (priority > 100 AND priority < 200)"
+            + " OR (priority > 200 AND priority < 300)"
+            + " OR priority > 300)";
+
     public ConcurrentLinkedQueue<ReindexEntry> getLocalQueue() {
         return queue;
     }
@@ -176,6 +188,13 @@ public class ReindexQueueFactory {
         return !dc.loadResults().isEmpty();
     }
 
+    /**
+     * Deletes every row above the REINDEX band, without logging: used where every content is
+     * requeued right after (full reindex start, boot without indices). See
+     * {@link #clearParkedRecords()} for the operator's clear (#37270).
+     *
+     * @throws DotDataException if the journal cannot be updated
+     */
     protected void deleteFailedRecords() throws DotDataException {
         DotConnect dc = new DotConnect();
         dc.setSQL("DELETE From dist_reindex_journal where priority > ?");
@@ -184,19 +203,47 @@ public class ReindexQueueFactory {
     }
 
 
+    /**
+     * Counts the rows that failed at least once, parked or still being retried. Describes the same
+     * rows as {@link #getFailedReindexRecords()} (#37270).
+     *
+     * @return the number of failed rows
+     * @throws DotDataException if the journal cannot be read
+     */
     protected long failedRecordCount() throws DotDataException {
-        DotConnect dc = new DotConnect();
-        return dc.setSQL("SELECT count(*) as count from dist_reindex_journal where priority >= ? ")
-                .addParam(Priority.ERROR.dbValue()).getInt("count");
+        return new DotConnect()
+                .setSQL("SELECT count(*) as count FROM dist_reindex_journal WHERE "
+                        + FAILED_PREDICATE)
+                .getInt("count");
+    }
+
+    /**
+     * Counts the rows that gave up: their retries ran out and the reindex queue no longer reads
+     * them. This is what a reindex skipped, as opposed to rows that are still being retried.
+     *
+     * @return the number of parked rows
+     * @throws DotDataException if the journal cannot be read
+     */
+    protected long parkedRecordCount() throws DotDataException {
+        return new DotConnect()
+                .setSQL("SELECT count(*) as count FROM dist_reindex_journal WHERE priority >= ?")
+                .addParam(Priority.ERROR.dbValue())
+                .getInt("count");
     }
 
 
+    /**
+     * Lists the rows that failed at least once, parked or still being retried, whatever band they
+     * were queued at. Describes the same rows as {@link #failedRecordCount()} (#37270).
+     *
+     * @return the failed rows, with their last failure reason
+     * @throws DotDataException if the journal cannot be read
+     */
     @CloseDBIfOpened
     protected List<ReindexEntry> getFailedReindexRecords() throws DotDataException {
         final DotConnect dc = new DotConnect();
-        dc.setSQL(
-                "SELECT id, ident_to_index, priority, dist_action, index_val, time_entered FROM dist_reindex_journal WHERE priority > ?");
-        dc.addParam(ReindexQueueFactory.Priority.REINDEX.dbValue());
+        dc.setSQL("SELECT id, ident_to_index, priority, dist_action, index_val, time_entered"
+                + " FROM dist_reindex_journal WHERE " + FAILED_PREDICATE);
         final List<Map<String, Object>> failedRecords = dc.loadObjectResults();
         final List<ReindexEntry> failed = new ArrayList<>();
         long identifier;
@@ -298,6 +345,58 @@ public class ReindexQueueFactory {
                 .addParam(Priority.ERROR.dbValue())
                 .addParam(exceptId)
                 .loadObjectResults().isEmpty();
+    }
+
+    /**
+     * Deletes the parked rows, the ones whose retries ran out, and returns their identifiers so the
+     * caller can record what was dropped (#37270). Rows still being retried are kept. A single
+     * {@code DELETE … RETURNING} makes the returned set exactly the deleted set: a row that parks
+     * between a separate read and the delete would otherwise be dropped without a trace.
+     *
+     * <p>Not used when a full reindex starts or the server boots without indices: those requeue
+     * every content right after and keep the wider {@link #deleteFailedRecords()}.</p>
+     *
+     * @return the identifiers of the deleted rows, one per row
+     * @throws DotDataException if the journal cannot be updated
+     */
+    protected List<String> clearParkedRecords() throws DotDataException {
+        return new DotConnect()
+                .setSQL("DELETE FROM dist_reindex_journal WHERE priority >= ?"
+                        + " RETURNING ident_to_index")
+                .addParam(Priority.ERROR.dbValue())
+                .loadObjectResults().stream()
+                .map(row -> (String) row.get("ident_to_index"))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Sends every parked row back to the queue (#37270). Each row returns to the band it was
+     * queued at, with a fresh retry budget: the parked value minus {@code ERROR}, rounded down to
+     * the hundred (705 → 300, 505 → 100). It keeps its row id, so a newer row for the same
+     * identifier still supersedes it. A parked reindex row whose content no longer exists comes
+     * back as a delete, so its stale document leaves the index instead of the row being dropped
+     * when the content cannot be loaded. The server is cleared and the row is stamped now:
+     * left with an old timestamp, the stale-row requeue would take it for a stuck one as soon as
+     * it is picked up. Must run inside a transaction so both statements apply together.
+     *
+     * @return how many rows were requeued, and how many of them as deletes
+     * @throws DotDataException if the journal cannot be updated
+     */
+    protected ParkedRecordsRetry retryParkedRecords() throws DotDataException {
+        final int asDelete = new DotConnect().executeUpdate(
+                "UPDATE dist_reindex_journal SET dist_action = ?"
+                        + " WHERE priority >= ? AND dist_action = ?"
+                        + " AND NOT EXISTS (SELECT 1 FROM contentlet_version_info cvi"
+                        + " WHERE cvi.identifier = dist_reindex_journal.ident_to_index)",
+                ReindexAction.DELETE.ordinal(), Priority.ERROR.dbValue(),
+                ReindexAction.REINDEX.ordinal());
+        final int requeued = new DotConnect().executeUpdate(
+                "UPDATE dist_reindex_journal SET priority = ((priority - ?) / 100) * 100,"
+                        + " serverid = NULL, time_entered = ? WHERE priority >= ?",
+                Priority.ERROR.dbValue(), DbConnectionFactory.now(), Priority.ERROR.dbValue());
+        resetLastIdReindexed();
+        unpauseReindexingServers();
+        return new ParkedRecordsRetry(requeued, asDelete);
     }
 
     protected void markAsFailed(ReindexEntry idx, String cause) throws DotDataException {

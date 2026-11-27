@@ -10986,12 +10986,27 @@ paths:
       - Search Index
   /v1/esindex/failed:
     delete:
+      description: "Deletes every parked reindex record (one whose retries ran out)\
+        \ and logs who cleared, how many and the identifiers. Records still being\
+        \ retried are kept. The cleared content stays out of the index until it is\
+        \ saved again or a full reindex runs; to index it instead, use POST /api/v1/index/failed/retry.\
+        \ The response entity is {\"cleared\": true, \"count\": N}; before #37270\
+        \ it was a bare true. Requires the CMS Administrator role and access to the\
+        \ Maintenance portlet."
       operationId: deleteFailedRecords
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityClearedFailedRecordsView"
+          description: Parked records cleared
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: "Unauthorized - not authenticated, or the user lacks the CMS\
+            \ Administrator role or access to the Maintenance portlet"
+      summary: Clear parked reindex records
       tags:
       - Search Index
     get:
@@ -12146,16 +12161,17 @@ paths:
       - Health
   /v1/index/failed:
     get:
-      description: "Returns every reindex journal entry that exhausted its retries,\
-        \ with the index-document limits and retry policy they are measured against.\
-        \ Each record identifies the content (identifier, inode, title, content type\
-        \ variable, language), what the index still owes for it (reindex or delete),\
-        \ how many attempts failed, the last failure reason and, when the document\
-        \ exceeded a document limit, which limit, field, actual value and allowed\
-        \ value. Unknown values are explicit nulls. Content field values are never\
-        \ included, so the response size does not depend on the size of the failed\
-        \ content. Requires the CMS Administrator role and access to the Maintenance\
-        \ portlet. Replaces the deprecated GET /api/v1/esindex/failed."
+      description: "Returns every reindex journal entry that failed at least once,\
+        \ whether it gave up (parked) or will be tried again (retrying), with the\
+        \ index-document limits and retry policy they are measured against. Each record\
+        \ identifies the content (identifier, inode, title, content type variable,\
+        \ language), what the index still owes for it (reindex or delete), how many\
+        \ attempts failed, the last failure reason and, when the document exceeded\
+        \ a document limit, which limit, field, actual value and allowed value. Unknown\
+        \ values are explicit nulls. Content field values are never included, so the\
+        \ response size does not depend on the size of the failed content. Requires\
+        \ the CMS Administrator role and access to the Maintenance portlet. Replaces\
+        \ the deprecated GET /api/v1/esindex/failed."
       operationId: listFailedReindexRecords
       responses:
         "200":
@@ -12170,6 +12186,34 @@ paths:
           description: "Unauthorized - not authenticated, or the user lacks the CMS\
             \ Administrator role or access to the Maintenance portlet"
       summary: List failed reindex records
+      tags:
+      - Search Index
+  /v1/index/failed/retry:
+    post:
+      description: "Sends every parked reindex record (one whose retries ran out)\
+        \ back to the queue at the priority it was originally queued at, with a fresh\
+        \ retry budget. A record whose content no longer exists is requeued as a removal,\
+        \ so its stale documents leave the index. Records still being retried are\
+        \ not touched. Refused with 409 while a full reindex is running. Requires\
+        \ the CMS Administrator role and access to the Maintenance portlet."
+      operationId: retryFailedReindexRecords
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRetriedFailedRecordsView"
+          description: Parked records requeued
+        "401":
+          content:
+            application/json: {}
+          description: "Unauthorized - not authenticated, or the user lacks the CMS\
+            \ Administrator role or access to the Maintenance portlet"
+        "409":
+          content:
+            application/json: {}
+          description: A full reindex is running; nothing was requeued
+      summary: Retry parked reindex records
       tags:
       - Search Index
   /v1/jobs:
@@ -27636,6 +27680,19 @@ components:
           format: int32
         message:
           $ref: "#/components/schemas/MessageView"
+    ClearedFailedRecordsView:
+      type: object
+      description: Result of clearing the parked reindex records
+      properties:
+        cleared:
+          type: boolean
+          description: True when the clear ran
+          example: true
+        count:
+          type: integer
+          format: int32
+          description: Parked records deleted; records still being retried are kept
+          example: 380
     ClusterNodeView:
       type: object
       description: One server of the cluster
@@ -30152,8 +30209,8 @@ components:
       - packages
     FailedReindexRecordView:
       type: object
-      description: "A reindex journal entry that exhausted its retries, without content\
-        \ values"
+      description: "A reindex journal entry that failed at least once, parked or still\
+        \ being retried, without content values"
       properties:
         archived:
           type: boolean
@@ -30202,6 +30259,14 @@ components:
           format: int32
           description: Raw journal priority; encodes the failed attempts
           example: 505
+        state:
+          type: string
+          description: "parked: the entry gave up and only a retry of the failed records\
+            \ or a new save brings it back; retrying: the reindex queue will try it\
+            \ again"
+          enum:
+          - parked
+          - retrying
         title:
           type: string
           description: Stored title of that version; null if unknown or no title is
@@ -35374,6 +35439,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityClearedFailedRecordsView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/ClearedFailedRecordsView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityClusterNodesView:
       type: object
       properties:
@@ -37343,6 +37431,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityRetriedFailedRecordsView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/RetriedFailedRecordsView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityRetryBundlesView:
       type: object
       properties:
@@ -39268,6 +39379,22 @@ components:
         uniqueBySession:
           type: integer
           format: int64
+    RetriedFailedRecordsView:
+      type: object
+      description: Result of retrying the parked reindex records
+      properties:
+        requeued:
+          type: integer
+          format: int32
+          description: Parked records sent back to the queue at their original priority
+            with a fresh retry budget
+          example: 380
+        requeuedAsDelete:
+          type: integer
+          format: int32
+          description: "Of those, records whose content no longer exists; they remove\
+            \ the stale documents from the index instead of reindexing"
+          example: 12
     RetryBundleResultView:
       type: object
       properties:

@@ -617,8 +617,9 @@ current phase considers active, and they keep the `indicies` database table in s
 | Start full reindex | `POST /api/v1/esindex/reindex` | Optional `?contentType=` (default = all). |
 | Reindex progress | `GET /api/v1/esindex/reindex` | |
 | Stop reindex | `DELETE /api/v1/esindex/reindex?switch=true` | `switch=true` stops **and** switches over. |
-| List failed reindex records | `GET /api/v1/esindex/failed` | |
-| Clear failed records | `DELETE /api/v1/esindex/failed` | |
+| List failed reindex records | `GET /api/v1/index/failed` | Every record that failed at least once, without content values; `state` is `parked` (gave up) or `retrying`. The older `GET /api/v1/esindex/failed` is deprecated: it embeds each content and can be huge. |
+| Retry parked records | `POST /api/v1/index/failed/retry` | Requeues parked records at their original priority with a fresh retry budget; deleted content comes back as a removal. **409 while a full reindex runs.** |
+| Clear failed records | `DELETE /api/v1/esindex/failed` | Deletes **parked** records only (retrying ones stay) and logs who cleared and which identifiers. Returns `{"cleared": true, "count": N}`. |
 | Optimize (force-merge) | `POST /api/v1/esindex/optimize` | |
 | Flush caches | `DELETE /api/v1/esindex/cache` | |
 

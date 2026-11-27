@@ -1,6 +1,7 @@
 package com.dotmarketing.common.reindex;
 
 import com.dotcms.contenttype.model.type.ContentType;
+import com.liferay.portal.model.User;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.exception.DotDataException;
@@ -89,8 +90,13 @@ public interface ReindexQueueAPI {
     public void deleteReindexAndFailedRecords() throws DotDataException;
 
     /**
-     * Deletes from dist_reindex_journal all failed records
-     * @throws DotDataException
+     * Deletes every journal row above the REINDEX band: parked rows of any band and reindex rows
+     * still being retried. Save and structure rows still being retried are kept. Meant for the
+     * start of a full reindex and a boot without indices, which requeue every content right after,
+     * so nothing is lost. An operator's clear must use {@link #clearParkedRecords(User)}, which
+     * deletes parked rows only and logs what it dropped (#37270).
+     *
+     * @throws DotDataException if the journal cannot be updated
      */
     void deleteFailedRecords() throws DotDataException;
 
@@ -182,10 +188,46 @@ public interface ReindexQueueAPI {
     void markAsFailed(ReindexEntry idx, String cause) throws DotDataException;
 
     /**
-     * returns the list of all failed reindex records
-     * 
-     * @return
-     * @throws DotDataException
+     * Counts the journal rows that gave up: their retries ran out and the reindex queue no longer
+     * reads them. Unlike {@link #failedRecordCount()}, rows still being retried are not counted,
+     * which is what a finished reindex reports as skipped (#37270).
+     *
+     * @return the number of parked rows
+     * @throws DotDataException if the journal cannot be read
+     */
+    long parkedRecordCount() throws DotDataException;
+
+    /**
+     * Sends every parked journal row back to the queue, at the priority it was originally queued
+     * at and with a fresh retry budget, so content that gave up is indexed again once the cause
+     * has been fixed. A row whose content no longer exists comes back as a removal of its
+     * documents. Callers must not run it during a full reindex: requeued reindex rows would land
+     * in the band the reindex waits on before switching over (#37270).
+     *
+     * @param user the user who asked for the retry, recorded in the log
+     * @return how many rows were requeued, and how many of them as removals
+     * @throws DotDataException if the journal cannot be updated
+     */
+    ParkedRecordsRetry retryParkedRecords(User user) throws DotDataException;
+
+    /**
+     * Deletes the parked journal rows, the ones whose retries ran out, and logs who cleared them,
+     * how many and which identifiers. Rows still being retried are kept. This is the operator's
+     * clear (Maintenance and {@code DELETE /api/v1/esindex/failed}); a full reindex keeps using
+     * {@link #deleteFailedRecords()} (#37270).
+     *
+     * @param user the user who cleared, recorded in the log
+     * @return how many rows were deleted
+     * @throws DotDataException if the journal cannot be updated
+     */
+    int clearParkedRecords(User user) throws DotDataException;
+
+    /**
+     * Lists the journal rows that failed at least once, parked or still being retried, whatever
+     * band they were queued at. Describes the same rows as {@link #failedRecordCount()} (#37270).
+     *
+     * @return the failed rows, with their last failure reason
+     * @throws DotDataException if the journal cannot be read
      */
     List<ReindexEntry> getFailedReindexRecords() throws DotDataException;
 
@@ -213,9 +255,11 @@ public interface ReindexQueueAPI {
     void deleteReindexEntry(String identiferToDelete) throws DotDataException;
 
     /**
-     * returns if there are any records that have been marked as failed
-     * @return
-     * @throws DotDataException
+     * Counts the journal rows that failed at least once, parked or still being retried. Describes
+     * the same rows as {@link #getFailedReindexRecords()} (#37270).
+     *
+     * @return the number of failed rows
+     * @throws DotDataException if the journal cannot be read
      */
     long failedRecordCount() throws DotDataException;
 

@@ -31,6 +31,7 @@ import io.vavr.Lazy;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -493,6 +494,10 @@ public class ReindexThread {
      * and {@link IndexBulkProcessor}. The processor is closed (blocking until {@code afterBulk}
      * completes) before the next batch starts, so there is no shared mutable state between
      * consecutive batches and no TOCTOU race on the processor reference.</p>
+
+     * <p>The batch's journal entries are acknowledged after the processor closed: only entries
+     * with a document indexed and none failed are deleted, whatever order the bulk responses came
+     * back in (#37270).</p>
      *
      * <p>When a batch throws (including an {@code Error} that ends the worker), the journal cursor
      * is reset to 0. The batch's rows are then read again once the local in-memory queue (up to
@@ -525,6 +530,13 @@ public class ReindexThread {
                             indexAPI.createBulkProcessor(batchListener)) {
                         indexAPI.appendToBulkProcessor(batchProcessor, workingRecords.values());
                     } // close() blocks until afterBulk completes before the next batch starts
+                    // Acknowledge only now that every response of the batch has reported: an
+                    // earlier delete let a sibling's success erase a failure (#37270). Not in a
+                    // finally — a batch that throws is read again, which costs a repeat, not a loss.
+                    final List<ReindexEntry> acknowledged = batchListener.entriesToAcknowledge();
+                    if (!acknowledged.isEmpty()) {
+                        queueApi.deleteReindexEntry(acknowledged);
+                    }
                     contentletsIndexed += batchListener.getContentletsIndexed();
                 }
 

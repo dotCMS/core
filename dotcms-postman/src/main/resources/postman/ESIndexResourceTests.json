@@ -206,10 +206,11 @@
 									"",
 									"pm.test(\"Records identify the content without its values\", function () {",
 									"    const keys = ['identifier', 'inode', 'title', 'contentTypeVariable', 'languageId', 'archived', 'operation',",
-									"        'failedAttempts', 'priority', 'failureReason', 'violation'];",
+									"        'failedAttempts', 'priority', 'failureReason', 'violation', 'state'];",
 									"    pm.response.json().entity.failedRecords.forEach(function (record) {",
 									"        pm.expect(Object.keys(record)).to.have.members(keys);",
 									"        pm.expect(record).to.not.have.property('contentlet');",
+									"        pm.expect(['parked', 'retrying']).to.include(record.state);",
 									"    });",
 									"});",
 									""
@@ -473,6 +474,523 @@
 							"type": "noauth"
 						},
 						"description": "Runs with cookies disabled: the earlier requests logged in as admin and left JSESSIONID and the remember-me cookie (rme) in the run's cookie jar, which would otherwise authenticate this request."
+					},
+					"response": [],
+					"protocolProfileBehavior": {
+						"disableCookies": true
+					}
+				},
+				{
+					"name": "RetryFailedRecordsAsAdmin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "0384fcdb-0825-40da-9927-9c6b7c1ed09d",
+								"exec": [
+									"// #37270: requeues parked records at their original priority with a fresh retry budget.",
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"pm.test(\"Reports how many records were requeued\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity).to.have.all.keys('requeued', 'requeuedAsDelete');",
+									"    pm.expect(entity.requeued).to.be.a('number');",
+									"    pm.expect(entity.requeuedAsDelete).to.be.a('number');",
+									"    pm.expect(entity.requeuedAsDelete).to.be.at.most(entity.requeued);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/index/failed/retry",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"index",
+								"failed",
+								"retry"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "RetryFailedRecordsAsLimitedUser",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "1e8eb3cf-680a-4967-b012-d645022c1fe0",
+								"exec": [
+									"pm.test(\"A user without CMS Administrator is rejected\", function () { pm.response.to.have.status(401); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{limitedUserToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/index/failed/retry",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"index",
+								"failed",
+								"retry"
+							]
+						}
+					},
+					"response": [],
+					"protocolProfileBehavior": {
+						"disableCookies": true
+					}
+				},
+				{
+					"name": "RetryFailedRecordsWithoutCredentials",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "e9e1a05e-ba7e-4269-98d7-d6ece444f006",
+								"exec": [
+									"pm.test(\"Anonymous is rejected\", function () { pm.response.to.have.status(401); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/index/failed/retry",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"index",
+								"failed",
+								"retry"
+							]
+						}
+					},
+					"response": [],
+					"protocolProfileBehavior": {
+						"disableCookies": true
+					}
+				},
+				{
+					"name": "StartFullReindexForRetryConflict",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "3efd2977-ca9e-4117-bcc4-7e6c69be2942",
+								"exec": [
+									"// A full reindex stays in progress for at least REINDEX_THREAD_MINIMUM_RUNTIME_IN_SEC (30 s),",
+									"// so the next request runs while it is in progress.",
+									"pm.test(\"Full reindex started\", function () { pm.response.to.have.status(200); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/esindex/reindex",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"esindex",
+								"reindex"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "RetryFailedRecordsDuringFullReindex",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "27b0d5bb-2511-4cbb-b5d0-48253629ea47",
+								"exec": [
+									"// #37270: refused while a full reindex runs; requeued rows would land in the band it waits on.",
+									"pm.test(\"Status code is 409\", function () { pm.response.to.have.status(409); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/index/failed/retry",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"index",
+								"failed",
+								"retry"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "StopFullReindexAfterRetryConflict",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "d4a05ad7-fe3f-411d-9629-a6e4003ba272",
+								"exec": [
+									"pm.test(\"Full reindex stopped without switching\", function () { pm.response.to.have.status(200); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/esindex/reindex?switch=false",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"esindex",
+								"reindex"
+							],
+							"query": [
+								{
+									"key": "switch",
+									"value": "false"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "RetryFailedRecordsAfterFullReindexStopped",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "efe63de7-5c83-4081-8eb9-f074fedae2f5",
+								"exec": [
+									"// #37270: once the full reindex is no longer running, the same retry succeeds.",
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/index/failed/retry",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"index",
+								"failed",
+								"retry"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "ClearFailedRecordsAsAdmin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "4ca3dd13-94d9-4df2-87be-e58b8b58aaa6",
+								"exec": [
+									"// #37270: deletes parked records only and reports how many; the entity was a bare true.",
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"pm.test(\"Reports that it cleared and how many\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity.cleared).to.eql(true);",
+									"    pm.expect(entity.count).to.be.a('number');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/esindex/failed",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"esindex",
+								"failed"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "ClearFailedRecordsAsLimitedUser",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "d0aebfbd-eeae-44a1-9b8b-6fb74f0ea829",
+								"exec": [
+									"pm.test(\"A user without CMS Administrator is rejected\", function () { pm.response.to.have.status(401); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{limitedUserToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/esindex/failed",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"esindex",
+								"failed"
+							]
+						}
+					},
+					"response": [],
+					"protocolProfileBehavior": {
+						"disableCookies": true
+					}
+				},
+				{
+					"name": "ClearFailedRecordsWithoutCredentials",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "1f54f949-be53-4f80-8198-b7f5a0f64b58",
+								"exec": [
+									"pm.test(\"Anonymous is rejected\", function () { pm.response.to.have.status(401); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/esindex/failed",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"esindex",
+								"failed"
+							]
+						}
 					},
 					"response": [],
 					"protocolProfileBehavior": {
