@@ -63,9 +63,9 @@ the installation changed.
 2. **Given** a file container under `/application/containers/` and a scripting endpoint under
    `/application/apivtl/` that use the deprecated calls, **When** the audit runs, **Then** each is
    reported by its site and CMS path, never by its location on disk.
-3. **Given** a content type widget whose code is only `#dotParse('/application/vtl/x.vtl')`,
-   **When** the audit runs, **Then** findings inside `x.vtl` are reported and also linked to the
-   widget that includes it.
+3. **Given** a template and a content type widget that both do
+   `#dotParse('/application/vtl/x.vtl')`, **When** the audit runs, **Then** findings inside `x.vtl`
+   are reported once, linked to both the template and the widget that include it.
 4. **Given** a workflow action with a Velocity script step that calls `$estool.esSearch(`,
    **When** the audit runs, **Then** it is reported with the workflow scheme, the action id and the
    action name.
@@ -73,6 +73,12 @@ the installation changed.
    findings.
 6. **Given** any audit request, **When** it completes, **Then** no object in any store has a new
    version and no stored code differs from before.
+7. **Given** a template whose draft was already converted by a run but whose published version
+   still calls `$estool.esSearch(`, **When** the audit runs, **Then** it is reported as "converted,
+   publish pending", never as clean.
+8. **Given** a template whose result is read through a member with no neutral equivalent (for
+   example `$results.hits.maxScore`), **When** the audit runs, **Then** the finding is manual and
+   names the member and the reason it has no equivalent.
 
 ---
 
@@ -103,6 +109,8 @@ published version is unchanged, and the pages render byte-for-byte as before.
    applied, **Then** those lines are never modified.
 5. **Given** an installation on which the rewrite was already applied, **When** it is applied
    again, **Then** nothing is written and no run with changes is recorded.
+6. **Given** an apply is running, **When** a second apply, publish or revert is requested,
+   **Then** it is refused as a conflict naming the run in progress, and nothing is written by it.
 
 ---
 
@@ -128,6 +136,8 @@ confirm every other object is published while the edited one is reported and sta
    after apply — publish manually", and the rest are published.
 3. **Given** a run that was reverted, **When** the operator tries to publish it, **Then** the
    request is refused and nothing is published.
+4. **Given** a partially applied run, **When** the operator publishes it, **Then** only the objects
+   the run actually wrote are published.
 
 ---
 
@@ -226,6 +236,11 @@ admin without the role, and an admin with the role.
 - An object was deleted between the apply and a revert: revert reports it as missing and continues.
 - A content type field or workflow action is listed as an explicit target but has no finding:
   nothing is written for it.
+- An include whose path is computed at render time (for example `#dotParse($path)`): reported as
+  "include not resolvable"; the files themselves are still audited on their own (FR-001c).
+- A request is retried or double-submitted while its first copy is still applying: the copy is
+  refused as a conflict (FR-014a), so no second manifest can record already-rewritten code as the
+  "previous" code.
 
 ## Requirements *(mandatory)*
 
@@ -235,20 +250,27 @@ admin without the role, and an admin with the role.
 
 - **FR-001**: The audit MUST read Velocity from all four stores: (a) templates in the database —
   body, header, footer and head code; (b) containers in the database — code, pre-loop, post-loop,
-  and the per-content-type code of each container; (c) `.vtl` file assets, including file
-  templates (`/application/templates/`), file containers (`/application/containers/`), theme
-  shells and scripting endpoints (`/application/apivtl/`) — every `.vtl` under those folders, since
-  a file container keeps its code in several files (container code, pre-loop, post-loop, default
-  and one per content type) besides its metadata file; (d) content type field definitions that
+  and the per-content-type code of each container; (c) every `.vtl` file asset in any folder of
+  any site — not only file templates (`/application/templates/`), file containers
+  (`/application/containers/`), theme shells and scripting endpoints (`/application/apivtl/`), but
+  also shared includes such as `/application/vtl/` and any other location; a file container alone
+  keeps its code in several files (container code, pre-loop, post-loop, default and one per
+  content type) besides its metadata file; (d) content type field definitions that
   hold Velocity (widget code, the widget pre-execute code, and custom fields); (e) the parameters
   of workflow action steps that evaluate Velocity — the Velocity script step, and also the steps
   whose parameters are rendered as Velocity (e-mail, notifications, comment, set value, move
   content, send form e-mail).
 - **FR-002**: The audit MUST NOT treat the template's visual layout definition or a container's
   content query as code.
-- **FR-003**: When a widget or custom field is only an include of a `.vtl` file, the audit MUST
-  follow that one include and report the findings inside the included file, linked to the field
-  that includes it.
+- **FR-003**: Includes (`#parse`, `#dotParse`) are followed for attribution, not for discovery:
+  since every `.vtl` file is audited on its own (FR-001c), a finding inside an included file MUST
+  list every object that includes it — template, container, widget, custom field or workflow step,
+  from any store. An include whose path is computed at render time MUST be reported as "include
+  not resolvable".
+- **FR-003a**: For templates, containers and file assets the audit MUST inspect both the draft
+  (working) and the published (live) version. An object whose draft is converted but whose
+  published version still uses the deprecated calls MUST be reported as "converted, publish
+  pending" — never as clean.
 - **FR-004**: Each finding MUST carry: the store, the object type, the object id, a human-readable
   name or CMS path (site + path for files — never a disk path), the part of the object (column,
   field or parameter), the line number, the rule, and whether it is auto-rewritable or manual.
@@ -261,18 +283,30 @@ admin without the role, and an admin with the role.
 
 **Rules**
 
-- **FR-006**: The following MUST be auto-rewritable: `$estool.esRaw(` → `$estool.raw(`;
-  `$r.took` → `$r.tookInMillis` when `$r` holds a raw response; `$r.hits.getAt(n)` →
-  `$r.hits.hits.get(n)`; `$estool.esSearch(` → `$estool.search(` together with every
-  `$item.map.field` → `$item.field` on the loop variable iterating its results.
-- **FR-007**: The following MUST be reported and NEVER rewritten: `toString()` on a search
-  response used as JSON (flagged as the highest-risk finding because it fails silently);
-  `hits.maxScore`; any `esSearch` whose result variable, or a loop variable over it, is passed to
-  `#parse`, `#dotParse` or a macro, or otherwise used outside the file.
+- **FR-006**: Rewriting is driven by an equivalence table that classifies **every public member**
+  of the old result types — the `esSearch` result, the `esRaw` response, their hits collection,
+  each hit, and each contentlet item — into either (a) a neutral equivalent, with every form in
+  which Velocity can write the old member (property and getter forms, e.g. `$r.took` and
+  `$r.getTook()`) and its replacement, or (b) "no equivalent", with the reason shown to the
+  operator. No old member may be left unclassified. Known equivalents include `$estool.esRaw(` →
+  `$estool.raw(`, `$estool.esSearch(` → `$estool.search(`, `took` → `tookInMillis`,
+  `hits.getAt(n)` → `hits.hits.get(n)`, `count` → `size()`, and `$item.map.field` /
+  `$item.getStringProperty('field')` → `$item.field`. Rewriting is always subject to FR-008.
+- **FR-007**: An `esSearch` or `esRaw` call MUST only be rewritten when **every** member read from
+  its result, its hits and its items has a neutral equivalent in the table. Any use of a member
+  with no equivalent makes the whole finding manual and names that member. In addition, the
+  following are always manual and NEVER rewritten: `toString()` on a search response used as JSON
+  (flagged as the highest-risk finding because it fails silently); any traversal of suggestions,
+  whose shape changed; any `esSearch` whose result variable, or a loop variable over it, is passed
+  to `#parse`, `#dotParse` or a macro, or otherwise used outside the file.
+- **FR-007a**: The audit MUST report, per member with no equivalent, how many findings use it, so
+  the gaps in the neutral types can be closed in order of real use (tracked in #38766).
 - **FR-008**: A rewrite MUST only be applied when every affected usage is provably local to the
   same piece of code. Any doubt makes the finding manual.
-- **FR-009**: The rules MUST come from a single rule source that other migration audits (for
-  example the plugin audit from #37466) can reuse, not from a list private to this tool.
+- **FR-009**: The equivalence table MUST be the single rule source shared with other migration
+  audits (for example the plugin audit from #37466), not a list private to this tool. Adding a
+  member to the neutral types MUST only require changing its row from "no equivalent" to its
+  replacement; a later apply then converts the findings that became rewritable (FR-014).
 
 **Dry run and apply**
 
@@ -286,8 +320,13 @@ admin without the role, and an admin with the role.
 - **FR-013**: Content type fields and workflow action steps have no draft/published split — saving
   them changes the live site immediately. Apply MUST NOT write them unless the request names them
   explicitly in a target list; without that list they are report-only.
-- **FR-014**: Apply MUST be idempotent: applying on an installation with no remaining
-  auto-rewritable findings writes nothing and records no run with changes.
+- **FR-014**: Apply MUST read and rewrite from the current draft (working) version, and MUST be
+  idempotent measured on that version: applying when no draft has a remaining auto-rewritable
+  finding writes nothing and records no run with changes. A published version that is still old
+  while its draft is converted is a pending publish (FR-003a), not something to rewrite again.
+- **FR-014a**: Only one writing operation (apply, publish or revert) MAY run at a time across the
+  whole cluster. A writing request received while another is running MUST be refused as a conflict
+  (409) naming the run in progress, without writing anything.
 - **FR-015**: Apply MUST return a run id and the run's manifest.
 
 **Run record (manifest)**
@@ -314,7 +353,8 @@ admin without the role, and an admin with the role.
   the run wrote — and only if the object's current draft is still exactly that version. Objects
   edited after the apply MUST NOT be published and MUST be returned as "modified after apply —
   publish manually".
-- **FR-020**: Publishing a reverted run MUST be refused without changes.
+- **FR-020**: Publishing a reverted run MUST be refused without changes. Publishing a partially
+  applied run is allowed and publishes only the objects the run actually wrote.
 
 **Revert**
 
@@ -340,8 +380,9 @@ admin without the role, and an admin with the role.
   the same gate as the migration readiness report. An unauthenticated caller MUST be refused as
   unauthorized (401) and an authenticated user lacking either role as forbidden (403), in both
   cases before anything is read or written.
-- **FR-026**: Every apply, publish and revert MUST be written to the security audit log with the
-  user, the run id and the number of objects affected.
+- **FR-026**: Every operation MUST be written to the security audit log with the user. Apply,
+  publish and revert also record the run id and the number of objects affected; audit, dry run,
+  list runs and read run are logged too, because they read customer code.
 
 **Locks**
 
@@ -356,9 +397,10 @@ admin without the role, and an admin with the role.
 ### Key Entities
 
 - **Finding**: one occurrence of a rule in one place — store, object, part, line, rule,
-  auto-rewritable or manual, and for includes the field that includes the file.
-- **Rule**: a named pattern with its classification (auto-rewritable with its replacement, or
-  report-only with the reason a person is needed).
+  auto-rewritable or manual, for files every object that includes them, and for versioned objects
+  whether it affects the draft, the published version or both.
+- **Equivalence entry**: one public member of an old result type — the forms Velocity can write it
+  in, and either its neutral replacement or "no equivalent" with the reason a person is needed.
 - **Run**: one apply — run id, date, user, state, and its manifest.
 - **Manifest entry**: one object touched by a run — identity, rules applied, version before,
   version written, whether a lock was removed and from whom, and for unversioned stores the full
@@ -377,8 +419,10 @@ admin without the role, and an admin with the role.
 - **SC-004**: Publish then revert of a run leaves 100% of touched objects with the same draft and
   published code they had before the apply.
 - **SC-005**: A second apply on a converted installation changes zero objects.
-- **SC-006**: None of the report-only cases (JSON `toString()`, `maxScore`, results escaping the
-  file) is ever modified by apply.
+- **SC-006**: None of the manual cases (JSON `toString()`, members with no equivalent such as
+  `maxScore`, suggestion traversal, results escaping the file) is ever modified by apply.
+- **SC-006a**: Every public member of the old result types appears in the equivalence table; a
+  fixture using each one is classified exactly as its row says.
 - **SC-007**: 100% of anonymous calls and of calls by users lacking either the admin role or the
   migration role are refused, across every operation.
 - **SC-008**: An operator who lost the run id can find and revert the run without database access.
@@ -416,3 +460,8 @@ admin without the role, and an admin with the role.
   scope for this feature and would be handled in a follow-up.
 - Velocity outside the four stores (for example inside plugins or in content field values of
   regular contentlets) is out of scope.
+- Known gap: several members of the old result types have no counterpart on the neutral types yet
+  (for example max score, shard and timeout information, document version, hit explanation, and
+  highlights on content hits), although OpenSearch returns that data. Closing them is tracked
+  separately in #38766 and does not block this feature; each member added there only changes its
+  row in the equivalence table (FR-009).
