@@ -6,6 +6,13 @@ import com.dotcms.browser.BrowserQuery;
 import com.dotcms.browser.ExportCandidates;
 import com.dotcms.browser.ExportRow;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.util.UtilMethods;
+import io.vavr.control.Try;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.api.v1.drive.ContentDriveHelper;
@@ -50,6 +57,8 @@ public class ContentDriveExportHelper {
     private final ContentDriveHelper driveHelper;
     private final BrowserAPI browserAPI;
     private final ExportFileBuilder fileBuilder;
+    private final HostAPI hostAPI = APILocator.getHostAPI();
+    private final SelectionResolver selectionResolver = new SelectionResolver();
 
     /**
      * Creates a helper that uses the standard dotCMS APIs.
@@ -104,7 +113,69 @@ public class ContentDriveExportHelper {
         if (form.validate() == Mode.FILTER) {
             return write(resolveFilterMode(form.query(), user), user, request);
         }
-        throw new UnsupportedOperationException("Selection-mode export is not implemented yet");
+        return exportSelection(form, user, request);
+    }
+
+    /**
+     * Selection mode: the selected contentlets, and the content of the selected folders, as a zip
+     * with one CSV per content type (research R5, R6).
+     *
+     * @param form    the request, already validated
+     * @param user    the {@link User} the export runs as
+     * @param request the HTTP request, used for the download links of binary fields
+     * @return the zip; it reports zero rows, and holds no file, when nothing readable was selected
+     * @throws NotFoundException   when the site does not exist or cannot be read
+     * @throws BadRequestException when more rows are selected than the limit
+     * @throws DotDataException    if the rows cannot be read or the file cannot be written
+     * @throws IOException         if the temp file cannot be written
+     */
+    private ExportFile exportSelection(final DriveExportRequestForm form, final User user,
+            final HttpServletRequest request) throws DotDataException, IOException {
+        final Host site = browsedSite(form.siteId(), user);
+
+        final int maxRows = Config.getIntProperty(MAX_ROWS_KEY, MAX_ROWS_DEFAULT);
+        final ExportCandidates candidates = selectionResolver.resolve(form, site, user, maxRows);
+        if (candidates.overLimit()) {
+            throw new BadRequestException(overLimitMessage(maxRows));
+        }
+
+        // One CSV per content type, in the order the types first appear
+        final Map<String, List<String>> inodesByTypeId = new LinkedHashMap<>();
+        for (final ExportRow row : candidates.rows()) {
+            inodesByTypeId.computeIfAbsent(row.contentTypeId(), id -> new ArrayList<>())
+                    .add(row.inode());
+        }
+        final ContentTypeAPI systemContentTypeAPI =
+                APILocator.getContentTypeAPI(APILocator.systemUser());
+        final Map<ContentType, List<String>> inodesByType = new LinkedHashMap<>();
+        for (final Map.Entry<String, List<String>> entry : inodesByTypeId.entrySet()) {
+            try {
+                inodesByType.put(systemContentTypeAPI.find(entry.getKey()), entry.getValue());
+            } catch (final DotSecurityException e) {
+                throw new DotDataException(e.getMessage(), e);
+            }
+        }
+        return fileBuilder.buildZip(site.getHostname(), inodesByType, user, request);
+    }
+
+    /**
+     * Resolves the site a selection was made in. A site that does not exist and one the user
+     * cannot read give the same 404, so the response never tells which applied (FR-014).
+     *
+     * @param siteId the site identifier from the request
+     * @param user   the {@link User} the export runs as
+     * @return the site
+     * @throws NotFoundException when the site is missing, does not exist or cannot be read
+     */
+    private Host browsedSite(final String siteId, final User user) {
+        if (!UtilMethods.isSet(siteId)) {
+            throw new NotFoundException(FOLDER_NOT_FOUND_MESSAGE);
+        }
+        final Host site = Try.of(() -> hostAPI.find(siteId, user, false)).getOrNull();
+        if (site == null || !UtilMethods.isSet(site.getIdentifier())) {
+            throw new NotFoundException(FOLDER_NOT_FOUND_MESSAGE);
+        }
+        return site;
     }
 
     /**

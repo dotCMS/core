@@ -89,6 +89,11 @@
                         animate.leave="toolbar-leave"
                         data-testid="workflow-actions" />
 
+                    <!-- Selection mode (#37900): exports the selected contentlets as a zip. Beside
+                         the workflow actions, since Upload and Add New are hidden while anything
+                         is selected. -->
+                    <dot-content-drive-export-button data-testid="export-button" />
+
                     @if ($displayActionCenter()) {
                         <!-- Refused outright during a run: the dialog would open with every row
                              disabled and then close itself when the run settled. -->

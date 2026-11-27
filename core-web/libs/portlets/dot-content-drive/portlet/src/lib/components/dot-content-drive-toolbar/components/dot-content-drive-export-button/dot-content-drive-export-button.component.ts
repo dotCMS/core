@@ -3,10 +3,12 @@ import { rxResource } from '@angular/core/rxjs-interop';
 
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { finalize } from 'rxjs/operators';
 
 import {
+    DotContentDriveExportRequest,
     DotContentDriveExportService,
     DotContentTypeService,
     DotMessageService
@@ -17,23 +19,26 @@ import { getDownloadLink } from '@dotcms/utils';
 
 import {
     ERROR_MESSAGE_LIFE,
+    MAX_SELECTION_ITEMS,
     SUCCESS_MESSAGE_LIFE,
     WARNING_MESSAGE_LIFE
 } from '../../../../shared/constants';
 import { DotContentDriveStatus } from '../../../../shared/models';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
+import { excludeFolders } from '../../../../utils/action-center';
 import { isFolder } from '../../../../utils/functions';
 
 /**
- * The toolbar's Export button: downloads the listing as a CSV when it is filtered to one content
- * type and nothing is selected (filter mode).
+ * The toolbar's Export button. With nothing selected it downloads the listing as a CSV when the
+ * listing is filtered to one content type (filter mode); with anything selected it downloads the
+ * selected contentlets as a zip with one CSV per content type (selection mode).
  *
  * It reads the store and keeps its own in-flight state; it adds nothing to the store, which is at
  * the `signalStore` feature limit.
  */
 @Component({
     selector: 'dot-content-drive-export-button',
-    imports: [ButtonModule, DotMessagePipe],
+    imports: [ButtonModule, TooltipModule, DotMessagePipe],
     templateUrl: './dot-content-drive-export-button.component.html'
 })
 export class DotContentDriveExportButtonComponent {
@@ -45,6 +50,19 @@ export class DotContentDriveExportButtonComponent {
 
     /** True from the click until the export answers, so a second click cannot start another. */
     protected readonly $exporting = signal(false);
+
+    /**
+     * Selection mode applies whenever anything is selected, whatever the listing is filtered to:
+     * the Form rule is filter mode's, and the server drops Form contentlets from a selection.
+     */
+    protected readonly $selectionMode = computed<boolean>(
+        () => this.#store.selectedItems().length > 0
+    );
+
+    /** More items are selected than the server accepts in one export. */
+    readonly #selectionTooLarge = computed<boolean>(
+        () => this.#store.selectedItems().length > MAX_SELECTION_ITEMS
+    );
 
     /** The one content type variable the listing is filtered to, or `undefined` for none or many. */
     readonly #filteredVariable = computed<string | undefined>(() => {
@@ -102,24 +120,58 @@ export class DotContentDriveExportButtonComponent {
         return !hasContentlet && !hasMoreContent;
     });
 
+    /** Whether the button shows: in selection mode always, in filter mode on its own rule. */
+    protected readonly $visible = computed<boolean>(
+        () => this.$selectionMode() || this.$filterModeVisible()
+    );
+
     /**
-     * Exports the listing request the store holds and downloads the file under the name the server
-     * gave it, then confirms with a toast that carries the number of exported items. When nothing
+     * Disabled while an export runs. In selection mode, also when more items are selected than the
+     * server accepts; in filter mode, when the loaded listing has nothing to export.
+     */
+    protected readonly $disabled = computed<boolean>(() => {
+        if (!this.$selectionMode()) {
+            return this.$filterModeDisabled();
+        }
+
+        return this.$exporting() || this.#selectionTooLarge();
+    });
+
+    /**
+     * The message key that says why the button is disabled, or an empty string when there is
+     * nothing to say. Only the selection limit is explained: the other disabled states are either
+     * brief (an export running) or visible in the listing itself (nothing to export).
+     */
+    protected readonly $tooltip = computed<string>(() =>
+        this.$selectionMode() && this.#selectionTooLarge()
+            ? 'content-drive.export.tooltip.max-items'
+            : ''
+    );
+
+    /**
+     * Exports what the button stands for and downloads the file under the name the server gave it,
+     * then confirms with a toast that carries the number of exported items and files. When nothing
      * readable matched, a warning toast says so; when the export fails, an error toast shows the
      * server's message. Neither downloads anything.
      *
-     * The request is not tied to this component's lifetime: the user may select a row while the
-     * file is being built, which removes the button, and the download should still arrive.
+     * In selection mode the request carries the browsed site and the selected contentlets; in
+     * filter mode, the listing request the store holds.
+     *
+     * The request is not tied to this component's lifetime: the user may change the selection
+     * while the file is being built, which can remove the button, and the download should still
+     * arrive.
      */
     protected onExport(): void {
-        if (this.$exporting()) {
+        if (this.$disabled()) {
             return;
         }
+
+        const body = this.#buildRequest();
 
         this.$exporting.set(true);
 
         this.#exportService
-            .export({ query: this.#store.$request() })
+            .export(body)
             .pipe(finalize(() => this.$exporting.set(false)))
             .subscribe({
                 next: (result) => {
@@ -158,5 +210,25 @@ export class DotContentDriveExportButtonComponent {
                     });
                 }
             });
+    }
+
+    /**
+     * The export body for the current mode. Selection mode sends contentlets only, one entry per
+     * selected language version; selected folders are not exported yet, so `folders` stays empty.
+     */
+    #buildRequest(): DotContentDriveExportRequest {
+        if (!this.$selectionMode()) {
+            return { query: this.#store.$request() };
+        }
+
+        return {
+            siteId: this.#store.currentSite()?.identifier ?? '',
+            selection: {
+                folders: [],
+                contentlets: excludeFolders(this.#store.selectedItems()).map(
+                    ({ identifier, languageId }) => ({ identifier, languageId })
+                )
+            }
+        };
     }
 }

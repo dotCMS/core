@@ -21,9 +21,32 @@ const GENERIC_EXPORT_ERROR =
  * Body of `POST /api/v1/drive/export` in filter mode: the same request the listing sends to
  * `/api/v1/drive/search`. The server ignores its paging, sorting and folder flags.
  */
-export interface DotContentDriveExportRequest {
+export interface DotContentDriveExportFilterRequest {
     query: DotContentDriveSearchRequest;
 }
+
+/** One selected contentlet: a language version, so the same identifier may appear once per language. */
+export interface DotContentDriveExportContentlet {
+    identifier: string;
+    languageId: number;
+}
+
+/**
+ * Body of `POST /api/v1/drive/export` in selection mode: the selected items of the site being
+ * browsed. Folders are sent as `//host/path/` paths; contentlets as identifier and language.
+ */
+export interface DotContentDriveExportSelectionRequest {
+    siteId: string;
+    selection: {
+        folders: string[];
+        contentlets: DotContentDriveExportContentlet[];
+    };
+}
+
+/** Body of `POST /api/v1/drive/export`: filter mode or selection mode. */
+export type DotContentDriveExportRequest =
+    | DotContentDriveExportFilterRequest
+    | DotContentDriveExportSelectionRequest;
 
 /**
  * A 200 from the export endpoint: the file and what the server says it holds.
@@ -48,7 +71,8 @@ export interface DotContentDriveExportEmpty {
 export type DotContentDriveExportResult = DotContentDriveExportFile | DotContentDriveExportEmpty;
 
 /**
- * Downloads Content Drive exports: one CSV for the content type the listing is filtered to.
+ * Downloads Content Drive exports: one CSV for the content type the listing is filtered to, or a
+ * zip with one CSV per content type for a selection.
  */
 @Injectable({
     providedIn: 'root'
@@ -62,11 +86,12 @@ export class DotContentDriveExportService {
      * The whole response is read as a blob, so the file name and the counts can be taken from its
      * headers. A 204 (nothing readable matched) resolves to `{ kind: 'empty' }`.
      *
-     * @param body The export request, carrying the listing query in filter mode.
      * An error response (400, 404, 500) arrives as a blob too, so its JSON body is read to error
      * with the server's `errors[0].message`; a body with no readable message errors with a generic
      * one.
      *
+     * @param body The export request: the listing query in filter mode, or the site and the
+     * selected items in selection mode.
      * @returns The file and its counts once the server has built it, or `empty` when there is none.
      */
     export(body: DotContentDriveExportRequest): Observable<DotContentDriveExportResult> {
