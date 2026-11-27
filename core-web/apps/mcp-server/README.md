@@ -97,7 +97,7 @@ Before setting up the MCP server, you need these environment variables to connec
 
 Get up and running with the dotCMS MCP Server in minutes.
 
-The server runs on both **Node.js** (≥20) and **Bun** — the correct sandbox implementation is selected automatically at runtime.
+The server runs on both **Node.js** (≥22.12, the version xmcp 1.10.2 and later require) and **Bun** — the correct sandbox implementation is selected automatically at runtime.
 
 ### The short way
 
