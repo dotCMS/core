@@ -46,7 +46,10 @@ describe('AddRelationshipsComponent — shared surface (US1)', () => {
         'dot.relationship.add.dialog.search.placeholder': 'Search by name...',
         'dot.relationship.add.dialog.confirm': 'Add Relationships',
         'dot.common.dialog.reject': 'Cancel',
-        'dot.relationship.add.dialog.empty': 'No content found'
+        'dot.relationship.add.dialog.empty': 'No content found',
+        'dot.file.relationship.dialog.content.already.related':
+            'This content is already related to another item',
+        'dot.file.relationship.dialog.content.already.related.to': 'Already related to {0}'
     });
 
     /**
@@ -141,7 +144,7 @@ describe('AddRelationshipsComponent — shared surface (US1)', () => {
     beforeEach(() => {
         input = { contentTypeId: 'target-type-id', selected: [], selectionMode: 'multiple' };
         searchMock.mockReset().mockReturnValue(of(emptyResponse));
-        constrainedMock.mockReset().mockReturnValue(of(new Set<string>()));
+        constrainedMock.mockReset().mockReturnValue(of(new Map<string, string>()));
         spectator = createComponent();
         spectator.detectChanges();
     });
@@ -352,7 +355,7 @@ describe('AddRelationshipsComponent — shared surface (US1)', () => {
          * visible.
          */
         it('hands the claimed identifiers to the list as its unselectable rows', () => {
-            constrainedMock.mockReturnValue(of(new Set(['id-1'])));
+            constrainedMock.mockReturnValue(of(new Map([['id-1', '']])));
             input = {
                 ...input,
                 cardinality: 2,
@@ -363,6 +366,35 @@ describe('AddRelationshipsComponent — shared surface (US1)', () => {
             mountWith(withResults);
 
             expect(spectator.query(DotFolderListViewComponent)?.$unselectable()).toEqual(['id-1']);
+        });
+
+        /**
+         * A greyed-out row with nothing saying why reads as a fault (#37958). Each refused row
+         * names the item that already holds it, or says so generically when that item has no
+         * title.
+         */
+        it('tells the list why each claimed row is refused, naming the item that holds it', () => {
+            constrainedMock.mockReturnValue(
+                of(
+                    new Map([
+                        ['id-1', 'Parent A'],
+                        ['id-2', '']
+                    ])
+                )
+            );
+            input = {
+                ...input,
+                cardinality: 2,
+                isParentField: true,
+                parentContentTypeId: 'parent-type',
+                fieldVariable: 'rel'
+            };
+            mountWith(withResults);
+
+            expect(spectator.query(DotFolderListViewComponent)?.$unselectableReasons()).toEqual({
+                'id-1': 'Already related to Parent A',
+                'id-2': 'This content is already related to another item'
+            });
         });
 
         it('leaves every row selectable when nothing is claimed', () => {

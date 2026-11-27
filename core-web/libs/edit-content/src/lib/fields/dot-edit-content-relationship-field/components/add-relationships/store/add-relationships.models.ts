@@ -158,12 +158,13 @@ export interface AddRelationshipsState {
 
     /**
      * Identifiers already related to a *different* parent through a relationship that permits only
-     * one. Listed, never selectable.
+     * one, each with the title of the parent that holds it (empty when it has none). Listed, never
+     * selectable; the title is what the refused row's tooltip names.
      *
      * Empty when the caller supplied no parent context — filter-time has none, and a partial
      * lookup would be worse than no lookup.
      */
-    constrainedIdentifiers: Set<string>;
+    constrainedIdentifiers: Map<string, string>;
 
     /**
      * Whether the claimed-children lookup failed.

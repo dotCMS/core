@@ -178,7 +178,7 @@ const initialState: AddRelationshipsState = {
     page: { number: 1, limit: ADD_RELATIONSHIPS_PAGE_SIZE },
     pages: {},
     sort: { field: 'modDate', order: 'desc' },
-    constrainedIdentifiers: new Set<string>(),
+    constrainedIdentifiers: new Map<string, string>(),
     constraintCheckFailed: false,
     scopeNotBrowsable: false,
     status: ComponentStatus.INIT,
@@ -226,7 +226,7 @@ export const AddRelationshipsStore = signalStore(
          * exists because refusing the pick in `toggleSelection` is not enough on its own — the
          * control still toggles under the cursor, so the row has to *look* refused too.
          */
-        $constrainedList: computed(() => [...state.constrainedIdentifiers()]),
+        $constrainedList: computed(() => [...state.constrainedIdentifiers().keys()]),
         /**
          * Row count the paginator divides into pages.
          *
@@ -442,10 +442,10 @@ export const AddRelationshipsStore = signalStore(
              * path and not the other — it was written on the setter first, which the tests drove
              * and the dialog never uses.
              */
-            const applyConstrained = (constrainedIdentifiers: Set<string>): void => {
+            const applyConstrained = (constrainedIdentifiers: Map<string, string>): void => {
                 const selection = new Map(store.selection());
 
-                for (const identifier of constrainedIdentifiers) {
+                for (const identifier of constrainedIdentifiers.keys()) {
                     selection.delete(identifier);
                 }
 
@@ -696,7 +696,7 @@ export const AddRelationshipsStore = signalStore(
                  * Refusing at pick time is not enough on its own, because the pick can happen
                  * before the answer arrives.
                  */
-                setConstrainedIdentifiers(constrainedIdentifiers: Set<string>): void {
+                setConstrainedIdentifiers(constrainedIdentifiers: Map<string, string>): void {
                     applyConstrained(constrainedIdentifiers);
                 },
 

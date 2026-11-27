@@ -35,7 +35,9 @@ export class ConstrainedIdentifiersService {
     readonly #contentSearchService = inject(DotContentSearchService);
 
     /**
-     * Identifiers already related to some other parent through this relationship.
+     * Identifiers already related to some other parent through this relationship, each with the
+     * title of the parent that holds it (empty when that parent has no title), so the dialog can
+     * say which item a refused row belongs to.
      *
      * @param params.parentContentTypeId Inode of the parent content type.
      * @param params.fieldVariable The relationship field's variable, e.g. `relation`.
@@ -50,11 +52,11 @@ export class ConstrainedIdentifiersService {
         parentContentTypeId: string;
         fieldVariable: string;
         currentContentIdentifier: string | null;
-    }): Observable<Set<string>> {
+    }): Observable<Map<string, string>> {
         const { parentContentTypeId, fieldVariable } = params;
 
         if (!parentContentTypeId || !fieldVariable) {
-            return of(new Set<string>());
+            return of(new Map<string, string>());
         }
 
         return this.#contentSearchService
@@ -67,7 +69,7 @@ export class ConstrainedIdentifiersService {
             })
             .pipe(
                 map(({ jsonObjectView: { contentlets } }) => {
-                    const constrainedIds = new Set<string>();
+                    const constrainedIds = new Map<string, string>();
 
                     for (const parent of contentlets) {
                         if (parent.identifier === params.currentContentIdentifier) {
@@ -94,7 +96,7 @@ export class ConstrainedIdentifiersService {
                                       : null;
 
                             if (childId) {
-                                constrainedIds.add(childId);
+                                constrainedIds.set(childId, String(parent.title ?? ''));
                             }
                         }
                     }

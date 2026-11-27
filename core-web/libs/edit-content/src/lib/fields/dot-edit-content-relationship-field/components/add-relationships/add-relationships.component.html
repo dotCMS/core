@@ -102,6 +102,7 @@
                         [loading]="store.$isLoading()"
                         [selection]="store.$selectedItems()"
                         [unselectable]="store.$constrainedList()"
+                        [unselectableReasons]="$unselectableReasons()"
                         [totalItems]="store.$totalItems()"
                         [offset]="store.$offset()"
                         [rows]="store.page().limit"

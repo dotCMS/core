@@ -12,6 +12,7 @@ import { By } from '@angular/platform-browser';
 
 import { LazyLoadEvent } from 'primeng/api';
 import { Table, TableCheckbox, TableHeaderCheckbox } from 'primeng/table';
+import { Tooltip } from 'primeng/tooltip';
 
 import { DotFormatDateService, DotLanguagesService, DotMessageService } from '@dotcms/data-access';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
@@ -606,6 +607,53 @@ describe('DotFolderListViewComponent', () => {
             // shortcuts off the row. Without it the control looks disabled and a range still
             // selects it.
             expect(spectator.queryAll('[data-testId="item-row"]')[0]).toHaveClass('opacity-50');
+        });
+
+        /**
+         * Why a row is refused is the caller's to say (`unselectableReasons`, keyed like
+         * `unselectable`). A greyed-out row with nothing explaining it reads as a fault, so the
+         * reason shows on hover and is read out with the row.
+         */
+        describe('with a reason', () => {
+            const REASON = 'Already related to Parent A';
+            const tooltipOf = (row: Element) =>
+                spectator.debugElement
+                    .queryAll(By.directive(Tooltip))
+                    .find((d) => d.nativeElement === row)
+                    ?.injector.get(Tooltip);
+
+            beforeEach(() => {
+                spectator.setInput('unselectableReasons', { [mockItems[0].identifier]: REASON });
+                spectator.detectChanges();
+            });
+
+            it('should show the reason as the refused row tooltip', () => {
+                const tooltip = tooltipOf(spectator.queryAll('[data-testId="item-row"]')[0]);
+
+                expect(tooltip?.content).toBe(REASON);
+                expect(tooltip?.disabled).toBeFalsy();
+            });
+
+            it('should read the reason out with the refused row', () => {
+                const row = spectator.queryAll('[data-testId="item-row"]')[0];
+
+                expect(row.querySelector('[data-testId="item-unselectable-reason"]')).toHaveText(
+                    REASON
+                );
+            });
+
+            it('should give a selectable row no reason and no tooltip', () => {
+                const row = spectator.queryAll('[data-testId="item-row"]')[1];
+
+                expect(row.querySelector('[data-testId="item-unselectable-reason"]')).toBeNull();
+                expect(tooltipOf(row)?.disabled ?? true).toBeTruthy();
+            });
+        });
+
+        it('should show no reason for a refused row the caller gave none for', () => {
+            const row = spectator.queryAll('[data-testId="item-row"]')[0];
+
+            expect(row.querySelector('[data-testId="item-unselectable-reason"]')).toBeNull();
         });
 
         it('should leave every row selectable when nothing is refused', () => {

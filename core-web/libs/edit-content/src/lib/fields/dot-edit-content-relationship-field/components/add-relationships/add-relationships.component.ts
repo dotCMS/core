@@ -6,6 +6,7 @@ import { Dialog } from 'primeng/dialog';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotContentDriveBrowseItem } from '@dotcms/dotcms-models';
 import {
     applyDialogFullscreen,
@@ -85,10 +86,33 @@ export class AddRelationshipsComponent implements OnInit {
     readonly #dialog = inject(Dialog, { optional: true });
     readonly #renderer = inject(Renderer2);
     readonly #document = inject(DOCUMENT);
+    readonly #dotMessageService = inject(DotMessageService);
 
     protected readonly $selectionMode = computed(
         () => this.#dialogConfig.data?.selectionMode ?? 'multiple'
     );
+
+    /**
+     * Why each claimed row is refused, for the list's tooltip: the item that already holds it, or
+     * a generic line when that item has no title. A greyed-out row with nothing saying why reads
+     * as a fault (#37958).
+     */
+    protected readonly $unselectableReasons = computed(() => {
+        const reasons: Record<string, string> = {};
+
+        for (const [identifier, holder] of this.store.constrainedIdentifiers()) {
+            reasons[identifier] = holder
+                ? this.#dotMessageService.get(
+                      'dot.file.relationship.dialog.content.already.related.to',
+                      holder
+                  )
+                : this.#dotMessageService.get(
+                      'dot.file.relationship.dialog.content.already.related'
+                  );
+        }
+
+        return reasons;
+    });
 
     protected readonly $searchTerm = computed(() => {
         const title = this.store.getFilterValue('title');

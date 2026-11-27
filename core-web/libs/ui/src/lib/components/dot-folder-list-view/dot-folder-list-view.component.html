@@ -116,6 +116,8 @@
                  Full `role="grid"` wiring (cell navigation, `aria-rowcount`/`aria-colindex`) is
                  tracked in #37439. -->
                 @let isUnselectable = $unselectableSet().has(item[$dataKey()]);
+                @let unselectableReason =
+                    isUnselectable ? $unselectableReasons()[item[$dataKey()]] : undefined;
                 <!-- Either key, matching `isNodeInFlight` in the sidebar tree. A run registers
                  both a folder's inode and its identifier because the search service only
                  backfills one from the other when the API returned none — so testing inode
@@ -134,6 +136,9 @@
                     [pSelectableRowIndex]="rowIndex"
                     [attr.aria-selected]="$selectedKeys().has(item[$dataKey()])"
                     [attr.aria-disabled]="isUnselectable || null"
+                    [pTooltip]="unselectableReason"
+                    [tooltipDisabled]="!unselectableReason"
+                    tooltipPosition="top"
                     [pSelectableRowDisabled]="
                         $disabled() || $readOnly() || isUnselectable || isBusyRow
                     "
@@ -168,6 +173,13 @@
                          init, so a bound `[disabled]` that flips back to false leaves a dead
                          control. Rebuilding it is the only way it recovers. -->
                         @if (isUnselectable) {
+                            <!-- The reason is read out with the row; the tooltip alone is
+                             hover-only, and the disabled control cannot take focus. -->
+                            @if (unselectableReason) {
+                                <span class="sr-only" data-testId="item-unselectable-reason">
+                                    {{ unselectableReason }}
+                                </span>
+                            }
                             @if ($selectionMode() === 'multiple') {
                                 <p-tableCheckbox [value]="item" [disabled]="true" />
                             } @else {

@@ -48,7 +48,24 @@ describe('ConstrainedIdentifiersService', () => {
 
         const claimed = await firstValueFrom(spectator.service.get(params));
 
-        expect([...claimed].sort()).toEqual(['child-1', 'child-2']);
+        expect([...claimed.keys()].sort()).toEqual(['child-1', 'child-2']);
+    });
+
+    /** The dialog names the holder in the refused row's tooltip (#37958). */
+    it('reports which parent holds each claimed child, by its title', async () => {
+        searchMock.mockReturnValue(
+            response([
+                { identifier: 'parent-a', title: 'Parent A', rel: ['child-1'] },
+                { identifier: 'parent-b', rel: [{ identifier: 'child-2' }] }
+            ])
+        );
+
+        const claimed = await firstValueFrom(spectator.service.get(params));
+
+        expect(claimed.get('child-1')).toBe('Parent A');
+        // No title on the parent: the child is still claimed, with no name to show.
+        expect(claimed.has('child-2')).toBe(true);
+        expect(claimed.get('child-2')).toBe('');
     });
 
     it('does not count the contentlet being edited as another parent', async () => {
