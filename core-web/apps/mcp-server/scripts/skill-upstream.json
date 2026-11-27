@@ -1,0 +1,49 @@
+{
+    "repository": "dotCMS/agent-toolkit",
+    "commit": "895ba10e8d639276099e674eb59d7a7f25b0c4d8",
+    "files": [
+        {
+            "upstream": "skills/dot-ui-vtl-migration/SKILL.md",
+            "served": "src/skills/dot-ui-vtl-migration/SKILL.md",
+            "replacements": [
+                {
+                    "from": "name: dotcms-custom-field-migration",
+                    "to": "name: dot-ui-vtl-migration",
+                    "reason": "xmcp and the Agent Skills spec require the frontmatter name to equal the directory name. Upstream calls the skill dotcms-custom-field-migration while the directory, and the URI this server must publish, is dot-ui-vtl-migration."
+                },
+                {
+                    "from": " Also trigger when the user pastes a VTL snippet and asks \"what needs to change\" or \"can you update this\", asks for an inline, single-file or one-file migration (\"un solo archivo\"), wants to paste the result into the content type editor, or wants to collapse a _new/_old/router migration into one file or split an inline one. Also trigger when the user asks to migrate ALL custom fields, every legacy field, or \"the whole instance\": the skill finds, downloads, and safely republishes every legacy custom field on a live dotCMS instance through the dotCMS MCP server (see \"Migrate a whole instance\" below). If in doubt, use this skill.",
+                    "to": " Also use it for a pasted snippet, an inline single-file migration (\"un solo archivo\"), or migrating every legacy field on an instance through the dotCMS MCP server.",
+                    "reason": "xmcp rejects a description longer than 1024 characters (upstream is 1476). The served description keeps the opening sentences and a shorter form of the remaining triggers. The whole-instance procedure itself stays in the skill body."
+                }
+            ]
+        },
+        {
+            "upstream": "skills/dot-ui-vtl-migration/reference/instance-migration.md",
+            "served": "src/skills/dot-ui-vtl-migration/reference/instance-migration.md",
+            "replacements": []
+        },
+        {
+            "upstream": "skills/dot-ui-vtl-migration/reference/migration-guide.md",
+            "served": "src/skills/dot-ui-vtl-migration/reference/migration-guide.md",
+            "replacements": [
+                {
+                    "from": "core-web/apps/dotcms-ui/src/daisyui-theme.css",
+                    "to": "the admin UI theme stylesheet (daisyui-theme.css)",
+                    "reason": "The served skill must not cite a path inside the dotCMS checkout. The stylesheet name stays so the advice is still findable."
+                }
+            ]
+        },
+        {
+            "upstream": "skills/dot-ui-vtl-migration/scripts/vtl_migration.py",
+            "served": "src/skills/dot-ui-vtl-migration/scripts/vtl_migration.py",
+            "replacements": [
+                {
+                    "from": "copied from dotCMS/core's migrate_custom_fields.py",
+                    "to": "copied from the original custom-field migration script",
+                    "reason": "The comment cited the core repository script. The logic is unchanged."
+                }
+            ]
+        }
+    ]
+}

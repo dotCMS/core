@@ -42,7 +42,7 @@
     },
     "homepage": "https://github.com/dotCMS/core/tree/main/core-web/apps/mcp-server",
     "engines": {
-        "node": ">=20.0.0"
+        "node": ">=22.12.0"
     },
     "dependencies": {},
     "publishConfig": {

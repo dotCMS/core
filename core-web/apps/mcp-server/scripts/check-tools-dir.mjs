@@ -2,12 +2,14 @@
  * Fails the build when `src/tools/` holds anything that is not a tool.
  *
  * xmcp loads EVERY module under the configured tools path (see `paths.tools` in
- * xmcp.config.ts) and awaits them all at startup — its discovery glob is hard-coded to
- * `<toolsPath>/**\/*.{ts,tsx}` and offers no exclude option, so a colocated test file is
- * bundled into the published artifact and executed as a tool. `describe` does not exist at
- * runtime, so the server dies with `ReferenceError: describe is not defined` before it reads
- * any configuration, for every user. That is exactly what shipped as @dotcms/mcp-server@0.1.0
- * (issue #37337).
+ * xmcp.config.ts) and awaits them all at startup. Confirmed against the 1.13 compiler
+ * (`packages/compiler/src/compiler/index.ts`): the discovery glob is still hard-coded to
+ * `<toolsPath>/**\/*.{ts,tsx}` and still has no exclude option. A file with no default
+ * export is skipped only after that module has been evaluated, so a colocated test file
+ * is bundled into the published artifact and executed as a tool. `describe` does not exist
+ * at runtime, so the server dies with `ReferenceError: describe is not defined` before it
+ * reads any configuration, for every user. That is exactly what shipped as
+ * @dotcms/mcp-server@0.1.0 (issue #37337).
  *
  * The rule this enforces: tests for tool code live next to the logic they cover — in
  * `libs/sdk/ai/src/tools/` (`@dotcms/ai/tools`), where the tools are defined — never in

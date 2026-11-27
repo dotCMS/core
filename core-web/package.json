@@ -185,7 +185,7 @@
         "turndown": "7.2.0",
         "uuid": "9.0.0",
         "vue": "^3.5.13",
-        "xmcp": "0.6.4",
+        "xmcp": "1.13.0",
         "yaml": "^2.8.3",
         "zod": "4.6.6",
         "zone.js": "0.15.1"
@@ -259,6 +259,7 @@
         "@vue/eslint-config-prettier": "^10.2.0",
         "@vue/eslint-config-typescript": "^14.6.0",
         "@vue/test-utils": "^2.4.6",
+        "@xmcp-dev/compiler": "1.13.0",
         "analytics": "0.8.14",
         "angular-eslint": "22.1.0",
         "babel-loader": "10.0.0",

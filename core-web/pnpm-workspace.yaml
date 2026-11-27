@@ -87,7 +87,7 @@ allowBuilds:
 # the intent is being declared rather than inherited.
 trustPolicy: no-downgrade
 
-# Eight lockfile entries fail no-downgrade today. None is a takeover: each is an older
+# Lockfile entries that fail no-downgrade today. None is a takeover: each is an older
 # release of a package whose other releases carry provenance, and the check compares a
 # version against the package's whole history regardless of semver line. Publish dates
 # verified against registry.npmjs.org. Listed one by one rather than waved through with
@@ -99,6 +99,10 @@ trustPolicyExclude:
     # a provenance gap in one release of an otherwise attested line
     - 'undici-types@6.21.0' # 2024-11-13; 6.13.0 through 6.16.x (Apr-May 2024) were attested
     - 'detect-port@1.6.1' # 2024-05-08; 1.6.0 was attested the same day
+    # last 4.x release has no attestation; 4.0.0 and 4.0.1 do, and 5.0.0 does.
+    # ts-checker-rspack-plugin@1.8.0 (@xmcp-dev/compiler) requires ^4.0.3, and
+    # 4.0.3 is the only release that satisfies that range.
+    - 'chokidar@4.0.3' # 2024-12-18; 4.0.0 attested 2024-09-13, 5.0.0 attested 2025-11-25
     - 'storybook@9.1.21' # 2026-10-12; 10.x attested since 2026-06-02 (10.4.2), same GitHub Actions trusted-publisher config (oidcConfigId 79413afc...) but no attestation
     # strongest signal here: over a thousand earlier versions attested, these two are not
     - '@modern-js/node-bundle-require@2.68.2' # 2025-07-11
