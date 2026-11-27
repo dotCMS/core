@@ -334,8 +334,8 @@
     }
     @default {
         <div class="min-h-0 flex-1 overflow-y-auto px-6 pb-4" data-testid="import-form-body">
-            <form [formGroup]="importForm" (ngSubmit)="preview()">
-                <div class="flex flex-col gap-2">
+            <form class="form" [formGroup]="importForm" (ngSubmit)="preview()">
+                <div class="field">
                     <label
                         for="import-content-type"
                         [checkIsRequiredControl]="'contentType'"
@@ -352,13 +352,13 @@
                         [emptyMessage]="'content-drive.import.content-type.empty' | dm"
                         [placeholder]="'content-drive.import.content-type.placeholder' | dm" />
                     @if ($fieldErrors().contentType) {
-                        <small class="text-sm text-red-500" data-testid="import-error-contentType">
+                        <small class="p-field-error" data-testid="import-error-contentType">
                             {{ 'content-drive.import.required.content-type' | dm }}
                         </small>
                     }
                 </div>
 
-                <div class="mt-5 flex flex-col gap-2">
+                <div class="field">
                     <label
                         for="import-language"
                         [checkIsRequiredControl]="'language'"
@@ -376,20 +376,20 @@
                         [placeholder]="'content-drive.import.language.placeholder' | dm"
                         [attr.aria-label]="'content-drive.import.language.label' | dm" />
                     @if ($isMultilingual()) {
-                        <small data-testid="import-multilingual-note">
+                        <small class="p-field-hint" data-testid="import-multilingual-note">
                             {{ 'In-order-to-import-correctly-a-multilingual-file' | dm }}
                             {{ 'There-CSV-file-must-have-two-extra-fields' | dm }}
                             {{ 'A-key-field-must-be-selected' | dm }}
                         </small>
                     }
                     @if ($fieldErrors().language) {
-                        <small class="text-sm text-red-500" data-testid="import-error-language">
+                        <small class="p-field-error" data-testid="import-error-language">
                             {{ 'content-drive.import.required.language' | dm }}
                         </small>
                     }
                 </div>
 
-                <div class="mt-5 flex flex-col gap-2">
+                <div class="field">
                     <label
                         for="import-workflow-action"
                         [checkIsRequiredControl]="'workflowActionId'"
@@ -429,19 +429,17 @@
                             </span>
                         </ng-template>
                     </p-select>
-                    <small class="text-gray-600">
+                    <small class="p-field-hint">
                         {{ 'content-drive.import.workflow-action.helper' | dm }}
                     </small>
                     @if ($fieldErrors().workflowActionId) {
-                        <small
-                            class="text-sm text-red-500"
-                            data-testid="import-error-workflowActionId">
+                        <small class="p-field-error" data-testid="import-error-workflowActionId">
                             {{ 'content-drive.import.required.workflow-action' | dm }}
                         </small>
                     }
                 </div>
 
-                <div class="mt-5 flex flex-col gap-2">
+                <div class="field">
                     <label for="import-key-fields">
                         {{ 'content-drive.import.match-by.label' | dm }}
                     </label>
@@ -472,17 +470,17 @@
                             </span>
                         </ng-template>
                     </p-multiselect>
-                    <small class="text-gray-600">
+                    <small class="p-field-hint">
                         {{ 'content-drive.import.key-fields.helper' | dm }}
                     </small>
                     @if ($fieldErrors().fields) {
-                        <small class="text-sm text-red-500" data-testid="import-error-fields">
+                        <small class="p-field-error" data-testid="import-error-fields">
                             {{ 'A-key-field-must-be-selected' | dm }}
                         </small>
                     }
                 </div>
 
-                <div class="mt-5 flex flex-col gap-2">
+                <div class="field">
                     <label [checkIsRequiredControl]="'file'" dotFieldRequired>
                         {{ 'content-drive.import.file.label' | dm }}
                     </label>
@@ -557,16 +555,16 @@
                                 </div>
                             } @else {
                                 <div
-                                    class="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-transparent bg-surface-50 px-6 py-10 text-center transition-colors group-data-[p-highlight=true]:border-primary group-data-[p-highlight=true]:bg-primary-50"
+                                    class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-transparent bg-surface-50 p-6 text-center transition-colors group-data-[p-highlight=true]:border-primary group-data-[p-highlight=true]:bg-primary-50"
                                     data-testid="import-file-dropzone"
                                     (click)="fileUpload.choose()">
                                     <span
-                                        class="mb-2 flex size-16 items-center justify-center rounded-full bg-primary-100">
+                                        class="mb-1 flex size-10 items-center justify-center rounded-full bg-primary-100">
                                         <i
-                                            class="pi pi-download text-2xl! text-primary-500"
+                                            class="pi pi-download text-primary-500"
                                             aria-hidden="true"></i>
                                     </span>
-                                    <span class="text-lg font-semibold">
+                                    <span class="font-semibold">
                                         {{ 'content-drive.import.file.drop-here' | dm }}
                                     </span>
                                     <span class="flex items-center gap-2 text-sm text-gray-500">
@@ -588,7 +586,7 @@
                         </ng-template>
                     </p-fileupload>
                     @if ($fieldErrors().file) {
-                        <small class="text-sm text-red-500" data-testid="import-error-file">
+                        <small class="p-field-error" data-testid="import-error-file">
                             {{ 'content-drive.import.required.file' | dm }}
                         </small>
                     }
