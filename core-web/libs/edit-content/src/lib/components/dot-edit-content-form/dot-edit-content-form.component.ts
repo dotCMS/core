@@ -9,7 +9,6 @@ import {
     Component,
     computed,
     DestroyRef,
-    DOCUMENT,
     effect,
     ElementRef,
     inject,
@@ -96,7 +95,6 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
 @Component({
     selector: 'dot-edit-content-form',
     templateUrl: './dot-edit-content-form.component.html',
-    styleUrl: './dot-edit-content-form.component.scss',
     imports: [
         ReactiveFormsModule,
         DotEditContentFieldComponent,
@@ -120,7 +118,9 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
         ])
     ],
     host: {
-        class: 'min-w-0 max-w-full overflow-auto overflow-x-hidden'
+        // The host never scrolls: the tab panels inside the form are the scroll container,
+        // so the scrollbar does not run alongside the tab bar (#38724).
+        class: 'min-w-0 max-w-full overflow-hidden'
     }
 })
 export class DotEditContentFormComponent implements OnInit {
@@ -133,7 +133,6 @@ export class DotEditContentFormComponent implements OnInit {
     readonly #dotWorkflowEventHandlerService = inject(DotWorkflowEventHandlerService);
     readonly #dotWizardService = inject(DotWizardService);
     readonly #dotMessageService = inject(DotMessageService);
-    readonly #document = inject(DOCUMENT);
     readonly #appRef = inject(ApplicationRef);
 
     /**
@@ -225,12 +224,34 @@ export class DotEditContentFormComponent implements OnInit {
     private formValueSubscription?: Subscription;
 
     /**
-     * Tracks the last contentlet version used to build the form. The effect that
-     * reinitializes the form compares this against the current contentlet's
-     * identifier|inode|modDate so that state-only updates (e.g. lock/unlock)
-     * don't discard in-flight field state.
+     * Tracks the last contentlet revision used to build the form (see {@link #revisionKeyOf}).
+     * The effect that reinitializes the form compares this against the current contentlet's
+     * key so that state-only updates (e.g. lock/unlock) don't discard in-flight field state.
      */
     #lastContentletRevisionKey: string | null = null;
+
+    /**
+     * Key of the contentlet revision the form is built from.
+     *
+     * `identifier|inode|modDate` alone is not enough: a workflow action such as Move changes
+     * the contentlet's data (host, folder, path) without a new inode or modDate, so the
+     * refetched contentlet never rebuilt the form and the Site or Folder field kept its old
+     * value until a manual reload (#38724 R3). The key therefore also carries the value each
+     * form field starts from, resolved exactly as {@link createFormControl} does, and nothing
+     * else: lock fields (lock/unlock must not rebuild the form, #35388) and server-computed
+     * keys no field reads (`*Version` URLs, `__icon__`, metadata) stay out, so a refetch that
+     * only changes those does not drop the user's unsaved edits.
+     */
+    #revisionKeyOf(contentlet: DotCMSContentlet): string {
+        const isManualTranslation = this.$store.isManualTranslation();
+        const values = this.$formFields().map((field) =>
+            this.getInitialFieldValue({ field, contentlet, isManualTranslation })
+        );
+
+        return `${contentlet.identifier}|${contentlet.inode}|${contentlet.modDate}|${JSON.stringify(
+            [values, contentlet.disabledWYSIWYG ?? []]
+        )}`;
+    }
 
     #flushTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
@@ -292,7 +313,7 @@ export class DotEditContentFormComponent implements OnInit {
         if (this.$store.tabs().length) {
             const contentlet = this.$store.contentlet();
             if (contentlet) {
-                this.#lastContentletRevisionKey = `${contentlet.identifier}|${contentlet.inode}|${contentlet.modDate}`;
+                this.#lastContentletRevisionKey = this.#revisionKeyOf(contentlet);
             }
             this.initializeForm();
             this.initializeFormListener();
@@ -337,11 +358,13 @@ export class DotEditContentFormComponent implements OnInit {
 
             // Only reinitialize if we have both contentlet and tabs, and form exists
             if (contentlet && tabs.length > 0 && this.form) {
-                const revisionKey = `${contentlet.identifier}|${contentlet.inode}|${contentlet.modDate}`;
+                const revisionKey = this.#revisionKeyOf(contentlet);
 
                 // Skip rebuild when only lock/volatile state changed — rebuilding the
                 // form here races with async child components (e.g. category field)
-                // and can wipe the user's current selection.
+                // and can wipe the user's current selection. A refetch after a workflow
+                // action that changed data (e.g. Move) has a new key even with the same
+                // inode and modDate, so it does rebuild.
                 if (revisionKey === this.#lastContentletRevisionKey) {
                     return;
                 }
@@ -369,6 +392,9 @@ export class DotEditContentFormComponent implements OnInit {
          */
         effect(() => {
             const isLoading = this.$store.isLoading();
+            // A user without EDIT (backend: canLock false + no actions) only reads the
+            // content: every field stays disabled (#38724 R4).
+            const isReadOnly = this.$store.isReadOnly();
             // const isViewingHistoricalVersion = this.$store.isViewingHistoricalVersion();
             const hasContentlet = untracked(() => !!this.$store.contentlet());
 
@@ -376,9 +402,11 @@ export class DotEditContentFormComponent implements OnInit {
             if (this.form && hasContentlet) {
                 // TODO: put back isViewingHistoricalVersion in the
                 // condition after all fields have disabled state
-                if (isLoading && this.form.enabled) {
+                const shouldDisable = isLoading || isReadOnly;
+
+                if (shouldDisable && this.form.enabled) {
                     this.form.disable({ emitEvent: false });
-                } else if (!isLoading && this.form.disabled) {
+                } else if (!shouldDisable && this.form.disabled) {
                     this.form.enable({ emitEvent: false });
                 }
             }
@@ -421,7 +449,7 @@ export class DotEditContentFormComponent implements OnInit {
                 // doesn't rebuild the form again for the same contentlet.
                 const contentlet = this.$store.contentlet();
                 if (contentlet) {
-                    this.#lastContentletRevisionKey = `${contentlet.identifier}|${contentlet.inode}|${contentlet.modDate}`;
+                    this.#lastContentletRevisionKey = this.#revisionKeyOf(contentlet);
                 }
 
                 if (isManualTranslation) {
@@ -692,6 +720,12 @@ export class DotEditContentFormComponent implements OnInit {
         controls[DISABLED_WYSIWYG_FIELD] = this.#fb.control(disabledWYSIWYG);
 
         this.form = this.#fb.group(controls);
+
+        // A rebuilt form starts enabled; keep a read-only user's fields disabled without
+        // making the rebuild effects depend on the read-only signal.
+        if (untracked(() => this.$store.isReadOnly())) {
+            this.form.disable({ emitEvent: false });
+        }
     }
 
     /**
@@ -946,8 +980,16 @@ export class DotEditContentFormComponent implements OnInit {
      * Uses smooth scrolling with proper offset calculation and fallback mechanisms.
      */
     scrollToFirstError(): void {
-        const errorElements =
-            this.#document.querySelectorAll<HTMLDivElement>('.field-error-marker');
+        // Searched from this form's own element, not the document: the side-panel editor
+        // opens over the full-screen one, and the first match in the document would belong
+        // to the editor behind it.
+        const host = this.#elementRef.nativeElement as HTMLElement;
+        // Called from a timeout: the editor may have closed in the meantime.
+        if (!host.isConnected) {
+            return;
+        }
+
+        const errorElements = host.querySelectorAll<HTMLDivElement>('.field-error-marker');
 
         if (errorElements.length === 0) {
             return;
@@ -958,10 +1000,11 @@ export class DotEditContentFormComponent implements OnInit {
             return;
         }
 
-        // Try multiple container selectors for better compatibility
-        const scrollContainer = this.#document.querySelector<HTMLElement>(
-            '.edit-content-layout__body'
-        );
+        // The tab panels are the scroll container (see the template); the body cell is kept
+        // as a fallback for a host that renders the form without them.
+        const scrollContainer =
+            host.querySelector<HTMLElement>('[data-testid="edit-content-form-scroll"]') ??
+            host.closest<HTMLElement>('.edit-content-layout__body');
         if (!scrollContainer) {
             return;
         }

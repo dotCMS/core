@@ -74,7 +74,8 @@ describe('DotEditContentMonacoEditorControlComponent', () => {
             theme: 'vs',
             // Monaco owns its DOM, so the field name reaches it through this option.
             ariaLabel: WYSIWYG_MOCK.name,
-            language: 'plaintext' // due the auto detect language is plaintext
+            language: 'plaintext', // due the auto detect language is plaintext
+            readOnly: false
         };
 
         // Wait for any potential asynchronous operations to complete
@@ -123,7 +124,8 @@ describe('DotEditContentMonacoEditorControlComponent', () => {
             ...DEFAULT_MONACO_CONFIG,
             ...customProps,
             ariaLabel: WYSIWYG_MOCK.name,
-            language: 'plaintext' // due the auto detect language is plaintext
+            language: 'plaintext', // due the auto detect language is plaintext
+            readOnly: false
         };
         expect(component.$monacoOptions()).toEqual(expectedOptions);
     });
@@ -190,6 +192,49 @@ describe('DotEditContentMonacoEditorControlComponent', () => {
      * that says "class name" reads as JavaScript), so the wrong checker's squiggles blocked Save
      * on a field with no required flag and no regex. The shared mock reports one marker on load.
      */
+    describe('disabled control (read-only form, R4 #38724)', () => {
+        const control = () => spectator.hostComponent.formGroup.get(WYSIWYG_MOCK.variable);
+
+        it('should make the editor read-only while its control is disabled', () => {
+            // ngx-monaco-editor implements no setDisabledState, so a disabled control alone
+            // leaves Monaco editable.
+            control()?.disable();
+            spectator.detectChanges();
+
+            expect(component.$monacoOptions().readOnly).toBe(true);
+
+            control()?.enable();
+            spectator.detectChanges();
+
+            expect(component.$monacoOptions().readOnly).toBe(false);
+        });
+
+        it('should follow a silent disable and enable of the form after it rendered (#38724 review)', () => {
+            // The edit-content form toggles with `{ emitEvent: false }`, which fires no
+            // statusChanges: e.g. the permission of an item opened in place arrives after the
+            // form was built enabled.
+            spectator.detectChanges();
+            expect(component.$monacoOptions().readOnly).toBe(false);
+
+            spectator.hostComponent.formGroup.disable({ emitEvent: false });
+            spectator.detectChanges();
+
+            expect(component.$monacoOptions().readOnly).toBe(true);
+
+            spectator.hostComponent.formGroup.enable({ emitEvent: false });
+            spectator.detectChanges();
+
+            expect(component.$monacoOptions().readOnly).toBe(false);
+        });
+
+        it('should start read-only when the control is already disabled', () => {
+            control()?.disable({ emitEvent: false });
+            spectator.detectChanges();
+
+            expect(component.$monacoOptions().readOnly).toBe(true);
+        });
+    });
+
     describe('editor syntax markers', () => {
         const control = () => spectator.hostComponent.formGroup.get(WYSIWYG_MOCK.variable);
 

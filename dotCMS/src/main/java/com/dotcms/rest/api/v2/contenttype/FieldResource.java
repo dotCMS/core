@@ -10,6 +10,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.api.v1.contenttype.ContentTypeHelper;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -117,7 +118,8 @@ public class FieldResource implements Serializable {
 
             } else {
 
-                field = fieldAPI.save(field, user);
+                field = fieldAPI.save(ContentTypeHelper.getInstance()
+                        .withContentTypeFromPath(field, typeIdOrVarName, user), user);
 
                 response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(field).mapObject())).build();
             }

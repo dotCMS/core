@@ -4,7 +4,7 @@ import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -33,6 +33,7 @@ import {
 } from './mocks/dot-edit-content-wysiwyg-field.mock';
 
 import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edit-content-monaco-editor-control/dot-edit-content-monaco-editor-control.component';
+import { DotEditContentStore } from '../../store/edit-content.store';
 
 const mockScrollIntoView = () => {
     Element.prototype.scrollIntoView = vi.fn();
@@ -186,6 +187,64 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
 
             // Verify method called with correct parameter
             expect(spy).toHaveBeenCalledWith(testVariable);
+        });
+    });
+
+    describe('read-only user (R4 #38724)', () => {
+        /**
+         * Driven by the store's `isReadOnly`, not by the control's `disabled` flag: the form
+         * is also disabled (silently) during every save, which is not a read-only user.
+         */
+        const render = (isReadOnly: boolean, controlDisabled = false) => {
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-wysiwyg-field [field]="field" [contentlet]="contentlet" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [WYSIWYG_MOCK.variable]: new FormControl({
+                                value: null,
+                                disabled: controlDisabled
+                            }),
+                            disabledWYSIWYG: new FormControl([])
+                        }),
+                        field: WYSIWYG_MOCK,
+                        contentlet: WYSIWYG_FIELD_CONTENTLET_MOCK_NO_CONTENT
+                    },
+                    providers: [
+                        {
+                            provide: DotEditContentStore,
+                            useValue: {
+                                isReadOnly: signal(isReadOnly),
+                                hasAttemptedSubmit: signal(false)
+                            }
+                        }
+                    ]
+                }
+            );
+            spectator.detectChanges();
+        };
+
+        it('should disable the editor-mode dropdown so the user cannot switch to an editable editor', () => {
+            // The dropdown is a standalone ngModel, outside the FormGroup that form.disable()
+            // reaches; switching to Code would open a Monaco the user could type into.
+            render(true);
+
+            expect(spectator.query(Select)?.disabled()).toBe(true);
+        });
+
+        it('should hide the language-variable selector, which only inserts text', () => {
+            render(true);
+
+            expect(spectator.query(DotLanguageVariableSelectorComponent)).toBeNull();
+        });
+
+        it('should keep both while an editable form is only disabled for a save (#38724 review)', () => {
+            render(false, true);
+
+            expect(spectator.query(Select)?.disabled()).toBe(false);
+            expect(spectator.query(DotLanguageVariableSelectorComponent)).toBeTruthy();
         });
     });
 

@@ -1190,6 +1190,20 @@ describe('DotHostFolderFieldComponent', () => {
         );
     });
 
+    describe('copy button inside the field (#38724)', () => {
+        it('should join the trigger and the copy button in a PrimeNG input group', () => {
+            // One control, the PrimeNG way: the trigger is the group's input and the copy
+            // button is its addon, so the field reads as a single box.
+            const group = spectator.query('p-inputgroup');
+
+            expect(group).toBeTruthy();
+            expect(group?.querySelector('[data-testid="host-folder-trigger"]')).toBeTruthy();
+            expect(
+                group?.querySelector('p-inputgroup-addon [data-testid="host-folder-copy"]')
+            ).toBeTruthy();
+        });
+    });
+
     describe('copyPath', () => {
         beforeEach(() => {
             clipboard.copy.mockClear();

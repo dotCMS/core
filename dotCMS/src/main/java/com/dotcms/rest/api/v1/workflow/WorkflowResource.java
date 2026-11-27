@@ -3155,7 +3155,7 @@ public class WorkflowResource {
         // the contentlets BEFORE the entity map is built so the transient key never leaks.
         final List<MessageEntity> messages = mergeMessages(
                 ignoredSystemFieldsMessages(ignoredSystemFields),
-                MapToContentletPopulator.popStoryBlockConversionMessages(
+                MapToContentletPopulator.popSaveWarningMessages(
                         contentlet, basicContentlet, hydratedContentlet));
         final Map<String, Object> entity = this.workflowHelper.contentletToMap(hydratedContentlet);
         return Response.ok(
@@ -3340,11 +3340,26 @@ public class WorkflowResource {
                     "}\n" +
                     "```\n" +
                     "Field keys inside `contentlet` are the content type's field `variable` names " +
-                    "(e.g., `title`, `body`, `image`). Unknown field names are silently dropped " +
-                    "(a typo like `titel` will be ignored and may surface as a misleading 'title is required' error). " +
+                    "(e.g., `title`, `body`, `image`), and they are case-sensitive. Unknown field names are " +
+                    "dropped (a typo like `titel` will be ignored and may surface as a misleading 'title is " +
+                    "required' error); a key that matches a field only by case (`Title` for `title`) is dropped " +
+                    "too and reported in `messages`. " +
                     "Radio/Select/Checkbox values are not validated against the field's `values` list — out-of-range " +
                     "values are accepted as-is. Always verify spelling against `fields[].variable` from " +
                     "`GET /api/v1/contenttype/id/{idOrVar}`.\n\n" +
+                    "**Language** — set `languageId` in `contentlet`. Without it, new content is saved in the " +
+                    "instance's default language. To add a language version to existing content, send its " +
+                    "`identifier` with the new `languageId`.\n\n" +
+                    "**Relationship fields** — the value is the related content's identifiers, as a " +
+                    "comma-separated string (`\"id1,id2\"`) or an array (`[\"id1\", \"id2\"]`), or a Lucene " +
+                    "query; an empty string or array clears the relationship. Relationships are read per " +
+                    "language: content read in a language shows only related items that have a version in that " +
+                    "language. The save still succeeds when an identifier does not exist (it is skipped) or when " +
+                    "related content has no version in the content's language; both are reported in `messages`. " +
+                    "Read relationships back with `POST /api/v1/content/_search` and `depth: 1`.\n\n" +
+                    "**`messages`** — advisory entries about the save (ignored keys, related content that will " +
+                    "not resolve as sent, Story Block conversion). The save itself succeeded; read them before " +
+                    "assuming the content looks exactly as sent.\n\n" +
                     "**Validation error response shape:**\n\n" +
                     "```json\n" +
                     "{\n" +
