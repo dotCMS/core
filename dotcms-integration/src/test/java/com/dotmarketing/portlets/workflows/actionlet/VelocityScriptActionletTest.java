@@ -42,6 +42,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 public class VelocityScriptActionletTest extends BaseWorkflowIntegrationTest {
 
@@ -285,6 +286,118 @@ public class VelocityScriptActionletTest extends BaseWorkflowIntegrationTest {
         Assert.assertFalse(result.isEmpty());
         Assert.assertTrue(result.containsKey("dotJSON"));
         Assert.assertEquals(expectedTitle, DotJSON.class.cast(result.get("dotJSON")).get("title"));
+    }
+
+    /**
+     * The script changes the content the action is processing, while a setter on another content item it looks up is
+     * ignored: that item keeps its saved title.
+     */
+    @Test
+    public void Test_Velocity_Script_Actionlet_Changes_Only_Processed_Content() throws Exception {
+
+        final String[] outcome = runScriptWithOtherContent(otherInode ->
+                "#set($other = $contents.getContentByInode(\"" + otherInode + "\"))\n"
+                + "$other.setProperty(\"title\", \"changed by the action\")\n"
+                + "$content.setProperty(\"txt\", \"set by the action\")\n"
+                + "$dotJSON.put(\"otherTitle\", $other.title)\n");
+
+        Assert.assertEquals("set by the action", outcome[0]);
+        Assert.assertEquals("Other title", outcome[1]);
+    }
+
+    /**
+     * Handing the workflow another content item does not make that item editable: the content the action was
+     * processing when the script started stays the only one the script may change.
+     */
+    @Test
+    public void Test_Velocity_Script_Actionlet_Swapped_Content_Stays_ReadOnly() throws Exception {
+
+        final String[] outcome = runScriptWithOtherContent(otherInode ->
+                "#set($processed = $content)\n"
+                + "#set($other = $contents.getContentByInode(\"" + otherInode + "\"))\n"
+                + "$workflow.setContentlet($other)\n"
+                + "$other.setProperty(\"title\", \"changed by the action\")\n"
+                + "$workflow.setContentlet($processed)\n"
+                + "$processed.setProperty(\"txt\", \"set by the action\")\n"
+                + "$dotJSON.put(\"otherTitle\", $other.title)\n");
+
+        Assert.assertEquals("set by the action", outcome[0]);
+        Assert.assertEquals("Other title", outcome[1]);
+    }
+
+    /**
+     * Saves a content item titled "Other title", fires a Velocity Script action whose script is built from that
+     * item's inode on a second, new content item, and reports what the action left behind. The script must end by
+     * putting the title of the other item it changed, {@code $other}, in {@code $dotJSON} under {@code otherTitle}.
+     *
+     * @param scriptForOtherInode builds the script from the other item's inode
+     * @return the processed content's {@code txt} value, and the other item's title as the script saw it at the end
+     */
+    private String[] runScriptWithOtherContent(final Function<String, String> scriptForOtherInode) throws Exception {
+
+        final User admin = APILocator.systemUser();
+        WorkflowScheme scheme = null;
+        ContentType type = null;
+        Contentlet other = null;
+        Contentlet checkedIn = null;
+
+        try {
+            type = createTestType(contentTypeAPI);
+            final Contentlet otherDraft = new Contentlet();
+            otherDraft.setContentType(type);
+            otherDraft.setProperty("title", "Other title");
+            other = contentletAPI.checkin(otherDraft, admin, false);
+
+            final CreateSchemeStepActionResult schemeResult = createSchemeStepActionActionlet(
+                    "ProcessedContentScheme" + UUIDGenerator.generateUuid(), "step1", "action1",
+                    VelocityScriptActionlet.class);
+            scheme = schemeResult.getScheme();
+
+            final WorkflowActionClass actionClass = schemeResult.getActionClass();
+            final List<WorkflowActionClassParameter> params = new ArrayList<>();
+            final WorkflowActionClassParameter scriptParam = new WorkflowActionClassParameter();
+            scriptParam.setActionClassId(actionClass.getId());
+            scriptParam.setKey("script");
+            scriptParam.setValue(scriptForOtherInode.apply(other.getInode()));
+            params.add(scriptParam);
+            final WorkflowActionClassParameter resultKeyParam = new WorkflowActionClassParameter();
+            resultKeyParam.setActionClassId(actionClass.getId());
+            resultKeyParam.setKey("resultKey");
+            resultKeyParam.setValue("result");
+            params.add(resultKeyParam);
+            workflowAPI.saveWorkflowActionClassParameters(params, admin);
+            workflowAPI.saveSchemesForStruct(new StructureTransformer(type).asStructure(), List.of(scheme));
+
+            final Contentlet draft = new Contentlet();
+            draft.setContentType(type);
+            draft.setProperty("title", "Processed title");
+            checkedIn = contentletAPI.checkin(draft, admin, false);
+
+            final Contentlet result = workflowAPI.fireContentWorkflow(checkedIn,
+                    new ContentletDependencies.Builder()
+                            .modUser(admin)
+                            .workflowActionId(schemeResult.getAction().getId())
+                            .build());
+
+            // Read inside the script: a lookup after the action may return a fresh copy of the other item
+            final DotJSON dotJSON = (DotJSON) ((Map<String, Object>) result.get("result")).get("dotJSON");
+            return new String[] {result.getStringProperty("txt"), (String) dotJSON.get("otherTitle")};
+
+        } finally {
+            for (final Contentlet content : new Contentlet[] {checkedIn, other}) {
+                try {
+                    if (null != content) {
+                        contentletAPI.destroy(content, admin, false);
+                    }
+                } catch (Exception ignored) { /* best-effort */ }
+            }
+            if (null != scheme) {
+                cleanScheme(scheme);
+            }
+            if (null != type) {
+                contentTypeAPI.delete(type);
+            }
+        }
     }
 
     /**

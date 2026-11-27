@@ -29,6 +29,14 @@ import javax.servlet.http.HttpServletResponseWrapper;
 import javax.servlet.http.HttpSession;
 import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
 import com.dotcms.rendering.velocity.viewtools.VelocitySessionWrapper;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.Inode;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.CompanyModel;
@@ -503,5 +511,49 @@ public class SecureIntrospectorImplTest {
             return; // not on this test classpath; the prefix check is covered by the JDK types above
         }
         assertDenied(clazz, method);
+    }
+
+    /**
+     * On content, site, container, template, inode, folder and identifier objects, only methods that read count as
+     * reads; setters and the other changing methods count as changes.
+     */
+    @Test
+    public void model_objects_only_allow_reads() {
+        for (final Class<?> type : new Class<?>[] {Contentlet.class, Host.class, FileAsset.class,
+                Container.class, Template.class, Inode.class, Folder.class, Identifier.class}) {
+            assertTrue(type + " setModUser", SecureIntrospectorImpl.isModelMutator(type, "setModUser"));
+        }
+        for (final String change : new String[] {"setProperty", "setStringProperty", "markAsDirty",
+                "resetActionId", "cleanup"}) {
+            assertTrue(change, SecureIntrospectorImpl.isModelMutator(Contentlet.class, change));
+        }
+        for (final String change : new String[] {"setCode", "setPreLoop", "setPostLoop", "copy"}) {
+            assertTrue(change, SecureIntrospectorImpl.isModelMutator(Container.class, change));
+        }
+        for (final String change : new String[] {"setBody", "setDrawedBody", "setHeadCode"}) {
+            assertTrue(change, SecureIntrospectorImpl.isModelMutator(Template.class, change));
+        }
+        for (final String change : new String[] {"addChild", "deleteParent", "setiDate"}) {
+            assertTrue(change, SecureIntrospectorImpl.isModelMutator(Inode.class, change));
+        }
+
+        for (final String read : new String[] {"getModUser", "getMap", "get", "getTitle", "isLive", "hasVersion",
+                "toString", "equals", "hashCode", "needsReindex", "validateMe"}) {
+            assertFalse(read, SecureIntrospectorImpl.isModelMutator(Contentlet.class, read));
+        }
+        assertFalse(SecureIntrospectorImpl.isModelMutator(Container.class, "getCode"));
+        assertFalse(SecureIntrospectorImpl.isModelMutator(Template.class, "compareTo"));
+        assertFalse(SecureIntrospectorImpl.isModelMutator(Identifier.class, "exists"));
+    }
+
+    /**
+     * Objects that are not model objects keep their setters: a template's own maps and lists, and value types.
+     */
+    @Test
+    public void other_objects_keep_their_setters() {
+        assertFalse(SecureIntrospectorImpl.isModelMutator(HashMap.class, "put"));
+        assertFalse(SecureIntrospectorImpl.isModelMutator(ArrayList.class, "add"));
+        assertFalse(SecureIntrospectorImpl.isModelMutator(StringBuilder.class, "setLength"));
+        assertFalse(SecureIntrospectorImpl.isModelMutator(null, "setModUser"));
     }
 }
