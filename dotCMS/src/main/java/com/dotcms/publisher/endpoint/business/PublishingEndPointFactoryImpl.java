@@ -145,16 +145,47 @@ public class PublishingEndPointFactoryImpl extends PublishingEndPointFactory {
 		return null;
 	}
 
-	private boolean validateAddress(String address, String ipOrNetMask, PublishingEndPoint endPoint) {
-		boolean match;
+	/**
+	 * Tells whether a request address belongs to an enabled sending endpoint.
+	 *
+	 * <p>An endpoint registered as a subnet in CIDR form matches the addresses inside it. Any other
+	 * endpoint address is resolved and compared with the request address. The subnet check only
+	 * understands IPv4, so a request address it cannot read, such as an IPv6 one, or a subnet that
+	 * is not valid, is treated as not matching and the next endpoint is checked.</p>
+	 *
+	 * @param address     the address the request comes from
+	 * @param ipOrNetMask the address the endpoint is registered with
+	 * @param endPoint    the endpoint being checked
+	 * @return {@code true} if the address matches and the endpoint is enabled and sending
+	 */
+	private boolean validateAddress(final String address, final String ipOrNetMask,
+			final PublishingEndPoint endPoint) {
+		final boolean match;
 		if (ipOrNetMask.contains("/")) {
-            match = new SubnetUtils(ipOrNetMask).getInfo().isInRange(address);
-        } else {
-            match = isMatchingEndpoint(ipOrNetMask, address);
-        }
-		if(match && endPoint.isEnabled() && endPoint.isSending())
-			return true;
-		return false;
+			match = isInSubnet(address, ipOrNetMask);
+		} else {
+			match = isMatchingEndpoint(ipOrNetMask, address);
+		}
+		return match && endPoint.isEnabled() && endPoint.isSending();
+	}
+
+	/**
+	 * Checks whether an address is inside an IPv4 subnet given in CIDR form.
+	 *
+	 * @param address the address to check
+	 * @param subnet  the subnet, e.g. {@code 10.0.0.0/24}
+	 * @return {@code true} if the address is inside the subnet; {@code false} if it is not, or if
+	 *         either value cannot be read as IPv4
+	 */
+	private boolean isInSubnet(final String address, final String subnet) {
+		try {
+			return new SubnetUtils(subnet).getInfo().isInRange(address);
+		} catch (final IllegalArgumentException e) {
+			Logger.debug(this.getClass(), () -> String.format(
+					"Address [%s] cannot be checked against subnet [%s]: %s",
+					address, subnet, e.getMessage()));
+			return false;
+		}
 	}
 
 	/**

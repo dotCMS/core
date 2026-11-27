@@ -157,11 +157,26 @@ public enum AuthCredentialPushPublishUtil {
                     && Claims.EXPIRATION.equals(((IncorrectClaimException) cause).getClaimName()));
     }
 
+    /**
+     * Finds the sending endpoint registered for the address a push publishing request comes from,
+     * and checks the key the request presents against that endpoint's key.
+     *
+     * <p>The endpoint is looked up by {@link HttpServletRequest#getRemoteAddr()}, the client address
+     * as the container resolves it (the forwarded address when the request comes through a proxy
+     * the container trusts), and not by the host name the container may report for it. Endpoints
+     * registered by host name or as a subnet in CIDR form are matched against that address.</p>
+     *
+     * @param request the incoming push publishing request
+     * @return the matching {@link PublishingEndPoint}, or empty when no enabled sending endpoint is
+     *         registered for the address or the presented key does not match its key
+     * @throws DotDataException if the endpoints cannot be loaded
+     * @throws IOException      if the endpoint's key cannot be read
+     */
     private Optional<PublishingEndPoint> getPublishingEndPointDotCMSToken(final HttpServletRequest request)
             throws DotDataException, IOException {
-        final String remoteIP = request.getRemoteHost();
+        final String remoteAddress = request.getRemoteAddr();
         final PublishingEndPoint publishingEndPoint =
-                APILocator.getPublisherEndPointAPI().findEnabledSendingEndPointByAddress(remoteIP);
+                APILocator.getPublisherEndPointAPI().findEnabledSendingEndPointByAddress(remoteAddress);
 
         Optional<String> key = PushPublisher.retriveEndpointKeyDigest(publishingEndPoint);
 
