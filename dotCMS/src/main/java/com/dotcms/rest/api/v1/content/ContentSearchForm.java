@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.content;
 
+import com.dotcms.util.ContentSearchLimit;
 import com.dotcms.variant.VariantAPI;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -310,13 +311,15 @@ public class ContentSearchForm implements Serializable {
     }
 
     /**
-     * Returns the offset to be used to paginate the search results.
+     * Returns the offset to be used to paginate the search results. It is worked out from the page
+     * size capped by {@link ContentSearchLimit}, the page size the search runs with, so pages follow
+     * each other.
      *
      * @return The offset to be used to paginate the search results.
      */
     public int offset() {
         if (this.page != 0) {
-            return this.perPage * (this.page - 1);
+            return ContentSearchLimit.cap(this.perPage) * (this.page - 1);
         }
         return 0;
     }

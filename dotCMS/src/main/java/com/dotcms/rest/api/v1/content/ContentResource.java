@@ -9,6 +9,7 @@ import com.dotcms.rest.*;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.api.v1.content.search.LuceneQueryBuilder;
+import com.dotcms.util.ContentSearchLimit;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.PaginationUtilParams;
@@ -930,7 +931,8 @@ public class ContentResource {
      *     "orderBy":"title desc"
      * }
      * The method will figure out language, working and
-     * live for you if not passed in with the condition Returns empty List if no results are found
+     * live for you if not passed in with the condition Returns empty List if no results are found.
+     * The {@code limit} of the form is capped by {@link ContentSearchLimit}.
      * @param request  - Http Request
      * @param response - Http Response
      * @param pullRelatedForm {@link PullRelatedForm}
@@ -1003,7 +1005,8 @@ public class ContentResource {
                     pullRelatedForm.getCondition() != null?
                             pullRelatedForm.getCondition():
                             ContentUtils.addDefaultsToQuery(pullRelatedForm.getCondition(), editOrPreviewMode, request),
-                    pullRelatedForm.getLimit(), pullRelatedForm.getOffset(), pullRelatedForm.getOrderBy(),
+                    ContentSearchLimit.cap(pullRelatedForm.getLimit()), pullRelatedForm.getOffset(),
+                    pullRelatedForm.getOrderBy(),
                     user, tmDate, pullParents, langId, editOrPreviewMode? null : true);
 
             return Response.ok(new ResponseEntityView<>(retrievedContentlets.stream()
@@ -1111,7 +1114,9 @@ public class ContentResource {
      * query, and leaving it to dotCMS itself. This endpoint uses the {@link ContentSearchForm} to
      * define the search parameters, and returns the same {@link SearchView} object that the
      * {@link com.dotcms.rest.ContentResource#search(HttpServletRequest, HttpServletResponse,
-     * boolean, SearchForm)} endpoint returns.
+     * boolean, SearchForm)} endpoint returns. The page size is capped by
+     * {@link ContentSearchLimit}, and {@link ContentSearchForm#offset()} works the page offset out
+     * from the capped size.
      *
      * @param request           The current instance of the {@link HttpServletRequest}.
      * @param response          The current instance of the {@link HttpServletResponse}.
@@ -1148,7 +1153,7 @@ public class ContentResource {
                     "| `lockedContent`                 | Boolean String | Include locked content (\"true\"/\"false\")           |\n" +
                     "| `orderBy`                       | String  | Sort criteria (defaults to \"score,modDate desc\")    |\n" +
                     "| `page`                          | Integer | Page number for pagination                            |\n" +
-                    "| `perPage`                       | Integer | Results per page                                      |\n\n" +
+                    "| `perPage`                       | Integer | Results per page. Values above the configured maximum (10000 by default) are lowered to it |\n\n" +
                     "When using `searchableFieldsByContentType`, different fields may require different string types:\n\n" +
                     "| Field Type                  | Description                                 |\n" +
                     "|-----------------------------|---------------------------------------------|\n" +

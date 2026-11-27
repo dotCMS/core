@@ -34,7 +34,8 @@ public class SearchForm {
             + "qualified the same way as in `query`.", example = "modDate desc")
     private final String sort;
 
-    @Schema(description = "Maximum number of contentlets to return (page size).", example = "20", defaultValue = "20")
+    @Schema(description = "Maximum number of contentlets to return (page size). Values above the configured "
+            + "maximum (10000 by default) are lowered to it.", example = "20", defaultValue = "20")
     private final int limit;
 
     @Schema(description = "Zero-based result offset for paging.", example = "0", defaultValue = "0")

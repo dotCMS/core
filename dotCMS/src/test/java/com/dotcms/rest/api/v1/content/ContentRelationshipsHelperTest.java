@@ -6,11 +6,19 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
+import com.dotcms.util.ContentSearchLimit;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -22,6 +30,8 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
@@ -30,8 +40,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.MockedStatic;
 
 /**
  * Unit tests for {@link ContentRelationshipsHelper}: which related content is serialized for the
@@ -47,6 +61,7 @@ class ContentRelationshipsHelperTest {
     private User user;
     private User publicUser;
     private ContentRelationshipsHelper helper;
+    private String previousMaximum;
 
     @BeforeEach
     void setUp() {
@@ -64,6 +79,14 @@ class ContentRelationshipsHelperTest {
         when(languageAPI.getDefaultLanguage()).thenReturn(defaultLanguage);
 
         helper = new ContentRelationshipsHelper(contentletAPI, languageAPI, permissionAPI);
+
+        previousMaximum = Config.getStringProperty(ContentSearchLimit.MAX_LIMIT_PROPERTY, null);
+        Config.setProperty(ContentSearchLimit.MAX_LIMIT_PROPERTY, null);
+    }
+
+    @AfterEach
+    void restoreConfiguredMaximum() {
+        Config.setProperty(ContentSearchLimit.MAX_LIMIT_PROPERTY, previousMaximum);
     }
 
     @Test
@@ -351,6 +374,53 @@ class ContentRelationshipsHelperTest {
 
         // Then the result holds that content
         assertEquals(List.of(found), result);
+    }
+
+    @Test
+    void getRelatedContent_capsALimitAboveTheMaximum() {
+        // Given a "query" parameter and a "limit" of 20000, with the default maximum of 10000
+        // When the related content is requested
+        // Then the content is pulled with a limit of 10000
+        assertEquals(10000, limitPulledFor(Map.of("query", "+contentType:News", "limit", "20000")));
+    }
+
+    @Test
+    void getRelatedContent_keepsALimitWithinTheMaximum() {
+        // Given a "query" parameter and a "limit" of 50
+        // When the related content is requested
+        // Then the content is pulled with a limit of 50
+        assertEquals(50, limitPulledFor(Map.of("query", "+contentType:News", "limit", "50")));
+    }
+
+    @Test
+    void getRelatedContent_usesTheDefaultLimitWhenNoneIsGiven() {
+        // Given a "query" parameter and no "limit"
+        // When the related content is requested
+        // Then the content is pulled with the default limit of 10
+        assertEquals(10, limitPulledFor(Map.of("query", "+contentType:News")));
+    }
+
+    /**
+     * Requests the related content with the given parameters and returns the limit the content
+     * was pulled with.
+     */
+    private int limitPulledFor(final Map<String, String> params) {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getSession()).thenReturn(mock(HttpSession.class));
+        // ContentUtils looks up the content API when the class loads, so the locator is mocked first
+        try (MockedStatic<APILocator> apiLocator = mockStatic(APILocator.class);
+                MockedStatic<ContentUtils> contentUtils = mockStatic(ContentUtils.class)) {
+            apiLocator.when(APILocator::getContentletAPI).thenReturn(contentletAPI);
+            contentUtils.when(() -> ContentUtils.pull(anyString(), anyInt(), anyInt(), anyString(),
+                    any(User.class), nullable(String.class))).thenReturn(new PaginatedArrayList<>());
+
+            helper.getRelatedContent(request, user, params);
+
+            final ArgumentCaptor<Integer> limit = ArgumentCaptor.forClass(Integer.class);
+            contentUtils.verify(() -> ContentUtils.pull(anyString(), anyInt(), limit.capture(),
+                    anyString(), any(User.class), nullable(String.class)));
+            return limit.getValue();
+        }
     }
 
     /**

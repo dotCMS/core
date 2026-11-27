@@ -4,6 +4,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.graphql.DotGraphQLContext;
 import com.dotcms.graphql.exception.PermissionDeniedGraphQLException;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
+import com.dotcms.util.ContentSearchLimit;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -24,6 +25,18 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 
 public class RelationshipFieldDataFetcher implements DataFetcher<Object> {
+
+    /**
+     * Resolves a relationship field of a content for the user in the GraphQL context. The
+     * requested {@code limit} is capped by {@link ContentSearchLimit}; without one, every related
+     * content is returned, as before.
+     *
+     * @param environment the GraphQL environment holding the source content, the field and its
+     *                    arguments
+     * @return the related {@link Contentlet} or list of them, or a result carrying a permission
+     * error when the user cannot read the relationship
+     * @throws Exception if the related content cannot be loaded
+     */
     @Override
     public Object get(final DataFetchingEnvironment environment) throws Exception {
         try {
@@ -70,8 +83,9 @@ public class RelationshipFieldDataFetcher implements DataFetcher<Object> {
 
             final String query = StringUtils.defaultString(environment.getArgument("query"), "");
 
-            final int limit = environment.getArgument("limit")!=null
+            final int requestedLimit = environment.getArgument("limit")!=null
                     ? environment.getArgument("limit") : -1;
+            final int limit = ContentSearchLimit.cap(requestedLimit);
 
             final int offset = environment.getArgument("offset")!=null
                     ? environment.getArgument("offset") : 0;

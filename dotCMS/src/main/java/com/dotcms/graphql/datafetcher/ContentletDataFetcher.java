@@ -6,6 +6,7 @@ import static com.dotcms.graphql.util.TypeUtil.BASE_TYPE_SUFFIX;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.graphql.DotGraphQLContext;
 import com.dotcms.graphql.util.TypeUtil;
+import com.dotcms.util.ContentSearchLimit;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -22,6 +23,16 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class ContentletDataFetcher implements DataFetcher<List<Contentlet>> {
+
+    /**
+     * Runs the content search behind the {@code search} field and the content type collection
+     * fields, for the user in the GraphQL context. The requested {@code limit} (100 when not given)
+     * is capped by {@link ContentSearchLimit}.
+     *
+     * @param environment the GraphQL environment holding the query arguments and the context
+     * @return the matching {@link Contentlet}s, transformed for GraphQL
+     * @throws Exception if the search fails
+     */
     @Override
     public List<Contentlet> get(final DataFetchingEnvironment environment) throws Exception {
         try {
@@ -38,8 +49,9 @@ public class ContentletDataFetcher implements DataFetcher<List<Contentlet>> {
 
             final var isPageSet = environment.getArgument("page") != null;
 
-            final Integer limit = environment.getArgument("limit") != null ?
+            final Integer requestedLimit = environment.getArgument("limit") != null ?
                     environment.getArgument("limit") : 100;
+            final int limit = ContentSearchLimit.cap(requestedLimit);
             final String sortBy = environment.getArgument("sortBy");
             Integer offset = environment.getArgument("offset") != null ?
                     environment.getArgument("offset") : 0;

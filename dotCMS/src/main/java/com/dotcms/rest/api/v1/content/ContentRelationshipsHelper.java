@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.content;
 
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.rest.RESTParams;
+import com.dotcms.util.ContentSearchLimit;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -91,7 +92,8 @@ public class ContentRelationshipsHelper implements Serializable {
 
     /**
      * Returns a list of contents and its relationships according to a given set of parameters.
-     * A content that is not found, or that the user cannot read, is not in the list.
+     * A content that is not found, or that the user cannot read, is not in the list. The
+     * {@code limit} parameter (10 when not given) is capped by {@link ContentSearchLimit}.
      *
      * @param request   The {@link HttpServletRequest} object.
      * @param user      The {@link User} performing this action.
@@ -122,7 +124,7 @@ public class ContentRelationshipsHelper implements Serializable {
         int offset = 0;
         try {
             if (UtilMethods.isSet(limitStr)) {
-                limit = Integer.parseInt(limitStr);
+                limit = ContentSearchLimit.cap(Integer.parseInt(limitStr));
             }
         } catch (NumberFormatException e) {
             // Could not parse limit value. Use default value

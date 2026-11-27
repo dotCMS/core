@@ -56,6 +56,7 @@ import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.util.ContentSearchLimit;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.TimeMachineUtil;
@@ -1397,10 +1398,12 @@ public class PageResource {
     /**
      * Returns the list of personas with a flag that determine if the persona has been customized on a page or not.
      * { persona:Persona, personalized:boolean, pageId:String  }
-     * The caller must be a back-end user with READ permission on the page.
+     * The caller must be a back-end user with READ permission on the page. The page size is capped
+     * by {@link ContentSearchLimit} before the page offset and the pagination headers are worked out.
      *
      * @param request  the current request
      * @param response the current response
+     * @param perPage  the page size asked for
      * @param pageId   identifier of the page
      * @return paginated personas with their personalization flag for the page
      * @throws DotDataException      if the page or the personas cannot be loaded
@@ -1431,7 +1434,8 @@ public class PageResource {
             @QueryParam(PaginationUtil.FILTER)   final String filter,
             @Parameter(description = "Page number for pagination (zero-based)")
             @QueryParam(PaginationUtil.PAGE)     final int page,
-            @Parameter(description = "Number of results per page")
+            @Parameter(description = "Number of results per page. Values above the configured maximum "
+                    + "(10000 by default) are lowered to it")
             @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
             @Parameter(description = "Field to order results by (default: title)")
             @DefaultValue("title") @QueryParam(PaginationUtil.ORDER_BY) final String orderbyParam,
@@ -1460,7 +1464,7 @@ public class PageResource {
 
         final PaginationUtil paginationUtil = new PaginationUtil(new PersonalizationPersonaPageViewPaginator());
 
-        return paginationUtil.getPage(request, user, filter, page, perPage, orderbyParam,
+        return paginationUtil.getPage(request, user, filter, page, ContentSearchLimit.cap(perPage), orderbyParam,
                 OrderDirection.valueOf(direction), extraParams);
     } // getPersonalizedPersonasOnPage
 
