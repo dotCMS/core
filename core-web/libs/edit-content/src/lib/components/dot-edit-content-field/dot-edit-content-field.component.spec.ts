@@ -536,7 +536,7 @@ describe('DotEditContentFieldComponent - Line Divider Field', () => {
         spectator.detectChanges();
 
         const title = spectator.query(byTestId('line-divider-title'));
-        expect(title?.textContent?.trim()).toBe(LINE_DIVIDER_MOCK.name.toUpperCase());
+        expect(title?.textContent?.trim()).toBe(LINE_DIVIDER_MOCK.name);
     });
 });
 

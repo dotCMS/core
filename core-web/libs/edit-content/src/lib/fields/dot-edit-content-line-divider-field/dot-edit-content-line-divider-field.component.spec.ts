@@ -31,8 +31,10 @@ describe('DotEditContentLineDividerFieldComponent', () => {
         expect(divider).toBeTruthy();
         expect(divider).toHaveClass('bg-surface-100');
         expect(divider).toHaveClass('mt-10');
-        // The title shows the field name in capitals.
-        expect(title?.textContent?.trim()).toBe('OPEN GRAPH (OG META TAGS)');
+        // Capitals come from CSS: the text stays as the user typed it, so screen readers, copy and
+        // locale-specific casing (Turkish "i", German "ß") are left to the browser.
+        expect(title).toHaveClass('uppercase');
+        expect(title?.textContent?.trim()).toBe('Open Graph (OG Meta Tags)');
     });
 
     it('should not render the line divider bar when the field name is empty', () => {
