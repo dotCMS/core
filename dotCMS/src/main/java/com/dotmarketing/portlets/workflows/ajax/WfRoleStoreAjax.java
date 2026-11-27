@@ -5,11 +5,14 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -25,7 +28,43 @@ import java.util.*;
 @Deprecated
 public class WfRoleStoreAjax extends WfBaseAction {
 
+    private final WorkflowAjaxReadAccess readAccess;
+
+    /**
+     * Creates the action as the ajax director does, with the default access check.
+     */
+    public WfRoleStoreAjax() {
+        this(new WorkflowAjaxReadAccess());
+    }
+
+    /**
+     * Creates the action with the given access check.
+     *
+     * @param readAccess decides who may read the role and assignee lists
+     */
+    @VisibleForTesting
+    WfRoleStoreAjax(final WorkflowAjaxReadAccess readAccess) {
+        this.readAccess = readAccess;
+    }
+
+    /**
+     * Writes the roles matching {@code searchName}, or the single role named by {@code roleId}, as
+     * the JSON store the legacy role pickers read. Only back-end users who can open one of the
+     * portlets {@code workflow-schemes}, {@code workflow}, {@code configuration} or
+     * {@code publishing-queue} may read it; anyone else gets a 403.
+     *
+     * @param request  the request with the optional {@code searchName}, {@code roleId},
+     *                 {@code start}, {@code count} and include flags
+     * @param response the response the JSON is written to
+     * @throws ServletException if the request cannot be served
+     * @throws IOException      if the response cannot be written
+     */
     public void action ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
+
+        if (!readAccess.canReadRoles(getUser())) {
+            sendForbidden(response, "role list");
+            return;
+        }
 
         String searchName = request.getParameter( "searchName" );
 
@@ -128,15 +167,29 @@ public class WfRoleStoreAjax extends WfBaseAction {
 
     }
 
+    /**
+     * Writes the roles and users the workflow action in {@code actionId} can be assigned to, as the
+     * JSON store the assignee picker reads. An action the user may not list, and an id that matches
+     * no action, both get the same 403.
+     *
+     * @param request  the request with {@code actionId} and the optional {@code name} filter
+     * @param response the response the JSON is written to
+     * @throws ServletException if the request cannot be served
+     * @throws IOException      if the response cannot be written
+     */
     public void assignable ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
+
+        final WorkflowAction action = findAction( request.getParameter( "actionId" ) );
+        if (!readAccess.canListAssignees(getUser(), action)) {
+            sendForbidden(response, "assignees of a workflow action");
+            return;
+        }
 
         String name = request.getParameter( "name" );
 
         boolean includeFake = UtilMethods.isSet(request.getParameter( "includeFake" ))&&request.getParameter( "includeFake" ).equals("true");
 
         try {
-            String actionId = request.getParameter( "actionId" );
-            WorkflowAction action = APILocator.getWorkflowAPI().findAction( actionId, getUser() );
             Role role = APILocator.getRoleAPI().loadRoleById( action.getNextAssign() );
             List<Role> roleList = new ArrayList<>();
             List<User> userList = new ArrayList<>();
@@ -180,6 +233,28 @@ public class WfRoleStoreAjax extends WfBaseAction {
         }
 
 
+    }
+
+    /**
+     * Loads the workflow action with the given id.
+     *
+     * @param actionId the action id from the request
+     * @return the {@link WorkflowAction}, or {@code null} when no id is given, the id matches no
+     *         action, the lookup fails or the action's scheme needs a license this instance lacks
+     */
+    private WorkflowAction findAction(final String actionId) {
+        if (!UtilMethods.isSet(actionId)) {
+            return null;
+        }
+        try {
+            return APILocator.getWorkflowAPI().findAction(actionId, getUser());
+        } catch (final DotDataException | DotSecurityException | InvalidLicenseException e) {
+            Logger.warn(WfRoleStoreAjax.class, String.format(
+                    "Unable to load a workflow action for the assignee list of user ID '%s'",
+                    null != getUser() ? getUser().getUserId() : null));
+            Logger.debug(WfRoleStoreAjax.class, "Workflow action lookup failed", e);
+            return null;
+        }
     }
 
     private String rolesToJson ( List<Role> roles, boolean includeFake, boolean includeLabelAll ) throws IOException, DotDataException, LanguageException {
