@@ -11,6 +11,11 @@
     <dot-card-field-content>
         <div class="flex flex-col gap-2">
             <div class="flex flex-wrap justify-between gap-2">
+                <!-- Both controls sit outside the FormGroup (standalone ngModel / plain
+                     output), so a disabled form does not reach them: for a read-only user the
+                     dropdown is disabled and the variable selector hidden, or they could switch
+                     to Code and type into Monaco (#38724 R4). Driven by the store's read-only
+                     signal, not the control, which is also disabled during every save. -->
                 <p-select
                     class="min-w-40"
                     [class.ng-invalid]="fieldHasError"
@@ -18,10 +23,14 @@
                     [options]="textAreaEditorOptions"
                     [(ngModel)]="$selectedEditorDropdown"
                     [ngModelOptions]="{ standalone: true }"
+                    [disabled]="$isReadOnly()"
                     (onChange)="onEditorChange($event.value)"
                     data-testId="editor-selector" />
-                <dot-language-variable-selector
-                    (onSelectLanguageVariable)="onSelectLanguageVariable($event)" />
+                @if (!$isReadOnly()) {
+                    <dot-language-variable-selector
+                        data-testid="language-variable-selector"
+                        (onSelectLanguageVariable)="onSelectLanguageVariable($event)" />
+                }
             </div>
 
             <div class="flex min-h-0 flex-col">

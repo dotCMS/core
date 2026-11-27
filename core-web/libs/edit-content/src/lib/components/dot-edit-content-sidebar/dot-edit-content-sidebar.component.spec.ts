@@ -204,6 +204,39 @@ describe('DotEditContentSidebarComponent', () => {
         spectator.detectChanges();
     });
 
+    describe('Read-only content (R4, #38724)', () => {
+        beforeEach(fakeAsync(() => {
+            const dotContentTypeService = spectator.inject(DotContentTypeService);
+            const workflowActionsService = spectator.inject(DotWorkflowsActionsService);
+            const dotWorkflowService = spectator.inject(DotWorkflowService);
+            const dotEditContentService = spectator.inject(DotEditContentService);
+
+            dotEditContentService.getContentById.mockReturnValue(
+                of(createFakeContentlet({ inode: '123', identifier: '123-456' }))
+            );
+            dotContentTypeService.getContentTypeWithRender.mockReturnValue(of(CONTENT_TYPE_MOCK));
+            // READ without EDIT: `_canlock` answers false and the EDITING action list is empty.
+            workflowActionsService.getByInode.mockReturnValue(of([]));
+            workflowActionsService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+            dotContentletService.canLock.mockReturnValue(
+                of({ locked: false, canLock: false } as DotContentletCanLock)
+            );
+
+            store.initializeExistingContent({ inode: '123', depth: DotContentletDepths.TWO });
+            tick();
+            spectator.detectChanges();
+        }));
+
+        it('should hide the lock button and the workflow actions', () => {
+            expect(store.isReadOnly()).toBe(true);
+            expect(spectator.query(byTestId('sidebar-lock-section'))).toBeNull();
+            expect(spectator.query(byTestId('sidebar-workflow-actions'))).toBeNull();
+        });
+    });
+
     describe('Initial Render', () => {
         it('should create the component', () => {
             expect(spectator.component).toBeTruthy();
