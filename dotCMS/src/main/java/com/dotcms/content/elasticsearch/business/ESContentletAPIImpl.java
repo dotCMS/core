@@ -2774,14 +2774,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 return Optional.empty();
             }
 
-            Logger.info(this, () -> "The contentlet: " + contentletIn.getIdentifier()
+            Logger.debug(this, () -> "The contentlet: " + contentletIn.getIdentifier()
                     + " hasn't action id set"
                     + " using the default action: " + actionId);
 
             // if the action has a save action, we skip the current checkin
             if (workflowActionOpt.get().hasDeleteActionlet()) {
 
-                Logger.info(this,
+                Logger.debug(this,
                         () -> "The action: " + actionId + " has a delete contentlet actionlet"
                                 + " so firing a workflow and skipping the current delete for the contentlet: "
                                 + contentletIn.getIdentifier());
@@ -2800,7 +2800,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 return Optional.ofNullable(false);
             }
 
-            Logger.info(this, () -> "The action: " + contentletIn.getIdentifier()
+            Logger.debug(this, () -> "The action: " + contentletIn.getIdentifier()
                     + " hasn't a delete contentlet actionlet"
                     + " so including just the action to the contentlet: " + title);
 
@@ -2818,7 +2818,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final Optional<Boolean> deleteOpt = this.checkAndRunDeleteAsWorkflow(contentlet, user,
                 respectFrontendRoles);
         if (deleteOpt.isPresent()) {
-            Logger.info(this, String.format("A delete workflow has been used to delete Contentlet ID " +
+            Logger.debug(this, () -> String.format("A delete workflow has been used to delete Contentlet ID " +
                     "'%s' instead of calling the APIs", contentlet.getIdentifier()));
             return deleteOpt.get();
         }
@@ -2957,14 +2957,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 return Optional.empty();
             }
 
-            Logger.info(this, () -> "The contentlet: " + contentletIn.getIdentifier()
+            Logger.debug(this, () -> "The contentlet: " + contentletIn.getIdentifier()
                     + " hasn't action id set"
                     + " using the default action: " + actionId);
 
             // if the action has a destroy action, we skip the current checkin
             if (workflowActionOpt.get().hasDestroyActionlet()) {
 
-                Logger.info(this,
+                Logger.debug(this,
                         () -> "The action: " + actionId + " has a destroy contentlet actionlet"
                                 + " so firing a workflow and skipping the current destroy for the contentlet: "
                                 + contentletIn.getIdentifier());
@@ -2983,7 +2983,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 return Optional.ofNullable(false);
             }
 
-            Logger.info(this, () -> "The action: " + contentletIn.getIdentifier()
+            Logger.debug(this, () -> "The action: " + contentletIn.getIdentifier()
                     + " hasn't a destroy contentlet actionlet"
                     + " so including just the action to the contentlet: " + title);
 
@@ -3001,7 +3001,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 respectFrontendRoles);
         if (deleteOpt.isPresent()) {
 
-            Logger.info(this, "A Workflow has been ran instead of destroy the contentlet: " +
+            Logger.debug(this, () -> "A Workflow has been ran instead of destroy the contentlet: " +
                     contentlet.getIdentifier());
 
             return deleteOpt.get();
@@ -3030,7 +3030,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         if (contentlets == null || contentlets.size() == 0) {
 
-            Logger.info(this, "No contents passed to delete so returning");
+            Logger.debug(this, "No contents passed to delete so returning");
             return false;
         }
 
@@ -3044,7 +3044,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 contentletsToDelete.add(contentlet);
             } else {
 
-                Logger.info(this, "A Workflow has been ran instead of destroy the contentlet: " +
+                Logger.debug(this, () -> "A Workflow has been ran instead of destroy the contentlet: " +
                         contentlet.getIdentifier());
                 destroyed |= deleteOpt.get();
             }
@@ -3462,7 +3462,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         boolean noErrors = true;
 
         if (UtilMethods.isNotSet(contentlets)) {
-            Logger.info(this, "No contents passed to delete");
+            Logger.debug(this, "No contents passed to delete");
             noErrors = false;
             return noErrors;
         }
@@ -3682,7 +3682,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public void deleteAllVersionsandBackup(List<Contentlet> contentlets, User user,
             boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         if (contentlets == null || contentlets.size() == 0) {
-            Logger.info(this, "No contents passed to delete so returning");
+            Logger.debug(this, "No contents passed to delete so returning");
             return;
         }
         for (Contentlet con : contentlets) {
@@ -3801,7 +3801,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public void deleteVersion(Contentlet contentlet, User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
         if (contentlet == null) {
-            Logger.info(this, "No contents passed to delete so returning");
+            Logger.debug(this, "No contents passed to delete so returning");
             return;
         }
         if (contentlet.getInode().equals("")) {
@@ -3885,14 +3885,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 return Optional.empty();
             }
 
-            Logger.info(this, () -> "The contentlet: " + contentletIn.getIdentifier()
+            Logger.debug(this, () -> "The contentlet: " + contentletIn.getIdentifier()
                     + " hasn't action id set"
                     + " using the default action: " + actionId);
 
             // if the action has a save action, we skip the current checkin
             if (workflowActionOpt.get().hasArchiveActionlet()) {
 
-                Logger.info(this,
+                Logger.debug(this,
                         () -> "The action: " + actionId + " has an archive contentlet actionlet"
                                 + " so firing a workflow and skipping the current archive for the contentlet: "
                                 + contentletIn.getIdentifier());
@@ -3905,7 +3905,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 ));
             }
 
-            Logger.info(this, () -> "The action: " + contentletIn.getIdentifier()
+            Logger.debug(this, () -> "The action: " + contentletIn.getIdentifier()
                     + " hasn't a archive contentlet actionlet"
                     + " so including just the action to the contentlet: " + title);
 
@@ -3932,7 +3932,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     user, respectFrontendRoles);
             if (contentletOpt.isPresent()) {
 
-                Logger.info(this, "A Workflow has been ran instead of archive the contentlet: " +
+                Logger.debug(this, () -> "A Workflow has been ran instead of archive the contentlet: " +
                         contentlet.getIdentifier());
                 if (!contentlet.getInode().equals(contentletOpt.get().getInode())) {
                     this.copyProperties(contentlet, contentletOpt.get().getMap());
@@ -4367,14 +4367,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 return Optional.empty();
             }
 
-            Logger.info(this, () -> "The contentlet: " + contentletIn.getIdentifier()
+            Logger.debug(this, () -> "The contentlet: " + contentletIn.getIdentifier()
                     + " hasn't action id set"
                     + " using the default action: " + actionId);
 
             // if the action has a save action, we skip the current checkin
             if (workflowActionOpt.get().hasUnpublishActionlet()) {
 
-                Logger.info(this,
+                Logger.debug(this,
                         () -> "The action: " + actionId + " has an unpublish contentlet actionlet"
                                 + " so firing a workflow and skipping the current publish for the contentlet: "
                                 + contentletIn.getIdentifier());
@@ -4387,7 +4387,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 ));
             }
 
-            Logger.info(this, () -> "The action: " + contentletIn.getIdentifier()
+            Logger.debug(this, () -> "The action: " + contentletIn.getIdentifier()
                     + " hasn't a unpublish contentlet actionlet"
                     + " so including just the action to the contentlet: " + title);
 
@@ -4419,7 +4419,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentlet, user, respectFrontendRoles);
             if (contentletOpt.isPresent()) {
 
-                Logger.info(this, "A Workflow has been ran instead of unpublish the contentlet: " +
+                Logger.debug(this, () -> "A Workflow has been ran instead of unpublish the contentlet: " +
                         contentlet.getIdentifier());
                 if (!contentlet.getInode().equals(contentletOpt.get().getInode())) {
                     this.copyProperties(contentlet, contentletOpt.get().getMap());
@@ -4609,14 +4609,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 return Optional.empty();
             }
 
-            Logger.info(this, () -> "The contentlet: " + contentletIn.getIdentifier()
+            Logger.debug(this, () -> "The contentlet: " + contentletIn.getIdentifier()
                     + " hasn't action id set"
                     + " using the default action: " + actionId);
 
             // if the action has a save action, we skip the current checkin
             if (workflowActionOpt.get().hasUnarchiveActionlet()) {
 
-                Logger.info(this,
+                Logger.debug(this,
                         () -> "The action: " + actionId + " has an unarchive contentlet actionlet"
                                 + " so firing a workflow and skipping the current unarchive for the contentlet: "
                                 + contentletIn.getIdentifier());
@@ -4629,7 +4629,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 ));
             }
 
-            Logger.info(this, () -> "The action: " + contentletIn.getIdentifier()
+            Logger.debug(this, () -> "The action: " + contentletIn.getIdentifier()
                     + " hasn't a unarchive contentlet actionlet"
                     + " so including just the action to the contentlet: " + title);
 
@@ -4671,7 +4671,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentlet, user, respectFrontendRoles);
             if (contentletOpt.isPresent()) {
 
-                Logger.info(this, "A Workflow has been ran instead of unarchive the contentlet: " +
+                Logger.debug(this, () -> "A Workflow has been ran instead of unarchive the contentlet: " +
                         contentlet.getIdentifier());
                 if (!contentlet.getInode().equals(contentletOpt.get().getInode())) {
                     this.copyProperties(contentlet, contentletOpt.get().getMap());
@@ -5656,8 +5656,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 generateSystemEvent);
 
                 if (workflowContentletOpt.isPresent()) {
-                    Logger.info(this,
-                            "A Workflow has been run instead of checking in Contentlet with ID: " +
+                    Logger.debug(this,
+                            () -> "A Workflow has been run instead of checking in Contentlet with ID: " +
                                     workflowContentletOpt.get().getIdentifier());
                     return workflowContentletOpt.get();
                 }
@@ -5801,14 +5801,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 return Optional.empty();
             }
 
-            Logger.info(this, () -> "The contentlet: " + contentletIn.getIdentifier()
+            Logger.debug(this, () -> "The contentlet: " + contentletIn.getIdentifier()
                     + " hasn't action id set"
                     + " using the default action: " + actionId);
 
             // if the action has a save action, we skip the current checkin
             if (workflowActionOpt.get().hasPublishActionlet()) {
 
-                Logger.info(this,
+                Logger.debug(this,
                         () -> "The action: " + actionId + " has a publish contentlet actionlet"
                                 + " so firing a workflow and skipping the current publish for the contentlet: "
                                 + contentletIn.getIdentifier());
@@ -5821,7 +5821,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 ));
             }
 
-            Logger.info(this, () -> "The action: " + contentletIn.getIdentifier()
+            Logger.debug(this, () -> "The action: " + contentletIn.getIdentifier()
                     + " hasn't a publish contentlet actionlet"
                     + " so including just the action to the contentlet: " + title);
 
@@ -5841,7 +5841,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return true;
         }
 
-        Logger.info(this, () -> "The contentlet: " + contentletIn.getIdentifier()
+        Logger.debug(this, () -> "The contentlet: " + contentletIn.getIdentifier()
                 + " has the action: " + actionId
                 + " but the this is not an available action for it");
         return false;
@@ -5882,13 +5882,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 return Optional.empty();
             }
 
-            Logger.info(this, () -> "The contentlet: " + title + " hasn't action id set"
+            Logger.debug(this, () -> "The contentlet: " + title + " hasn't action id set"
                     + " using the default action: " + actionId);
 
             // if the action has a save action, we skip the current checkin
             if (workflowActionOpt.get().hasSaveActionlet()) {
 
-                Logger.info(this,
+                Logger.debug(this,
                         () -> "The action: " + actionId + " has a save contentlet actionlet"
                                 + " so firing a workflow and skipping the current checkin for the contentlet: "
                                 + title);
@@ -5903,7 +5903,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 ));
             }
 
-            Logger.info(this,
+            Logger.debug(this,
                     () -> "The action: " + actionId + " hasn't a save contentlet actionlet"
                             + " so including just the action to the contentlet: " + title);
 

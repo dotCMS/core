@@ -50,7 +50,7 @@ public class LinkCheckerJob implements Job, StatefulJob {
             return;
         }
         
-        Logger.info(this, "Checking for broken links");
+        Logger.debug(this, "Checking for broken links");
         
         final Set<Structure> structures = new HashSet<>();
 

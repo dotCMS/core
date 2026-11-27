@@ -108,14 +108,13 @@ public class StorageReplicationJob extends DotStatefulJob {
         final StorageType fromStorageType = (StorageType) map.get("fromStorageType");
         final List<StorageType> toStorageTypes = (List<StorageType>) map.get("toStorageTypes");
         final User user = (User) map.get("user");
-        Logger.info(this, "--------------------------------------");
         Logger.info(this, "ReplicateStoragesJob has started");
         Logger.info(this, String.format("-> Initiated by User: %s", user.getUserId()));
-        Logger.info(this, String.format("-> From Storage Type: %s", fromStorageType.name()));
-        Logger.info(this, String.format("-> To Storage Type(s): %s", toStorageTypes.toString()));
-        Logger.info(this, String.format("-> Batch Size: %d", BATCH_SIZE.get()));
-        Logger.info(this, String.format("-> Sleep For: %d millis", SLEEP_FOR.get()));
-        Logger.info(this, "This process runs in the background and may take a long time. " +
+        Logger.debug(this, () -> String.format("-> From Storage Type: %s", fromStorageType.name()));
+        Logger.debug(this, () -> String.format("-> To Storage Type(s): %s", toStorageTypes.toString()));
+        Logger.debug(this, () -> String.format("-> Batch Size: %d", BATCH_SIZE.get()));
+        Logger.debug(this, () -> String.format("-> Sleep For: %d millis", SLEEP_FOR.get()));
+        Logger.debug(this, () -> "This process runs in the background and may take a long time. " +
                 "Please wait...");
         replicate(fromStorageType, toStorageTypes);
         Logger.info(this.getClass(), String.format("ReplicateStoragesJob initiated by '%s' from " +

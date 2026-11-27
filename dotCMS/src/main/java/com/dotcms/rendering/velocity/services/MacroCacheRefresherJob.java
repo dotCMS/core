@@ -39,10 +39,10 @@ public class MacroCacheRefresherJob implements Runnable, FileListener {
     @Override
     public void run() {
 
-        Logger.info(this, "Refreshing system macros");
+        Logger.debug(this, "Refreshing system macros");
         refreshSystemMacros();
 
-        Logger.info(this, "Refreshing dot_velocity_macros.vtl macros");
+        Logger.debug(this, "Refreshing dot_velocity_macros.vtl macros");
         refreshDotVelocityMacros();
     }
 

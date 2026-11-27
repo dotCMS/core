@@ -63,7 +63,7 @@ public class BinaryCleanupJob implements StatefulJob {
 
   @Override
   public void execute(final JobExecutionContext ctx) throws JobExecutionException {
-    Logger.info(this.getClass(), "STARTING TMP/TRASH FILE CLEANUP");
+    Logger.debug(this.getClass(), "STARTING TMP/TRASH FILE CLEANUP");
 
     cleanUpTmpUploadedFiles();
     cleanUpDotGeneratedSharedStaging();
@@ -72,7 +72,7 @@ public class BinaryCleanupJob implements StatefulJob {
     cleanUpLocalBackupDirectory();
     cleanUpJavaIoTmpFiles();
 
-    Logger.info(this.getClass(), "ENDING TMP/TRASH FILE CLEANUP");
+    Logger.debug(this.getClass(), "ENDING TMP/TRASH FILE CLEANUP");
   }
 
   /**
@@ -82,7 +82,7 @@ public class BinaryCleanupJob implements StatefulJob {
     final int hours = Config.getIntProperty(CLEANUP_TMP_FILES_OLDER_THAN_HOURS, 3);
     final Date olderThan = Date.from(Instant.now().minus(Duration.ofHours(hours)));
 
-    Logger.info(this.getClass(), String.format(FILE_DELETION_STATUS_MSG, hours, HOURS, ConfigUtils.getAssetTempPath()));
+    Logger.debug(this.getClass(), () -> String.format(FILE_DELETION_STATUS_MSG, hours, HOURS, ConfigUtils.getAssetTempPath()));
     final File folder = new File(ConfigUtils.getAssetTempPath());
     FileUtil.cleanTree(folder, olderThan);
   }
@@ -97,7 +97,7 @@ public class BinaryCleanupJob implements StatefulJob {
     final Date olderThan = Date.from(Instant.now().minus(Duration.ofHours(hours)));
     final String staging = ConfigUtils.getDotGeneratedSharedStagingPath();
 
-    Logger.info(this.getClass(), String.format(FILE_DELETION_STATUS_MSG, hours, HOURS, staging));
+    Logger.debug(this.getClass(), () -> String.format(FILE_DELETION_STATUS_MSG, hours, HOURS, staging));
     FileUtil.cleanTree(new File(staging), olderThan);
   }
 
@@ -110,7 +110,7 @@ public class BinaryCleanupJob implements StatefulJob {
         return;
       }
       final Date olderThan =  Date.from(Instant.now().minus(Duration.ofDays(days)));
-      Logger.info(this.getClass(), String.format(FILE_DELETION_STATUS_MSG, days, DAYS, ConfigUtils.getBundlePath()));
+      Logger.debug(this.getClass(), String.format(FILE_DELETION_STATUS_MSG, days, DAYS, ConfigUtils.getBundlePath()));
       final File bundleFolder = new File(ConfigUtils.getBundlePath());
       FileUtil.cleanTree(bundleFolder, olderThan);
   }
@@ -123,7 +123,7 @@ public class BinaryCleanupJob implements StatefulJob {
     final Date olderThan = Date.from(Instant.now().minus(Duration.ofHours(hours)));
 
     final TrashUtils trash = new TrashUtils();
-    Logger.info(this.getClass(), String.format(FILE_DELETION_STATUS_MSG, hours, HOURS, trash.getTrashFolder()));
+    Logger.debug(this.getClass(), () -> String.format(FILE_DELETION_STATUS_MSG, hours, HOURS, trash.getTrashFolder()));
     FileUtil.cleanTree(trash.getTrashFolder(), olderThan);
     new TrashUtils().emptyTrash();
   }
@@ -138,7 +138,7 @@ public class BinaryCleanupJob implements StatefulJob {
     }
     final Date olderThan = Date.from(Instant.now().minus(Duration.ofDays(days)));
 
-    Logger.info(this.getClass(), String.format(FILE_DELETION_STATUS_MSG, days, DAYS, ConfigUtils.getBackupPath()));
+    Logger.debug(this.getClass(), () -> String.format(FILE_DELETION_STATUS_MSG, days, DAYS, ConfigUtils.getBackupPath()));
     final File folder = new File(ConfigUtils.getBackupPath());
     FileUtil.cleanTree(folder, olderThan);
   }
@@ -154,7 +154,7 @@ public class BinaryCleanupJob implements StatefulJob {
     final int hours = Config.getIntProperty(CLEANUP_TMP_FILES_OLDER_THAN_HOURS, 3);
     final Date olderThan = Date.from(Instant.now().minus(Duration.ofHours(hours)));
 
-    Logger.info(this.getClass(), String.format(FILE_DELETION_STATUS_MSG, hours, HOURS, javaTmpDir));
+    Logger.debug(this.getClass(), () -> String.format(FILE_DELETION_STATUS_MSG, hours, HOURS, javaTmpDir));
     final File folder = new File(javaTmpDir);
     FileUtil.cleanTree(folder, olderThan);
   }

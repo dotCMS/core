@@ -103,7 +103,7 @@ public class DropOldContentletRunner implements Runnable {
     void createIndexIfNeeded() {
         try (Connection conn = DbConnectionFactory.getConnection()) {
             DotConnect dc = new DotConnect();
-            Logger.info(this, "Creating index on contentlet.mod_date");
+            Logger.debug(this, "Creating index on contentlet.mod_date");
             dc.setSQL(CREATE_INDEX_CONTENTLET_MOD_DATE);
             dc.loadResult(conn);
         } catch (Exception e) {
@@ -116,15 +116,14 @@ public class DropOldContentletRunner implements Runnable {
 
     public int deleteOldContent() {
         int deleted = 0;
-        Logger.info(this, "------- Delete Old Assets Started ------- ");
-        Logger.info(this, "Configuration:");
-        Logger.info(this, "  DROP_OLD_ASSET_BATCH_SIZE: " + DROP_OLD_ASSET_BATCH_SIZE);
-        Logger.info(this, "  DAYS_TO_ITERATE: " + DAYS_TO_ITERATE);
-        Logger.info(this, "  FINAL_END_DATE: " + finalEndDate);
-        Logger.info(this, "  CLEAN_DEAD_INODE_FROM_FS: " + CLEAN_DEAD_INODE_FROM_FS);
-        Logger.info(this, "  SLEEP_BETWEEN_RUNS_MS: " + SLEEP_BETWEEN_RUNS_MS);
-        Logger.info(this, "  MAX_RUNTIME_SECONDS: " + MAX_RUNTIME_SECONDS);
-        Logger.info(this, "----------------------------------------------------");
+        Logger.debug(this, "------- Delete Old Assets Started ------- ");
+        Logger.debug(this, "Configuration:");
+        Logger.debug(this, () -> "  DROP_OLD_ASSET_BATCH_SIZE: " + DROP_OLD_ASSET_BATCH_SIZE);
+        Logger.debug(this, () -> "  DAYS_TO_ITERATE: " + DAYS_TO_ITERATE);
+        Logger.debug(this, () -> "  FINAL_END_DATE: " + finalEndDate);
+        Logger.debug(this, () -> "  CLEAN_DEAD_INODE_FROM_FS: " + CLEAN_DEAD_INODE_FROM_FS);
+        Logger.debug(this, () -> "  SLEEP_BETWEEN_RUNS_MS: " + SLEEP_BETWEEN_RUNS_MS);
+        Logger.debug(this, () -> "  MAX_RUNTIME_SECONDS: " + MAX_RUNTIME_SECONDS);
 
         createIndexIfNeeded();
 
@@ -136,7 +135,7 @@ public class DropOldContentletRunner implements Runnable {
         Date startIterationDate = earliestContentlet();
         Date endInterationDate = Date.from(startIterationDate.toInstant().plus(DAYS_TO_ITERATE, ChronoUnit.DAYS));
         Logger.info(this, "START: Deleting contentlet older than " + sdf.format(finalEndDate));
-        Logger.info(this, "     : earliest contentlet " + sdf.format(startIterationDate));
+        Logger.debug(this, "     : earliest contentlet " + sdf.format(startIterationDate));
 
         int i = 0;
         final List<String> inodeList = new ArrayList<>();
@@ -144,7 +143,7 @@ public class DropOldContentletRunner implements Runnable {
             if (isInterrupted()) {
                 return deleted;
             }
-            Logger.info(this,
+            Logger.debug(this,
                     "Looking for old contentlet from " + sdf.format(startIterationDate) + " to " + sdf.format(
                             endInterationDate));
 
@@ -214,7 +213,7 @@ public class DropOldContentletRunner implements Runnable {
             String path = APILocator.getFileAssetAPI().getRealAssetPath(inode)
                     .replace(FileAssetAPI.BINARY_FIELD + File.separator, "");
 
-            Logger.info(this, "Deleting file asset " + path);
+            Logger.debug(this, () -> "Deleting file asset " + path);
             try {
                 FileUtil.deltree(path);
             } catch (Exception e) {
