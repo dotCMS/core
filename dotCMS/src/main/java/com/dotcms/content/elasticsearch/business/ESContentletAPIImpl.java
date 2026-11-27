@@ -2818,7 +2818,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final Optional<Boolean> deleteOpt = this.checkAndRunDeleteAsWorkflow(contentlet, user,
                 respectFrontendRoles);
         if (deleteOpt.isPresent()) {
-            Logger.info(this, String.format("A delete workflow has been used to delete Contentlet ID " +
+            Logger.debug(this, () -> String.format("A delete workflow has been used to delete Contentlet ID " +
                     "'%s' instead of calling the APIs", contentlet.getIdentifier()));
             return deleteOpt.get();
         }
@@ -3001,7 +3001,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 respectFrontendRoles);
         if (deleteOpt.isPresent()) {
 
-            Logger.info(this, "A Workflow has been ran instead of destroy the contentlet: " +
+            Logger.debug(this, () -> "A Workflow has been ran instead of destroy the contentlet: " +
                     contentlet.getIdentifier());
 
             return deleteOpt.get();
@@ -3044,7 +3044,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 contentletsToDelete.add(contentlet);
             } else {
 
-                Logger.info(this, "A Workflow has been ran instead of destroy the contentlet: " +
+                Logger.debug(this, () -> "A Workflow has been ran instead of destroy the contentlet: " +
                         contentlet.getIdentifier());
                 destroyed |= deleteOpt.get();
             }
@@ -3932,7 +3932,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     user, respectFrontendRoles);
             if (contentletOpt.isPresent()) {
 
-                Logger.info(this, "A Workflow has been ran instead of archive the contentlet: " +
+                Logger.debug(this, () -> "A Workflow has been ran instead of archive the contentlet: " +
                         contentlet.getIdentifier());
                 if (!contentlet.getInode().equals(contentletOpt.get().getInode())) {
                     this.copyProperties(contentlet, contentletOpt.get().getMap());
@@ -4419,7 +4419,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentlet, user, respectFrontendRoles);
             if (contentletOpt.isPresent()) {
 
-                Logger.info(this, "A Workflow has been ran instead of unpublish the contentlet: " +
+                Logger.debug(this, () -> "A Workflow has been ran instead of unpublish the contentlet: " +
                         contentlet.getIdentifier());
                 if (!contentlet.getInode().equals(contentletOpt.get().getInode())) {
                     this.copyProperties(contentlet, contentletOpt.get().getMap());
@@ -4671,7 +4671,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentlet, user, respectFrontendRoles);
             if (contentletOpt.isPresent()) {
 
-                Logger.info(this, "A Workflow has been ran instead of unarchive the contentlet: " +
+                Logger.debug(this, () -> "A Workflow has been ran instead of unarchive the contentlet: " +
                         contentlet.getIdentifier());
                 if (!contentlet.getInode().equals(contentletOpt.get().getInode())) {
                     this.copyProperties(contentlet, contentletOpt.get().getMap());
@@ -5656,8 +5656,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 generateSystemEvent);
 
                 if (workflowContentletOpt.isPresent()) {
-                    Logger.info(this,
-                            "A Workflow has been run instead of checking in Contentlet with ID: " +
+                    Logger.debug(this,
+                            () -> "A Workflow has been run instead of checking in Contentlet with ID: " +
                                     workflowContentletOpt.get().getIdentifier());
                     return workflowContentletOpt.get();
                 }

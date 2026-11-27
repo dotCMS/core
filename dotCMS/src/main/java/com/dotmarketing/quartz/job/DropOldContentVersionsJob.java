@@ -83,11 +83,11 @@ public class DropOldContentVersionsJob implements StatefulJob {
     public void execute(final JobExecutionContext jobExecutionContext) throws JobExecutionException {
         Logger.info(this.getClass(), "--------------------------------------");
         Logger.info(this.getClass(), "DropOldContentVersionsJob has started");
-        Logger.info(this, String.format("-> Deleting Contentlets older than %d days...",
+        Logger.debug(this, () -> String.format("-> Deleting Contentlets older than %d days...",
                 OLDER_THAN.get()));
         this.deleteOldVersionsFromContentlet();
         final List<Language> languageIds = APILocator.getLanguageAPI().getLanguages();
-        Logger.info(this, String.format("Looking for Contentlets with more than %d versions per " +
+        Logger.debug(this, () -> String.format("Looking for Contentlets with more than %d versions per " +
                 "language...", GREATER_THAN.get()));
         for (final Language language : languageIds) {
             Logger.debug(this, String.format("Searching for Contentlets in language '%s' [ %s ] ...",

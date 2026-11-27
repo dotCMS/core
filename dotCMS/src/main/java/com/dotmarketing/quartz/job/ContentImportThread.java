@@ -249,7 +249,7 @@ public class ContentImportThread implements Job{
 				Logger.error(this, "File "+path+" doesn't exist");
 			}
 
-			Logger.info(this,"The ContentImportThread Job End successfully"+(String)context.getJobDetail().getName());
+			Logger.debug(this,() -> "The ContentImportThread Job End successfully"+(String)context.getJobDetail().getName());
 		} catch (Exception e) {
 			Logger.error(this, e.toString());
 		}

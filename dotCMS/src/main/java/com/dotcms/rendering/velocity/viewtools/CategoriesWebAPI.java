@@ -53,12 +53,12 @@ public class CategoriesWebAPI implements ViewTool {
 		try {
 			Category cat = categoryAPI.findByKey(key, user, true);
 			if (null == cat || !InodeUtils.isSet(cat.getInode())) {
-				Logger.info(this, String.format("The category for key `%s` does not exist.",key));
+				Logger.debug(this, () -> String.format("The category for key `%s` does not exist.",key));
 				return new ArrayList<>();
 			}
 			return categoryAPI.getChildren(cat, user, true);
 		} catch (DotSecurityException se) {
-			Logger.info(this, "The logged in user cannot access the categories with key : " + key);
+			Logger.debug(this, () -> "The logged in user cannot access the categories with key : " + key);
 		} catch (DotDataException de) {
 			Logger.error(this, "An error happening while trying to retrieve categories : ", de);
 		} catch (Exception e) {

@@ -118,12 +118,12 @@ public class DropOldContentletRunner implements Runnable {
         int deleted = 0;
         Logger.debug(this, "------- Delete Old Assets Started ------- ");
         Logger.debug(this, "Configuration:");
-        Logger.info(this, "  DROP_OLD_ASSET_BATCH_SIZE: " + DROP_OLD_ASSET_BATCH_SIZE);
-        Logger.info(this, "  DAYS_TO_ITERATE: " + DAYS_TO_ITERATE);
-        Logger.info(this, "  FINAL_END_DATE: " + finalEndDate);
-        Logger.info(this, "  CLEAN_DEAD_INODE_FROM_FS: " + CLEAN_DEAD_INODE_FROM_FS);
-        Logger.info(this, "  SLEEP_BETWEEN_RUNS_MS: " + SLEEP_BETWEEN_RUNS_MS);
-        Logger.info(this, "  MAX_RUNTIME_SECONDS: " + MAX_RUNTIME_SECONDS);
+        Logger.debug(this, () -> "  DROP_OLD_ASSET_BATCH_SIZE: " + DROP_OLD_ASSET_BATCH_SIZE);
+        Logger.debug(this, () -> "  DAYS_TO_ITERATE: " + DAYS_TO_ITERATE);
+        Logger.debug(this, () -> "  FINAL_END_DATE: " + finalEndDate);
+        Logger.debug(this, () -> "  CLEAN_DEAD_INODE_FROM_FS: " + CLEAN_DEAD_INODE_FROM_FS);
+        Logger.debug(this, () -> "  SLEEP_BETWEEN_RUNS_MS: " + SLEEP_BETWEEN_RUNS_MS);
+        Logger.debug(this, () -> "  MAX_RUNTIME_SECONDS: " + MAX_RUNTIME_SECONDS);
         Logger.info(this, "----------------------------------------------------");
 
         createIndexIfNeeded();
@@ -214,7 +214,7 @@ public class DropOldContentletRunner implements Runnable {
             String path = APILocator.getFileAssetAPI().getRealAssetPath(inode)
                     .replace(FileAssetAPI.BINARY_FIELD + File.separator, "");
 
-            Logger.info(this, "Deleting file asset " + path);
+            Logger.debug(this, () -> "Deleting file asset " + path);
             try {
                 FileUtil.deltree(path);
             } catch (Exception e) {
