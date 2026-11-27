@@ -34,55 +34,7 @@
 
 <script type="text/javascript">
 <!-- 
-	<liferay:include page="/html/js/calendar/calendar_js_box_ext.jsp" flush="true">
-		<liferay:param name="calendar_num" value="9" />
-	</liferay:include>
-	//lastLoginDateFrom
-	function <portlet:namespace />setCalendarDate_0 (year, month, day) {
-		var textbox = document.getElementById('lastLoginDateFrom');
-		textbox.value = month + '/' + day + '/' + year;
-	}
-	//lastLoginDateTo
-	function <portlet:namespace />setCalendarDate_1 (year, month, day) {
-		var textbox = document.getElementById('lastLoginDateTo');
-		textbox.value = month + '/' + day + '/' + year;
-	}
-	//createdDateFrom
-	function <portlet:namespace />setCalendarDate_2 (year, month, day) {
-		var textbox = document.getElementById('createdDateFrom');
-		textbox.value = month + '/' + day + '/' + year;
-	}
-	//createdDateTo
-	function <portlet:namespace />setCalendarDate_3 (year, month, day) {
-		var textbox = document.getElementById('createdDateTo');
-		textbox.value = month + '/' + day + '/' + year;
-	}
-	//lastVisitDateFrom
-	function <portlet:namespace />setCalendarDate_4 (year, month, day) {
-		var textbox = document.getElementById('lastVisitDateFrom');
-		textbox.value = month + '/' + day + '/' + year;
-	}
-	//lastVisitDateTo
-	function <portlet:namespace />setCalendarDate_5 (year, month, day) {
-		var textbox = document.getElementById('lastVisitDateTo');
-		textbox.value = month + '/' + day + '/' + year;
-	}
-	//dateOfBirthFrom
-	function <portlet:namespace />setCalendarDate_6 (year, month, day) {
-		var textbox = document.getElementById('dateOfBirthFrom');
-		textbox.value = month + '/' + day + '/' + year;
-	}
-	//dateOfBirthTo
-	function <portlet:namespace />setCalendarDate_7 (year, month, day) {
-		var textbox = document.getElementById('dateOfBirthTo');
-		textbox.value = month + '/' + day + '/' + year;
-	}
-	//dateOfBirthSince
-	function <portlet:namespace />setCalendarDate_8 (year, month, day) {
-		var textbox = document.getElementById('dateOfBirthSince');
-		textbox.value = month + '/' + day + '/' + year;
-	}
-	function doSearchSubmit() 
+	function doSearchSubmit()
 	{
 		var form = document.getElementById('<portlet:namespace />fm');
 		<% if (viewUserManager) { %>

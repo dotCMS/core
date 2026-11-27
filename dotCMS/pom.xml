@@ -236,10 +236,6 @@
 
         <dependency>
             <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.jazzy-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.jboss-logging</artifactId>
         </dependency>
         <dependency>
@@ -404,10 +400,6 @@
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.woodstox-core-lgpl</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.xpp3-min</artifactId>
         </dependency>
 
         <dependency>

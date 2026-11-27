@@ -1,4 +1,18 @@
 <%@ include file="/html/portlet/ext/usermanager/init.jsp" %>
+<script src="/html/js/legacy-date-picker.js" type="text/javascript"></script>
+<script type="text/javascript">
+    dojo.addOnLoad(function () {
+        initializeLegacyDatePicker('lastLoginDateFrom');
+        initializeLegacyDatePicker('lastLoginDateTo');
+        initializeLegacyDatePicker('createdDateFrom');
+        initializeLegacyDatePicker('createdDateTo');
+        initializeLegacyDatePicker('lastVisitDateFrom');
+        initializeLegacyDatePicker('lastVisitDateTo');
+        initializeLegacyDatePicker('dateOfBirthFrom');
+        initializeLegacyDatePicker('dateOfBirthTo');
+        initializeLegacyDatePicker('dateOfBirthSince');
+    });
+</script>
 <%
 	java.util.Hashtable params = new java.util.Hashtable ();
 	params.put("struts_action", new String [] {"/ext/usermanager/view_usermanagerlist"} );
@@ -24,54 +38,6 @@
 
 <script type="text/javascript">
 <!--
-	<liferay:include page="/html/js/calendar/calendar_js_box_ext.jsp" flush="true">
-		<liferay:param name="calendar_num" value="9" />
-	</liferay:include>
-	//lastLoginDateFrom
-	function <portlet:namespace />setCalendarDate_0 (year, month, day) {
-		var textbox = document.getElementById('lastLoginDateFrom');
-		textbox.value = month + '/' + day + '/' + year;
-	}
-	//lastLoginDateTo
-	function <portlet:namespace />setCalendarDate_1 (year, month, day) {
-		var textbox = document.getElementById('lastLoginDateTo');
-		textbox.value = month + '/' + day + '/' + year;
-	}
-	//createdDateFrom
-	function <portlet:namespace />setCalendarDate_2 (year, month, day) {
-		var textbox = document.getElementById('createdDateFrom');
-		textbox.value = month + '/' + day + '/' + year;
-	}
-	//createdDateTo
-	function <portlet:namespace />setCalendarDate_3 (year, month, day) {
-		var textbox = document.getElementById('createdDateTo');
-		textbox.value = month + '/' + day + '/' + year;
-	}
-	//lastVisitDateFrom
-	function <portlet:namespace />setCalendarDate_4 (year, month, day) {
-		var textbox = document.getElementById('lastVisitDateFrom');
-		textbox.value = month + '/' + day + '/' + year;
-	}
-	//lastVisitDateTo
-	function <portlet:namespace />setCalendarDate_5 (year, month, day) {
-		var textbox = document.getElementById('lastVisitDateTo');
-		textbox.value = month + '/' + day + '/' + year;
-	}
-	//dateOfBirthFrom
-	function <portlet:namespace />setCalendarDate_6 (year, month, day) {
-		var textbox = document.getElementById('dateOfBirthFrom');
-		textbox.value = month + '/' + day + '/' + year;
-	}
-	//dateOfBirthTo
-	function <portlet:namespace />setCalendarDate_7 (year, month, day) {
-		var textbox = document.getElementById('dateOfBirthTo');
-		textbox.value = month + '/' + day + '/' + year;
-	}
-	//dateOfBirthSince
-	function <portlet:namespace />setCalendarDate_8 (year, month, day) {
-		var textbox = document.getElementById('dateOfBirthSince');
-		textbox.value = month + '/' + day + '/' + year;
-	}
 	function doSearchSubmit () {
 		var form = document.getElementById('searchForm');
 		form.action = '<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/usermanager/view_usermanagerlist" /><portlet:param name="cmd" value="<%=com.liferay.portal.util.Constants.SEARCH%>" /></portlet:renderURL>';
@@ -116,21 +82,21 @@
 
 		document.getElementById('tagName').value = "";
 
-		document.getElementById("dateOfBirthSince").value = "";
-		document.getElementById("dateOfBirthFrom").value = "";
-		document.getElementById("dateOfBirthTo").value = "";
+		if (dijit.byId("dateOfBirthSince")) { dijit.byId("dateOfBirthSince").set("value", null); }
+		if (dijit.byId("dateOfBirthFrom")) { dijit.byId("dateOfBirthFrom").set("value", null); }
+		if (dijit.byId("dateOfBirthTo")) { dijit.byId("dateOfBirthTo").set("value", null); }
 
 		document.getElementById("lastLoginSince").value = "";
-		document.getElementById("lastLoginDateFrom").value = "";
-		document.getElementById("lastLoginDateTo").value = "";
+		if (dijit.byId("lastLoginDateFrom")) { dijit.byId("lastLoginDateFrom").set("value", null); }
+		if (dijit.byId("lastLoginDateTo")) { dijit.byId("lastLoginDateTo").set("value", null); }
 
 		document.getElementById("createdSince").value = "";
-		document.getElementById("createdDateFrom").value = "";
-		document.getElementById("createdDateTo").value = "";
+		if (dijit.byId("createdDateFrom")) { dijit.byId("createdDateFrom").set("value", null); }
+		if (dijit.byId("createdDateTo")) { dijit.byId("createdDateTo").set("value", null); }
 
 		document.getElementById("lastVisitSince").value = "";
-		document.getElementById("lastVisitDateFrom").value = "";
-		document.getElementById("lastVisitDateTo").value = "";
+		if (dijit.byId("lastVisitDateFrom")) { dijit.byId("lastVisitDateFrom").set("value", null); }
+		if (dijit.byId("lastVisitDateTo")) { dijit.byId("lastVisitDateTo").set("value", null); }
 	}
 	
 	function addUser() {
@@ -198,12 +164,12 @@
 		<html:radio property="lastLoginTypeSearch" styleId="lastLoginTypeSearch" value="DateRange" />
 		<html:text styleClass="form-text" property="lastLoginDateFrom" styleId="lastLoginDateFrom" size="10" maxlength="10" style="font-size:11px;"/>&nbsp;
 		<img align="absmiddle" border="0" hspace="0" id="<portlet:namespace />calendar_input_0_button" 
-		src="<%= COMMON_IMG %>/calendar/calendar.gif" vspace="0" onClick="<portlet:namespace />calendarOnClick_0();">
+		src="<%= COMMON_IMG %>/calendar/calendar.gif" vspace="0" onClick="dijit.byId('lastLoginDateFrom').toggleDropDown();">
 		
 		&nbsp;<%= LanguageUtil.get(pageContext, "To") %>&nbsp;
 		<html:text styleClass="form-text" property="lastLoginDateTo" styleId="lastLoginDateTo" size="10" maxlength="10" style="font-size:11px;"/>&nbsp;
 		<img align="absmiddle" border="0" hspace="0" id="<portlet:namespace />calendar_input_1_button" src="<%= COMMON_IMG %>/calendar/calendar.gif"
-		 vspace="0" onClick="<portlet:namespace />calendarOnClick_1();"> <br/>
+		 vspace="0" onClick="dijit.byId('lastLoginDateTo').toggleDropDown();"> <br/>
 		
 		<html:radio property="lastLoginTypeSearch" styleId="lastLoginTypeSearch" value="Since" />
 		<%= LanguageUtil.get(pageContext, "Since") %>&nbsp;<html:text styleClass="form-text" property="lastLoginSince" styleId="lastLoginSince" size="5" maxlength="4"/>
@@ -217,12 +183,12 @@
 		<html:radio property="createdTypeSearch" styleId="createdTypeSearch" value="DateRange" />
 		<html:text styleClass="form-text" property="createdDateFrom" styleId="createdDateFrom" size="10" maxlength="10" style="font-size:11px;"/>
 		&nbsp;<img align="absmiddle" border="0" hspace="0" id="<portlet:namespace />calendar_input_2_button" 
-		src="<%= COMMON_IMG %>/calendar/calendar.gif" vspace="0" onClick="<portlet:namespace />calendarOnClick_2();">
+		src="<%= COMMON_IMG %>/calendar/calendar.gif" vspace="0" onClick="dijit.byId('createdDateFrom').toggleDropDown();">
 		
 		&nbsp;<span style="font-size:11px;"><%= LanguageUtil.get(pageContext, "To") %></span>&nbsp;
 		<html:text styleClass="form-text" property="createdDateTo" styleId="createdDateTo" size="10" maxlength="10"  style="font-size:11px;"/>&nbsp;
 		<img align="absmiddle" border="0" hspace="0" id="<portlet:namespace />calendar_input_3_button" 
-		src="<%= COMMON_IMG %>/calendar/calendar.gif" vspace="0" onClick="<portlet:namespace />calendarOnClick_3();"> <br/>
+		src="<%= COMMON_IMG %>/calendar/calendar.gif" vspace="0" onClick="dijit.byId('createdDateTo').toggleDropDown();"> <br/>
 		
 		<html:radio property="createdTypeSearch" styleId="createdTypeSearch" value="Since" />&nbsp;<%= LanguageUtil.get(pageContext, "Since") %>
 		<html:text styleClass="form-text" property="createdSince" styleId="createdSince" size="5" maxlength="4"/>&nbsp;<%= LanguageUtil.get(pageContext, "days-ago") %>
@@ -240,11 +206,11 @@
 		<html:radio property="lastVisitTypeSearch" styleId="lastVisitTypeSearch" value="DateRange" />
 		<html:text styleClass="form-text" property="lastVisitDateFrom" styleId="lastVisitDateFrom" size="10" maxlength="10"  style="font-size:11px;"/>
 		&nbsp;<img align="absmiddle" border="0" hspace="0" id="<portlet:namespace />calendar_input_4_button" 
-		src="<%= COMMON_IMG %>/calendar/calendar.gif" vspace="0" onClick="<portlet:namespace />calendarOnClick_4();">
+		src="<%= COMMON_IMG %>/calendar/calendar.gif" vspace="0" onClick="dijit.byId('lastVisitDateFrom').toggleDropDown();">
 		
 		&nbsp;<%= LanguageUtil.get(pageContext, "To") %>&nbsp; <html:text styleClass="form-text" property="lastVisitDateTo" styleId="lastVisitDateTo" size="10" maxlength="10"  style="font-size:11px;"/>
 		&nbsp;<img align="absmiddle" border="0" hspace="0" id="<portlet:namespace />calendar_input_5_button" 
-		src="<%= COMMON_IMG %>/calendar/calendar.gif" vspace="0" onClick="<portlet:namespace />calendarOnClick_5();"> <br/>
+		src="<%= COMMON_IMG %>/calendar/calendar.gif" vspace="0" onClick="dijit.byId('lastVisitDateTo').toggleDropDown();"> <br/>
 		
 		<html:radio property="lastVisitTypeSearch" styleId="lastVisitTypeSearch" value="Since" />&nbsp;<%= LanguageUtil.get(pageContext, "Since") %>
 		<html:text styleClass="form-text" property="lastVisitSince" styleId="lastVisitSince" size="5" maxlength="4"/>&nbsp;<%= LanguageUtil.get(pageContext, "days-ago") %>
@@ -366,16 +332,16 @@
 		<html:radio property="dateOfBirthTypeSearch" styleId="dateOfBirthTypeSearch" value="DateRange" />
 		<html:text styleClass="form-text" property="dateOfBirthFrom" styleId="dateOfBirthFrom" size="10" maxlength="10" style="font-size:11px;"/>&nbsp;
 		<img align="absmiddle" border="0" hspace="0" id="<portlet:namespace />calendar_input_6_button" 
-		src="<%= COMMON_IMG %>/calendar/calendar.gif" vspace="0" onClick="<portlet:namespace />calendarOnClick_6();">
+		src="<%= COMMON_IMG %>/calendar/calendar.gif" vspace="0" onClick="dijit.byId('dateOfBirthFrom').toggleDropDown();">
 		&nbsp;to&nbsp;<html:text styleClass="form-text" property="dateOfBirthTo" styleId="dateOfBirthTo" size="10" maxlength="10" style="font-size:11px;"/>
 		
 		&nbsp;<img align="absmiddle" border="0" hspace="0" id="<portlet:namespace />calendar_input_7_button" 
-		src="<%= COMMON_IMG %>/calendar/calendar.gif" vspace="0" onClick="<portlet:namespace />calendarOnClick_7();"><br>
+		src="<%= COMMON_IMG %>/calendar/calendar.gif" vspace="0" onClick="dijit.byId('dateOfBirthTo').toggleDropDown();"><br>
 		
 		<html:radio property="dateOfBirthTypeSearch" styleId="dateOfBirthTypeSearch" value="Since" />&nbsp;On&nbsp;
 		<html:text styleClass="form-text" property="dateOfBirthSince" styleId="dateOfBirthSince" size="10" maxlength="10" style="font-size:11px;"/>&nbsp;
 		<img align="absmiddle" border="0" hspace="0" id="<portlet:namespace />calendar_input_8_button" 
-		src="<%= COMMON_IMG %>/calendar/calendar.gif" vspace="0" onClick="<portlet:namespace />calendarOnClick_8();">
+		src="<%= COMMON_IMG %>/calendar/calendar.gif" vspace="0" onClick="dijit.byId('dateOfBirthSince').toggleDropDown();">
 		</span>
 	</td>
 <%

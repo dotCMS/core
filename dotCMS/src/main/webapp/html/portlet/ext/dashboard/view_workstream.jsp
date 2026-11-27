@@ -57,40 +57,6 @@ try {
       var globalPageNumber = 1;
       dojo.require('dotcms.dojo.data.HostReadStore');
         
-      <liferay:include page="/html/js/calendar/calendar_js_box_ext.jsp" flush="true">
-        <liferay:param name="calendar_num" value="1" />
-      </liferay:include>
-
-      function <portlet:namespace />setCalendarDate_0(year, month, day) {
-   	     date = document.getElementById("workStreamFromDate");
-   	     var monthStr = ''+month;
-   	     var dayStr = ''+day;
-   	     if(month < 10){
-   	        monthStr = '0'+month;
-   	     }
-         if(day < 10){
-   	       dayStr = '0'+day;
-         }
-   	   date.value=monthStr+"/"+dayStr+"/"+year;
-   	}
-
-     <liferay:include page="/html/js/calendar/calendar_js_box_ext.jsp" flush="true">
-      <liferay:param name="calendar_num" value="2" />
-     </liferay:include>
- 	 
-     function <portlet:namespace />setCalendarDate_1(year, month, day) {
-      	date = document.getElementById("workStreamToDate");
-      	var monthStr = ''+month;
-      	var dayStr = ''+day;
-      	if(month < 10){
-      	   monthStr = '0'+month;
-      	}
-        if(day < 10){
-      	   dayStr = '0'+day;
-        }
-      date.value=monthStr+"/"+dayStr+"/"+year;
-    }
-
      function viewWorkStreams(pageNumber, orderBy){
     	    globalPageNumber = pageNumber;
     	   	var hostId = dijit.byId("dahboardHostSelectorWorkStream").value;
