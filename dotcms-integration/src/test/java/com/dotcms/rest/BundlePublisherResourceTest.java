@@ -4,6 +4,8 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.EnvironmentDataGen;
 import com.dotcms.datagen.PushPublishingEndPointDataGen;
 import com.dotcms.publisher.bundle.bean.Bundle;
+import com.dotcms.publisher.business.PublishAuditAPI;
+import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.endpoint.bean.impl.PushPublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.util.IntegrationTestInitService;
@@ -39,8 +41,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Verifies the file name handling of {@link BundlePublisherResource#publish} when a bundle is
- * received from a registered sending endpoint.
+ * Verifies the file name handling of {@link BundlePublisherResource#publish}, and how it records
+ * the sender, when a bundle is received from a registered sending endpoint.
  */
 public class BundlePublisherResourceTest extends IntegrationTestBase {
 
@@ -269,8 +271,40 @@ public class BundlePublisherResourceTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to test: {@link BundlePublisherResource#publish}
+     * When: the container reports a host name for the sender that differs from its address
+     * Should: record the received bundle in the publish audit under the sender's address
+     */
+    @Test
+    public void test_publish_recordsSenderAddressInAudit() throws Exception {
+        final String bundleId = UUID.randomUUID().toString();
+        filesToDelete.add(new File(bundlesDir, bundleId + ".tar.gz"));
+
+        final Response response = publish(bundleId + ".tar.gz", "sender.example.test");
+
+        try {
+            assertEquals(200, response.getStatus());
+            final PublishAuditStatus audit =
+                    PublishAuditAPI.getInstance().getPublishAuditStatus(bundleId);
+            assertNotNull(audit);
+            assertTrue("The audit must name the sender by its address, but has "
+                            + audit.getStatusPojo().getEndpointsMap().keySet(),
+                    audit.getStatusPojo().getEndpointsMap().containsKey(SENDER_ADDRESS));
+        } finally {
+            PublishAuditAPI.getInstance().deletePublishAuditStatus(bundleId);
+            if (bundleRecord(bundleId) != null) {
+                APILocator.getBundleAPI().deleteBundle(bundleId);
+            }
+        }
+    }
+
     private Response publish(final String fileName) throws Exception {
-        final HttpServletRequest request = bundleRequest(fileName);
+        return publish(fileName, SENDER_ADDRESS);
+    }
+
+    private Response publish(final String fileName, final String remoteHost) throws Exception {
+        final HttpServletRequest request = bundleRequest(fileName, remoteHost);
         final HttpServletResponse response = mock(HttpServletResponse.class);
         return new BundlePublisherResource().publish("plain", null, false, null, request, response);
     }
@@ -280,7 +314,8 @@ public class BundlePublisherResourceTest extends IntegrationTestBase {
         return bundle == null || bundle.getId() == null ? null : bundle;
     }
 
-    private HttpServletRequest bundleRequest(final String fileName) throws IOException {
+    private HttpServletRequest bundleRequest(final String fileName, final String remoteHost)
+            throws IOException {
         final byte[] payload = "not-a-real-bundle".getBytes(StandardCharsets.UTF_8);
         final ByteArrayInputStream body = new ByteArrayInputStream(payload);
         final ServletInputStream stream = new ServletInputStream() {
@@ -306,7 +341,7 @@ public class BundlePublisherResourceTest extends IntegrationTestBase {
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getInputStream()).thenReturn(stream);
-        when(request.getRemoteHost()).thenReturn(SENDER_ADDRESS);
+        when(request.getRemoteHost()).thenReturn(remoteHost);
         when(request.getRemoteAddr()).thenReturn(SENDER_ADDRESS);
         when(request.getHeader("Authorization"))
                 .thenReturn("Bearer " + PublicEncryptionFactory.digestString(SENDER_KEY));

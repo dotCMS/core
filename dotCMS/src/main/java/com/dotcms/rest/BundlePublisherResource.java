@@ -93,8 +93,8 @@ public class BundlePublisherResource {
 		paramsMap.put("callback", callback);
 		paramsMap.put("filterKey", UtilMethods.isSet(filterKey) ? filterKey : BLANK);
 		final ResourceResponse responseResource = new ResourceResponse(paramsMap);
-		final String remoteIP = UtilMethods.isSet(request.getRemoteHost())?
-				request.getRemoteHost() : request.getRemoteAddr();
+		// the same address the sender is authenticated by
+		final String remoteIP = request.getRemoteAddr();
 
 		if (request.getInputStream().isFinished()) {
 			Logger.error(this.getClass(), "Push Publishing failed from " + remoteIP + ": Bundle expected");
