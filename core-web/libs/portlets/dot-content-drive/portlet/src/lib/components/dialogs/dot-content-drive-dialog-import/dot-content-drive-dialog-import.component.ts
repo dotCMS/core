@@ -14,7 +14,6 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { AccordionModule } from 'primeng/accordion';
 import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
 import { FileSelectEvent, FileUploadModule } from 'primeng/fileupload';
 import { MessageModule } from 'primeng/message';
 import { MultiSelectModule } from 'primeng/multiselect';
@@ -22,7 +21,14 @@ import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { catchError, distinctUntilChanged, finalize, map, switchMap } from 'rxjs/operators';
+import {
+    catchError,
+    distinctUntilChanged,
+    finalize,
+    map,
+    startWith,
+    switchMap
+} from 'rxjs/operators';
 
 import {
     DotAlertConfirmService,
@@ -34,6 +40,7 @@ import {
 } from '@dotcms/data-access';
 import {
     DotCMSClazzes,
+    DotCMSContentletWorkflowActions,
     DotCMSContentTypeField,
     DotContentImportForm,
     DotImportJob,
@@ -47,6 +54,7 @@ import {
 } from '@dotcms/ui';
 import { getDownloadLink } from '@dotcms/utils';
 
+import { ROOT_PATH, SYSTEM_HOST_PATH } from '../../../shared/constants';
 import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
 
 /** The Host content type's variable: sites are not imported from a CSV, as in Content Search. */
@@ -91,6 +99,28 @@ interface DotImportOption {
 }
 
 /**
+ * A workflow action choice. `scheme` names the workflow scheme the action belongs to, which is
+ * what tells two actions of the same name apart.
+ */
+interface DotImportActionOption extends DotImportOption {
+    scheme: string;
+}
+
+/**
+ * Labels workflow actions with their name and their scheme, in the order the server lists them.
+ * Actions without a Save step are left out: they only run on content that already exists, so
+ * every row an import would create fails with them ("The content must be saved").
+ */
+const toActionOptions = (actions: DotCMSContentletWorkflowActions[]): DotImportActionOption[] =>
+    actions
+        .filter(({ action }) => action.hasSaveActionlet !== false)
+        .map(({ action, scheme }) => ({
+            label: action.name,
+            value: action.id,
+            scheme: scheme.name
+        }));
+
+/**
  * Imports content from a CSV into the Drive (#37896).
  *
  * The form offers only what an import can actually use: the content types the user can write to
@@ -104,7 +134,6 @@ interface DotImportOption {
         ReactiveFormsModule,
         AccordionModule,
         ButtonModule,
-        CardModule,
         FileUploadModule,
         MessageModule,
         MultiSelectModule,
@@ -117,7 +146,7 @@ interface DotImportOption {
     ],
     templateUrl: './dot-content-drive-dialog-import.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    host: { class: 'block' }
+    host: { class: 'flex min-h-0 flex-1 flex-col' }
 })
 export class DotContentDriveDialogImportComponent {
     readonly #formBuilder = inject(FormBuilder);
@@ -138,7 +167,10 @@ export class DotContentDriveDialogImportComponent {
     #lastPreview: { file: File; form: string; job: DotImportJob } | null = null;
 
     readonly importForm = this.#formBuilder.group({
-        contentType: this.#formBuilder.control<string | null>(null, Validators.required),
+        contentType: this.#formBuilder.control<string | null>(
+            this.#workingContentType(),
+            Validators.required
+        ),
         language: this.#formBuilder.control<string | null>(
             this.#workingLanguage(),
             Validators.required
@@ -165,10 +197,13 @@ export class DotContentDriveDialogImportComponent {
      * and grew back when the last one was removed; this floor is the empty label's own height.
      */
     readonly keyFieldsLabelClass = 'min-h-[calc(2*var(--p-multiselect-padding-y)+1lh)]';
-    /** The preview's warning and error sections, both open when it appears (FR-012). */
-    readonly openSections = ['warnings', 'errors'];
-    /** The picked type's workflow actions, labelled "action ( scheme )" as in Content Search. */
-    readonly $workflowActions = signal<DotImportOption[]>([]);
+    /**
+     * The preview's error and warning sections, both closed when it appears (FR-012): their
+     * headers and counts stay side by side, so a long first list can't hide the second.
+     */
+    readonly openSections: string[] = [];
+    /** The picked type's workflow actions that can create content, each with its scheme. */
+    readonly $workflowActions = signal<DotImportActionOption[]>([]);
     /** The picked type's fields that can serve as key fields. */
     readonly $keyFields = signal<DotCMSContentTypeField[]>([]);
     /** Whether the user has tried to preview, which is when missing inputs start being reported. */
@@ -201,14 +236,22 @@ export class DotContentDriveDialogImportComponent {
         };
     });
 
-    /** Where the rows will land, worded for the preview. */
+    /**
+     * Where the rows will land, worded for the preview: the path, how many rows, and why they go
+     * there when it isn't the file's own site/folder column. A path with no folder below the site
+     * is a site root.
+     */
     readonly $destinations = computed(() =>
         (this.$preview()?.result?.destinations ?? []).map((destination) => ({
-            text: this.#dotMessageService.get(
-                'content-drive.import.preview.destination.rows',
-                String(destination.rows),
-                destination.path
-            ),
+            path: destination.path,
+            isSiteRoot: /^\/\/[^/]+\/?$/.test(destination.path),
+            rows:
+                destination.rows === 1
+                    ? this.#dotMessageService.get('content-drive.import.preview.destination.row')
+                    : this.#dotMessageService.get(
+                          'content-drive.import.preview.destination.rows',
+                          String(destination.rows)
+                      ),
             source:
                 destination.source === 'CONTENT_TYPE_DEFAULT'
                     ? this.#dotMessageService.get(
@@ -223,40 +266,40 @@ export class DotContentDriveDialogImportComponent {
     );
 
     /**
-     * The short notes under the Summary figures: where rows land, the key fields when there are
-     * any, and the server's info lines. Variable by design — the server only adds the lines that
-     * apply — minus the two that repeat the figures ("Import statistics…" and the header count).
+     * Whether no row lands in the folder the Drive is showing. Rows are placed by the file, not by
+     * where the user opened the dialog, so this says so when the two differ. Only a folder counts:
+     * when the Drive shows a whole site there is no single folder to compare with.
      */
-    readonly $summaryNotes = computed(() => {
-        const result = this.$preview()?.result;
-        const headersMatched = this.$summary().headersMatched;
-        const notes: { text: string; testId: string }[] = this.$destinations().map(
-            (destination) => ({
-                text: destination.source
-                    ? `${destination.text} (${destination.source})`
-                    : destination.text,
-                testId: 'import-destination'
-            })
-        );
-
-        if (this.$summary().keyFields) {
-            notes.push({
-                text: `${this.#dotMessageService.get('Key-Fields')}: ${this.$summary().keyFields}`,
-                testId: 'import-summary-key-fields'
-            });
+    readonly $destinationsSkipViewedFolder = computed(() => {
+        const path = this.#store.path();
+        const destinations = this.$destinations();
+        if (!path || path === ROOT_PATH || path === SYSTEM_HOST_PATH || !destinations.length) {
+            return false;
         }
 
-        (result?.info ?? [])
-            .map((info) => info.message)
-            .filter(
-                (message) =>
-                    !message.startsWith('Import statistics') &&
-                    !message.startsWith(`${headersMatched} `)
-            )
-            .forEach((text) => notes.push({ text, testId: 'import-summary-info-item' }));
+        const folder = `//${this.#store.currentSite()?.hostname}${path.endsWith('/') ? path : `${path}/`}`;
 
-        return notes;
+        return !destinations.some(
+            (destination) => destination.path.toLowerCase() === folder.toLowerCase()
+        );
     });
+
+    /**
+     * The note under the Summary figures: the key fields the rows are matched by, when there are
+     * any. The server's information lines are left out: they restate the content type ("there are
+     * unique fields…", "3 relationship fields…"), not anything about this file, and the rows they
+     * would affect are listed as errors already.
+     */
+    readonly $summaryNotes = computed(() =>
+        this.$summary().keyFields
+            ? [
+                  {
+                      text: `${this.#dotMessageService.get('content-drive.import.match-by.summary')}: ${this.$summary().keyFields}`,
+                      testId: 'import-summary-key-fields'
+                  }
+              ]
+            : []
+    );
 
     /** "Will import" splits into new and updated content; the tooltip says how. */
     readonly $willImportTooltip = computed(
@@ -271,6 +314,21 @@ export class DotContentDriveDialogImportComponent {
 
     /** The preview's warnings, file-wide ones first, then by line. */
     readonly $previewWarnings = computed(() => byLine(this.$preview()?.result?.warning));
+    /**
+     * The server's information lines, minus the two the Summary figures already say: "Import
+     * statistics…" and "N headers found…". Neither has a code; the header count is told from the
+     * relationship line, which also starts with a number, by having no field.
+     */
+    readonly $previewInfo = computed(() => {
+        const headersMatched = this.$summary().headersMatched;
+
+        return (this.$preview()?.result?.info ?? []).filter(
+            ({ message, field }) =>
+                !message.startsWith('Import statistics') &&
+                !(message.startsWith(`${headersMatched} `) && !field)
+        );
+    });
+
     /** The preview's errors, file-wide ones first, then by line. */
     readonly $previewErrors = computed(() => byLine(this.$preview()?.result?.error));
 
@@ -322,9 +380,32 @@ export class DotContentDriveDialogImportComponent {
         };
     });
 
+    /**
+     * Whether the import will skip rows. Counted from failed rows, not from the error list: an
+     * error about the whole file (a key field missing from it, for one) skips no row.
+     */
+    readonly $skipsRows = computed(() => this.$summary().failed > 0);
+
+    /**
+     * Why the previewed import can't do anything, so the dialog stops it instead of running an
+     * import that changes nothing: the preview is a dry run of the import itself, so its counts
+     * decide, not the kind of error (a key field missing from the file, for one, is reported as an
+     * error yet ignored). `null` when the import can run.
+     */
+    readonly $importBlockedReason = computed(() => {
+        const { toCreate, toUpdate } = this.$summary();
+
+        return toCreate + toUpdate === 0
+            ? this.#dotMessageService.get('content-drive.import.preview.blocked.nothing-to-import')
+            : null;
+    });
+
     constructor() {
         this.importForm.controls.contentType.valueChanges
             .pipe(
+                // A type prefilled from the Drive's filter needs its options too, and an initial
+                // value never reaches valueChanges.
+                startWith(this.importForm.controls.contentType.value),
                 // The shared selector hands back the value it is given, so showing the form again
                 // after a preview reports the same type; only a different one is a change.
                 distinctUntilChanged(),
@@ -342,7 +423,7 @@ export class DotContentDriveDialogImportComponent {
             .subscribe((options) => {
                 if (options) {
                     this.$workflowActions.set(options.actions);
-                    this.$keyFields.set(options.keyFields);
+                    this.#setKeyFields(options.keyFields);
                 }
             });
 
@@ -369,6 +450,19 @@ export class DotContentDriveDialogImportComponent {
         const file = event.currentFiles?.[0] ?? null;
         this.importForm.controls.file.setValue(file);
         this.#readFileMeta(file);
+    }
+
+    /**
+     * Lists the type's key fields with the unique ones first: a unique field matches at most one
+     * item, so it is the field to pick for updating existing content.
+     *
+     * @param fields the type's fields that can be keys, in server order
+     */
+    #setKeyFields(fields: DotCMSContentTypeField[]): void {
+        this.$keyFields.set([
+            ...fields.filter((field) => field.unique),
+            ...fields.filter((field) => !field.unique)
+        ]);
     }
 
     /** Forgets the picked CSV. */
@@ -419,14 +513,13 @@ export class DotContentDriveDialogImportComponent {
     }
 
     /**
-     * Asks the user to confirm the import. When the preview found errors, the question says how
-     * many rows will be skipped, as Content Search does; otherwise it is Content Search's usual
-     * question. Rows are counted, not error messages: one row can carry several errors, and an
-     * error about the whole file belongs to no row.
+     * Asks the user to confirm the import. When rows will be skipped, the question says how many,
+     * as Content Search does; otherwise it is Content Search's usual question. Rows are counted,
+     * not error messages: one row can carry several errors, and an error about the whole file
+     * belongs to no row.
      */
     confirmImport(): void {
-        const hasErrors = this.$previewErrors().length > 0;
-        const message = hasErrors
+        const message = this.$skipsRows()
             ? this.#dotMessageService.get(
                   'content-drive.import.preview.errors-will-be-skipped',
                   String(this.$summary().failed)
@@ -576,6 +669,17 @@ export class DotContentDriveDialogImportComponent {
     }
 
     /**
+     * The content type the user is working in: the one type the Drive is filtered by, or none when
+     * the filter holds none or several, since then there is no single type to assume.
+     */
+    #workingContentType(): string | null {
+        const filter = this.#store.getFilterValue('contentType');
+        const selected = Array.isArray(filter) ? filter : filter ? [filter] : [];
+
+        return selected.length === 1 ? selected[0] : null;
+    }
+
+    /**
      * The language the user is working in: the one language the Drive is filtered by, or the
      * default language when the filter holds none or several.
      */
@@ -601,13 +705,8 @@ export class DotContentDriveDialogImportComponent {
      */
     #loadTypeOptions(contentType: string) {
         const actions$ = this.#workflowsService.getDefaultActions(contentType).pipe(
-            map((actions) =>
-                actions.map(({ action, scheme }) => ({
-                    label: `${action.name} ( ${scheme.name} )`,
-                    value: action.id
-                }))
-            ),
-            catchError(() => of([] as DotImportOption[]))
+            map(toActionOptions),
+            catchError(() => of([] as DotImportActionOption[]))
         );
 
         const keyFields$ = this.#fieldService.getFields(contentType, 'SYSTEM_INDEXED').pipe(

@@ -1,205 +1,319 @@
 @switch ($step()) {
     @case ('preview') {
-        <div class="flex flex-col gap-4" data-testid="import-preview">
-            @if ($previewErrors().length) {
-                <div
-                    class="rounded-lg bg-red-50 px-4 py-3 text-sm font-medium text-red-600"
-                    data-testid="import-preview-errors-banner">
-                    {{ 'content-drive.import.preview.errors-banner' | dm }}
-                </div>
-            }
+        <!-- The scroll container is a plain block: as a flex column it would shrink its children to
+             fit, and the messages box (overflow-hidden) would be cut off instead of scrolling. -->
+        <div class="min-h-0 flex-1 overflow-y-auto px-6 pb-4">
+            <div class="flex flex-col gap-4" data-testid="import-preview">
+                <!-- A blocked import would change nothing, so its reason replaces the banner about
+                 skipping rows. -->
+                @if ($importBlockedReason(); as reason) {
+                    <div
+                        class="rounded-lg bg-red-50 px-4 py-3 text-sm font-medium text-red-600"
+                        data-testid="import-blocked">
+                        {{ reason }}
+                    </div>
+                } @else if ($skipsRows()) {
+                    <div
+                        class="rounded-lg bg-red-50 px-4 py-3 text-sm font-medium text-red-600"
+                        data-testid="import-preview-errors-banner">
+                        {{ 'content-drive.import.preview.errors-banner' | dm }}
+                    </div>
+                }
 
-            <section class="flex flex-col gap-2" data-testid="import-summary">
-                <span class="font-semibold">{{ 'Summary' | dm }}</span>
-                <p-card [pt]="{ body: { class: 'p-0' } }">
-                    <div class="grid grid-cols-4 divide-x divide-gray-200">
-                        <div
-                            class="flex flex-col gap-1 p-3"
-                            [pTooltip]="'content-drive.import.preview.rows-read.tooltip' | dm"
-                            tooltipPosition="top">
-                            <span class="text-sm text-gray-500">
-                                {{ 'content-drive.import.preview.rows-read' | dm }}
-                            </span>
-                            <span
-                                class="text-xl font-semibold"
-                                data-testid="import-summary-rows-read">
-                                {{ $summary().rowsRead }}
-                            </span>
-                        </div>
-                        <div
-                            class="flex flex-col gap-1 p-3"
-                            [pTooltip]="'content-drive.import.preview.headers-matched.tooltip' | dm"
-                            tooltipPosition="top">
-                            <span class="text-sm text-gray-500">
-                                {{ 'content-drive.import.preview.headers-matched' | dm }}
-                            </span>
-                            <span
-                                class="text-xl font-semibold"
-                                data-testid="import-summary-headers">
-                                {{ $summary().headersMatched }}
-                            </span>
-                        </div>
-                        <div
-                            class="flex flex-col gap-1 p-3"
-                            [pTooltip]="$willImportTooltip()"
-                            tooltipPosition="top">
-                            <span class="text-sm text-gray-500">
-                                {{ 'content-drive.import.preview.will-import' | dm }}
-                            </span>
-                            <span
-                                class="text-xl font-semibold"
-                                data-testid="import-summary-will-import">
-                                {{ $summary().toCreate + $summary().toUpdate }}
-                            </span>
-                        </div>
-                        <div
-                            class="flex flex-col gap-1 p-3"
-                            [pTooltip]="'content-drive.import.preview.failed-rows.tooltip' | dm"
-                            tooltipPosition="top">
-                            <span class="text-sm text-gray-500">
-                                {{ 'content-drive.import.preview.failed-rows' | dm }}
-                            </span>
-                            <span
-                                class="text-xl font-semibold"
-                                [class.text-red-500]="$summary().failed > 0"
-                                data-testid="import-summary-failed">
-                                {{ $summary().failed }}
-                            </span>
+                <section class="flex flex-col gap-2" data-testid="import-summary">
+                    <span class="font-semibold">{{ 'Summary' | dm }}</span>
+                    <div class="rounded-lg border border-surface-200">
+                        <div class="grid grid-cols-4 divide-x divide-surface-200">
+                            <div
+                                class="flex flex-col gap-1 p-3"
+                                [pTooltip]="'content-drive.import.preview.rows-read.tooltip' | dm"
+                                tooltipPosition="top">
+                                <span class="text-sm text-gray-500">
+                                    {{ 'content-drive.import.preview.rows-read' | dm }}
+                                </span>
+                                <span
+                                    class="text-xl font-semibold"
+                                    data-testid="import-summary-rows-read">
+                                    {{ $summary().rowsRead }}
+                                </span>
+                            </div>
+                            <div
+                                class="flex flex-col gap-1 p-3"
+                                [pTooltip]="
+                                    'content-drive.import.preview.headers-matched.tooltip' | dm
+                                "
+                                tooltipPosition="top">
+                                <span class="text-sm text-gray-500">
+                                    {{ 'content-drive.import.preview.headers-matched' | dm }}
+                                </span>
+                                <span
+                                    class="text-xl font-semibold"
+                                    data-testid="import-summary-headers">
+                                    {{ $summary().headersMatched }}
+                                </span>
+                            </div>
+                            <div
+                                class="flex flex-col gap-1 p-3"
+                                [pTooltip]="$willImportTooltip()"
+                                tooltipPosition="top">
+                                <span class="text-sm text-gray-500">
+                                    {{ 'content-drive.import.preview.will-import' | dm }}
+                                </span>
+                                <span
+                                    class="text-xl font-semibold"
+                                    data-testid="import-summary-will-import">
+                                    {{ $summary().toCreate + $summary().toUpdate }}
+                                </span>
+                            </div>
+                            <div
+                                class="flex flex-col gap-1 p-3"
+                                [pTooltip]="'content-drive.import.preview.failed-rows.tooltip' | dm"
+                                tooltipPosition="top">
+                                <span class="text-sm text-gray-500">
+                                    {{ 'content-drive.import.preview.failed-rows' | dm }}
+                                </span>
+                                <span
+                                    class="text-xl font-semibold"
+                                    [class.text-red-500]="$summary().failed > 0"
+                                    data-testid="import-summary-failed">
+                                    {{ $summary().failed }}
+                                </span>
+                            </div>
                         </div>
                     </div>
-                </p-card>
-                <!-- Variable by design: where rows land, the key fields when there are any, and the
-                     server's info lines that the figures above don't already say. -->
-                @if ($summaryNotes().length) {
-                    <span class="text-xs text-gray-500" data-testid="import-summary-info">
-                        @for (note of $summaryNotes(); track $index; let last = $last) {
-                            <span [attr.data-testid]="note.testId">{{ note.text }}</span>
-                            @if (!last) {
-                                ·
+                    <!-- The key fields the rows are matched by, when there are any. -->
+                    @if ($summaryNotes().length) {
+                        <span class="text-xs text-gray-500" data-testid="import-summary-info">
+                            @for (note of $summaryNotes(); track $index; let last = $last) {
+                                <span [attr.data-testid]="note.testId">{{ note.text }}</span>
+                                @if (!last) {
+                                    ·
+                                }
                             }
+                        </span>
+                    }
+                </section>
+
+                <!-- Where rows land is decided by the file, so it is shown here, for this file, rather
+                 than explained in the form (FR-011). -->
+                @if ($destinations().length) {
+                    <section class="flex flex-col gap-2" data-testid="import-destinations">
+                        <span
+                            class="font-semibold"
+                            [pTooltip]="'content-drive.import.preview.destinations.tooltip' | dm"
+                            tooltipPosition="top">
+                            {{ 'content-drive.import.preview.destinations' | dm }}
+                        </span>
+                        <ul
+                            class="m-0 flex list-none flex-col divide-y divide-surface-200 rounded-lg border border-surface-200 p-0 text-sm">
+                            @for (destination of $destinations(); track $index) {
+                                <li
+                                    class="flex items-center gap-3 px-4 py-3"
+                                    data-testid="import-destination">
+                                    <i
+                                        class="pi text-gray-500"
+                                        [class.pi-globe]="destination.isSiteRoot"
+                                        [class.pi-folder]="!destination.isSiteRoot"
+                                        aria-hidden="true"></i>
+                                    <span
+                                        class="min-w-0 truncate font-medium"
+                                        [title]="destination.path">
+                                        {{ destination.path }}
+                                    </span>
+                                    @if (destination.source) {
+                                        <p-tag
+                                            class="shrink-0 whitespace-nowrap"
+                                            severity="secondary"
+                                            [value]="destination.source" />
+                                    }
+                                    <span
+                                        class="ml-auto shrink-0 whitespace-nowrap text-gray-500"
+                                        data-testid="import-destination-rows">
+                                        {{ destination.rows }}
+                                    </span>
+                                </li>
+                            }
+                        </ul>
+                        @if ($destinationsSkipViewedFolder()) {
+                            <small class="text-gray-600" data-testid="import-destination-elsewhere">
+                                {{ 'content-drive.import.preview.destination.elsewhere' | dm }}
+                            </small>
                         }
-                    </span>
+                    </section>
                 }
-            </section>
 
-            <!-- Warnings first and Errors below, each a section the user opens and closes on its
-                 own, both open at first. A section with nothing in it is left out, and with
+                <!-- Errors first, since they are the rows that will be skipped, then Warnings, then the
+                 server's information; each a
+                 section the user opens and closes on its own, both open at first. A section with nothing in it is left out, and with
                  neither there is no box at all (FR-012). -->
-            @if ($previewWarnings().length || $previewErrors().length) {
-                <p-accordion
-                    class="overflow-hidden rounded-lg border border-surface-200"
-                    data-testid="import-messages"
-                    [multiple]="true"
-                    [value]="openSections">
-                    @if ($previewWarnings().length) {
-                        <p-accordion-panel value="warnings" data-testid="import-warnings-group">
-                            <p-accordion-header>
-                                <span class="flex w-full items-center gap-2 pr-2">
-                                    <i
-                                        class="pi pi-exclamation-triangle text-amber-500"
-                                        aria-hidden="true"></i>
-                                    <span class="text-sm font-bold">{{ 'Warnings' | dm }}</span>
-                                    <p-tag
-                                        class="ml-auto"
-                                        severity="warn"
-                                        [value]="'' + $previewWarnings().length"
-                                        data-testid="import-warnings-count" />
-                                </span>
-                            </p-accordion-header>
-                            <p-accordion-content>
-                                <ul
-                                    class="m-0 flex list-none flex-col divide-y divide-surface-100 p-0">
-                                    @for (warning of $previewWarnings(); track $index) {
-                                        <li
-                                            class="flex items-start gap-4 px-4 py-3 text-sm"
-                                            data-testid="import-warning-item">
-                                            <span
-                                                class="w-24 shrink-0 whitespace-nowrap text-gray-500">
-                                                @if (warning.row) {
-                                                    {{
-                                                        'content-drive.import.preview.line'
-                                                            | dm: ['' + warning.row]
-                                                    }}
-                                                }
-                                            </span>
-                                            <div class="min-w-0 flex-1">
-                                                {{ warning.message }}
-                                                @if (warning.field || warning.value) {
-                                                    <div class="text-xs text-gray-500">
-                                                        {{ warning.field }}
-                                                        @if (warning.value) {
-                                                            <code>{{ warning.value }}</code>
-                                                        }
-                                                    </div>
-                                                }
-                                            </div>
-                                        </li>
-                                    }
-                                </ul>
-                            </p-accordion-content>
-                        </p-accordion-panel>
-                    }
-                    @if ($previewErrors().length) {
-                        <p-accordion-panel value="errors" data-testid="import-errors-group">
-                            <p-accordion-header>
-                                <span class="flex w-full items-center gap-2 pr-2">
-                                    <i
-                                        class="pi pi-exclamation-circle text-red-500"
-                                        aria-hidden="true"></i>
-                                    <span class="text-sm font-bold">{{ 'Errors' | dm }}</span>
-                                    <p-tag
-                                        class="ml-auto"
-                                        severity="danger"
-                                        [value]="'' + $previewErrors().length"
-                                        data-testid="import-errors-count" />
-                                </span>
-                            </p-accordion-header>
-                            <p-accordion-content>
-                                <ul
-                                    class="m-0 flex list-none flex-col divide-y divide-surface-100 p-0">
-                                    @for (error of $previewErrors(); track $index) {
-                                        <li
-                                            class="flex items-start gap-4 px-4 py-3 text-sm"
-                                            data-testid="import-error-item">
-                                            <span
-                                                class="w-24 shrink-0 whitespace-nowrap text-gray-500">
-                                                @if (error.row) {
-                                                    {{
-                                                        'content-drive.import.preview.line'
-                                                            | dm: ['' + error.row]
-                                                    }}
-                                                }
-                                            </span>
-                                            <div class="min-w-0 flex-1">
-                                                {{ error.message }}
-                                                @if (error.field || error.value) {
-                                                    <div class="text-xs text-gray-500">
-                                                        {{ error.field }}
-                                                        @if (error.value) {
-                                                            <code>{{ error.value }}</code>
-                                                        }
-                                                    </div>
-                                                }
-                                            </div>
-                                        </li>
-                                    }
-                                </ul>
-                            </p-accordion-content>
-                        </p-accordion-panel>
-                    }
-                </p-accordion>
-            }
+                @if (
+                    $previewErrors().length || $previewWarnings().length || $previewInfo().length
+                ) {
+                    <p-accordion
+                        class="overflow-hidden rounded-lg border border-surface-200"
+                        data-testid="import-messages"
+                        [multiple]="true"
+                        [value]="openSections">
+                        @if ($previewErrors().length) {
+                            <p-accordion-panel value="errors" data-testid="import-errors-group">
+                                <p-accordion-header>
+                                    <span class="flex w-full items-center gap-2 pr-2">
+                                        <i
+                                            class="pi pi-exclamation-circle text-red-500"
+                                            aria-hidden="true"></i>
+                                        <span class="text-sm font-bold">{{ 'Errors' | dm }}</span>
+                                        <p-tag
+                                            class="ml-auto"
+                                            severity="danger"
+                                            [value]="'' + $previewErrors().length"
+                                            data-testid="import-errors-count" />
+                                    </span>
+                                </p-accordion-header>
+                                <p-accordion-content>
+                                    <ul
+                                        class="m-0 flex list-none flex-col divide-y divide-surface-100 p-0">
+                                        @for (error of $previewErrors(); track $index) {
+                                            <li
+                                                class="flex items-start gap-4 px-4 py-3 text-sm"
+                                                data-testid="import-error-item">
+                                                <span
+                                                    class="w-24 shrink-0 whitespace-nowrap text-gray-500">
+                                                    @if (error.row) {
+                                                        {{
+                                                            'content-drive.import.preview.line'
+                                                                | dm: ['' + error.row]
+                                                        }}
+                                                    }
+                                                </span>
+                                                <div class="min-w-0 flex-1">
+                                                    {{ error.message }}
+                                                    @if (error.field || error.value) {
+                                                        <div class="text-xs text-gray-500">
+                                                            {{ error.field }}
+                                                            @if (error.value) {
+                                                                <code>{{ error.value }}</code>
+                                                            }
+                                                        </div>
+                                                    }
+                                                </div>
+                                            </li>
+                                        }
+                                    </ul>
+                                </p-accordion-content>
+                            </p-accordion-panel>
+                        }
+                        @if ($previewWarnings().length) {
+                            <p-accordion-panel value="warnings" data-testid="import-warnings-group">
+                                <p-accordion-header>
+                                    <span class="flex w-full items-center gap-2 pr-2">
+                                        <i
+                                            class="pi pi-exclamation-triangle text-amber-500"
+                                            aria-hidden="true"></i>
+                                        <span class="text-sm font-bold">{{ 'Warnings' | dm }}</span>
+                                        <p-tag
+                                            class="ml-auto"
+                                            severity="warn"
+                                            [value]="'' + $previewWarnings().length"
+                                            data-testid="import-warnings-count" />
+                                    </span>
+                                </p-accordion-header>
+                                <p-accordion-content>
+                                    <ul
+                                        class="m-0 flex list-none flex-col divide-y divide-surface-100 p-0">
+                                        @for (warning of $previewWarnings(); track $index) {
+                                            <li
+                                                class="flex items-start gap-4 px-4 py-3 text-sm"
+                                                data-testid="import-warning-item">
+                                                <span
+                                                    class="w-24 shrink-0 whitespace-nowrap text-gray-500">
+                                                    @if (warning.row) {
+                                                        {{
+                                                            'content-drive.import.preview.line'
+                                                                | dm: ['' + warning.row]
+                                                        }}
+                                                    }
+                                                </span>
+                                                <div class="min-w-0 flex-1">
+                                                    {{ warning.message }}
+                                                    @if (warning.field || warning.value) {
+                                                        <div class="text-xs text-gray-500">
+                                                            {{ warning.field }}
+                                                            @if (warning.value) {
+                                                                <code>{{ warning.value }}</code>
+                                                            }
+                                                        </div>
+                                                    }
+                                                </div>
+                                            </li>
+                                        }
+                                    </ul>
+                                </p-accordion-content>
+                            </p-accordion-panel>
+                        }
+                        @if ($previewInfo().length) {
+                            <p-accordion-panel value="info" data-testid="import-info-group">
+                                <p-accordion-header>
+                                    <span class="flex w-full items-center gap-2 pr-2">
+                                        <i
+                                            class="pi pi-info-circle text-blue-500"
+                                            aria-hidden="true"></i>
+                                        <span class="text-sm font-bold">{{ 'Info' | dm }}</span>
+                                        <p-tag
+                                            class="ml-auto"
+                                            severity="info"
+                                            [value]="'' + $previewInfo().length"
+                                            data-testid="import-info-count" />
+                                    </span>
+                                </p-accordion-header>
+                                <p-accordion-content>
+                                    <ul
+                                        class="m-0 flex list-none flex-col divide-y divide-surface-100 p-0">
+                                        @for (info of $previewInfo(); track $index) {
+                                            <li
+                                                class="flex items-start gap-4 px-4 py-3 text-sm"
+                                                data-testid="import-info-item">
+                                                <span
+                                                    class="w-24 shrink-0 whitespace-nowrap text-gray-500">
+                                                    @if (info.row) {
+                                                        {{
+                                                            'content-drive.import.preview.line'
+                                                                | dm: ['' + info.row]
+                                                        }}
+                                                    }
+                                                </span>
+                                                <div class="min-w-0 flex-1">
+                                                    {{ info.message }}
+                                                    @if (info.field || info.value) {
+                                                        <div class="text-xs text-gray-500">
+                                                            {{ info.field }}
+                                                            @if (info.value) {
+                                                                <code>{{ info.value }}</code>
+                                                            }
+                                                        </div>
+                                                    }
+                                                </div>
+                                            </li>
+                                        }
+                                    </ul>
+                                </p-accordion-content>
+                            </p-accordion-panel>
+                        }
+                    </p-accordion>
+                }
 
-            @if ($error(); as error) {
-                <p-message severity="error" data-testid="import-error">
-                    {{ error }}
-                </p-message>
-            }
+                @if ($error(); as error) {
+                    <p-message severity="error" data-testid="import-error">
+                        {{ error }}
+                    </p-message>
+                }
+            </div>
         </div>
 
-        <!-- The dialog's content box is the one scroll container (FR-012); the buttons stick to
-             its bottom edge. `-bottom-6 pb-6` covers the content box's 1.5rem bottom padding. -->
-        <div class="sticky -bottom-6 mt-4 flex justify-end gap-2 bg-white pt-2 pb-6">
+        <!-- The body above is the dialog's one scroll container (FR-012); the buttons are its sibling,
+             so they stay in view. -->
+        <div
+            class="flex shrink-0 justify-end gap-2 border-t border-surface-100 px-6 py-4"
+            data-testid="import-preview-footer">
             <p-button
                 severity="secondary"
                 [outlined]="true"
@@ -208,8 +322,9 @@
                 (onClick)="backToForm()" />
             <p-button
                 data-testid="import-confirm-btn"
+                [disabled]="!!$importBlockedReason()"
                 [label]="
-                    ($previewErrors().length
+                    ($skipsRows()
                         ? 'content-drive.import.preview.import-valid-rows'
                         : 'Import-Content'
                     ) | dm
@@ -218,7 +333,7 @@
         </div>
     }
     @default {
-        <div>
+        <div class="min-h-0 flex-1 overflow-y-auto px-6 pb-4" data-testid="import-form-body">
             <form [formGroup]="importForm" (ngSubmit)="preview()">
                 <div class="flex flex-col gap-2">
                     <label
@@ -290,7 +405,30 @@
                         data-testid="import-workflow-action"
                         [options]="$workflowActions()"
                         [placeholder]="'content-drive.import.workflow-action.placeholder' | dm"
-                        [attr.aria-label]="'Workflow-Action' | dm" />
+                        [attr.aria-label]="'Workflow-Action' | dm">
+                        <!-- In the list the scheme sits under the action in text-xs, muted with
+                         opacity rather than a fixed gray so it follows the option's own color when
+                         selected, as the Page type's Template field shows a template's site. The
+                         picked value reads "action · scheme" in one color with only the separator
+                         muted, as the query tool and the Velocity playground write theirs. -->
+                        <ng-template #selectedItem let-option>
+                            <span>
+                                {{ option.label }}
+                                <span class="opacity-80" aria-hidden="true">&middot;</span>
+                                {{ option.scheme }}
+                            </span>
+                        </ng-template>
+                        <ng-template #item let-option>
+                            <span class="flex flex-col">
+                                {{ option.label }}
+                                <span
+                                    class="text-xs opacity-80"
+                                    data-testid="import-workflow-action-scheme">
+                                    {{ option.scheme }}
+                                </span>
+                            </span>
+                        </ng-template>
+                    </p-select>
                     <small class="text-gray-600">
                         {{ 'content-drive.import.workflow-action.helper' | dm }}
                     </small>
@@ -304,7 +442,9 @@
                 </div>
 
                 <div class="mt-5 flex flex-col gap-2">
-                    <label for="import-key-fields">{{ 'Key-Fields' | dm }}</label>
+                    <label for="import-key-fields">
+                        {{ 'content-drive.import.match-by.label' | dm }}
+                    </label>
                     <p-multiselect
                         inputId="import-key-fields"
                         formControlName="fields"
@@ -316,7 +456,22 @@
                         [pt]="{ label: { class: keyFieldsLabelClass } }"
                         [options]="$keyFields()"
                         [placeholder]="'content-drive.import.key-fields.placeholder' | dm"
-                        [attr.aria-label]="'Key-Fields' | dm" />
+                        [attr.aria-label]="'content-drive.import.match-by.label' | dm">
+                        <ng-template #item let-field>
+                            <span
+                                class="flex items-center gap-2"
+                                data-testid="import-key-field-option">
+                                {{ field.name }}
+                                @if (field.unique) {
+                                    <p-tag
+                                        class="whitespace-nowrap"
+                                        severity="info"
+                                        [value]="'Unique' | dm"
+                                        data-testid="import-key-field-unique" />
+                                }
+                            </span>
+                        </ng-template>
+                    </p-multiselect>
                     <small class="text-gray-600">
                         {{ 'content-drive.import.key-fields.helper' | dm }}
                     </small>
@@ -345,7 +500,7 @@
                         [pt]="{
                             root: { style: { border: '0' } },
                             header: { style: { padding: '0', border: '0' } },
-                            content: { style: { padding: '0', border: '0' } }
+                            content: { class: 'group', style: { padding: '0', border: '0' } }
                         }"
                         data-testid="import-file-input"
                         [disabled]="$previewing()"
@@ -355,7 +510,7 @@
                         <ng-template #content>
                             @if ($fileName(); as fileName) {
                                 <div
-                                    class="flex items-center gap-3 rounded-xl border border-surface-200 bg-surface-50 px-4 py-3"
+                                    class="flex items-center gap-3 rounded-xl border border-surface-200 bg-surface-50 px-4 py-3 transition-colors group-data-[p-highlight=true]:border-dashed group-data-[p-highlight=true]:border-primary group-data-[p-highlight=true]:bg-primary-50"
                                     data-testid="import-file-card">
                                     <span
                                         class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary-100">
@@ -402,7 +557,7 @@
                                 </div>
                             } @else {
                                 <div
-                                    class="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl bg-surface-50 px-6 py-10 text-center"
+                                    class="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-transparent bg-surface-50 px-6 py-10 text-center transition-colors group-data-[p-highlight=true]:border-primary group-data-[p-highlight=true]:bg-primary-50"
                                     data-testid="import-file-dropzone"
                                     (click)="fileUpload.choose()">
                                     <span
@@ -438,10 +593,6 @@
                         </small>
                     }
                 </div>
-
-                <p class="m-0 mt-5 text-sm text-gray-600" data-testid="import-placement-notice">
-                    {{ 'content-drive.import.placement-notice' | dm }}
-                </p>
             </form>
 
             @if ($error(); as error) {
@@ -450,9 +601,11 @@
                 </p-message>
             }
         </div>
-        <!-- The dialog's content box is the one scroll container (FR-012); the buttons stick to
-             its bottom edge. `-bottom-6 pb-6` covers the content box's 1.5rem bottom padding. -->
-        <div class="sticky -bottom-6 mt-4 flex justify-end gap-2 bg-white pt-2 pb-6">
+        <!-- The body above is the dialog's one scroll container (FR-012); the buttons are its sibling,
+             so they stay in view. -->
+        <div
+            class="flex shrink-0 justify-end gap-2 border-t border-surface-100 px-6 py-4"
+            data-testid="import-form-footer">
             <p-button
                 [text]="true"
                 data-testid="import-cancel-btn"

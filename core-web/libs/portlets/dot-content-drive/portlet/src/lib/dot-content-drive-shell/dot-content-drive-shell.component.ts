@@ -106,6 +106,7 @@ import { DotFolderListViewContextMenuComponent } from '../components/dot-folder-
 import {
     ACTION_CENTER_DIALOG_CONTENT_STYLE,
     ACTION_CENTER_DIALOG_CLASS,
+    IMPORT_DIALOG_CLASS,
     CONTENT_DRIVE_EDIT_CODE_PARAM,
     CONTENT_DRIVE_URL_PARAM,
     CONTENT_DRIVE_VIEW_PARAM,
@@ -596,8 +597,10 @@ export class DotContentDriveShellComponent implements OnDestroy {
         switch (this.$activeDialog()?.type) {
             case DIALOG_TYPE.CONTENT_TYPE_SELECTOR:
                 return 'w-152 max-w-[92vw] px-0! pt-0 pb-4';
-            // Action Center sizes itself through `$dialogStyle` / `$dialogContentStyle` instead.
+            // Action Center sizes itself through `$dialogStyle` / `$dialogContentStyle` instead,
+            // and Import pads its own scrolling body and pinned footer.
             case DIALOG_TYPE.ACTION_CENTER:
+            case DIALOG_TYPE.IMPORT:
                 return '';
             default:
                 return 'w-175 pt-0 p-4';
@@ -607,18 +610,28 @@ export class DotContentDriveShellComponent implements OnDestroy {
     /**
      * @see ACTION_CENTER_DIALOG_CLASS
      */
-    readonly $dialogRootClass = computed(() =>
-        this.$activeDialog()?.type === DIALOG_TYPE.ACTION_CENTER ? ACTION_CENTER_DIALOG_CLASS : ''
-    );
+    readonly $dialogRootClass = computed(() => {
+        switch (this.$activeDialog()?.type) {
+            case DIALOG_TYPE.ACTION_CENTER:
+                return ACTION_CENTER_DIALOG_CLASS;
+            case DIALOG_TYPE.IMPORT:
+                return IMPORT_DIALOG_CLASS;
+            default:
+                return '';
+        }
+    });
 
     /**
      * @see ACTION_CENTER_DIALOG_CONTENT_STYLE
      */
-    readonly $dialogContentStyle = computed(() =>
-        this.$activeDialog()?.type === DIALOG_TYPE.ACTION_CENTER
+    readonly $dialogContentStyle = computed(() => {
+        const type = this.$activeDialog()?.type;
+
+        // Import shares the layout: one scrolling body with its buttons pinned below.
+        return type === DIALOG_TYPE.ACTION_CENTER || type === DIALOG_TYPE.IMPORT
             ? ACTION_CENTER_DIALOG_CONTENT_STYLE
-            : undefined
-    );
+            : undefined;
+    });
 
     /**
      * Drops the header's bottom rule and locks horizontal padding to `px-6` so the title lines up

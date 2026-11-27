@@ -18,6 +18,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 
 import { Accordion, AccordionHeader } from 'primeng/accordion';
 import { FileUpload } from 'primeng/fileupload';
+import { MultiSelect } from 'primeng/multiselect';
 
 import {
     DotAlertConfirmService,
@@ -62,15 +63,20 @@ const CONTENT_TYPES_PAGE: { contentTypes: DotCMSContentType[]; pagination: DotPa
     pagination: { currentPage: 1, perPage: 40, totalEntries: CONTENT_TYPES.length }
 };
 
-const workflowAction = (id: string, name: string, scheme: string) =>
+const workflowAction = (id: string, name: string, scheme: string, hasSaveActionlet = true) =>
     ({
-        action: { id, name },
+        action: { id, name, hasSaveActionlet },
         scheme: { id: `scheme-${scheme}`, name: scheme },
         firstStep: {}
     }) as unknown as DotCMSContentletWorkflowActions;
 
-const field = (variable: string, clazz: string, indexed = true): DotCMSContentTypeField =>
-    createFakeTextField({ variable, name: variable, clazz, indexed } as never);
+const field = (
+    variable: string,
+    clazz: string,
+    indexed = true,
+    unique = false
+): DotCMSContentTypeField =>
+    createFakeTextField({ variable, name: variable, clazz, indexed, unique } as never);
 
 /** Every field kind the import can't use as a key, next to two it can. */
 const BLOG_FIELDS: DotCMSContentTypeField[] = [
@@ -93,11 +99,22 @@ describe('DotContentDriveDialogImportComponent', () => {
     let workflowsService: Mocked<DotWorkflowsActionsService>;
     let fieldService: Mocked<DotFieldService>;
 
-    const storeMock = (languageFilter: string[] | undefined) => ({
+    const storeMock = (
+        languageFilter: string[] | undefined,
+        contentTypeFilter: string[] | undefined,
+        path: string | undefined
+    ) => ({
         currentSite: vi.fn().mockReturnValue(createFakeSite({ hostname: 'demo.dotcms.com' })),
+        path: vi.fn().mockReturnValue(path),
         languages: vi.fn().mockReturnValue([ENGLISH, SPANISH]),
         defaultLanguageId: vi.fn().mockReturnValue(ENGLISH.id),
-        getFilterValue: vi.fn((key: string) => (key === 'languageId' ? languageFilter : undefined)),
+        getFilterValue: vi.fn((key: string) =>
+            key === 'languageId'
+                ? languageFilter
+                : key === 'contentType'
+                  ? contentTypeFilter
+                  : undefined
+        ),
         closeDialog: vi.fn(),
         startImportRun: vi.fn()
     });
@@ -135,7 +152,8 @@ describe('DotContentDriveDialogImportComponent', () => {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
                     'content-drive.import.language.multilingual': 'Multilingual file',
-                    'content-drive.import.preview.destination.rows': '{0} rows → {1}',
+                    'content-drive.import.preview.destination.rows': '{0} rows',
+                    'content-drive.import.preview.destination.row': '1 row',
                     'content-drive.import.preview.line': 'Line {0}',
                     'content-drive.import.preview.errors-will-be-skipped':
                         'content-drive.import.preview.errors-will-be-skipped ({0})'
@@ -145,12 +163,21 @@ describe('DotContentDriveDialogImportComponent', () => {
     });
 
     /** `'none'` means the Drive has no language filter at all. */
-    const setup = (languageFilter: string[] | 'none' = ['2']) => {
+    /** `path` is the folder the Drive is showing; `undefined` is the whole site. */
+    const setup = (
+        languageFilter: string[] | 'none' = ['2'],
+        contentTypeFilter?: string[],
+        path?: string
+    ) => {
         spectator = createComponent({
             providers: [
                 mockProvider(
                     DotContentDriveStore,
-                    storeMock(languageFilter === 'none' ? undefined : languageFilter)
+                    storeMock(
+                        languageFilter === 'none' ? undefined : languageFilter,
+                        contentTypeFilter,
+                        path
+                    )
                 )
             ]
         });
@@ -227,17 +254,103 @@ describe('DotContentDriveDialogImportComponent', () => {
 
             expect(form().contentType.value).toBe('Blog');
         });
+
+        it('is prefilled with the one content type the Drive is filtered by, with its actions', () => {
+            setup(['2'], ['Blog']);
+
+            expect(form().contentType.value).toBe('Blog');
+            expect(workflowsService.getDefaultActions).toHaveBeenCalledWith('Blog');
+            expect(spectator.component.$workflowActions()).toEqual([
+                { label: 'Publish', value: 'publish', scheme: 'Blogs' }
+            ]);
+        });
+
+        it('starts empty when the Drive is filtered by several content types', () => {
+            setup(['2'], ['Blog', 'News']);
+
+            expect(form().contentType.value).toBeNull();
+        });
+
+        it('starts empty when the Drive has no content type filter', () => {
+            setup();
+
+            expect(form().contentType.value).toBeNull();
+        });
     });
 
     describe('workflow action (FR-006)', () => {
-        it('loads the initial actions of the picked type, labelled with their scheme', () => {
+        it('labels each action with its name and its scheme, even when there is one scheme', () => {
             setup();
             pickContentType('Blog');
 
             expect(workflowsService.getDefaultActions).toHaveBeenCalledWith('Blog');
-            expect(spectator.component.$workflowActions()).toEqual([
-                { label: 'Publish ( Blogs )', value: 'publish' }
+            expect(spectator.component.$workflowActions()).toStrictEqual([
+                { label: 'Publish', value: 'publish', scheme: 'Blogs' }
             ]);
+        });
+
+        it('shows the picked action as "action · scheme"', () => {
+            setup();
+            pickContentType('Blog');
+            form().workflowActionId.setValue('publish');
+            spectator.detectChanges();
+
+            const shown = spectator
+                .query('[data-testid="import-workflow-action"] .p-select-label')
+                ?.textContent?.replace(/\s+/g, ' ')
+                .trim();
+
+            expect(shown).toBe('Publish · Blogs');
+        });
+
+        it('keeps the order the server lists the actions in, across schemes', () => {
+            setup();
+            workflowsService.getDefaultActions.mockReturnValueOnce(
+                of([
+                    workflowAction('draft', 'Save as Draft', 'Blogs'),
+                    workflowAction('save', 'Save', 'System Workflow')
+                ])
+            );
+            pickContentType('Blog');
+
+            expect(spectator.component.$workflowActions()).toStrictEqual([
+                { label: 'Save as Draft', value: 'draft', scheme: 'Blogs' },
+                { label: 'Save', value: 'save', scheme: 'System Workflow' }
+            ]);
+        });
+
+        it('leaves out actions that cannot create content, which would fail every new row', () => {
+            setup();
+            workflowsService.getDefaultActions.mockReturnValueOnce(
+                of([
+                    workflowAction('draft', 'Save as Draft', 'Blogs'),
+                    workflowAction('review', 'Send for Review', 'Blogs', false)
+                ])
+            );
+            pickContentType('Blog');
+
+            expect(spectator.component.$workflowActions().map((o) => o.label)).toEqual([
+                'Save as Draft'
+            ]);
+        });
+
+        it('shows the scheme under each action in the open list', () => {
+            setup();
+            workflowsService.getDefaultActions.mockReturnValueOnce(
+                of([
+                    workflowAction('draft', 'Save as Draft', 'Blogs'),
+                    workflowAction('save', 'Save', 'System Workflow')
+                ])
+            );
+            pickContentType('Blog');
+            spectator.click(spectator.query('[data-testid="import-workflow-action"]'));
+            spectator.detectChanges();
+
+            const schemes = spectator
+                .queryAll('[data-testid="import-workflow-action-scheme"]', { root: true })
+                .map((el) => el.textContent?.trim());
+
+            expect(schemes).toEqual(['Blogs', 'System Workflow']);
         });
     });
 
@@ -262,6 +375,111 @@ describe('DotContentDriveDialogImportComponent', () => {
 
             expect(spectator.component.$keyFields().map((f) => f.variable)).toEqual(['title']);
         });
+
+        it('marks the unique fields in the open list, since they are the safest keys', () => {
+            setup();
+            fieldService.getFields.mockReturnValueOnce(
+                of([
+                    field('title', DotCMSClazzes.TEXT),
+                    field('urlTitle', DotCMSClazzes.TEXT, true, true)
+                ])
+            );
+            pickContentType('Blog');
+            spectator.click(spectator.query('[data-testid="import-key-fields"]'));
+            spectator.detectChanges();
+
+            const marked = spectator
+                .queryAll('[data-testid="import-key-field-unique"]', { root: true })
+                .map((el) =>
+                    el.closest('[data-testid="import-key-field-option"]')?.textContent?.trim()
+                );
+
+            expect(marked).toHaveLength(1);
+            expect(marked[0]).toContain('urlTitle');
+            expect(marked[0]).toContain('Unique');
+        });
+
+        describe('matching existing content', () => {
+            const withFields = (fields: DotCMSContentTypeField[]) => {
+                setup();
+                fieldService.getFields.mockReturnValueOnce(of(fields));
+                pickContentType('Blog');
+            };
+
+            it('asks how to match existing content rather than for key fields', () => {
+                setup();
+
+                expect(spectator.query('label[for="import-key-fields"]')?.textContent).toContain(
+                    'content-drive.import.match-by.label'
+                );
+            });
+
+            it('matches nothing until the user picks fields, even when the type has unique ones', () => {
+                withFields([
+                    field('title', DotCMSClazzes.TEXT),
+                    field('urlTitle', DotCMSClazzes.TEXT, true, true)
+                ]);
+
+                expect(form().fields.value).toEqual([]);
+            });
+
+            it('lists the unique fields first, keeping the order of the rest', () => {
+                withFields([
+                    field('title', DotCMSClazzes.TEXT),
+                    field('urlTitle', DotCMSClazzes.TEXT, true, true),
+                    field('author', DotCMSClazzes.TEXT)
+                ]);
+
+                expect(spectator.component.$keyFields().map((f) => f.variable)).toEqual([
+                    'urlTitle',
+                    'title',
+                    'author'
+                ]);
+            });
+        });
+
+        it('offers select-all', () => {
+            setup();
+            pickContentType('Blog');
+
+            expect(spectator.query(MultiSelect)?.showToggleAll).toBe(true);
+        });
+
+        it('previews key fields that are not columns in the file, leaving that check to the preview', async () => {
+            setup();
+            importService.preview.mockClear();
+            importService.preview.mockReturnValue(new Subject<DotImportJob>().asObservable());
+            pickContentType('Blog');
+            form().workflowActionId.setValue('publish');
+            const file = new File(['title,teaser\nHello,World'], 'blogs.csv', { type: 'text/csv' });
+            spectator.triggerEventHandler(FileUpload, 'onSelect', {
+                originalEvent: new Event('change'),
+                files: [file],
+                currentFiles: [file]
+            });
+            await file.text();
+            await spectator.fixture.whenStable();
+            form().fields.setValue(['title', 'urlTitle']);
+
+            const host = spectator.query(byTestId('import-preview-btn'));
+            spectator.click(host?.querySelector('button') ?? (host as HTMLElement));
+
+            expect(importService.preview).toHaveBeenCalled();
+            importService.preview.mockReset();
+        });
+    });
+
+    describe('layout', () => {
+        it('keeps the form buttons outside the scrolling body, so they stay in view', () => {
+            setup();
+
+            const body = spectator.query(byTestId('import-form-body'));
+            const footer = spectator.query(byTestId('import-form-footer'));
+
+            expect(body).toBeTruthy();
+            expect(footer?.querySelector('[data-testid="import-preview-btn"]')).toBeTruthy();
+            expect(body?.contains(footer as Node)).toBe(false);
+        });
     });
 
     describe('changing the content type (FR-008)', () => {
@@ -276,7 +494,7 @@ describe('DotContentDriveDialogImportComponent', () => {
             expect(form().workflowActionId.value).toBeNull();
             expect(form().fields.value).toEqual([]);
             expect(spectator.component.$workflowActions()).toEqual([
-                { label: 'Save ( System Workflow )', value: 'save' }
+                { label: 'Save', value: 'save', scheme: 'System Workflow' }
             ]);
         });
     });
@@ -347,10 +565,10 @@ describe('DotContentDriveDialogImportComponent', () => {
     });
 
     describe('placement notice (FR-011)', () => {
-        it('tells the user where rows land', () => {
+        it('leaves where rows land to the preview, which knows the file', () => {
             setup();
 
-            expect(spectator.query(byTestId('import-placement-notice'))).toBeTruthy();
+            expect(spectator.query(byTestId('import-placement-notice'))).toBeFalsy();
         });
     });
 
@@ -527,15 +745,119 @@ describe('DotContentDriveDialogImportComponent', () => {
             );
         });
 
+        describe('information from the server', () => {
+            const withInfo = () =>
+                runPreview({
+                    ...PREVIEW,
+                    result: {
+                        ...PREVIEW.result,
+                        info: [
+                            {
+                                code: 'UNIQUE_FIELD',
+                                message: 'There are unique fields in this Content Type.'
+                            },
+                            { message: '3 headers found on the file matches all the fields.' },
+                            { message: 'Import statistics: 4 successful imports' },
+                            {
+                                message:
+                                    '3 Relationship field(s) were found and will be used for import.',
+                                field: 'Blog.author, Blog.comments, Blog.related'
+                            }
+                        ]
+                    }
+                });
+
+            it('lists it in its own section, after errors and warnings', () => {
+                withInfo();
+
+                const items = spectator
+                    .queryAll(byTestId('import-info-item'))
+                    .map((item) => item.textContent ?? '');
+                expect(items.length).toBe(2);
+                expect(items[0]).toContain('unique fields');
+                expect(items[1]).toContain('Relationship');
+                expect(text('import-info-count')).toContain('2');
+                const preview = spectator.query(byTestId('import-preview')) as HTMLElement;
+                expect(preview.innerHTML.indexOf('import-warnings-group')).toBeLessThan(
+                    preview.innerHTML.indexOf('import-info-group')
+                );
+            });
+
+            it('keeps it out of the note under the summary, which only says what rows match by', () => {
+                withInfo();
+
+                const notes = text('import-summary-info');
+                expect(notes).toContain('title');
+                expect(notes).not.toContain('unique fields');
+            });
+
+            it('starts closed, like the other sections', () => {
+                withInfo();
+
+                expect(spectator.query(Accordion)?.value()).toEqual([]);
+            });
+        });
+
+        it('counts each destination in rows, saying 1 row for one', () => {
+            runPreview();
+
+            const counts = spectator
+                .queryAll(byTestId('import-destination-rows'))
+                .map((el) => el.textContent?.trim());
+            expect(counts).toEqual(['2 rows', '1 row', '1 row']);
+        });
+
+        it('shows where rows land on their own, under their heading', () => {
+            runPreview();
+
+            const destinations = spectator.query(byTestId('import-destinations'));
+            expect(destinations?.textContent).toContain(
+                'content-drive.import.preview.destinations'
+            );
+            expect(
+                destinations?.querySelectorAll('[data-testid="import-destination"]').length
+            ).toBe(3);
+            expect(
+                spectator.query(byTestId('import-summary-info'))?.textContent ?? ''
+            ).not.toContain('//demo.dotcms.com/news/');
+        });
+
+        describe('rows that land away from the folder being viewed', () => {
+            const elsewhere = () => spectator.query(byTestId('import-destination-elsewhere'));
+            const viewing = (path: string | undefined) =>
+                vi.mocked(spectator.inject(DotContentDriveStore).path).mockReturnValue(path);
+
+            it('says so when no row goes to the folder being viewed', () => {
+                viewing('/activities/');
+                runPreview();
+
+                expect(elsewhere()).toBeTruthy();
+            });
+
+            it('says nothing when some rows go to the folder being viewed', () => {
+                viewing('/news/');
+                runPreview();
+
+                expect(elsewhere()).toBeFalsy();
+            });
+
+            it('says nothing when the Drive shows a whole site rather than a folder', () => {
+                viewing(undefined);
+                runPreview();
+
+                expect(elsewhere()).toBeFalsy();
+            });
+        });
+
         it('lists warnings and errors apart, errors without a line first, then by line', () => {
             runPreview();
 
             expect(text('import-warnings-count')).toContain('1');
             expect(text('import-errors-count')).toContain('3');
-            // Warnings come first, Errors after.
+            // Errors come first, since they are the rows that will be skipped; Warnings after.
             const preview = spectator.query(byTestId('import-preview')) as HTMLElement;
-            expect(preview.innerHTML.indexOf('import-warnings-group')).toBeLessThan(
-                preview.innerHTML.indexOf('import-errors-group')
+            expect(preview.innerHTML.indexOf('import-errors-group')).toBeLessThan(
+                preview.innerHTML.indexOf('import-warnings-group')
             );
             const errors = spectator
                 .queryAll(byTestId('import-error-item'))
@@ -548,28 +870,32 @@ describe('DotContentDriveDialogImportComponent', () => {
             expect(errors[2]).toContain('13/40');
         });
 
-        /** #37896 FR-012 (UI review): collapsible sections, both open when the preview appears. */
-        it('shows warnings and errors as sections that both start open', () => {
+        /**
+         * #37896 FR-012 (UI review): collapsible sections, both closed when the preview appears, so
+         * a long first list can't hide that there is a second one.
+         */
+        it('shows errors and warnings as sections that both start closed', () => {
             runPreview();
 
             const accordion = spectator.query(Accordion);
             expect(accordion?.multiple()).toBe(true);
-            expect(accordion?.value()).toEqual(['warnings', 'errors']);
+            expect(accordion?.value()).toEqual([]);
         });
 
-        it('collapses and expands each section on its own', () => {
+        it('opens and closes each section on its own', () => {
             runPreview();
-            const [warningsHeader, errorsHeader] = spectator.queryAll(AccordionHeader);
-
-            warningsHeader.onClick();
-            spectator.detectChanges();
-            expect(spectator.query(Accordion)?.value()).toEqual(['errors']);
+            // Errors is the first section, Warnings the second.
+            const [errorsHeader, warningsHeader] = spectator.queryAll(AccordionHeader);
 
             errorsHeader.onClick();
             spectator.detectChanges();
-            expect(spectator.query(Accordion)?.value()).toEqual([]);
+            expect(spectator.query(Accordion)?.value()).toEqual(['errors']);
 
             warningsHeader.onClick();
+            spectator.detectChanges();
+            expect(spectator.query(Accordion)?.value()).toEqual(['errors', 'warnings']);
+
+            errorsHeader.onClick();
             spectator.detectChanges();
             expect(spectator.query(Accordion)?.value()).toEqual(['warnings']);
         });
@@ -701,14 +1027,122 @@ describe('DotContentDriveDialogImportComponent', () => {
         });
 
         it('asks the usual confirmation when the preview has no errors', () => {
-            runPreview({ ...PREVIEW, result: { ...PREVIEW.result, error: [] } });
+            runPreview({
+                ...PREVIEW,
+                result: {
+                    ...PREVIEW.result,
+                    error: [],
+                    data: {
+                        processed: { parsedRows: 5, failedRows: 0 },
+                        summary: { created: 4, updated: 1, failed: 0 }
+                    }
+                }
+            });
 
             clickTestId('import-confirm-btn');
 
-            const confirm = vi.mocked(spectator.inject(DotAlertConfirmService).confirm);
-            expect(confirm.mock.calls[0][0].message).toContain(
-                'message.contentlet.proceed.importing'
+            expect(spectator.inject(DotAlertConfirmService).confirm).toHaveBeenCalledWith(
+                expect.objectContaining({ message: 'message.contentlet.proceed.importing' })
             );
+        });
+
+        describe('with errors about the file but no failed rows', () => {
+            const FILE_ERROR_ONLY: DotImportJob = {
+                ...PREVIEW,
+                result: {
+                    ...PREVIEW.result,
+                    data: {
+                        processed: { parsedRows: 5, failedRows: 0 },
+                        summary: { created: 5, updated: 0, failed: 0 }
+                    },
+                    error: [
+                        {
+                            code: 'INVALID_KEY_FIELD',
+                            message: 'Key field: "sitemap" chosen doesn\'t match',
+                            row: 1,
+                            field: 'sitemap'
+                        }
+                    ]
+                }
+            };
+
+            it('asks the usual confirmation, since no row will be skipped', () => {
+                runPreview(FILE_ERROR_ONLY);
+
+                clickTestId('import-confirm-btn');
+
+                expect(spectator.inject(DotAlertConfirmService).confirm).toHaveBeenCalledWith(
+                    expect.objectContaining({ message: 'message.contentlet.proceed.importing' })
+                );
+            });
+
+            it('neither says rows will be skipped nor offers to import only the valid ones', () => {
+                runPreview(FILE_ERROR_ONLY);
+
+                expect(spectator.query(byTestId('import-preview-errors-banner'))).toBeFalsy();
+                expect(text('import-confirm-btn')).toContain('Import-Content');
+            });
+
+            it('still lists the error', () => {
+                runPreview(FILE_ERROR_ONLY);
+
+                expect(spectator.query(byTestId('import-preview'))?.textContent).toContain(
+                    'sitemap'
+                );
+            });
+        });
+
+        describe('an import that cannot succeed', () => {
+            const isImportDisabled = () =>
+                !!spectator
+                    .query(byTestId('import-confirm-btn'))
+                    ?.querySelector('button')
+                    ?.hasAttribute('disabled');
+
+            it('is blocked when no row would be created or updated', () => {
+                runPreview({
+                    ...PREVIEW,
+                    result: {
+                        ...PREVIEW.result,
+                        data: {
+                            processed: { parsedRows: 5, failedRows: 5 },
+                            summary: { created: 0, updated: 0, failed: 5 }
+                        }
+                    }
+                });
+
+                expect(isImportDisabled()).toBe(true);
+                expect(text('import-blocked')).toContain(
+                    'content-drive.import.preview.blocked.nothing-to-import'
+                );
+            });
+
+            it('is not blocked by a header error when rows would still import', () => {
+                runPreview({
+                    ...PREVIEW,
+                    result: {
+                        ...PREVIEW.result,
+                        error: [
+                            {
+                                code: 'INVALID_KEY_FIELD',
+                                message: 'Key field: "sitemap" chosen doesn\'t match',
+                                row: 1,
+                                field: 'sitemap'
+                            }
+                        ]
+                    }
+                });
+
+                expect(isImportDisabled()).toBe(false);
+                expect(spectator.query(byTestId('import-blocked'))).toBeFalsy();
+            });
+
+            it('is not blocked by errors on data rows, which are skipped', () => {
+                runPreview();
+
+                expect(isImportDisabled()).toBe(false);
+                expect(spectator.query(byTestId('import-blocked'))).toBeFalsy();
+            });
         });
     });
 
@@ -868,7 +1302,11 @@ describe('DotContentDriveDialogImportComponent', () => {
 
         it('stays open with the reason when the import cannot be started', () => {
             importService.preview.mockReturnValue(
-                of({ id: 'job-1', state: 'SUCCESS', result: { error: [] } } as DotImportJob)
+                of({
+                    id: 'job-1',
+                    state: 'SUCCESS',
+                    result: { error: [], data: { summary: { created: 1, updated: 0 } } }
+                } as DotImportJob)
             );
             importService.importContent.mockReturnValue(
                 throwError(() => refused('Workflow action not found'))

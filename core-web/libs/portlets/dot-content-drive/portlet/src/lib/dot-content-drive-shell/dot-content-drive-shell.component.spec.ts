@@ -84,6 +84,7 @@ import { DotContentDriveGridCardComponent } from '../components/dot-content-driv
 import {
     ACTION_CENTER_DIALOG_CONTENT_STYLE,
     ACTION_CENTER_DIALOG_CLASS,
+    IMPORT_DIALOG_CLASS,
     DEFAULT_PAGE,
     DEFAULT_PAGINATION,
     DIALOG_TYPE,
@@ -573,6 +574,13 @@ describe('DotContentDriveShellComponent', () => {
                 mockProvider(DotContentTypeService, {
                     getAllContentTypes: vi.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
                     getContentTypes: vi.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
+                    // The Import dialog's content type picker loads its first page on open.
+                    getWritableContentTypes: vi.fn().mockReturnValue(
+                        of({
+                            contentTypes: [],
+                            pagination: { currentPage: 1, perPage: 40, totalEntries: 0 }
+                        })
+                    ),
                     getContentTypesWithPagination: vi.fn().mockReturnValue(
                         of({
                             contentTypes: MOCK_BASE_TYPES,
@@ -2140,6 +2148,17 @@ describe('DotContentDriveShellComponent', () => {
             // The header template is shared, so the default branch must still render the plain title.
             expect(spectator.query('[data-testId="dialog-subheader"]')).toBeNull();
             expect(spectator.query('.p-dialog-title')?.textContent?.trim()).toBe('Folder');
+        });
+
+        it('should pin the Import buttons by making its content box the only scroll container', () => {
+            dialogSignal.set({ type: DIALOG_TYPE.IMPORT, header: 'Import' });
+            spectator.detectChanges();
+            spectator.detectChanges();
+
+            expect(spectator.component.$dialogContentStyle()).toEqual(
+                ACTION_CENTER_DIALOG_CONTENT_STYLE
+            );
+            expect(spectator.component.$dialogRootClass()).toBe(IMPORT_DIALOG_CLASS);
         });
 
         it('should not apply the Action Center sizing to other dialog types', () => {

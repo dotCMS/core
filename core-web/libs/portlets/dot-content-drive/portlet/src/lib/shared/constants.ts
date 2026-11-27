@@ -255,6 +255,13 @@ export const ACTION_CENTER_DIALOG_CLASS =
  * `overflow-hidden`. Inline styles win without needing `!` overrides. `min-height: 0` lets the box
  * shrink inside the flex column; without it a flex item refuses to go below its content height.
  */
+/**
+ * Root classes for the Import dialog: the Import form's width, and a height capped at 80vh so a
+ * long form or preview scrolls inside the dialog. With {@link ACTION_CENTER_DIALOG_CONTENT_STYLE}
+ * on its content box, the body scrolls and the buttons stay pinned below it.
+ */
+export const IMPORT_DIALOG_CLASS = 'w-175 max-w-[92vw] max-h-[80vh]! overflow-hidden';
+
 export const ACTION_CENTER_DIALOG_CONTENT_STYLE = {
     display: 'flex',
     'flex-direction': 'column',
