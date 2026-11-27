@@ -1916,7 +1916,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	 *             The Content Type could not be read.
 	 */
 	public void downloadToExcel(final HttpServletResponse response, final User user, final List<Map<String, String>> contentletsToExport, final String contentTypeInode) throws DotSecurityException, DotDataException {
-		PrintWriter writer = null;
+		// Empty input writes nothing, not even a header row, as it always has
 		if (!contentletsToExport.isEmpty()) {
 			Logger.info(this, String.format("Generating CSV data. Mapping content list of type '%s'", contentTypeInode));
 			final List<String> contentletInodes = new ArrayList<>();
@@ -1935,12 +1935,13 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
                 response.setContentType(MediaType.APPLICATION_OCTET_STREAM + "; " + MediaType.CHARSET_PARAMETER + "="
                         + StandardCharsets.UTF_8.name());
                 response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + csvFileName +"\"");
-				writer = response.getWriter();
-				// The Content Drive export writes the same file through the same writer
-				totalSize = new ContentletCsvWriter().write(contentType, contentletInodes, user,
-						HttpServletRequestThreadLocal.INSTANCE.getRequest(), HostFolderMode.IDENTIFIER,
-						writer);
-				writer.close();
+				// The headers are set before the writer is taken, so its charset is UTF-8
+				try (final PrintWriter writer = response.getWriter()) {
+					// The Content Drive export writes the same file through the same writer
+					totalSize = new ContentletCsvWriter().write(contentType, contentletInodes, user,
+							HttpServletRequestThreadLocal.INSTANCE.getRequest(), HostFolderMode.IDENTIFIER,
+							writer);
+				}
 				HibernateUtil.closeSession();
 			} catch (final Exception p) {
                 final String errorMsg = String.format("An error occurred when exporting contents of type '%s' [%s] to" +
@@ -1960,9 +1961,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
                     .SIMPLE_MESSAGE).setSeverity(MessageSeverity.INFO).setLife(10000).create();
             SystemMessageEventUtil.getInstance().pushMessage(systemMessage, ImmutableList.of(user.getUserId()));
             Logger.info(this, endMsg);
-        } else {
-			try {writer.print("\r\n");} catch (Exception e) {	Logger.debug(this,"Error: download to excel "+e);	}
-		}
+        }
 	}
 
 	/**

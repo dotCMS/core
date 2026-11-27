@@ -172,6 +172,13 @@ public class SelectionResolver {
         return false;
     }
 
+    /**
+     * The result when the selection holds more rows than the limit. The rows are incomplete and
+     * must not be written; the caller refuses the export.
+     *
+     * @param rows the rows resolved so far, one past the limit
+     * @return the rows, flagged as over the limit
+     */
     private static ExportCandidates overLimit(final Map<String, ExportRow> rows) {
         return new ExportCandidates(new ArrayList<>(rows.values()), true);
     }

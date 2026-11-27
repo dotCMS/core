@@ -348,6 +348,15 @@ public class ContentletCsvWriter {
         private final Map<String, Optional<Host>> hosts = new HashMap<>();
         private final Map<String, Optional<Folder>> folders = new HashMap<>();
 
+        /**
+         * Starts the context of one {@link ContentletCsvWriter#write} call, with empty host and
+         * folder caches.
+         *
+         * @param contentType    the content type being written
+         * @param user           the user the rows are loaded as
+         * @param request        the request used for binary download links
+         * @param hostFolderMode how the host/folder column is written
+         */
         private RowContext(final ContentType contentType, final User user,
                 final HttpServletRequest request, final HostFolderMode hostFolderMode) {
             this.contentType = contentType;
@@ -387,6 +396,12 @@ public class ContentletCsvWriter {
             return Optional.of("//" + host.get().getHostname() + folder.get().getPath());
         }
 
+        /**
+         * Reads a host as the system user, for the location column only.
+         *
+         * @param hostId the host identifier
+         * @return the host, or empty when it cannot be read; the failure is logged
+         */
         private Optional<Host> findHost(final String hostId) {
             try {
                 return Optional.ofNullable(
@@ -398,6 +413,12 @@ public class ContentletCsvWriter {
             }
         }
 
+        /**
+         * Reads a folder as the system user, for the location column only.
+         *
+         * @param folderInode the folder inode
+         * @return the folder, or empty when it cannot be read; the failure is logged
+         */
         private Optional<Folder> findFolder(final String folderInode) {
             try {
                 return Optional.ofNullable(folderAPI.find(folderInode, APILocator.systemUser(),
