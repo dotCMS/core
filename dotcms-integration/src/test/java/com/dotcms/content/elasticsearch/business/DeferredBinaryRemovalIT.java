@@ -15,6 +15,7 @@ import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.StoragePersistenceProvider;
 import com.dotcms.util.IntegrationTestInitService;
@@ -250,11 +251,15 @@ public class DeferredBinaryRemovalIT {
     /**
      * A file asset with two versions, each with its binary directory, a resized-image cache
      * directory and stored metadata in place.
+     * <p>Waits for the reindex queue to drain first: indexing a version generates its metadata,
+     * which writes into the version's binary directory, so an indexing run still pending when a
+     * test removes that directory would create it again and fail the test's checks.
      */
     private Versions fileAssetWithTwoVersions() throws Exception {
         final Folder folder = new FolderDataGen().site(site).nextPersisted();
         final Contentlet older = new FileAssetDataGen(folder, "first version").nextPersisted();
         final Contentlet working = ContentletDataGen.checkin(ContentletDataGen.checkout(older));
+        assertTrue(TestDataUtils.waitForEmptyQueue(), "the reindex queue did not drain");
 
         final Contentlet olderReRead = contentletAPI.find(older.getInode(), admin, false);
         final Contentlet workingReRead = contentletAPI.find(working.getInode(), admin, false);

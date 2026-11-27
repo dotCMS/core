@@ -39,6 +39,7 @@ import com.google.common.base.Strings;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.PathContainmentUtil;
 import com.dotcms.util.xstream.XStreamHandler;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -101,12 +102,14 @@ import io.vavr.control.Try;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -297,6 +300,7 @@ public class ContentHandler implements IHandler {
 				if (Host.SYSTEM_HOST.equalsIgnoreCase(wrapper.getContent().getIdentifier())) {
 					return;
 				}
+				requireIdFormat(wrapper.getContent());
 
 				content = new Contentlet(wrapper.getContent());
 
@@ -643,6 +647,50 @@ public class ContentHandler implements IHandler {
 	}
 
 	/**
+	 * Makes sure the inode and identifier of a content item read from a bundle are usable. The
+	 * inode names the folders the item's binaries are read from and written to, so it must have the
+	 * form of an id dotCMS generates ({@link InodeUtils#hasIdFormat(String)}). The identifier is only
+	 * used to find and create records, and check-in keeps an identifier the author chose, so any
+	 * value that is a plain name ({@link PathContainmentUtil#isPlainSegment(String)}: set, not
+	 * {@code .} or {@code ..}, and without slashes) is accepted.
+	 *
+	 * @param content The {@link Contentlet} as read from the bundle.
+	 *
+	 * @throws DotPublishingException If the inode or the identifier is not valid.
+	 */
+	private static void requireIdFormat(final Contentlet content) throws DotPublishingException {
+		if (!InodeUtils.hasIdFormat(content.getInode())
+				|| !PathContainmentUtil.isPlainSegment(content.getIdentifier())) {
+			throw new DotPublishingException("The bundle has a content item whose inode or identifier is not a valid id");
+		}
+	}
+
+	/**
+	 * Returns the file a bundle carries for a binary field of a content item, which the sender puts
+	 * in {@code assets/<i0>/<i1>/<inode>/<field>/}. Only a regular file inside the bundle's
+	 * {@code assets} folder is returned.
+	 *
+	 * @param bundleFolder The folder the bundle was extracted to.
+	 * @param inode        The item's inode, already checked by {@link #requireIdFormat(Contentlet)}.
+	 * @param fieldVar     The variable name of the binary field.
+	 *
+	 * @return The file, or {@code null} if the bundle carries none for this field.
+	 */
+	private static File bundledBinary(final File bundleFolder, final String inode, final String fieldVar) {
+		final File assetsFolder = new File(bundleFolder, "assets");
+		final File binaryFolder = new File(assetsFolder, inode.charAt(0) + File.separator + inode.charAt(1)
+				+ File.separator + inode + File.separator + fieldVar);
+		final File[] files = binaryFolder.listFiles(
+				file -> Files.isRegularFile(file.toPath(), LinkOption.NOFOLLOW_LINKS));
+		// The files come from an uploaded archive, so the check resolves the real location of the
+		// file (following any link in the folders above it) rather than judging the path alone
+		if (files == null || files.length == 0 || !PathContainmentUtil.isContainedIn(assetsFolder, files[0])) {
+			return null;
+		}
+		return files[0];
+	}
+
+	/**
 	 * Returns the Identifier the pushed Contentlet has in the receiver. If its Identifier already
 	 * exists there, it's used as is. Otherwise, HTML Pages and File Assets are matched by Site and
 	 * URI, so that an existing asset created with a different Identifier is updated instead of
@@ -857,15 +905,14 @@ public class ContentHandler implements IHandler {
 	    //Copy asset files to bundle folder keeping original folders structure
         for (final Field ff : fields) {
             if(ff.getFieldType().equals(Field.FieldType.BINARY.toString())) {
-                final String folderTree = inode.charAt(0)+File.separator+inode.charAt(1)+File.separator+
-                        inode+File.separator+ff.getVelocityVarName();
-
-                final File binaryFolder = new File(folderOut+File.separator+"assets"+File.separator+folderTree);
-				final File[] filesInFolder = binaryFolder.listFiles();
-
-                if(binaryFolder.exists() && filesInFolder!=null && filesInFolder.length > 0) {
-					content.setBinary(ff.getVelocityVarName(), filesInFolder[0]);
-				}
+                // The value read from the content XML is never used: only a file the bundle carries
+                // can become the binary. Without one, the item keeps the binary the receiver already
+                // stores for it, if any: for an item matched by a unique field it was put back by
+                // findUniqueContentMatch, and otherwise the check-in finds it by inode.
+                final String fieldVar = ff.getVelocityVarName();
+                final File bundled = bundledBinary(folderOut, inode, fieldVar);
+                content.setBinary(fieldVar,
+                        bundled != null || !updateExisting ? bundled : content.getBinary(fieldVar));
 			} else if ( ff.getFieldType().equals(Field.FieldType.TAG.toString()) ) {
 				// We don't want to rely on this value since it is not supposed to exist. So set it empty always
 				content.setStringProperty(ff.getVelocityVarName(), "");
@@ -1321,7 +1368,8 @@ public class ContentHandler implements IHandler {
      * Based on the content coming from the sender environment, finds the correspondent content in the receiver
      * environment based on a unique field instead of using the Identifier equality approach. This will allow content
      * creators to update or delete a given piece of content based on the value of a unique field, instead of using the
-     * Identifier value.
+     * Identifier value. A matched content keeps the binaries the receiver stores for it: the binary values in the
+     * bundle's content XML are not copied.
      *
      * @param content              The {@link Contentlet} object coming from the bundle (sender environment).
      * @param fields               The list of fields in the content, based on its Content Type.
@@ -1396,7 +1444,22 @@ public class ContentHandler implements IHandler {
 							Pair.of(content.getIdentifier(), remoteLocalLanguages.getLeft()),
 							Pair.of(matchingContent.getIdentifier(), remoteLocalLanguages.getRight()));
 					final String identifier = matchingContent.getIdentifier();
+					// The binary values in the bundle's content XML are not used, so the receiver's
+					// binaries are read before the copy and put back after it. They're read now
+					// because the new inode below hides them from Contentlet#getBinary
+					final Map<String, File> receiverBinaries = new HashMap<>();
+					for (final Field field : fields) {
+						if (Field.FieldType.BINARY.toString().equals(field.getFieldType())) {
+							final String fieldVar = field.getVelocityVarName();
+							receiverBinaries.put(fieldVar, Try.of(() -> matchingContent.getBinary(fieldVar))
+									.getOrElseThrow(e -> new DotDataException(e.getMessage(), e)));
+						}
+					}
 					this.contentletAPI.copyProperties(matchingContent, content.getMap());
+					for (final Map.Entry<String, File> receiverBinary : receiverBinaries.entrySet()) {
+						Try.run(() -> matchingContent.setBinary(receiverBinary.getKey(), receiverBinary.getValue()))
+								.getOrElseThrow(e -> new DotDataException(e.getMessage(), e));
+					}
 					matchingContent.setIdentifier(identifier);
 					matchingContent.setInode(UUIDUtil.uuid());
 					matchingContent.setProperty(Contentlet.DONT_VALIDATE_ME, true);

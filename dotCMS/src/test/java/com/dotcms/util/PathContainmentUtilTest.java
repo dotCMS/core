@@ -134,6 +134,38 @@ public class PathContainmentUtilTest {
     }
 
     /**
+     * Method to test: {@link PathContainmentUtil#isLexicallyContainedIn(File, File)}
+     * When: the candidate is below the root once its path is normalized
+     * Should: return true, without the files having to exist.
+     */
+    @Test
+    public void test_isLexicallyContainedIn_acceptsDescendants() {
+        final File root = new File("/data/shared/assets");
+
+        assertTrue(PathContainmentUtil.isLexicallyContainedIn(root, new File(root, "3/5/35f36e04-60f1-4252-aab6-4b9e564c38bd")));
+        assertTrue(PathContainmentUtil.isLexicallyContainedIn(root, new File(root, "a/./b/../c")));
+    }
+
+    /**
+     * Method to test: {@link PathContainmentUtil#isLexicallyContainedIn(File, File)}
+     * When: the candidate is the root, leaves it through parent segments, is a sibling sharing
+     * the root's name prefix, or an argument is null
+     * Should: return false.
+     */
+    @Test
+    public void test_isLexicallyContainedIn_rejectsPathsOutsideTheRoot() {
+        final File root = new File("/data/shared/assets");
+
+        assertFalse(PathContainmentUtil.isLexicallyContainedIn(root, root));
+        assertFalse(PathContainmentUtil.isLexicallyContainedIn(root, new File(root, "./../felix")));
+        assertFalse(PathContainmentUtil.isLexicallyContainedIn(root, new File(root, "././/../felix/upload")));
+        assertFalse(PathContainmentUtil.isLexicallyContainedIn(root, new File(root, "a/..")));
+        assertFalse(PathContainmentUtil.isLexicallyContainedIn(root, new File("/data/shared/assets_other/x")));
+        assertFalse(PathContainmentUtil.isLexicallyContainedIn(null, root));
+        assertFalse(PathContainmentUtil.isLexicallyContainedIn(root, null));
+    }
+
+    /**
      * Method to test: {@link PathContainmentUtil#plainSegmentBeforeSuffix(String, String)}
      * When: the name ends with the suffix and what comes before it is a plain segment
      * Should: return that part.

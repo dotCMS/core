@@ -31,19 +31,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 public class InodeUtils {
 
+	private static final Pattern ID_FORMAT = Pattern.compile(
+			"(?i)[0-9a-f]{32}|[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}|[1-9][0-9]{1,18}");
+
 	/**
-	 * Checks whether the inodeStr isSet or not.
-	 * 
+	 * Checks whether the inodeStr isSet or not. This only tells a set value from an empty one: it
+	 * does not check the form of the value. Use {@link #hasIdFormat(String)} for that.
+	 *
 	 * @param inodeStr
 	 *            Inode.inode which is a String.
-	 * 
-	 * @return the value <code>True</code> if the inodeStr is a in valid
-	 *         UUID.toString() format or inodeStr is a positive long. else the
-	 *         value <code>False</code>.
-	 * 
+	 *
+	 * @return the value <code>False</code> if inodeStr is null, empty, or one of
+	 *         <code>null</code>, <code>0</code> and <code>''</code> (case and surrounding
+	 *         blanks ignored); <code>True</code> for any other value.
+	 *
 	 */
 	public static final boolean isSet(String inodeStr) {
 
@@ -59,6 +64,21 @@ public class InodeUtils {
 		}
 
 		return (inodeStr.length() > 0);
+	}
+
+	/**
+	 * Tells whether a value has the form of an id dotCMS generates for an inode or identifier: a
+	 * UUID, either in its usual 8-4-4-4-12 dashed form or as 32 hexadecimal digits without dashes,
+	 * or a positive number of at least two digits (the form of very old inodes). Such a value holds
+	 * only hexadecimal digits and dashes, so it is safe to use as a folder name, and it is long
+	 * enough for the two one-character folders the asset store places above each inode folder.
+	 *
+	 * @param id The value to check.
+	 * @return {@code true} if the value has one of those forms, {@code false} otherwise, including
+	 * for {@code null}.
+	 */
+	public static boolean hasIdFormat(final String id) {
+		return id != null && ID_FORMAT.matcher(id).matches();
 	}
 
 	/**

@@ -1,12 +1,16 @@
 package com.dotcms.enterprise.publishing.remote.handler;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 
+import com.dotcms.LicenseTestUtil;
+import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextField;
@@ -14,8 +18,12 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FilterDescriptorDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.pusher.wrapper.ContentWrapper;
+import com.dotcms.publisher.pusher.wrapper.PushContentWrapper;
+import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
@@ -28,19 +36,23 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.tag.model.Tag;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import org.apache.commons.lang3.tuple.Pair;
 import com.thoughtworks.xstream.XStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -52,6 +64,7 @@ public class ContentHandlerTest {
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
+        LicenseTestUtil.getLicense();
     }
 
     /**
@@ -173,8 +186,284 @@ public class ContentHandlerTest {
         assertSame("The stale index document must be ignored, not matched", fromBundle, result);
     }
 
+    /**
+     * Method to test: {@link ContentHandler#handle(File)}
+     * Given scenario: A bundle whose content item has an inode that is a relative path
+     * ({@code ../<name>}) rather than a UUID, and a file at the folder that inode points to.
+     * Expected Result: The bundle is refused, and nothing is written next to the asset store, where
+     * that inode would place the item's binary folder.
+     */
+    @Test
+    public void TEST_BUNDLE_CONTENT_WITH_PATH_AS_INODE_IS_REFUSED() throws Exception {
+        final ContentType contentType = binaryContentType();
+        final File bundleFolder = newBundleFolder();
+        final String probeName = "ctprobe" + UUIDGenerator.shorty();
+        final File probeFolder = new File(
+                new File(APILocator.getFileAssetAPI().getRealAssetsRootPath()).getParentFile(), probeName);
+        try {
+            final Contentlet source = persistedSource(contentType, "bundle binary");
+            final String inode = "../" + probeName;
+            writeContentXml(bundleFolder, source, inode, UUIDGenerator.generateUuid(), null);
+            // The file the receiver would pick up as the item's binary, at <bundle>/<name>/<field>
+            FileUtils.writeStringToFile(new File(bundleFolder, probeName + "/" + BINARY_VAR + "/marker.txt"),
+                    "marker", StandardCharsets.UTF_8);
 
+            assertThrows(DotPublishingException.class, () -> handlerFor(bundleFolder).handle(bundleFolder));
 
+            assertFalse("No folder may be created outside the asset store", probeFolder.exists());
+            assertTrue("The item must not be saved",
+                    new DotConnect().setSQL("select inode from contentlet where inode = ?")
+                            .addParam(inode).loadResults().isEmpty());
+        } finally {
+            FileUtils.deleteQuietly(probeFolder);
+            FileUtils.deleteQuietly(bundleFolder);
+            ContentTypeDataGen.remove(contentType);
+        }
+    }
 
+    /**
+     * Method to test: {@link ContentHandler#handle(File)}
+     * Given scenario: A bundle whose content item has a valid inode but an identifier that is a
+     * relative path rather than a UUID.
+     * Expected Result: The bundle is refused and no identifier is created for it.
+     */
+    @Test
+    public void TEST_BUNDLE_CONTENT_WITH_PATH_AS_IDENTIFIER_IS_REFUSED() throws Exception {
+        final ContentType contentType = binaryContentType();
+        final File bundleFolder = newBundleFolder();
+        try {
+            final Contentlet source = persistedSource(contentType, "bundle binary");
+            final String identifier = "../" + UUIDGenerator.shorty();
+            writeContentXml(bundleFolder, source, UUIDGenerator.generateUuid(), identifier, null);
+
+            assertThrows(DotPublishingException.class, () -> handlerFor(bundleFolder).handle(bundleFolder));
+
+            assertTrue("No identifier may be created",
+                    new DotConnect().setSQL("select id from identifier where id = ?")
+                            .addParam(identifier).loadResults().isEmpty());
+        } finally {
+            FileUtils.deleteQuietly(bundleFolder);
+            ContentTypeDataGen.remove(contentType);
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentHandler#handle(File)}
+     * Given scenario: A bundle whose content item has a UUID inode and an identifier chosen by its
+     * author rather than generated, which check-in keeps and the sender bundles unchanged.
+     * Expected Result: The item is imported under that identifier.
+     */
+    @Test
+    public void TEST_BUNDLE_CONTENT_WITH_CUSTOM_IDENTIFIER_IS_IMPORTED() throws Exception {
+        final ContentType contentType = binaryContentType();
+        final File bundleFolder = newBundleFolder();
+        try {
+            final Contentlet source = persistedSource(contentType, "bundle binary");
+            final String inode = UUIDGenerator.generateUuid();
+            final String identifier = "custom_id-" + UUIDGenerator.shorty();
+            writeContentXml(bundleFolder, source, inode, identifier, null);
+
+            handlerFor(bundleFolder).handle(bundleFolder);
+
+            final Contentlet imported = APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false);
+            assertNotNull("The item must be imported", imported);
+            assertEquals(identifier, imported.getIdentifier());
+        } finally {
+            FileUtils.deleteQuietly(bundleFolder);
+            ContentTypeDataGen.remove(contentType);
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentHandler#handle(File)}
+     * Given scenario: A bundle whose content item does not carry its binary under the bundle's
+     * {@code assets} folder, while the item's binary value in the content XML names a file
+     * elsewhere on the receiver.
+     * Expected Result: The item is imported without a binary: only files the bundle itself carries
+     * are used, so the named file is not copied into the asset store.
+     */
+    @Test
+    public void TEST_BUNDLE_BINARY_VALUE_OUTSIDE_THE_BUNDLE_IS_NOT_IMPORTED() throws Exception {
+        final ContentType contentType = binaryContentType();
+        final File bundleFolder = newBundleFolder();
+        final File outsideFolder = Files.createTempDirectory("ct-outside").toFile();
+        try {
+            final File outsideFile = new File(outsideFolder, "outside.txt");
+            FileUtils.writeStringToFile(outsideFile, "outside the bundle", StandardCharsets.UTF_8);
+            final Contentlet source = persistedSource(contentType, "bundle binary");
+            final String inode = UUIDGenerator.generateUuid();
+            writeContentXml(bundleFolder, source, inode, UUIDGenerator.generateUuid(), outsideFile);
+            new File(bundleFolder, "assets").mkdirs();
+
+            handlerFor(bundleFolder).handle(bundleFolder);
+
+            final Contentlet imported = APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false);
+            assertNotNull("The item itself must still be imported", imported);
+            assertNull("A file outside the bundle must not become the item's binary",
+                    imported.getBinary(BINARY_VAR));
+        } finally {
+            FileUtils.deleteQuietly(outsideFolder);
+            FileUtils.deleteQuietly(bundleFolder);
+            ContentTypeDataGen.remove(contentType);
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentHandler#handle(File)}
+     * Given scenario: An ordinary bundle: the content item has a UUID inode and carries its binary
+     * under {@code assets/<i0>/<i1>/<inode>/<field>/}.
+     * Expected Result: The item is imported and its binary, read from the asset store, has the
+     * content of the file in the bundle.
+     */
+    @Test
+    public void TEST_BUNDLE_CONTENT_WITH_BINARY_IS_IMPORTED() throws Exception {
+        final ContentType contentType = binaryContentType();
+        final File bundleFolder = newBundleFolder();
+        try {
+            final Contentlet source = persistedSource(contentType, "bundle binary");
+            final String inode = UUIDGenerator.generateUuid();
+            writeContentXml(bundleFolder, source, inode, UUIDGenerator.generateUuid(), null);
+            FileUtils.writeStringToFile(new File(bundleFolder, "assets/" + inode.charAt(0) + "/"
+                            + inode.charAt(1) + "/" + inode + "/" + BINARY_VAR + "/from-bundle.txt"),
+                    "carried by the bundle", StandardCharsets.UTF_8);
+
+            handlerFor(bundleFolder).handle(bundleFolder);
+
+            final Contentlet imported = APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false);
+            assertNotNull(imported);
+            final File binary = imported.getBinary(BINARY_VAR);
+            assertNotNull("The binary carried by the bundle must be imported", binary);
+            assertEquals("carried by the bundle", FileUtils.readFileToString(binary, StandardCharsets.UTF_8));
+            assertTrue("The binary must be stored in the asset store",
+                    binary.getCanonicalPath().startsWith(new File(
+                            APILocator.getFileAssetAPI().getRealAssetsRootPath()).getCanonicalPath() + File.separator));
+        } finally {
+            FileUtils.deleteQuietly(bundleFolder);
+            ContentTypeDataGen.remove(contentType);
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentHandler#handle(File)}
+     * Given scenario: A bundle whose content item has a new identifier but the same unique field
+     * value as an item in the receiver that has a binary. The bundle carries no binary file, and
+     * the binary value in its content XML names a file elsewhere on the receiver.
+     * Expected Result: The receiver's item is updated and keeps its own binary.
+     */
+    @Test
+    public void TEST_UNIQUE_FIELD_MATCH_KEEPS_RECEIVER_BINARY() throws Exception {
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(new FieldDataGen().type(TextField.class).velocityVarName("title").unique(true).next())
+                .field(new FieldDataGen().type(BinaryField.class).velocityVarName(BINARY_VAR).next())
+                .nextPersisted();
+        final File bundleFolder = newBundleFolder();
+        final File outsideFolder = Files.createTempDirectory("ct-outside").toFile();
+        try {
+            final File outsideFile = new File(outsideFolder, "outside.txt");
+            FileUtils.writeStringToFile(outsideFile, "outside the bundle", StandardCharsets.UTF_8);
+            final Contentlet receiverItem = persistedSource(contentType, "receiver binary");
+            // Kept as values: the handler may change the cached object receiverItem refers to
+            final String receiverIdentifier = receiverItem.getIdentifier();
+            final String receiverInode = receiverItem.getInode();
+            final long languageId = receiverItem.getLanguageId();
+            writeContentXml(bundleFolder, receiverItem, UUIDGenerator.generateUuid(),
+                    UUIDGenerator.generateUuid(), outsideFile);
+            new File(bundleFolder, "assets").mkdirs();
+
+            handlerFor(bundleFolder).handle(bundleFolder);
+
+            final Contentlet updated = APILocator.getContentletAPI().findContentletByIdentifier(
+                    receiverIdentifier, false, languageId, APILocator.systemUser(), false);
+            assertNotEquals("The receiver's item must have a new version", receiverInode,
+                    updated.getInode());
+            final File binary = updated.getBinary(BINARY_VAR);
+            assertNotNull("The receiver's binary must be kept", binary);
+            assertEquals("receiver binary", FileUtils.readFileToString(binary, StandardCharsets.UTF_8));
+        } finally {
+            FileUtils.deleteQuietly(outsideFolder);
+            FileUtils.deleteQuietly(bundleFolder);
+            ContentTypeDataGen.remove(contentType);
+        }
+    }
+
+    private static final String BINARY_VAR = "upload";
+
+    private static ContentType binaryContentType() {
+        return new ContentTypeDataGen()
+                .field(new FieldDataGen().type(TextField.class).velocityVarName("title").next())
+                .field(new FieldDataGen().type(BinaryField.class).velocityVarName(BINARY_VAR).next())
+                .nextPersisted();
+    }
+
+    /**
+     * Creates and saves the item the test bundles are made from, with a small text file as its
+     * binary.
+     */
+    private static Contentlet persistedSource(final ContentType contentType, final String binaryText)
+            throws Exception {
+        final File sourceFolder = Files.createTempDirectory("ct-source").toFile();
+        try {
+            final File binary = new File(sourceFolder, "source.txt");
+            FileUtils.writeStringToFile(binary, binaryText, StandardCharsets.UTF_8);
+            final Contentlet saved = new ContentletDataGen(contentType)
+                    .setProperty("title", "bundle item " + UUIDGenerator.shorty())
+                    .setProperty(BINARY_VAR, binary)
+                    .nextPersisted();
+            return APILocator.getContentletAPI().find(saved.getInode(), APILocator.systemUser(), false);
+        } finally {
+            // check-in copies the binary into the asset store, so the source file is no longer needed
+            FileUtils.deleteQuietly(sourceFolder);
+        }
+    }
+
+    /**
+     * A folder under the receiver's bundle directory, where received bundles are extracted.
+     */
+    private static File newBundleFolder() {
+        final File folder = new File(ConfigUtils.getBundlePath(), "ct-bundle-" + UUIDGenerator.shorty());
+        folder.mkdirs();
+        return folder;
+    }
+
+    private static ContentHandler handlerFor(final File bundleFolder) {
+        if (APILocator.getPublisherAPI().getFilterDescriptorByKey("") == null) {
+            new FilterDescriptorDataGen().clearFilterList(false).nextPersisted();
+        }
+        final PublisherConfig config = new PublisherConfig();
+        config.setId(bundleFolder.getName() + ".tar.gz");
+        return new ContentHandler(config);
+    }
+
+    /**
+     * Writes the content XML for {@code source} the way the sender does, then replaces the item's
+     * inode and identifier in it, as an edited bundle would.
+     *
+     * @param binaryValue if set, the file the binary field's value names in the XML
+     */
+    private static void writeContentXml(final File bundleFolder, final Contentlet source,
+            final String inode, final String identifier, final File binaryValue) throws Exception {
+        final File sourceBinary = source.getBinary(BINARY_VAR);
+        final PushContentWrapper wrapper = new PushContentWrapper();
+        wrapper.setContent(source);
+        wrapper.setInfo(APILocator.getVersionableAPI()
+                .getContentletVersionInfo(source.getIdentifier(), source.getLanguageId()).orElseThrow());
+        wrapper.setId(APILocator.getIdentifierAPI().find(source.getIdentifier()));
+        wrapper.setTags(new ArrayList<>());
+        wrapper.setTree(new ArrayList<>());
+        wrapper.setMultiTree(new ArrayList<>());
+        wrapper.setCategories(new ArrayList<>());
+        wrapper.setContentTags(new HashMap<>());
+        wrapper.setBinariesMetadata(new HashMap<>());
+        wrapper.setOperation(PushPublisherConfig.Operation.PUBLISH);
+        wrapper.setLanguage(APILocator.getLanguageAPI().getLanguage(source.getLanguageId()));
+
+        String xml = XStreamHandler.newXStreamInstance().toXML(wrapper);
+        if (binaryValue != null) {
+            xml = xml.replace(sourceBinary.getAbsolutePath(), binaryValue.getAbsolutePath());
+        }
+        xml = xml.replace(source.getInode(), inode).replace(source.getIdentifier(), identifier);
+        FileUtils.writeStringToFile(new File(bundleFolder, "working/1/0-content.content.xml"), xml,
+                StandardCharsets.UTF_8);
+    }
 
 }
