@@ -338,6 +338,28 @@ public class PublisherQueueJob implements StatefulJob {
 	}
 
 	/**
+	 * Tells whether the bundle has queue rows and none of them is due yet, that is, it was pushed
+	 * again for a later date. A row is due when its publish date is now or earlier, as in
+	 * {@link PublisherAPI#getQueueBundleIdsToProcess()}. If the queue cannot be read, the bundle is
+	 * treated as scheduled, so nothing is counted or finalized on a guess.
+	 *
+	 * @param bundleId the bundle to look for
+	 * @return {@code true} if the bundle has queue rows and none is due, or the queue could not be read
+	 */
+	private boolean hasOnlyFutureQueueRows(final String bundleId) {
+		try {
+			final List<PublishQueueElement> rows = pubAPI.getQueueElementsByBundleId(bundleId);
+			final Date now = new Date();
+			return !rows.isEmpty() && rows.stream()
+					.noneMatch(row -> row.getPublishDate() != null && !row.getPublishDate().after(now));
+		} catch (final Exception e) {
+			Logger.warn(this, "Unable to read the publishing queue for bundle '" + bundleId + "': "
+					+ ExceptionUtil.getErrorMessage(e));
+			return true;
+		}
+	}
+
+	/**
 	 * Tells whether a receiver refused the bundle: an endpoint answered the send with a wrong token
 	 * ({@link Status#INVALID_TOKEN}) or a licence error ({@link Status#LICENSE_REQUIRED}). Such a
 	 * bundle is taken out of the publishing queue and is never sent again.
@@ -602,7 +624,9 @@ public class PublisherQueueJob implements StatefulJob {
 	 * Updates the local Publish Audit History with the information retrieved from a remote
 	 * end-point. When the tracking map is empty there is nothing to aggregate, and the status is
 	 * left as it is. A bundle a receiver refused that only has queue rows for a later date keeps its
-	 * status and attempts, so its scheduled push is not given up before it runs.
+	 * status and attempts, so its scheduled push is not given up before it runs. A refused bundle
+	 * with no queue rows counts an attempt on every pass that leaves it failed, since nothing will
+	 * send it again.
 	 *
 	 * @param bundleAudit         The {@link PublishAuditStatus} object that contains the audit
 	 *                            status of the bundle in the local environment.
@@ -630,11 +654,12 @@ public class PublisherQueueJob implements StatefulJob {
 		}
 		final PublishAuditHistory localHistory = bundleAudit.getStatusPojo();
 		final String auditedBundleId = bundleAudit.getBundleId();
-		// A refused bundle that was pushed again for a later date is not due yet, so it is missing from
-		// the due list. Counting this pass as an attempt would finalize it and delete the scheduled push;
-		// the send counts the attempt instead, as in the failed-poll path of updateAuditStatus (#35764)
-		if (isRefusedByAReceiver(localHistory) && !isBundleInQueue(auditedBundleId, bundlesInQueue)
-				&& hasQueueRows(auditedBundleId)) {
+		// A refused bundle that was pushed again for a later date is not due yet. Counting this pass as
+		// an attempt would finalize it and delete the scheduled push; the send counts the attempt
+		// instead, as in the failed-poll path of updateAuditStatus (#35764). The rows' dates are read
+		// rather than the due list, which also leaves out a due bundle whose status is
+		// WAITING_FOR_PUBLISHING: that one must be aggregated, or it would never be sent again
+		if (isRefusedByAReceiver(localHistory) && hasOnlyFutureQueueRows(auditedBundleId)) {
 			pubAuditAPI.updatePublishAuditStatus(auditedBundleId, bundleAudit.getStatus(), localHistory);
 			return;
 		}
@@ -738,7 +763,10 @@ public class PublisherQueueJob implements StatefulJob {
 			Logger.info(this, String.format("-> Re-publish attempts: %d out of %d", totalAttemptsFromHistory,
 					MAX_NUM_TRIES));
 
-			if(!UtilMethods.isSet(bundlesInQueue)) {
+			// A refused bundle with no queue rows is never sent again, so this pass is its attempt even
+			// while unrelated bundles are due; otherwise a busy queue would keep it pending
+			if (!UtilMethods.isSet(bundlesInQueue)
+					|| (isRefusedByAReceiver(localHistory) && !hasQueueRows(auditedBundleId))) {
 				localHistory.addNumTries();
 				pubAuditAPI.updatePublishAuditStatus(auditedBundleId, bundleStatus, localHistory);
 			}

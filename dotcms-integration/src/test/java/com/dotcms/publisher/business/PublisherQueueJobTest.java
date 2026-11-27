@@ -335,6 +335,109 @@ public class PublisherQueueJobTest {
     }
 
     /**
+     * Method to test: {@link PublisherQueueJob} audit-status pass for a refused bundle that was
+     * retried while another receiver was still installing it.
+     * <p>
+     * Given scenario: one endpoint has no usable key and refused the bundle; the other accepted it.
+     * The owner retried the bundle, so its queue rows are due now, but the retry found the other
+     * receiver still installing and left the bundle in {@link Status#WAITING_FOR_PUBLISHING}, which
+     * the list of bundles to process leaves out. That receiver has now installed it.
+     * <p>
+     * Expected result: the pass aggregates the answers, the bundle leaves
+     * {@link Status#WAITING_FOR_PUBLISHING} and is due again. Before the fix the pass took the bundle
+     * for one scheduled later, kept its status, and the retry was never sent.
+     */
+    @Test
+    public void test_refusedBundleRetriedWhilePeerInstalled_isDueAgain() throws Exception {
+        final PublishAuditHistory remote = new PublishAuditHistory();
+        remote.addOrUpdateEndpoint("127.0.0.1", "127.0.0.1", endpointDetail(Status.SUCCESS, "installed"));
+
+        try (AuditStub healthyStub = new AuditStub(list(remote.getSerialized()));
+                AuditStub refusingStub = AuditStub.unauthorized()) {
+            final User user = TestUserUtils.getAdminUser();
+            final Contentlet contentlet = new ContentletDataGen(new ContentTypeDataGen().nextPersisted())
+                    .nextPersisted();
+            final Environment environment = PublisherTestUtil.createEnvironment(user, true);
+            final PublishingEndPoint healthy = PublisherTestUtil.createEndpoint(environment);
+            healthy.setPort(String.valueOf(healthyStub.port()));
+            APILocator.getPublisherEndPointAPI().updateEndPoint(healthy);
+            final PublishingEndPoint keyless = PublisherTestUtil.createEndpoint(environment);
+            keyless.setPort(String.valueOf(refusingStub.port()));
+            keyless.setAuthKey(new StringBuilder(PublicEncryptionFactory.encryptString("   ")));
+            APILocator.getPublisherEndPointAPI().updateEndPoint(keyless);
+            final Bundle bundle = PublisherTestUtil.createBundle("bundle-" + System.nanoTime(), user, environment);
+            try {
+                seedAudit(bundle, environment, Map.of(
+                        healthy.getId(), Status.PUBLISHING_BUNDLE,
+                        keyless.getId(), Status.INVALID_TOKEN));
+                APILocator.getPublishAuditAPI().updatePublishAuditStatus(bundle.getId(),
+                        Status.WAITING_FOR_PUBLISHING,
+                        APILocator.getPublishAuditAPI().getPublishAuditStatus(bundle.getId()).getStatusPojo());
+                PublisherAPI.getInstance().addContentsToPublish(
+                        list(contentlet.getIdentifier()), bundle.getId(), new Date(), user);
+                assertFalse("A bundle waiting for publishing is not in the list to process",
+                        isBundleQueued(bundle.getId()));
+
+                invokeUpdateAuditStatus(PublisherAPI.getInstance().getQueueBundleIdsToProcess());
+
+                assertEquals("The retry must be aggregated once the peer has installed it",
+                        Status.FAILED_TO_SEND_TO_SOME_GROUPS, statusOf(bundle.getId()));
+                assertTrue("The retry must be due again", isBundleQueued(bundle.getId()));
+            } finally {
+                PublisherAPI.getInstance().deleteElementsFromPublishQueueTable(bundle.getId());
+                cleanUpAudit(bundle);
+                APILocator.getPublisherEndPointAPI().deleteEndPointById(keyless.getId());
+                PublisherTestUtil.cleanBundleEndpointEnv(bundle, healthy, environment);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link PublisherQueueJob} audit-status pass for a refused bundle whose endpoint
+     * has no usable key, while other bundles are due.
+     * <p>
+     * Given scenario: a receiver refused the bundle and it was taken out of the queue, so nothing
+     * sends it again. Its endpoint has no usable key, so the poll is skipped. On every pass some
+     * unrelated bundle is due.
+     * <p>
+     * Expected result: each pass still counts an attempt, and after
+     * {@link PublisherQueueJob#MAX_NUM_TRIES} passes the bundle is {@link Status#FAILED_TO_PUBLISH}.
+     * Before the fix the attempt was only counted when no bundle at all was due, so on a busy queue
+     * the bundle stayed pending.
+     */
+    @Test
+    public void test_refusedDequeuedBundle_withOtherBundlesDue_reachesFailedToPublish() throws Exception {
+        try (AuditStub stub = AuditStub.unauthorized()) {
+            final User user = TestUserUtils.getAdminUser();
+            final Environment environment = PublisherTestUtil.createEnvironment(user, true);
+            final PublishingEndPoint keyless = PublisherTestUtil.createEndpoint(environment);
+            keyless.setPort(String.valueOf(stub.port()));
+            keyless.setAuthKey(new StringBuilder(PublicEncryptionFactory.encryptString("   ")));
+            APILocator.getPublisherEndPointAPI().updateEndPoint(keyless);
+            final Bundle bundle = PublisherTestUtil.createBundle("bundle-" + System.nanoTime(), user, environment);
+            try {
+                seedAudit(bundle, environment, Map.of(keyless.getId(), Status.INVALID_TOKEN));
+                APILocator.getPublishAuditAPI().updatePublishAuditStatus(bundle.getId(),
+                        Status.FAILED_TO_SEND_TO_ALL_GROUPS,
+                        APILocator.getPublishAuditAPI().getPublishAuditStatus(bundle.getId()).getStatusPojo());
+                final List<Map<String, Object>> otherBundleDue =
+                        List.of(Map.of("bundle_id", "other-bundle-" + System.nanoTime()));
+
+                for (int pass = 0; pass < PublisherQueueJob.MAX_NUM_TRIES; pass++) {
+                    invokeUpdateAuditStatus(otherBundleDue);
+                }
+
+                assertEquals("A refused bundle nothing will send again must run out of attempts",
+                        Status.FAILED_TO_PUBLISH, statusOf(bundle.getId()));
+                assertEquals("An endpoint with no usable key must not be asked", 0, stub.requests());
+            } finally {
+                cleanUpAudit(bundle);
+                PublisherTestUtil.cleanBundleEndpointEnv(bundle, keyless, environment);
+            }
+        }
+    }
+
+    /**
      * Method to test: {@link PublisherQueueJob} audit-status pass for a bundle that is no longer in the
      * {@code publishing_queue} but whose receiver accepted it (issue #35764).
      * <p>
