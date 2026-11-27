@@ -46,9 +46,11 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import io.vavr.control.Try;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.Writer;
@@ -72,6 +74,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.function.ThrowingRunnable;
 
 /**
  * Integration tests for {@code POST /api/v1/drive/export} in filter mode
@@ -116,6 +119,12 @@ public class ContentDriveExportFilterModeTest extends IntegrationTestBase {
     private static ContentType blog;
     private static ContentType otherType;
     private static ContentType formType;
+    /** Types with 5, 6 and 7 contentlets at the site root, for the row limit. */
+    private static ContentType fiveRows;
+    private static ContentType sixRows;
+    private static ContentType sevenRows;
+    /** A back-end user who can read the site and 5 of the 7 {@link #sevenRows} contentlets. */
+    private static User limitReader;
     /** A type the limited user cannot read: its only permission is READ for an unrelated role. */
     private static ContentType unreadableType;
 
@@ -199,9 +208,46 @@ public class ContentDriveExportFilterModeTest extends IntegrationTestBase {
                 APILocator.getPermissionAPI().doesUserHavePermission(inFolder,
                         PermissionAPI.PERMISSION_READ, siteReader, false));
 
+        fiveRows = rowsType("Five", unique, 5);
+        sixRows = rowsType("Six", unique, 6);
+        sevenRows = rowsType("Seven", unique, 7);
+        final Role limitReaderRole = new RoleDataGen().nextPersisted();
+        limitReader = new UserDataGen().roles(limitReaderRole,
+                APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        APILocator.getPermissionAPI().save(new Permission(site.getPermissionId(),
+                limitReaderRole.getId(), PermissionAPI.PERMISSION_READ), site, systemUser, false);
+        final List<Contentlet> sevenContentlets = APILocator.getContentletAPI().search(
+                "+contentType:" + sevenRows.variable() + " +working:true", 0, 0, null, systemUser,
+                false);
+        assertEquals("Fixture error: seven contentlets", 7, sevenContentlets.size());
+        for (final Contentlet contentlet : sevenContentlets.subList(0, 5)) {
+            APILocator.getPermissionAPI().save(new Permission(contentlet.getPermissionId(),
+                    limitReaderRole.getId(), PermissionAPI.PERMISSION_READ), contentlet,
+                    systemUser, false);
+        }
+        assertEquals("Fixture error: the limit reader must read exactly 5 of the 7", 5,
+                sevenContentlets.stream().filter(contentlet -> Try.of(() ->
+                        APILocator.getPermissionAPI().doesUserHavePermission(contentlet,
+                                PermissionAPI.PERMISSION_READ, limitReader, false)).get())
+                        .count());
+
         assertThrows("Fixture error: the limited user must not be able to read this type",
                 DotSecurityException.class,
                 () -> APILocator.getContentTypeAPI(limitedUser).find(unreadableType.variable()));
+    }
+
+    /** A type with a title field and {@code rows} contentlets at the site root. */
+    private static ContentType rowsType(final String name, final String unique, final int rows) {
+        final ContentType type = new ContentTypeDataGen().host(site)
+                .name(name + "Rows" + unique).velocityVarName("driveExport" + name + "Rows" + unique)
+                .field(new FieldDataGen().defaultValue(null).type(TextField.class).name("title")
+                        .velocityVarName("title").next())
+                .nextPersisted();
+        for (int i = 0; i < rows; i++) {
+            new ContentletDataGen(type).host(site).languageId(defaultLanguage.getId())
+                    .setProperty("title", name + " " + i).nextPersisted();
+        }
+        return type;
     }
 
     private static Contentlet blogEntry(final Folder target, final String title) {
@@ -642,5 +688,96 @@ public class ContentDriveExportFilterModeTest extends IntegrationTestBase {
             bodies.add(entityJson(entry.getValue()));
         }
         assertEquals("identical bodies", 1, bodies.size());
+    }
+    // ---------------------------------------------------------------------------------------------
+    // the row limit (User Story 5)
+    // ---------------------------------------------------------------------------------------------
+
+    /** The whole site, without System Host, for one type. */
+    private static DriveRequestForm wholeSite(final ContentType type) {
+        return query(sitePath()).browseScope(BrowseScope.ALL).includeSystemHost(false)
+                .contentTypes(List.of(type.variable())).build();
+    }
+
+    private static int csvRows(final Response response) throws Exception {
+        return parseCsv(new String(body(response), StandardCharsets.UTF_8)).size() - 1;
+    }
+
+    /**
+     * Runs an action with {@code CONTENT_DRIVE_EXPORT_MAX_ROWS} set to 5, restoring it afterwards.
+     */
+    private static void withLimitOfFive(final ThrowingRunnable action) throws Throwable {
+        final int previous = Config.getIntProperty(ContentDriveExportHelper.MAX_ROWS_KEY,
+                ContentDriveExportHelper.MAX_ROWS_DEFAULT);
+        Config.setProperty(ContentDriveExportHelper.MAX_ROWS_KEY, 5);
+        try {
+            action.run();
+        } finally {
+            Config.setProperty(ContentDriveExportHelper.MAX_ROWS_KEY, previous);
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentDriveResource#export}
+     * Given Scenario: (a) A limit of 5 and 6 readable rows
+     * ExpectedResult: 400 with the limit message, and no file left (FR-010)
+     */
+    @Test
+    public void test_overTheLimit_isRefused() throws Throwable {
+        withLimitOfFive(() -> {
+            final Set<Path> before = exportDirectoryFiles();
+
+            final Response response = export(wholeSite(sixRows));
+
+            assertEquals(400, response.getStatus());
+            assertEquals("This export has more than 5 rows; 5 is the limit. Narrow the filters or "
+                    + "the selection and try again.", errorMessage(response));
+            assertEquals("no temp file is left", Set.of(), newFilesSince(before));
+        });
+    }
+
+    /**
+     * Method to test: {@link ContentDriveResource#export}
+     * Given Scenario: (b) A limit of 5 and exactly 5 readable rows
+     * ExpectedResult: 200 with the 5 rows: the limit itself is allowed
+     */
+    @Test
+    public void test_atTheLimit_isExported() throws Throwable {
+        withLimitOfFive(() -> {
+            final Response response = export(wholeSite(fiveRows));
+
+            assertEquals(200, response.getStatus());
+            assertEquals("5", header(response, "X-Export-Contentlets"));
+            assertEquals(5, csvRows(response));
+        });
+    }
+
+    /**
+     * Method to test: {@link ContentDriveResource#export}
+     * Given Scenario: (c) A limit of 5, and a user who can read 5 of 7 rows
+     * ExpectedResult: 200 with the 5 readable rows: only readable rows count toward the limit
+     * (FR-015)
+     */
+    @Test
+    public void test_onlyReadableRows_countTowardTheLimit() throws Throwable {
+        withLimitOfFive(() -> {
+            final Response response = export(wholeSite(sevenRows), limitReader);
+
+            assertEquals(200, response.getStatus());
+            assertEquals("5", header(response, "X-Export-Contentlets"));
+            assertEquals(5, csvRows(response));
+        });
+    }
+
+    /**
+     * Method to test: {@link ContentDriveExportHelper#overLimitMessage(int)}
+     * Given Scenario: (d) The default limit, 100000
+     * ExpectedResult: The number is written with a comma as the thousands separator
+     */
+    @Test
+    public void test_overLimitMessage_formatsTheDefaultLimit() {
+        assertEquals("This export has more than 100,000 rows; 100,000 is the limit. Narrow the "
+                        + "filters or the selection and try again.",
+                ContentDriveExportHelper.overLimitMessage(100_000));
     }
 }

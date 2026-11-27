@@ -2682,7 +2682,7 @@ public class BrowserAPIImpl implements BrowserAPI {
     /**
      * Reads the next chunk of export rows in {@code (identifier, language)} order, starting right
      * after {@code after}. Keyset paging keeps every chunk as cheap as the first, however deep
-     * the export goes.
+     * the export goes. Package-visible so tests can count the chunks an export reads.
      *
      * @param sqlQuery  the export select, built with {@link Projection#EXPORT}
      * @param after     the last row of the previous chunk, or {@code null} for the first chunk
@@ -2690,7 +2690,7 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @return the rows, in order
      * @throws DotDataException if the query fails
      */
-    private static List<ExportRow> readExportChunk(final SelectQuery sqlQuery, final ExportRow after,
+    List<ExportRow> readExportChunk(final SelectQuery sqlQuery, final ExportRow after,
             final int chunkSize) throws DotDataException {
         final StringBuilder sql = new StringBuilder(sqlQuery.selectQuery);
         if (after != null) {

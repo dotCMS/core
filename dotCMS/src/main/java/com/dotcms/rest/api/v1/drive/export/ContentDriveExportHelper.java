@@ -202,7 +202,7 @@ public class ContentDriveExportHelper {
      * @param maxRows the limit
      * @return the message, with the limit written with thousands separators
      */
-    static String overLimitMessage(final int maxRows) {
+    public static String overLimitMessage(final int maxRows) {
         final String limit = new DecimalFormat("#,###", DecimalFormatSymbols.getInstance(Locale.US))
                 .format(maxRows);
         return "This export has more than " + limit + " rows; " + limit

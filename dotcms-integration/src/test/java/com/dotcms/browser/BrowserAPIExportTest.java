@@ -3,6 +3,11 @@ package com.dotcms.browser;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.browser.BrowserAPIImpl.PaginatedContents;
@@ -85,6 +90,8 @@ public class BrowserAPIExportTest extends IntegrationTestBase {
     private static ContentType bulkType;
     /** Type with 6 contentlets, for the row limit. */
     private static ContentType sixType;
+    /** Type with 30 contentlets, to show the walk stops early. */
+    private static ContentType thirtyType;
     private static ContentType formType;
 
     private static Contentlet live;
@@ -179,6 +186,12 @@ public class BrowserAPIExportTest extends IntegrationTestBase {
         for (int i = 0; i < 6; i++) {
             new ContentletDataGen(sixType).host(site).folder(folder)
                     .setProperty("title", "six " + i).nextPersisted();
+        }
+
+        thirtyType = simpleType("BrowserExportThirty", unique);
+        for (int i = 0; i < 30; i++) {
+            new ContentletDataGen(thirtyType).host(site).folder(folder)
+                    .setProperty("title", "thirty " + i).nextPersisted();
         }
 
         formType = new ContentTypeDataGen().baseContentType(BaseContentType.FORM).host(site)
@@ -492,5 +505,25 @@ public class BrowserAPIExportTest extends IntegrationTestBase {
             assertFalse("no Host row: " + row, hostType.id().equals(row.contentTypeId()));
             assertFalse("no Form row: " + row, formType.id().equals(row.contentTypeId()));
         }
+    }
+    /**
+     * Method to test: {@link BrowserAPI#getContentForExport(BrowserQuery, int)}
+     * Given Scenario: 30 readable rows, a limit of 5 and chunks of 3
+     * ExpectedResult: Over the limit, and only 2 chunks read: the walk stops after the chunk that
+     * produced the 6th row instead of reading all 10 (FR-010)
+     */
+    @Test
+    public void test_overLimit_stopsReadingAtTheChunkPastTheLimit() throws Exception {
+        final Map<String, Object> settings = new LinkedHashMap<>();
+        settings.put(BrowserAPIImpl.BROWSER_CONTENT_CHUNK_SIZE_KEY, 3);
+        withSettings(settings, () -> {
+            final BrowserAPIImpl browserAPI = spy(new BrowserAPIImpl());
+
+            final ExportCandidates candidates =
+                    export(browserAPI, siteRequest(thirtyType).build(), 5);
+
+            assertTrue(candidates.overLimit());
+            verify(browserAPI, times(2)).readExportChunk(any(), any(), anyInt());
+        });
     }
 }
