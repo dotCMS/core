@@ -102,25 +102,35 @@ public class ContentDriveExportHelper {
             final HttpServletRequest request)
             throws DotDataException, DotSecurityException, IOException {
         if (form.validate() == Mode.FILTER) {
-            return exportFilter(form.query(), user, request);
+            return write(resolveFilterMode(form.query(), user), user, request);
         }
         throw new UnsupportedOperationException("Selection-mode export is not implemented yet");
     }
 
     /**
-     * Filter mode: every row the listing shows for the query, as one CSV (research R1–R3).
+     * The rows a filter-mode export resolved for one content type, before anything is written.
      *
-     * @param query   the listing request
-     * @param user    the {@link User} the export runs as
-     * @param request the HTTP request
-     * @return the CSV
+     * @param contentType the content type every row belongs to
+     * @param candidates  the readable rows, in output order
+     */
+    record FilterResolution(ContentType contentType, ExportCandidates candidates) {
+    }
+
+    /**
+     * Filter mode, first step: checks the request and resolves its readable rows (research R1–R3).
+     * Nothing is written.
+     *
+     * @param query the listing request
+     * @param user  the {@link User} the export runs as
+     * @return the content type and its readable rows
+     * @throws BadRequestException  when there is not exactly one readable type, it is a Form or Host
+     *                              type, or more rows match than the limit
+     * @throws NotFoundException    when the site or folder does not exist or cannot be read
      * @throws DotDataException     if the rows cannot be read
      * @throws DotSecurityException if the user cannot read the site or folder
-     * @throws IOException          if the temp file cannot be written
      */
-    private ExportFile exportFilter(final DriveRequestForm query, final User user,
-            final HttpServletRequest request)
-            throws DotDataException, DotSecurityException, IOException {
+    FilterResolution resolveFilterMode(final DriveRequestForm query, final User user)
+            throws DotDataException, DotSecurityException {
         final ContentType contentType = resolveOneContentType(query, user);
 
         // Every override goes before build(): build() snapshots the builder
@@ -137,9 +147,25 @@ public class ContentDriveExportHelper {
         if (candidates.overLimit()) {
             throw new BadRequestException(overLimitMessage(maxRows));
         }
-        final List<String> inodes = candidates.rows().stream().map(ExportRow::inode)
+        return new FilterResolution(contentType, candidates);
+    }
+
+    /**
+     * Filter mode, second step: writes the resolved rows as one CSV. A row the user can no longer
+     * read by now is skipped and not counted (FR-026a).
+     *
+     * @param resolution what {@link #resolveFilterMode} returned
+     * @param user       the {@link User} the export runs as
+     * @param request    the HTTP request, used for the download links of binary fields
+     * @return the CSV; it reports zero rows, and holds no file, when no row was written
+     * @throws DotDataException if the file cannot be written
+     * @throws IOException      if the temp file cannot be written
+     */
+    ExportFile write(final FilterResolution resolution, final User user,
+            final HttpServletRequest request) throws DotDataException, IOException {
+        final List<String> inodes = resolution.candidates().rows().stream().map(ExportRow::inode)
                 .collect(Collectors.toList());
-        return fileBuilder.buildCsv(contentType, inodes, user, request);
+        return fileBuilder.buildCsv(resolution.contentType(), inodes, user, request);
     }
 
     /**
