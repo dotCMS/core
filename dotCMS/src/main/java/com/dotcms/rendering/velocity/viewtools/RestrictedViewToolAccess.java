@@ -1,12 +1,16 @@
 package com.dotcms.rendering.velocity.viewtools;
 
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.rendering.velocity.services.VTLLoader;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -75,7 +79,7 @@ public final class RestrictedViewToolAccess {
      * @param userId ID of the user that last modified the content being rendered, resolving to
      *               {@code null} when the renderer knows the content but not its author
      */
-    private record RenderingAuthor(Lazy<String> userId) {
+    private record RenderingAuthor(Lazy<String> userId, Kind kind) {
 
         /**
          * Resolves the author, so that anything printing the announcement -- a debug dump of
@@ -87,8 +91,23 @@ public final class RestrictedViewToolAccess {
          */
         @Override
         public String toString() {
-            return "RenderingAuthor[userId=" + userId.get() + "]";
+            return "RenderingAuthor[userId=" + userId.get() + ", kind=" + kind + "]";
         }
+    }
+
+    /**
+     * What kind of render made an announcement. A refused tool is only worth a log line if the
+     * line says why, and the two kinds are refused for different reasons: code held by a
+     * container, template, file or field answers for whoever saved it, while a Custom Field
+     * preview answers for the user it is being rendered for.
+     */
+    private enum Kind {
+
+        /** Code a Velocity resource holds, answering for whoever last saved it. */
+        SAVED_CODE,
+
+        /** A Custom Field preview, answering for the user the Content Editor is serving. */
+        FIELD_PREVIEW
     }
 
     /**
@@ -253,6 +272,90 @@ public final class RestrictedViewToolAccess {
     }
 
     /**
+     * Records on the request that the Content Editor is about to render a Custom Field as a
+     * preview for the given user, so that the view tools reserved for the Scripting Developer
+     * role answer to that user's own role.
+     *
+     * <p>A preview is not a page. Its output goes to the one user the editor is serving and to
+     * nobody else, and the code it runs is the Content Type's, which records no author of its
+     * own. So the preview names the user it is being rendered for, and does it only when that
+     * user is allowed to change the Content Type the field belongs to: what runs is then code
+     * that user could have written themselves, which is the same answer the tools would give
+     * if they had.
+     *
+     * <p>The tools render nothing when the user may not change the Content Type, when they are
+     * not named at all, or when
+     * {@link FeatureFlagName#FEATURE_FLAG_CUSTOM_FIELD_VIEW_TOOL_PREVIEW_ENABLED} is turned
+     * off. In the first two cases the preview still announces itself, naming nobody, so that a
+     * tool refused further down says that this is why instead of reading as a render path that
+     * forgot to announce; with the flag off nothing is written at all. The value handed back
+     * restores correctly in every one of those cases.
+     *
+     * <p>Whether the user may change the Content Type is worked out only if a tool asks, like
+     * every other announcement here: most Custom Fields never call one, and the permission
+     * lookup is not worth putting on the preview path for an answer nobody reads.
+     *
+     * <p>Nothing that renders for a visitor may use this. On a page the viewer and the author
+     * are different people, and letting the viewer answer for the code would hand a restricted
+     * tool to whoever merely opens the page.
+     *
+     * @param request        the request the preview is running under; {@code null} is ignored
+     * @param contentType    the Content Type the field belongs to, as a {@link Permissionable}:
+     *                       either a {@link com.dotcms.contenttype.model.type.ContentType} or
+     *                       the {@link com.dotmarketing.portlets.structure.model.Structure} of
+     *                       the same row, which answer the permission check alike
+     * @param previewingUser the user the Content Editor is rendering the preview for
+     *
+     * @return whatever was recorded before, to restore afterwards
+     */
+    public static Object announceFieldPreviewAuthor(final HttpServletRequest request,
+            final Permissionable contentType, final User previewingUser) {
+        if (null == request) {
+            return null;
+        }
+        if (!Config.getBooleanProperty(
+                FeatureFlagName.FEATURE_FLAG_CUSTOM_FIELD_VIEW_TOOL_PREVIEW_ENABLED, true)) {
+            // leave the request as it is: restoring this value puts back what is already there
+            return request.getAttribute(RENDERING_AUTHOR_ID);
+        }
+        // announced even when it names nobody, so that a tool refused further down the preview
+        // can say that this is why rather than reading as a render path that forgot to announce
+        final Lazy<String> author = Lazy.of(() -> null != previewingUser && null != contentType
+                && mayChangeTheCodeOf(contentType, previewingUser)
+                ? previewingUser.getUserId()
+                : null);
+        return announce(request, author, Kind.FIELD_PREVIEW);
+    }
+
+    /**
+     * Answers whether the user is allowed to change the Content Type a previewed field belongs
+     * to, and therefore to write the code the preview is about to run.
+     *
+     * <p>This is the permission the Content Type and Field APIs require to save one
+     * ({@code ContentTypeAPIImpl.save}, {@code FieldAPIImpl.save}), not the one that lets a
+     * user edit the content of that type. Front-end roles do not count towards it.
+     *
+     * @param contentType    the Content Type the field belongs to
+     * @param previewingUser the user the preview is being rendered for
+     *
+     * @return {@code true} when that user could have written the field's code
+     */
+    private static boolean mayChangeTheCodeOf(final Permissionable contentType,
+            final User previewingUser) {
+        try {
+            return APILocator.getPermissionAPI().doesUserHavePermission(contentType,
+                    PermissionAPI.PERMISSION_EDIT_PERMISSIONS, previewingUser, false);
+        } catch (final DotDataException e) {
+            Logger.warn(RestrictedViewToolAccess.class,
+                    "A Custom Field preview named nobody: the permissions of user '"
+                            + previewingUser.getUserId() + "' on Content Type '"
+                            + contentType.getPermissionId() + "' could not be read: "
+                            + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Writes the announcement and hands back the one it replaced.
      *
      * @param request the request the render is running under; {@code null} is ignored
@@ -261,11 +364,25 @@ public final class RestrictedViewToolAccess {
      * @return whatever was recorded before, to restore afterwards
      */
     private static Object announce(final HttpServletRequest request, final Lazy<String> author) {
+        return announce(request, author, Kind.SAVED_CODE);
+    }
+
+    /**
+     * Writes the announcement and hands back the one it replaced.
+     *
+     * @param request the render is running under; {@code null} is ignored
+     * @param author  the author of the code about to run, resolved on demand
+     * @param kind    what kind of render is announcing, so a refusal can say why
+     *
+     * @return whatever was recorded before, to restore afterwards
+     */
+    private static Object announce(final HttpServletRequest request, final Lazy<String> author,
+            final Kind kind) {
         if (null == request) {
             return null;
         }
         final Object previous = request.getAttribute(RENDERING_AUTHOR_ID);
-        request.setAttribute(RENDERING_AUTHOR_ID, new RenderingAuthor(author));
+        request.setAttribute(RENDERING_AUTHOR_ID, new RenderingAuthor(author, kind));
         return previous;
     }
 
@@ -284,6 +401,189 @@ public final class RestrictedViewToolAccess {
             request.removeAttribute(RENDERING_AUTHOR_ID);
         } else {
             request.setAttribute(RENDERING_AUTHOR_ID, previous);
+        }
+    }
+
+    /**
+     * The body of a render that produces a value, for the bracket methods below.
+     *
+     * @param <T> what the render produces
+     * @param <E> the checked exception the render is allowed to throw, inferred from the body,
+     *            so that the bracket does not force a caller to catch what it never throws
+     */
+    @FunctionalInterface
+    public interface Render<T, E extends Exception> {
+
+        T render() throws E;
+    }
+
+    /**
+     * The body of a render that produces nothing, for the bracket methods below.
+     *
+     * @param <E> the checked exception the render is allowed to throw, inferred from the body
+     */
+    @FunctionalInterface
+    public interface VoidRender<E extends Exception> {
+
+        void render() throws E;
+    }
+
+    /**
+     * Runs the body with the given user announced as the author of the code it renders, and puts
+     * back the previous announcement afterwards.
+     *
+     * <p>This is {@link #announceRenderingAuthor} and {@link #restoreRenderingAuthor} as a single
+     * call. Renders nest, so the restore has to happen on every way out of the body, including a
+     * thrown exception; a caller that writes the pair by hand and forgets the {@code finally}
+     * leaves the inner author standing for whatever the surrounding render does next, which no
+     * test of the inner render would catch. Prefer this form; the two halves stay public for the
+     * paths whose cleanup is already bundled with other work.
+     *
+     * @param request  the request the render is running under; {@code null} is ignored
+     * @param authorId ID of the user that last modified the content being rendered
+     * @param body     the render
+     * @param <E>      whatever the body throws
+     *
+     * @throws E whatever the body throws, unchanged
+     */
+    public static <E extends Exception> void withRenderingAuthor(final HttpServletRequest request,
+            final String authorId, final VoidRender<E> body) throws E {
+        withRenderingAuthorReturn(request, authorId, () -> {
+            body.render();
+            return null;
+        });
+    }
+
+    /**
+     * Runs the body with the given user announced as the author of the code it renders, and puts
+     * back the previous announcement afterwards. The value the body produces is handed back.
+     *
+     * @param request  the request the render is running under; {@code null} is ignored
+     * @param authorId ID of the user that last modified the content being rendered
+     * @param body     the render
+     * @param <T>      what the render produces
+     * @param <E>      whatever the body throws
+     *
+     * @return what the body returned
+     *
+     * @throws E whatever the body throws, unchanged
+     *
+     * @see #withRenderingAuthor(HttpServletRequest, String, VoidRender)
+     */
+    public static <T, E extends Exception> T withRenderingAuthorReturn(
+            final HttpServletRequest request, final String authorId, final Render<T, E> body)
+            throws E {
+        final Object previous = announceRenderingAuthor(request, authorId);
+        try {
+            return body.render();
+        } finally {
+            restoreRenderingAuthor(request, previous);
+        }
+    }
+
+    /**
+     * Runs the body with the code of the given Velocity resource announced as what it renders,
+     * and puts back the previous announcement afterwards.
+     *
+     * @param request              the request the render is running under; {@code null} is ignored
+     * @param velocityResourcePath the resource path the renderer resolved
+     * @param body                 the render
+     * @param <E>                  whatever the body throws
+     *
+     * @throws E whatever the body throws, unchanged
+     *
+     * @see #withRenderingAuthor(HttpServletRequest, String, VoidRender)
+     * @see #announceRenderingAuthorOf(HttpServletRequest, String)
+     */
+    public static <E extends Exception> void withRenderingAuthorOf(
+            final HttpServletRequest request, final String velocityResourcePath,
+            final VoidRender<E> body) throws E {
+        withRenderingAuthorOfReturn(request, velocityResourcePath, () -> {
+            body.render();
+            return null;
+        });
+    }
+
+    /**
+     * Runs the body with the code of the given Velocity resource announced as what it renders,
+     * and puts back the previous announcement afterwards. The value the body produces is handed
+     * back.
+     *
+     * @param request              the request the render is running under; {@code null} is ignored
+     * @param velocityResourcePath the resource path the renderer resolved
+     * @param body                 the render
+     * @param <T>                  what the render produces
+     * @param <E>                  whatever the body throws
+     *
+     * @return what the body returned
+     *
+     * @throws E whatever the body throws, unchanged
+     *
+     * @see #withRenderingAuthor(HttpServletRequest, String, VoidRender)
+     * @see #announceRenderingAuthorOf(HttpServletRequest, String)
+     */
+    public static <T, E extends Exception> T withRenderingAuthorOfReturn(
+            final HttpServletRequest request, final String velocityResourcePath,
+            final Render<T, E> body) throws E {
+        final Object previous = announceRenderingAuthorOf(request, velocityResourcePath);
+        try {
+            return body.render();
+        } finally {
+            restoreRenderingAuthor(request, previous);
+        }
+    }
+
+    /**
+     * Runs the body as a Custom Field preview rendered for the given user, and puts back the
+     * previous announcement afterwards.
+     *
+     * @param request        the request the preview is running under; {@code null} is ignored
+     * @param contentType    the Content Type the field belongs to
+     * @param previewingUser the user the Content Editor is rendering the preview for
+     * @param body           the render
+     * @param <E>            whatever the body throws
+     *
+     * @throws E whatever the body throws, unchanged
+     *
+     * @see #withRenderingAuthor(HttpServletRequest, String, VoidRender)
+     * @see #announceFieldPreviewAuthor(HttpServletRequest, Permissionable, User)
+     */
+    public static <E extends Exception> void withFieldPreviewAuthor(
+            final HttpServletRequest request, final Permissionable contentType,
+            final User previewingUser, final VoidRender<E> body) throws E {
+        withFieldPreviewAuthorReturn(request, contentType, previewingUser, () -> {
+            body.render();
+            return null;
+        });
+    }
+
+    /**
+     * Runs the body as a Custom Field preview rendered for the given user, and puts back the
+     * previous announcement afterwards. The value the body produces is handed back.
+     *
+     * @param request        the request the preview is running under; {@code null} is ignored
+     * @param contentType    the Content Type the field belongs to
+     * @param previewingUser the user the Content Editor is rendering the preview for
+     * @param body           the render
+     * @param <T>            what the render produces
+     * @param <E>            whatever the body throws
+     *
+     * @return what the body returned
+     *
+     * @throws E whatever the body throws, unchanged
+     *
+     * @see #withRenderingAuthor(HttpServletRequest, String, VoidRender)
+     * @see #announceFieldPreviewAuthor(HttpServletRequest, Permissionable, User)
+     */
+    public static <T, E extends Exception> T withFieldPreviewAuthorReturn(
+            final HttpServletRequest request, final Permissionable contentType,
+            final User previewingUser, final Render<T, E> body) throws E {
+        final Object previous =
+                announceFieldPreviewAuthor(request, contentType, previewingUser);
+        try {
+            return body.render();
+        } finally {
+            restoreRenderingAuthor(request, previous);
         }
     }
 
@@ -331,8 +631,15 @@ public final class RestrictedViewToolAccess {
         final String authorId = null != announced
                 ? ((RenderingAuthor) announced).userId().get()
                 : ScriptingFileAttribute.get(request);
+        final Kind kind = null != announced ? ((RenderingAuthor) announced).kind() : null;
         if (!UtilMethods.isSet(authorId)) {
-            if (null != announced) {
+            if (Kind.FIELD_PREVIEW == kind) {
+                reportRefusal("preview-names-nobody", () ->
+                        "A view tool was refused in a Custom Field preview: the preview names "
+                                + "nobody, because the user it is being rendered for is not "
+                                + "allowed to change the Content Type the field belongs to, or "
+                                + "is not logged in. The rest of the field renders.");
+            } else if (null != announced) {
                 reportRefusal("announced-without-author", () ->
                         "A view tool was refused: the code being rendered was announced as having "
                                 + "no author of its own, which is what text built at render time "
@@ -350,10 +657,18 @@ public final class RestrictedViewToolAccess {
         }
         final boolean allowed = isScriptingDeveloper(authorId);
         if (!allowed) {
-            reportRefusal("author:" + authorId, () -> String.format(
-                    "A view tool was refused: the code being rendered was last saved by user "
-                            + "'%s', who does not have the %s role",
-                    authorId, Role.SCRIPTING_DEVELOPER));
+            if (Kind.FIELD_PREVIEW == kind) {
+                reportRefusal("preview-author:" + authorId, () -> String.format(
+                        "A view tool was refused in a Custom Field preview: the preview is being "
+                                + "rendered for user '%s', who does not have the %s role. The "
+                                + "rest of the field renders.",
+                        authorId, Role.SCRIPTING_DEVELOPER));
+            } else {
+                reportRefusal("author:" + authorId, () -> String.format(
+                        "A view tool was refused: the code being rendered was last saved by user "
+                                + "'%s', who does not have the %s role",
+                        authorId, Role.SCRIPTING_DEVELOPER));
+            }
         }
         return allowed;
     }

@@ -14,13 +14,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ConfirmationService, ConfirmEventType, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import {
-    DialogService,
-    DynamicDialog,
-    DynamicDialogModule,
-    DynamicDialogRef
-} from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { MessageModule } from 'primeng/message';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ToastModule } from 'primeng/toast';
 
 import {
@@ -32,7 +28,7 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { DotCMSWorkflowAction, DotContentletDepths } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSWorkflowAction, DotContentletDepths } from '@dotcms/dotcms-models';
 import { DotCollapseBreadcrumbComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { FormValues } from '../../models/dot-edit-content-form.interface';
@@ -71,6 +67,7 @@ import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-
         ButtonModule,
         ToastModule,
         MessageModule,
+        ProgressSpinnerModule,
         DynamicDialogModule,
         DotEditContentFormComponent,
         DotEditContentSidebarComponent,
@@ -151,6 +148,17 @@ export class DotEditContentLayoutComponent {
      */
     readonly #reloadWait = signal(false);
 
+    /**
+     * Whether the editor has been rendered at least once. The "hold the loading screen
+     * until `_canlock` has answered" rule (#38724 R4) is for the FIRST load only, so the
+     * form never shows enabled and then flips to read-only; once something is on screen the
+     * editor stays mounted while the permission is re-checked — after the first save in the
+     * dialog (the saved contentlet lands directly in LOADED, no reload), or after an in-place
+     * reload (under its overlay). Unmounting would flash the spinner and reset the sidebar tab.
+     */
+    readonly #editorShown = signal(false);
+    protected readonly $editorShown = this.#editorShown.asReadonly();
+
     /** Whether the in-place reload overlay should be shown. */
     readonly $showReloadOverlay = computed(() => this.#reloadWait());
 
@@ -188,26 +196,9 @@ export class DotEditContentLayoutComponent {
         });
     });
 
-    /**
-     * Present when rendered inside a PrimeNG DynamicDialog; null otherwise (e.g.
-     * full-screen). Used to intercept dialog close events for the dirty-content guard.
-     */
-    readonly #dialogRef = inject(DynamicDialogRef, { optional: true });
-
-    /**
-     * The DynamicDialog host component. Injected optionally to access its inner
-     * p-dialog instance (via `dialog`) so we can override `p-dialog.close()` and
-     * prevent the hide animation from starting when there are unsaved changes.
-     */
-    readonly #dynamicDialog = inject(DynamicDialog, { optional: true });
-
     readonly $editContentForm = viewChild(DotEditContentFormComponent);
 
     constructor() {
-        if (this.#dialogRef) {
-            this.#interceptDirtyClose();
-        }
-
         // In-place hosts (dialog) request related-content navigation without a
         // route change; reload the editor here, confirming unsaved changes first.
         const inPlaceNavigation$ = this.#host.inPlaceNavigation$;
@@ -257,6 +248,8 @@ export class DotEditContentLayoutComponent {
         // editor no longer branches on a "dialog mode".
         this.$store.initialize();
 
+        this.#offerRequestedTranslation();
+
         // Hold the in-place reload overlay until BOTH the new content and the
         // sidebar's data have loaded. Arm when a reload starts (`isReloading`), and
         // disarm only once everything has settled (`isFullyLoaded`) — the window in
@@ -268,6 +261,13 @@ export class DotEditContentLayoutComponent {
                 untracked(() => this.#reloadWait.set(true));
             } else if (this.$store.isFullyLoaded()) {
                 untracked(() => this.#reloadWait.set(false));
+            }
+        });
+
+        // Latch once the editor has rendered with its permission known (see `#editorShown`).
+        effect(() => {
+            if (this.$store.isLoaded() && this.$store.isPermissionsSettled()) {
+                untracked(() => this.#editorShown.set(true));
             }
         });
 
@@ -291,54 +291,48 @@ export class DotEditContentLayoutComponent {
     }
 
     /**
-     * Sets up two intercepts for dirty-content confirmation when rendered inside a dialog:
+     * Offers the translation into the language the opener asked for, when the content has no
+     * version in it (#38303, T178). The opener then hands the editor the content in another
+     * language with the asked one on the request: the UVE's "create a new language version", or a
+     * link naming a language (`editContentLang`). The editor switches to that locale as its own
+     * locale selector does, so the author chooses to copy the content or start from scratch, and
+     * the first save creates the translation.
      *
-     * 1. pDialog.close override — catches all UI-triggered closes (X button, ESC
-     *    key, mask click). p-dialog.close() sets _visible = false synchronously
-     *    before emitting visibleChange, so we must intercept here — before the
-     *    internal state changes — to prevent the hide animation from starting.
-     *
-     * 2. dialogRef.close override — catches programmatic closes (dialogRef.close()
-     *    called directly from code, e.g. DotEditContentDialogComponent.closeDialog()).
+     * Decided once, when the content's locales first load: a later locale switch, or the locales
+     * loading again, does not offer it again. Nothing happens when the request names no language,
+     * the content's own, or one the content has.
      */
-    #interceptDirtyClose(): void {
-        const dialogRef = this.#dialogRef!;
-        const originalClose = dialogRef.close.bind(dialogRef);
+    #offerRequestedTranslation(): void {
+        let decided = false;
 
-        // --- Programmatic close path ---
-        dialogRef.close = (value?: unknown) => {
-            if (!this.hasUnsavedChanges() || this.$store.workflowActionSuccess()) {
-                originalClose(value);
+        effect(() => {
+            const contentlet = this.$store.contentlet();
+            const locales = this.$store.locales();
+            const loaded = this.$store.localesStatus().status === ComponentStatus.LOADED;
 
+            if (
+                decided ||
+                !loaded ||
+                !contentlet?.identifier ||
+                this.$store.currentIdentifier() !== contentlet.identifier
+            ) {
                 return;
             }
 
-            this.#confirmIfDirty(
-                () => originalClose(value),
-                () => undefined
-            );
-        };
+            decided = true;
 
-        // --- UI close path (X button, ESC, mask click) ---
-        // Access p-dialog directly via DynamicDialog.dialog to intercept close()
-        // before it sets _visible = false and starts the hide animation.
-        const pDialog = this.#dynamicDialog?.dialog;
-        if (pDialog) {
-            const originalPDialogClose = pDialog.close.bind(pDialog);
-            pDialog.close = (event: Event) => {
-                if (!this.hasUnsavedChanges() || this.$store.workflowActionSuccess()) {
-                    originalPDialogClose(event);
+            untracked(() => {
+                const { languageId } = this.#host.resolveIdentity();
+                const locale =
+                    languageId && languageId !== contentlet.languageId
+                        ? locales?.find(({ id }) => id === languageId)
+                        : undefined;
 
-                    return;
+                if (locale && !locale.translated) {
+                    this.$store.switchLocale(locale);
                 }
-
-                event?.preventDefault();
-                this.#confirmIfDirty(
-                    () => originalPDialogClose(event),
-                    () => undefined
-                );
-            };
-        }
+            });
+        });
     }
 
     /**

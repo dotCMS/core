@@ -226,13 +226,13 @@ describe('AddRelationshipsComponent — shared surface (US1)', () => {
 
     describe('empty states', () => {
         /**
-         * The **table's** empty state, not one of the dialog's own: replacing the table with a
-         * message took the header row and the paging footer with it, and with them the controls
-         * that get the editor out of an empty result.
+         * The listing's empty state, not one of the dialog's own. An empty first page shows the
+         * message alone, with no table header, as every listing does (#38379); the dialog's own
+         * search and filters stay, and they are what get the editor out of an empty result.
          */
-        it('shows the table empty state when a search matches nothing', () => {
+        it('shows the listing empty state, with no table, when a search matches nothing', () => {
             expect(spectator.query(byTestId('empty-state'))).toBeTruthy();
-            expect(spectator.query(byTestId('header-row'))).toBeTruthy();
+            expect(spectator.query(byTestId('header-row'))).toBeNull();
         });
 
         it('shows an empty state, not an error, when the target content type has no content', () => {
@@ -416,6 +416,36 @@ describe('AddRelationshipsComponent — shared surface (US1)', () => {
             spectator.detectChanges();
 
             expect(spectator.component.store.sort()).toEqual({ field: 'title', order: 'desc' });
+        });
+
+        /**
+         * An empty search renders no table, so the list's rows-per-page picker is rebuilt when
+         * results come back. Bound from the store, it comes back at the size the store fetches
+         * instead of the list's default 20.
+         */
+        it('gives the list the page size the store fetches', () => {
+            mountWith(withResults);
+
+            spectator.query(DotFolderListViewComponent)?.paginate.emit({
+                first: 0,
+                rows: 40,
+                page: 1
+            });
+            spectator.detectChanges();
+
+            expect(spectator.query(DotFolderListViewComponent)?.$rows()).toBe(40);
+        });
+
+        /** Same as the page size: the rebuilt table shows the sort the store fetches. */
+        it('gives the list the sort the store fetches', () => {
+            mountWith(withResults);
+
+            spectator.query(DotFolderListViewComponent)?.sort.emit({ field: 'title', order: 1 });
+            spectator.detectChanges();
+
+            const list = spectator.query(DotFolderListViewComponent);
+            expect(list?.$sortField()).toBe('title');
+            expect(list?.$sortOrder()).toBe(1);
         });
 
         it('stays on the first page when the list reports no page', () => {

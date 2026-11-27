@@ -259,7 +259,7 @@ public class ContentResource {
         // Popped BEFORE the transformer builds the entity map so the transient warnings key
         // never leaks into the response entity; surfaced as advisory messages (#36658).
         final List<MessageEntity> conversionMessages =
-                MapToContentletPopulator.popStoryBlockConversionMessages(contentlet);
+                MapToContentletPopulator.popSaveWarningMessages(contentlet);
         final Map<String, Object> entityMap = new DotTransformerBuilder().defaultOptions()
                 .content(contentlet).build().toMaps().stream().findFirst().orElse(Collections.emptyMap());
         return null != conversionMessages
@@ -342,7 +342,7 @@ public class ContentResource {
         final Contentlet tempContentlet = new Contentlet();
         tempContentlet.getMap().putAll(existentContentlet.getMap());
         final Contentlet mergedContentlet = MapToContentletPopulator.INSTANCE.populate(tempContentlet,
-                contentForm.getContentlet());
+                contentForm.getContentlet(), user);
         if (null == mergedContentlet || null == mergedContentlet.getContentType()) {
             throw new DotContentletValidationException(String.format("Contentlet '%s' does not have a specified " +
                                                                              "Content Type",
@@ -1235,6 +1235,17 @@ public class ContentResource {
                     "(https://dev.dotcms.com/docs/content-search-syntax). " +
                     "Supports filtering, sorting, pagination, and depth-based relationship loading. " +
                     "Returns structured JSON with search metadata and contentlet results.\n\n" +
+                    "**What a query returns:**\n\n" +
+                    "- **Unpublished content too.** Called as a back-end user (API token or session), results include working " +
+                    "(unpublished) versions. Add `+live:true` to get published content only; a draft that is " +
+                    "not in that result still exists.\n" +
+                    "- **One entry per language version.** Content that exists in two languages comes back " +
+                    "twice, with the same `identifier`. Filter with `+languageId:<id>` **in the query**: a " +
+                    "`languageId` property in the request body does not filter.\n" +
+                    "- **Fields by type.** Query a content type's field as `+<ContentTypeVar>.<fieldVar>:value`, " +
+                    "e.g. `+Blog.author:\"Ada\"`, together with `+contentType:<ContentTypeVar>`.\n" +
+                    "- **Relationships.** With `depth: 1`, relationship fields come back as the related " +
+                    "contentlets, resolved in each result's language.\n\n" +
                     "> **Note:** This is a wrapper around the former `api/content/_search`. Both " +
                     "paths remain valid for backwards compatibility, but the `v1` path is preferred."
     )

@@ -220,6 +220,23 @@ describe('DotCalendarFieldComponent', () => {
         );
     });
 
+    describe('Error state (#38724)', () => {
+        it('should mark the PrimeNG DatePicker invalid through its own input when the field has an error', () => {
+            // PrimeNG first: the DatePicker's `invalid` input draws the error border, no custom CSS.
+            spectator = buildHost(DotCMSFieldTypes.DATE, null, { hasError: true });
+            spectator.detectChanges();
+
+            expect(spectator.query(DatePicker)?.invalid()).toBe(true);
+        });
+
+        it('should not mark it invalid without an error', () => {
+            spectator = buildHost(DotCMSFieldTypes.DATE);
+            spectator.detectChanges();
+
+            expect(spectator.query(DatePicker)?.invalid()).toBeFalsy();
+        });
+    });
+
     describe('Default value versus an explicit clear (FR-017)', () => {
         const NOW_DEFAULT = { ...DATE_FIELD_MOCK, defaultValue: 'now' } as DotCMSContentTypeField;
 

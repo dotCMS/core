@@ -97,6 +97,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -499,8 +500,10 @@ public class ContentTypeResource implements Serializable {
 														   "- `folder` *(string)* — folder identifier UUID or the literal `SYSTEM_FOLDER` (defaults to `SYSTEM_FOLDER`)\n" +
 														   "- `description` *(string)*\n" +
 														   "- `workflow` *(array of workflow scheme UUIDs)* — e.g. `[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]` for System Workflow. " +
-														   "⚠️ **Note:** this is `workflow` (singular) in the request. GET responses return `workflows` (plural, array of objects) — " +
-														   "clients round-tripping an object must rename this key.\n" +
+														   "GET responses return `workflows` (plural, array of scheme objects); that key is read-only and ignored " +
+														   "on write, so send `workflow` to set the schemes. Accepted values: an array of scheme ids, variable names " +
+														   "or scheme objects; a string with one id or variable name, or several comma-separated; " +
+														   "`null` or `[]` for no schemes. Any other type is rejected with a 400.\n" +
 														   "- `fields` *(array of field objects)* — see field schema below (`ContentTypeFieldView`)\n" +
 														   "- `metadata` *(object)* — known keys: `CONTENT_EDITOR2_ENABLED` (boolean), `DOT_STYLE_EDITOR_SCHEMA` (JSON string)\n" +
 														   "- `systemActionMappings` *(object)* — maps system actions (`NEW`, `EDIT`, `PUBLISH`, `UNPUBLISH`, `ARCHIVE`, `UNARCHIVE`, `DELETE`, `DESTROY`) to workflow action UUIDs\n\n" +
@@ -578,6 +581,8 @@ public class ContentTypeResource implements Serializable {
 						.rejectWhenNoUser(true)
 						.init();
 		final User user = initData.getUser();
+		// Outside the try so the 400 is not turned into a 500 by the catch-all below.
+		ContentTypeHelper.checkWorkflowShape(null == form ? null : form.getRequestJson());
 		try {
 			checkNotNull(form, "The 'form' parameter is required");
 			Logger.debug(this, ()->String.format("Creating Content Type(s): %s", form.getRequestJson()));
@@ -657,13 +662,18 @@ public class ContentTypeResource implements Serializable {
 			operationId = "putContentTypeUpdate",
 			summary = "Updates a content type",
 			description = "Updates the content type based on the given ID or Velocity variable name.\n\n" +
-			"⚠️ **Destructive semantics.** (with one exception). This endpoint treats the request body as the full desired state. " +
+			"⚠️ **Destructive semantics.** (with two exceptions). This endpoint treats the request body as the full desired state. " +
 			"Any editable property (including items in `fields[]`) absent from the body will be removed. " +
 			"**Exception: `metadata`** — if the `metadata` key is absent from the request body, the server " +
 			"preserves the existing metadata unchanged. To explicitly clear all metadata, send `\"metadata\": null`.\n\n" +
+			"**Exception: workflow schemes** — only `workflow` (array of scheme UUIDs or scheme objects) sets them. " +
+			"If `workflow` is absent, the existing schemes are preserved unchanged; the `workflows` array GET returns is " +
+			"read-only and ignored on write. Accepted `workflow` values: an array of scheme ids, variable names or scheme objects; " +
+			"a string with one id or variable name, or several comma-separated (`\"a,b\"`); `null` or `[]` to remove every scheme. " +
+			"Any other type (number, boolean, object) is rejected with a 400.\n\n" +
 			"**Recommended update pattern:**\n" +
 			"1. `GET /api/v1/contenttype/id/{idOrVar}` to fetch the current object.\n" +
-			"2. Mutate the returned object in place. Rename `workflows` (array of objects) → `workflow` (array of UUIDs) before sending.\n" +
+			"2. Mutate the returned object in place. To change the schemes, send `workflow` (see accepted values above); editing `workflows` has no effect.\n" +
 			"3. PUT the entire mutated object back.\n\n" +
 			"This is also the only supported way to add, remove, or modify individual fields — " +
 			"the `/api/v1/contenttype/{typeId}/fields/**` family is deprecated in favor of this full-CT PUT.\n\n" +
@@ -738,8 +748,11 @@ public class ContentTypeResource implements Serializable {
 												"[Default Workflow Actions](https://www.dotcms.com/docs/latest/managing-" +
 												"workflows#DefaultActions) (as keys) " +
 												"to workflow action identifiers (as values) for this content type.|\n" +
-												"| `workflow` | List of Strings | A list of identifiers of workflow " +
-												"schemes to be associated with the content type.",
+												"| `workflow` | List of Strings, String or null | A list of identifiers of workflow " +
+												"schemes to be associated with the content type. When absent, the current " +
+												"schemes are kept; `workflows` (the scheme objects GET returns) is ignored. " +
+												"Also accepts a single id or variable name, a comma-separated string of them, " +
+												"or `null` (no schemes); any other type is rejected with a 400.|",
 										required = true,
 										content = @Content(
 												schema = @Schema(implementation = ContentTypeRequestView.class),
@@ -776,6 +789,8 @@ public class ContentTypeResource implements Serializable {
 						.init();
 		final User user = initData.getUser();
 		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, true);
+		// Outside the try so the 400 is not turned into a 500 by the catch-all below.
+		ContentTypeHelper.checkWorkflowShape(null == form ? null : form.getRequestJson());
 		try {
 			checkNotNull(form, "The 'form' parameter is required");
 			ContentType contentType = contentTypeHelper.evaluateContentTypeRequest(
@@ -787,10 +802,14 @@ public class ContentTypeResource implements Serializable {
 
 			contentType = contentTypeHelper.preserveMetadataIfAbsent(
 					contentType, form.getRequestJson(), contentTypeAPI);
+			// Like metadata above: a body without a `workflow` key leaves the schemes as they are.
+			final List<WorkflowFormEntry> workflows =
+					ContentTypeHelper.requestContainsWorkflow(form.getRequestJson())
+							? form.getWorkflows() : null;
 
 			final Tuple2<ContentType, List<SystemActionWorkflowActionMapping>> tuple2 =
 					this.saveContentTypeAndDependencies(contentType, user,
-							form.getWorkflows(), form.getSystemActions(),
+							workflows, form.getSystemActions(),
 							contentTypeAPI, false);
 			final ImmutableMap.Builder<String, Object> builderMap =
 					ImmutableMap.<String, Object>builder()
@@ -830,8 +849,8 @@ public class ContentTypeResource implements Serializable {
 	 *
 	 * @param contentType          The {@link ContentType} to save.
 	 * @param user                 The {@link User} executing this action.
-	 * @param workflows            The {@link Set} of Workflow IDs to associate to the Content
-	 *                             Type.
+	 * @param workflows            The Workflow Schemes to associate to the Content Type, or
+	 *                             {@code null} to leave its current schemes untouched.
 	 * @param systemActionMappings The {@link List} of {@link Tuple2} containing the
 	 *                             {@link WorkflowAPI.SystemAction} and the {@link String}
 	 *                             representing the Workflow Action ID.
@@ -849,13 +868,15 @@ public class ContentTypeResource implements Serializable {
 	@WrapInTransaction
 	private Tuple2<ContentType, List<SystemActionWorkflowActionMapping>> saveContentTypeAndDependencies (final ContentType contentType,
 																								   final User user,
-																								   final List<WorkflowFormEntry> workflows,
+																								   @Nullable final List<WorkflowFormEntry> workflows,
 																								   final List<Tuple2<WorkflowAPI.SystemAction,String>> systemActionMappings,
 																								   final ContentTypeAPI contentTypeAPI,
 																								   final boolean isNew) throws DotSecurityException, DotDataException, UniqueFieldValueDuplicatedException {
 
 		ContentType contentTypeSaved = contentTypeAPI.save(contentType);
-		this.contentTypeHelper.saveSchemesByContentType(contentTypeSaved, workflows);
+		if (null != workflows) {
+			this.contentTypeHelper.saveSchemesByContentType(contentTypeSaved, workflows);
+		}
 
 		if (!isNew) {
 			this.handleFields(contentTypeSaved.id(), contentType.fieldMap(
@@ -1094,6 +1115,20 @@ public class ContentTypeResource implements Serializable {
 		}
 	}
 
+	/**
+	 * Returns a Content Type by its ID or Velocity variable name. Requests without a user follow
+	 * the anonymous access setting for the content APIs.
+	 *
+	 * @param idOrVar    The ID or Velocity variable name of the Content Type.
+	 * @param req        The current instance of the {@link HttpServletRequest}.
+	 * @param res        The current instance of the {@link HttpServletResponse}.
+	 * @param languageId The Language ID, used for internationalization purposes.
+	 * @param paramLive  Whether live versions of language variables are used.
+	 *
+	 * @return The Content Type in its JSON format.
+	 *
+	 * @throws DotDataException An error occurred when interacting with the database.
+	 */
 	@GET
 	@Path("/id/{idOrVar}")
 	@JSONP
@@ -1179,9 +1214,27 @@ public class ContentTypeResource implements Serializable {
 			@QueryParam("live") @Parameter(
 					description = "Determines whether live versions of language variables are used in the returned object.",
 					schema = @Schema(type = "boolean")) final Boolean paramLive) throws DotDataException {
-		return retrieveContentType(req, res, idOrVar, languageId, paramLive, false, null);
+		final InitDataObject initData = this.webResource.init(null, req, res, false, null);
+		return retrieveContentType(initData, req, idOrVar, languageId, paramLive, false, null);
 	}
 
+	/**
+	 * Returns a Content Type with the Velocity code of its Custom Fields rendered, as the back-end
+	 * content editor shows them. Requires a logged-in back-end user.
+	 *
+	 * @param idOrVar         The ID or Velocity variable name of the Content Type.
+	 * @param req             The current instance of the {@link HttpServletRequest}.
+	 * @param res             The current instance of the {@link HttpServletResponse}.
+	 * @param languageId      The Language ID, used for internationalization purposes.
+	 * @param paramLive       Whether live versions of language variables are used.
+	 * @param contentletInode Optional contentlet inode whose values are available to the Custom
+	 *                        Fields while they are rendered.
+	 *
+	 * @return The Content Type in its JSON format, with a {@code rendered} attribute on each
+	 * rendered Custom Field.
+	 *
+	 * @throws DotDataException An error occurred when interacting with the database.
+	 */
 	@GET
 	@Path("/render/id/{idOrVar}")
 	@JSONP
@@ -1191,7 +1244,8 @@ public class ContentTypeResource implements Serializable {
 			operationId = "getContentTypeRenderedCustomFieldIdVar",
 			summary = "Retrieves a single content type with their rendered custom fields",
 			description = "Returns a content type based on the provided ID or Velocity variable " +
-					"name. Additionally, the Velocity code in all of its custom fields will be parsed.",
+					"name. Additionally, the Velocity code in all of its custom fields will be parsed. " +
+					"Requires a logged-in back-end user.",
 			tags = {"Content Type"},
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Content type retrieved successfully",
@@ -1242,6 +1296,7 @@ public class ContentTypeResource implements Serializable {
 									}
 							)
 					),
+					@ApiResponse(responseCode = "401", description = "Unauthorized"),
 					@ApiResponse(responseCode = "403", description = "Forbidden"),
 					@ApiResponse(responseCode = "404", description = "Not Found"),
 					@ApiResponse(responseCode = "500", description = "Internal Server Error")
@@ -1266,17 +1321,24 @@ public class ContentTypeResource implements Serializable {
 								  "Velocity variables ($inode, $identifier, $lang, etc.) will be " +
 								  "available when rendering Custom Fields.",
 					schema = @Schema(type = "string")) final String contentletInode) throws DotDataException {
+		final InitDataObject initData = new WebResource.InitBuilder(this.webResource)
+				.requestAndResponse(req, res)
+				.requiredBackendUser(true)
+				.rejectWhenNoUser(true)
+				.init();
 		req.setAttribute("contentTypeId", idOrVar);
-		return retrieveContentType(req, res, idOrVar, languageId, paramLive, true, contentletInode);
+		return retrieveContentType(initData, req, idOrVar, languageId, paramLive, true, contentletInode);
 	}
 
 	/**
-	 * Retrieves a content type based on the provided ID or Velocity variable name.
+	 * Retrieves a content type based on the provided ID or Velocity variable name, for a request
+	 * that the calling endpoint has already initialized and authorized.
 	 *
+	 * @param initData           The request data from the calling endpoint, holding the user the
+	 *                           Content Type is retrieved for.
 	 * @param idOrVar            The ID or Velocity variable name of the {@link ContentType} to
 	 *                           retrieve.
-	 * @param httpRequest                The current instance of the {@link HttpServletRequest}.
-	 * @param httpResponse                The current instance of the {@link HttpServletResponse}.
+	 * @param httpRequest        The current instance of the {@link HttpServletRequest}.
 	 * @param languageId         The Language ID, used for internationalization purposes.
 	 * @param paramLive          Determines whether live versions of language variables are used in
 	 *                           the returned object.
@@ -1289,12 +1351,11 @@ public class ContentTypeResource implements Serializable {
 	 *
 	 * @throws DotDataException An error occurred when interacting with the database.
 	 */
-	private Response retrieveContentType(final HttpServletRequest httpRequest,
-										 final HttpServletResponse httpResponse, final String idOrVar,
+	private Response retrieveContentType(final InitDataObject initData,
+										 final HttpServletRequest httpRequest, final String idOrVar,
 										 final Long languageId, final Boolean paramLive,
 										 final boolean renderCustomFields,
 										 final String contentletInode) throws DotDataException {
-		final InitDataObject initData = this.webResource.init(null, httpRequest, httpResponse, false, null);
 		final User user = initData.getUser();
 		final ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
 		Response response = Response.status(404).build();

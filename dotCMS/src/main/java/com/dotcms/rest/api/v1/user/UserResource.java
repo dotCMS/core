@@ -36,6 +36,7 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -54,6 +55,8 @@ import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
@@ -137,6 +140,13 @@ public class UserResource implements Serializable {
 	public static final String USER_WITH_USER_ID_MSG = "User with userId '";
 	/** Item key carrying whether the User is a CMS Administrator; returned to Role administrators. */
 	private static final String ADMIN_ITEM_KEY = "admin";
+	/**
+	 * The session attributes a Login As writes ({@link #updateLoginAsSessionInfo}, {@link #setImpersonatedUserSite}).
+	 * {@link #loginAs} reads them before it starts, so a request that does not complete can put them back.
+	 */
+	private static final List<String> LOGIN_AS_SESSION_ATTRIBUTES = List.of(WebKeys.PRINCIPAL_USER_ID,
+			LoginAsSession.SESSION_KEY, WebKeys.USER, WebKeys.USER_ID, com.dotmarketing.util.WebKeys.CURRENT_HOST,
+			com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
 	private final WebResource webResource;
 	private final UserAPI userAPI;
 	private final HostAPI siteAPI;
@@ -729,6 +739,22 @@ public class UserResource implements Serializable {
         throw new ForbiddenException(message);
     }
 
+	/**
+	 * Starts a Login As: the caller's session acts as the requested user until Logout As. The security log records
+	 * that the caller logged in as the user only once the Login As completes. A request that is refused or fails
+	 * leaves the session as it found it, so a Login As that was already active stays active and Logout As keeps
+	 * working.
+	 *
+	 * @param request      The current {@link HttpServletRequest}.
+	 * @param httpResponse The current {@link HttpServletResponse}.
+	 * @param loginAsForm  The id of the user to log in as and, when that user is an administrator, the caller's
+	 *                     password.
+	 *
+	 * @return 200 with {@code loginAs: true} when it completes; 200 with {@code loginAs: false} and an error key when
+	 * it is refused for a reason the UI shows; 400, 401, 403 or 500 otherwise.
+	 *
+	 * @throws Exception If the request cannot be initialized.
+	 */
 	@Operation(
 	    operationId = "loginAsUser",
 	    summary = "Login as user",
@@ -779,8 +805,10 @@ public class UserResource implements Serializable {
 
 		final String serverName = request.getServerName();
 		final User currentUser = initData.getUser();
-		final Host currentSite = Host.class.cast(request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST));
-		Response response;
+		// a request that does not complete leaves the session as it found it, including a Login As already active
+		final HttpSession session = request.getSession();
+		final Map<String, Object> sessionBefore = loginAsSessionAttributes(session);
+		final String principalBefore = PrincipalThreadLocal.getName();
 		try {
 			final Map<String, Object> sessionData = this.helper.doLoginAs(currentUser, loginAsUserId, loginAsUserPwd, serverName);
 			// the id as stored in the user record, not as it was posted
@@ -788,12 +816,14 @@ public class UserResource implements Serializable {
 			updateLoginAsSessionInfo(request, Host.class.cast(sessionData.get(com.dotmarketing.util.WebKeys
 					.CURRENT_HOST)), currentUser.getUserId(), loginAsStoredUserId);
 			this.setImpersonatedUserSite(request, loginAsStoredUserId);
-			response = Response.ok(new ResponseEntityView<>(Map.of("loginAs", true))).build();
+			SecurityLogger.logInfo(UserResource.class, String.format("UserID '%s' has successfully logged in as '%s' / " +
+					"Remote IP: '%s'", currentUser.getUserId(), loginAsStoredUserId, request.getRemoteAddr()));
+			return Response.ok(new ResponseEntityView<>(Map.of("loginAs", true))).build();
 		} catch (final DotSecurityException e) {
 			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An attempt to login as a different user " +
 							"was made by UserID '%s' / Remote IP '%s': %s", currentUser.getUserId(), request.getRemoteAddr(),
 					e.getMessage()));
-			revertLoginAsSessionInfo(request, currentSite, currentUser.getUserId());
+			restoreLoginAsSessionAttributes(session, sessionBefore, principalBefore);
 			// 403, not 401: the caller is authenticated but not allowed; a 401 makes the UI end the session.
 			// The key travels in the error-key header so the UI can tell this denial from other 403s
 			return ExceptionMapperUtil.createResponse(e, "loginas.error.adminrequired", Response.Status.FORBIDDEN);
@@ -801,35 +831,65 @@ public class UserResource implements Serializable {
 			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An attempt to login as a different user " +
 							"was made by UserID '%s' / Remote IP '%s': %s", currentUser.getUserId(), request.getRemoteAddr(),
 					e.getMessage()));
-			revertLoginAsSessionInfo(request, currentSite, currentUser.getUserId());
+			restoreLoginAsSessionAttributes(session, sessionBefore, principalBefore);
 			return ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
 		} catch (final DotDataException e) {
 			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An attempt to login as a different user " +
 							"was made by UserID '%s' / Remote IP '%s': %s", currentUser.getUserId(), request.getRemoteAddr(),
 					e.getMessage()));
-			revertLoginAsSessionInfo(request, currentSite, currentUser.getUserId());
+			restoreLoginAsSessionAttributes(session, sessionBefore, principalBefore);
 			if (UtilMethods.isSet(e.getMessageKey())) {
-				final User user = initData.getUser();
-				response = Response.ok(new ResponseEntityView<>(
-						list(new ErrorEntity(e.getMessageKey(), LanguageUtil.get(user.getLocale(), e.getMessageKey()))),
+				return Response.ok(new ResponseEntityView<>(
+						list(new ErrorEntity(e.getMessageKey(), LanguageUtil.get(currentUser.getLocale(), e.getMessageKey()))),
 						Map.of("loginAs", false))).build();
-			} else {
-				return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
 			}
+			return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
 		} catch (final Exception e) {
 			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An error occurred when processing the " +
 					"Login As request from UserID '%s': %s", currentUser.getUserId(), e.getMessage()));
-			revertLoginAsSessionInfo(request, currentSite, currentUser.getUserId());
+			restoreLoginAsSessionAttributes(session, sessionBefore, principalBefore);
 			if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
-				return ErrorResponseHelper.INSTANCE.getErrorResponse(Response.Status.UNAUTHORIZED, initData.getUser()
+				return ErrorResponseHelper.INSTANCE.getErrorResponse(Response.Status.UNAUTHORIZED, currentUser
 						.getLocale(), e.getMessage());
 			}
 			// In case of unknown error, a Status 500 is returned
 			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
-		SecurityLogger.logInfo(UserResource.class, String.format("UserID '%s' has successfully logged in as '%s' / " +
-				"Remote IP: '%s'", currentUser.getUserId(), loginAsUserId, request.getRemoteAddr()));
-		return response;
+	}
+
+	/**
+	 * Reads the session attributes a Login As changes, so they can be put back if the request does not complete.
+	 *
+	 * @param session The current {@link HttpSession}.
+	 *
+	 * @return Each attribute in {@link #LOGIN_AS_SESSION_ATTRIBUTES} with its current value; {@code null} when it is
+	 * not set.
+	 */
+	private static Map<String, Object> loginAsSessionAttributes(final HttpSession session) {
+		final Map<String, Object> attributes = new HashMap<>();
+		LOGIN_AS_SESSION_ATTRIBUTES.forEach(name -> attributes.put(name, session.getAttribute(name)));
+		return attributes;
+	}
+
+	/**
+	 * Puts back the session attributes read by {@link #loginAsSessionAttributes}, and the request's principal name,
+	 * after a Login As that did not complete. A Login As that was already active stays active, so Logout As keeps
+	 * working; a plain session goes back to the caller.
+	 *
+	 * @param session       The current {@link HttpSession}.
+	 * @param attributes    The attributes as they were before the request.
+	 * @param principalName The {@link PrincipalThreadLocal} name as it was before the request.
+	 */
+	private static void restoreLoginAsSessionAttributes(final HttpSession session, final Map<String, Object> attributes,
+			final String principalName) {
+		attributes.forEach((name, value) -> {
+			if (null == value) {
+				session.removeAttribute(name);
+			} else {
+				session.setAttribute(name, value);
+			}
+		});
+		PrincipalThreadLocal.setName(principalName);
 	}
 
 	/**
@@ -1076,7 +1136,9 @@ public class UserResource implements Serializable {
 	@Operation(
 	    operationId = "createUser",
 	    summary = "Create user",
-	    description = "Creates a new user. Requires a CMS Administrator. FirstName, LastName, Email and Password are required"
+	    description = "Creates a new user. Requires a CMS Administrator. FirstName, LastName, Email and Password are required. "
+	            + "The optional active flag sets the new user's status; omit it to create an active user. "
+	            + "The optional male flag is applied the same way; omit it to take the default."
 	)
 	@ApiResponses(value = {
 	    @ApiResponse(responseCode = "200",
@@ -1201,8 +1263,16 @@ public class UserResource implements Serializable {
 		}
 
 		user.setPassword(new String(createUserForm.getPassword()));
-		user.setMale(createUserForm.isMale());
+		// On create there is no stored value to leave alone, so an absent flag keeps the value this
+		// endpoint has always stored — false — rather than the true UserAPI#createUser seeds a new
+		// user with. Only the update path reads absence as "do not touch".
+		user.setMale(Boolean.TRUE.equals(createUserForm.getMale()));
 		user.setCreateDate(new Date());
+
+		// absent = the status UserAPI#createUser gives a new user; an explicit value wins over it
+		if (null != createUserForm.getActive()) {
+			user.setActive(createUserForm.getActive());
+		}
 
 		if (UtilMethods.isSet(createUserForm.getAdditionalInfo())) {
 			user.setAdditionalInfo(createUserForm.getAdditionalInfo());
@@ -1258,7 +1328,10 @@ public class UserResource implements Serializable {
 					"individual role) are never modified, keys that resolve to no role are ignored, and null " +
 					"or blank entries are rejected with 400. Note that roles without a key cannot be " +
 					"expressed in this list — manage those through the role-centric /v1/roles/{roleId}/users " +
-					"endpoints instead.",
+					"endpoints instead. The optional active flag activates or deactivates the user; omit it to " +
+					"leave the status untouched. Deactivating a user invalidates their login tokens and ends " +
+					"their sessions, which is why deactivating your own account is refused with a 400. The " +
+					"optional male flag follows the same rule: omit it to leave the stored value untouched.",
 			responses = {
 					@ApiResponse(
 							responseCode = "200",
@@ -1284,7 +1357,7 @@ public class UserResource implements Serializable {
 							content = @Content(mediaType = "application/json",
 									schema = @Schema(implementation =
 											ResponseSiteVariablesEntityView.class)),
-							description = "If the user information is not valid"),
+							description = "If the user information is not valid, or the payload asks to deactivate the calling user's own account"),
 			})
 	@PUT
 	@JSONP
@@ -1390,8 +1463,14 @@ public class UserResource implements Serializable {
                 throw new NoSuchUserException("User with id " + userId + " does not exist");
             }
 
+            final boolean wasActive = userToUpdated.isActive();
             userToUpdated.setActive(true);
             this.userAPI.save(userToUpdated, modUser, false);
+
+            if (!wasActive) {
+
+                this.logStatusChange(modUser, userToUpdated);
+            }
 
             return new ResponseUserMapEntityView(Map.of(USER_ID, userToUpdated.getUserId(),
                     "user", userToUpdated.toMap())); // 200
@@ -1410,6 +1489,8 @@ public class UserResource implements Serializable {
      * @throws Exception
      */
     @Operation(operationId = "deactivateUser", summary = "Deactivate an existing user.",
+            description = "Deactivates a user, which invalidates their login tokens and ends their "
+                    + "sessions. Deactivating your own account is refused with a 400.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -1434,7 +1515,7 @@ public class UserResource implements Serializable {
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation =
                                             ResponseUserMapEntityView.class)),
-                            description = "If the user information is not valid"),
+                            description = "If the user id is the calling user's own, which cannot be deactivated"),
             })
     @PATCH
     @Path("/deactivate/{userId}")
@@ -1469,8 +1550,23 @@ public class UserResource implements Serializable {
                 throw new NoSuchUserException("User with id " + userId + " does not exist");
             }
 
+            // same refusal the legacy Users portlet gives, and the same one PUT /v1/users gives:
+            // deactivating yourself takes your own tokens and session away, and on an instance with
+            // a single administrator nobody is left who could undo it
+            if (userToUpdated.getUserId().equals(modUser.getUserId())) {
+
+                throw new BadRequestException(LanguageUtil.get(modUser.getLocale(),
+                        "deactivate-your-own-user-error"));
+            }
+
+            final boolean wasActive = userToUpdated.isActive();
             userToUpdated.setActive(false);
             this.userAPI.save(userToUpdated, modUser, false);
+
+            if (wasActive) {
+
+                this.logStatusChange(modUser, userToUpdated);
+            }
 
             return new ResponseUserMapEntityView(Map.of(USER_ID, userToUpdated.getUserId(),
                     "user", userToUpdated.toMap())); // 200
@@ -1479,6 +1575,38 @@ public class UserResource implements Serializable {
         throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to update users");
     } // deactivate.
 
+    /**
+     * Writes the audit trail for a change of a user's account status, the way the legacy Users
+     * portlet does it (DWR {@code UserAjax#saveUserAdditionalInfo}), so that enabling or disabling
+     * an account through the REST API leaves the same trace and the existing log readers keep
+     * working. Unlike the legacy entry, this one names the user whose status changed as well as the
+     * user who changed it.
+     *
+     * On the update path this runs from a commit listener, so it must not throw: an exception
+     * escaping a sync listener reaches the caller as a failure for a change that is already
+     * committed. A log that cannot be written is worth a warning, not a failed request, so the
+     * writes are guarded here. The activate and deactivate endpoints call it directly, after
+     * {@code UserAPI#save} has committed a transaction of its own.
+     *
+     * @param modUser The user performing the request.
+     * @param changed The user whose status changed, already carrying the new value.
+     */
+    private void logStatusChange(final User modUser, final User changed) {
+
+        final String message = "Updating User Additional Info. 'Is User Enabled' was set to: "
+                + changed.isActive() + " for User:" + changed.getUserId();
+        final String detail = "Date: " + DateUtil.getCurrentDate() + "; User:" + modUser.getUserId();
+
+        try {
+
+            ActivityLogger.logInfo(this.getClass(), message, detail);
+            AdminLogger.log(this.getClass(), message, detail);
+        } catch (final Exception e) {
+
+            Logger.warn(this, "The status change of user " + changed.getUserId()
+                    + " could not be written to the audit log: " + e.getMessage(), e);
+        }
+    }
 
 	/**
 	 * Updates a user from the payload and, when the payload has a {@code roles} field, reconciles the
@@ -1490,6 +1618,12 @@ public class UserResource implements Serializable {
 	 * hashed, and the login tokens issued to the user before the change are invalidated (both done by
 	 * {@link UserAPI#save(User, User, boolean, boolean)}). Without a password, the stored one is left
 	 * as it is.
+	 * <p>
+	 * When the payload has an {@code active} flag, the user's status is set from it, and making a
+	 * user inactive invalidates their login tokens and ends their sessions (again through
+	 * {@link UserAPI#save(User, User, boolean, boolean)}). Without the flag, the status is left as it is.
+	 * Deactivating the calling user's own account is refused with a 400, the same refusal the legacy
+	 * Users portlet gives, because it would take the caller's own session away.
 	 *
 	 * @param modUser        The user performing the request.
 	 * @param request        The current request.
@@ -1524,6 +1658,17 @@ public class UserResource implements Serializable {
 
 		final User userToSave = (User)userRecovery.clone();
 
+		// Refusing to let a caller switch their own account off is what the legacy Users portlet
+		// does (UserAjax#saveUserAdditionalInfo). Deactivating takes the caller's own login tokens
+		// and session away, so on an instance with a single administrator nobody is left who could
+		// undo it. Checked before anything is written, so a refused request changes nothing.
+		if (Boolean.FALSE.equals(updateUserForm.getActive())
+				&& userRecovery.getUserId().equals(modUser.getUserId())) {
+
+			throw new BadRequestException(LanguageUtil.get(modUser.getLocale(),
+					"deactivate-your-own-user-error"));
+		}
+
 		validateMaximumLength(updateUserForm.getFirstName(),updateUserForm.getLastName(),updateUserForm.getEmail(),
 				updateUserForm.getMiddleName(),updateUserForm.getNickName(),updateUserForm.getBirthday());
 
@@ -1557,7 +1702,20 @@ public class UserResource implements Serializable {
 			userToSave.setTimeZoneId(updateUserForm.getTimeZoneId());
 		}
 
-		userToSave.setMale(updateUserForm.isMale());
+		// An absent flag (null) leaves the stored value as it is. The Users (Beta) portlet never
+		// sends this field, so reading the omission as false overwrote the stored value on every save.
+		if (null != updateUserForm.getMale()) {
+			userToSave.setMale(updateUserForm.getMale());
+		}
+
+		// An absent flag (null) leaves the status as it is; an explicit value activates or
+		// deactivates the user. No extra privilege check is needed here: this endpoint already
+		// requires a Role administrator, the very caller the activate/deactivate endpoints require.
+		// The deactivation itself takes effect in UserAPI#save, which is what invalidates the
+		// user's login tokens and ends their tracked sessions.
+		if (null != updateUserForm.getActive()) {
+			userToSave.setActive(updateUserForm.getActive());
+		}
 
 		if (UtilMethods.isSet(updateUserForm.getAdditionalInfo())) {
 			userToSave.setAdditionalInfo(updateUserForm.getAdditionalInfo());
@@ -1586,6 +1744,17 @@ public class UserResource implements Serializable {
 					!WebAPILocator.getUserWebAPI().isLoggedToBackend(request));
 			Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
 					updateUserForm.getEmail() + "' has been updated.");
+
+			// only an actual change is worth an audit entry: resending the status the user already
+			// has is not one. Written from a commit listener because the role update below can still
+			// fail and roll this whole method back, and an inline write would leave the audit trail
+			// claiming a status change that never happened. Sync rather than async, so the entry is
+			// on disk before the caller gets its 200 — the same listener UserAPIImpl uses to end the
+			// sessions of a user it just deactivated.
+			if (userRecovery.isActive() != userToSave.isActive()) {
+
+				HibernateUtil.addSyncCommitListener(() -> this.logStatusChange(modUser, userToSave));
+			}
 
             if (null != roleChanges) {
                 this.applyRoleChanges(roleChanges, userToSave);

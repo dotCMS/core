@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { patchState, signalStore, signalStoreFeature, withMethods, withState } from '@ngrx/signals';
 import { createServiceFactory, SpectatorService, SpyObject } from '@openng/spectator/vitest';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { fakeAsync, tick } from '@angular/core/testing';
@@ -20,6 +21,7 @@ import {
 
 import { withLock } from './lock.feature';
 
+import { EDIT_CONTENT_HOST } from '../../../services/host/edit-content-host.model';
 import { initialRootState } from '../../edit-content.store';
 
 describe('LockFeature', () => {
@@ -28,6 +30,7 @@ describe('LockFeature', () => {
     let dotContentletService: SpyObject<DotContentletService>;
     let dotHttpErrorManagerService: SpyObject<DotHttpErrorManagerService>;
     let dotMessageService: SpyObject<DotMessageService>;
+    const host = { reportLockChanged: vi.fn() };
 
     const withTest = () =>
         signalStoreFeature(
@@ -49,10 +52,12 @@ describe('LockFeature', () => {
 
     const createStore = createServiceFactory({
         service: signalStore(withTest(), withLock()),
-        mocks: [DotContentletService, DotHttpErrorManagerService, DotMessageService]
+        mocks: [DotContentletService, DotHttpErrorManagerService, DotMessageService],
+        providers: [{ provide: EDIT_CONTENT_HOST, useValue: host }]
     });
 
     beforeEach(() => {
+        host.reportLockChanged.mockClear();
         spectator = createStore();
         store = spectator.service;
         dotContentletService = spectator.inject(DotContentletService);
@@ -286,6 +291,90 @@ describe('LockFeature', () => {
             });
         });
 
+        describe('isReadOnly (R4, #38724)', () => {
+            const ACTION = { id: 'publish', name: 'Publish' };
+
+            /** A saved item the backend answered `canLock: false` and an empty action list for. */
+            const readOnlyState = () => {
+                // The onInit hook re-checks `_canlock` on every contentlet change.
+                dotContentletService.canLock.mockReturnValue(
+                    of({ canLock: false, locked: false } as DotContentletCanLock)
+                );
+                store.updateCurrentUser({ userId: '456' });
+                patchState(store, {
+                    contentlet: { inode: 'inode-1', locked: false } as DotCMSContentlet,
+                    initialContentletState: 'existing',
+                    canLock: false,
+                    currentContentActions: {}
+                });
+            };
+
+            it('should be true when the user cannot lock and has no workflow actions', () => {
+                readOnlyState();
+
+                expect(store.isReadOnly()).toBe(true);
+            });
+
+            it('should be false until the backend has answered the canLock check', () => {
+                readOnlyState();
+                patchState(store, { canLock: null });
+
+                expect(store.isReadOnly()).toBe(false);
+            });
+
+            it('should be false when the user has workflow actions to run', () => {
+                readOnlyState();
+                patchState(store, { currentContentActions: { scheme: [ACTION] } as any });
+
+                expect(store.isReadOnly()).toBe(false);
+            });
+
+            it('should be true when the content is locked by another user', () => {
+                // `_canlock` and the action list answer the same for a READ-only user and an
+                // EDIT user blocked by someone else's lock: canLock false, no actions. Neither
+                // can save, so both get the disabled form (#38724 review).
+                readOnlyState();
+                store.updateContent({
+                    inode: 'inode-1',
+                    locked: true,
+                    lockedBy: { userId: '123', firstName: 'John', lastName: 'Doe' }
+                } as unknown as DotCMSContentlet);
+
+                expect(store.isReadOnly()).toBe(true);
+            });
+
+            it('should be false for new content', () => {
+                readOnlyState();
+                patchState(store, { initialContentletState: 'new' });
+
+                expect(store.isReadOnly()).toBe(false);
+            });
+        });
+
+        describe('isPermissionsSettled (no enabled-then-disabled flash, #38724 R4)', () => {
+            it('should be false for an existing content until the backend answered _canlock', () => {
+                dotContentletService.canLock.mockReturnValue(
+                    of({ canLock: false, locked: false } as DotContentletCanLock)
+                );
+                patchState(store, {
+                    contentlet: { inode: 'inode-1', identifier: 'id-1' } as DotCMSContentlet,
+                    canLock: null
+                });
+
+                expect(store.isPermissionsSettled()).toBe(false);
+
+                patchState(store, { canLock: false });
+
+                expect(store.isPermissionsSettled()).toBe(true);
+            });
+
+            it('should be true for new content, which has no lock to check', () => {
+                patchState(store, { contentlet: null, canLock: null });
+
+                expect(store.isPermissionsSettled()).toBe(true);
+            });
+        });
+
         describe('lockedByName', () => {
             it('should return the locker name when locked by another user', () => {
                 store.updateCurrentUser({ userId: '456' });
@@ -338,6 +427,65 @@ describe('LockFeature', () => {
                 expect(store.lockError()).toBeNull();
                 expect(store.lockStatus()).toBe(ComponentStatus.LOADED);
                 expect(store.isLocking()).toBe(false);
+            }));
+
+            // An opener listing this content (Content Drive) shows its lock, and a lock is not a
+            // save, so it has to be told (#38379).
+            it('should report the new lock to the host that opened the editor', fakeAsync(() => {
+                dotContentletService.canLock.mockReturnValue(
+                    of({ canLock: true, locked: true } as DotContentletCanLock)
+                );
+                store.updateContent({ inode: '123', locked: false } as DotCMSContentlet);
+                dotContentletService.lockContent.mockReturnValue(
+                    of({ inode: '123', locked: true } as DotCMSContentlet)
+                );
+
+                store.lockContent();
+                tick();
+
+                expect(host.reportLockChanged).toHaveBeenCalledWith(
+                    expect.objectContaining({ inode: '123', locked: true })
+                );
+            }));
+
+            // The editor can move to another language while the request is pending; the answer is
+            // still about the version it was asked for, so that is the one reported, and the
+            // version now open keeps its own lock.
+            it('should report the locked version, not the one open when it answers', fakeAsync(() => {
+                dotContentletService.canLock.mockReturnValue(
+                    of({ canLock: true, locked: false } as DotContentletCanLock)
+                );
+                store.updateContent({ inode: '123', locked: false } as DotCMSContentlet);
+                const pending = new Subject<DotCMSContentlet>();
+                dotContentletService.lockContent.mockReturnValue(pending);
+
+                store.lockContent();
+                store.updateContent({ inode: '456', locked: false } as DotCMSContentlet);
+                pending.next({ inode: '123', locked: true } as DotCMSContentlet);
+                pending.complete();
+                tick();
+
+                expect(host.reportLockChanged).toHaveBeenCalledWith(
+                    expect.objectContaining({ inode: '123', locked: true })
+                );
+                expect(store.contentlet()).toEqual(
+                    expect.objectContaining({ inode: '456', locked: false })
+                );
+            }));
+
+            it('should not report a lock that failed', fakeAsync(() => {
+                dotContentletService.canLock.mockReturnValue(
+                    of({ canLock: true, locked: false } as DotContentletCanLock)
+                );
+                store.updateContent({ inode: '123', locked: false } as DotCMSContentlet);
+                dotContentletService.lockContent.mockReturnValue(
+                    throwError(() => new HttpErrorResponse({ status: 400 }))
+                );
+
+                store.lockContent();
+                tick();
+
+                expect(host.reportLockChanged).not.toHaveBeenCalled();
             }));
 
             it('should handle error when locking content', fakeAsync(() => {
@@ -397,6 +545,48 @@ describe('LockFeature', () => {
                 expect(store.lockError()).toBeNull();
                 expect(store.lockStatus()).toBe(ComponentStatus.LOADED);
                 expect(store.isLocking()).toBe(false);
+            }));
+
+            // The editor can move to another language while the request is pending; the answer is
+            // still about the version it was asked for, so that is the one reported, and the
+            // version now open keeps its own lock.
+            it('should report the unlocked version, not the one open when it answers', fakeAsync(() => {
+                dotContentletService.canLock.mockReturnValue(
+                    of({ canLock: true, locked: true } as DotContentletCanLock)
+                );
+                store.updateContent({ inode: '123', locked: true } as DotCMSContentlet);
+                const pending = new Subject<DotCMSContentlet>();
+                dotContentletService.unlockContent.mockReturnValue(pending);
+
+                store.unlockContent();
+                store.updateContent({ inode: '456', locked: true } as DotCMSContentlet);
+                pending.next({ inode: '123', locked: false } as DotCMSContentlet);
+                pending.complete();
+                tick();
+
+                expect(host.reportLockChanged).toHaveBeenCalledWith(
+                    expect.objectContaining({ inode: '123', locked: false })
+                );
+                expect(store.contentlet()).toEqual(
+                    expect.objectContaining({ inode: '456', locked: true })
+                );
+            }));
+
+            it('should report the released lock to the host that opened the editor', fakeAsync(() => {
+                dotContentletService.canLock.mockReturnValue(
+                    of({ canLock: true, locked: true } as DotContentletCanLock)
+                );
+                store.updateContent({ inode: '123', locked: true } as DotCMSContentlet);
+                dotContentletService.unlockContent.mockReturnValue(
+                    of({ inode: '123', locked: false } as DotCMSContentlet)
+                );
+
+                store.unlockContent();
+                tick();
+
+                expect(host.reportLockChanged).toHaveBeenCalledWith(
+                    expect.objectContaining({ inode: '123', locked: false })
+                );
             }));
 
             it('should handle error when unlocking content', fakeAsync(() => {
@@ -468,6 +658,23 @@ describe('LockFeature', () => {
 
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalled();
                 expect(store.canLock()).toBe(false);
+            }));
+
+            it('should ignore a reply that arrives after another contentlet replaced the one it asked about (#38724 review)', fakeAsync(() => {
+                // Item A's slow `_canlock` must not settle item B's permission.
+                const reply = new Subject<DotContentletCanLock>();
+                dotContentletService.canLock.mockReturnValue(reply);
+                patchState(store, { contentlet: { inode: 'inode-a' } as DotCMSContentlet });
+                store.checkCanLock();
+
+                patchState(store, {
+                    contentlet: { inode: 'inode-b' } as DotCMSContentlet,
+                    canLock: null
+                });
+                reply.next({ canLock: true, locked: false } as DotContentletCanLock);
+                tick();
+
+                expect(store.canLock()).toBeNull();
             }));
 
             it('should set canLock to false when no contentlet exists', fakeAsync(() => {

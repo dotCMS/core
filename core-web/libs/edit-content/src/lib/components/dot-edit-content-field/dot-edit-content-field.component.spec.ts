@@ -194,7 +194,9 @@ const FIELD_TYPES_COMPONENTS: Partial<
                     hasAttemptedSubmit: signal(false),
                     currentLocale: signal({ id: 1, language: 'English', country: 'US' })
                 }
-            }
+            },
+            // The field hands embedded-content edits to the editor's host (#38303).
+            { provide: EDIT_CONTENT_HOST, useValue: { openContent: vi.fn() } }
         ],
         overrideComponents: [
             [

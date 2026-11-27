@@ -6,7 +6,7 @@ FROM ubuntu:24.04 AS base-builder
 WORKDIR /srv
 
 # Defining default Java version, can be any java version provided by sdkman
-ARG SDKMAN_JAVA_VERSION="25.0.4+1-ms"
+ARG SDKMAN_JAVA_VERSION="25.0.5.1.2-amzn"
 ARG TCNATIVE_VERSION="1.3.8"
 ARG TCNATIVE_SHA512="a12b97979037720465300cbc05777ff6ee2ec1dc59ff698864d7068800bf0c2d2606a4e0e29a4d7b16f92c9130604a13e0cc27929a224c9ff77e532ac98a4695"
 

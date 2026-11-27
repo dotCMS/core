@@ -537,6 +537,34 @@ public class FolderBulkDuplicateProcessorIT extends Junit5WeldBaseTest {
 
     /**
      * Method to test: {@link FolderBulkDuplicateProcessor#process(Job)}
+     * Given Scenario: A folder that inherits permissions and has no cached permission_reference row (AC-014)
+     * ExpectedResult: Succeeded; the uncached inheriting folder is duplicated successfully.
+     */
+    @Test
+    public void test_process_uncachedInheritingFolder_succeeds_AC014() throws Exception {
+        final User user = limitedUser();
+        final Folder parent = folder();
+        // Grant parent individual permissions so user can add children to parent
+        grant(parent, roleOf(user), PermissionAPI.PERMISSION_READ
+                | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN);
+        // Grant inheritable read permission on parent for child folders
+        APILocator.getPermissionAPI().save(
+                new Permission(Folder.class.getCanonicalName(), parent.getPermissionId(), roleOf(user),
+                        PermissionAPI.PERMISSION_READ, true),
+                parent, admin, false);
+        final Folder child = new FolderDataGen().parent(parent).nextPersisted();
+
+        // Make child uncached
+        new DotConnect().setSQL("DELETE FROM permission_reference WHERE asset_id = ?")
+                .addParam(child.getPermissionId()).loadResult();
+        APILocator.getPermissionAPI().removePermissionableFromCache(child.getPermissionId());
+
+        final Map<String, Object> metadata = duplicatePaths(List.of(pathOf(child)), user);
+        assertSucceeded(metadata, child);
+    }
+
+    /**
+     * Method to test: {@link FolderBulkDuplicateProcessor#process(Job)}
      * Given Scenario: A path that resolves to nothing, beside a folder that can be duplicated
      * ExpectedResult: PATH_NOT_FOUND, and the other folder is still duplicated (US3)
      */

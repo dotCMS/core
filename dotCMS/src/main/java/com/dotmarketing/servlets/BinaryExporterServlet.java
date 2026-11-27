@@ -40,6 +40,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
+import com.dotcms.util.CdnTagHeader;
 import com.dotcms.util.CloseUtils;
 import com.dotcms.util.DownloadUtil;
 import com.dotcms.util.SecurityUtils;
@@ -250,6 +251,7 @@ public class BinaryExporterServlet extends HttpServlet {
 			final PageMode mode = PageMode.get(req);
 
 			String downloadName = "file_asset";
+			String servedIdentifier = null;
 			final long lang = WebAPILocator.getLanguageWebAPI().getLanguage(req).getId();
 
 			if (isContent){
@@ -380,6 +382,7 @@ public class BinaryExporterServlet extends HttpServlet {
 					return;
 				}
 
+				servedIdentifier = content.getIdentifier();
 			}
 
 			// if this is file uploaded by the tempResource
@@ -479,6 +482,7 @@ public class BinaryExporterServlet extends HttpServlet {
 				mimeType = "application/octet-stream";
 			}
 
+			CdnTagHeader.set(resp, servedIdentifier);
 			resp.setHeader("Content-Disposition", "inline; filename=\"" + UtilMethods.encodeURL(downloadName) + "\"" );
 			resp.setHeader("Content-Length", String.valueOf(_fileLength));
 
@@ -689,7 +693,12 @@ public class BinaryExporterServlet extends HttpServlet {
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
 			Logger.error(BinaryExporterServlet.class, "[BinaryContentExporterException] An error occurred when accessing '" + uri + "': " + e.getMessage());
 			if(!resp.isCommitted()){
-			  resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+			  // the content exists but could not be rendered: report a server error and keep it out of
+			  // browser/CDN caches, so the next request retries instead of a cached "not found"
+			  // setStatus, not sendError: sendError dispatches to the custom 500 page, whose vanity
+			  // handler can turn the response into a 301 redirect
+			  resp.setHeader("Cache-Control", "no-store");
+			  resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			}
 		}catch (Exception e) {
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);

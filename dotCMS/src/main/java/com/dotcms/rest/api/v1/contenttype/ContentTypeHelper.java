@@ -7,11 +7,15 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.rendering.velocity.viewtools.RestrictedViewToolAccess;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.rest.api.v1.contenttype.ContentTypeForm.ContentTypeFormDeserialize;
 import com.dotcms.rest.exception.BadRequestException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.contenttype.model.field.CustomField;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.ImmutableCustomField;
 import com.dotcms.contenttype.model.field.layout.FieldLayout;
 import com.dotcms.contenttype.model.field.layout.FieldUtil;
@@ -29,6 +33,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.workflow.form.WorkflowSystemActionForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -544,6 +549,13 @@ public class ContentTypeHelper implements Serializable {
      * If a contentlet inode is provided, contentlet-specific variables ({@code $inode},
      * {@code $identifier}, {@code $lang}, {@code $contentlet}) are also injected when the
      * contentlet can be loaded and belongs to the requested content type.
+     * <p>
+     * The user the preview is being rendered for is named on the request while the code runs,
+     * so the view tools reserved for the Scripting Developer role can answer to that user's own
+     * role, and only when that user may change this Content Type. This can be turned off with
+     * {@link com.dotcms.featureflag.FeatureFlagName#FEATURE_FLAG_CUSTOM_FIELD_VIEW_TOOL_PREVIEW_ENABLED};
+     * see
+     * {@link com.dotcms.rendering.velocity.viewtools.RestrictedViewToolAccess#announceFieldPreviewAuthor}.
      *
      * @param contentTypeMap  The {@link Map} containing all the Content Type's properties,
      *                        including its fields.
@@ -566,21 +578,25 @@ public class ContentTypeHelper implements Serializable {
                 .collect(Collectors.toMap(Field::variable, f -> f, (a, b) -> a));
         try {
             final Context velocityContext = VelocityWebUtil.getVelocityContext(request, response);
-            fieldsMap.forEach(fieldMap -> {
-                if (fieldMap.get("clazz").equals(ImmutableCustomField.class.getName())
-                        && getCustomFieldRenderMode(fieldMap).equals(CustomField.RenderMode.COMPONENT)) {
-                    try {
-                        final Field fieldObj = fieldsByVar.get(fieldMap.get("variable"));
-                        loadVelocityContextVariables(velocityContext, contentType, contentlet, fieldObj);
-                        final String textValue = (String) fieldMap.getOrDefault("values", BLANK);
-                        final String htmlString = new VelocityUtil().parseVelocity(textValue, velocityContext);
-                        fieldMap.put("rendered", htmlString);
-                    } catch (final Exception e) {
-                        Logger.error(JsonContentTypeTransformer.class, String.format("Failed to render Custom Field " +
-                                "'%s': %s", fieldMap.get("variable"), ExceptionUtil.getErrorMessage(e)));
+            // The fields' code is about to run as a preview for this user alone, so name them:
+            // the restricted view tools it calls answer to their role, and nothing else on this
+            // path names anybody.
+            RestrictedViewToolAccess.withFieldPreviewAuthor(request, contentType, user, () ->
+                fieldsMap.forEach(fieldMap -> {
+                    if (fieldMap.get("clazz").equals(ImmutableCustomField.class.getName())
+                            && getCustomFieldRenderMode(fieldMap).equals(CustomField.RenderMode.COMPONENT)) {
+                        try {
+                            final Field fieldObj = fieldsByVar.get(fieldMap.get("variable"));
+                            loadVelocityContextVariables(velocityContext, contentType, contentlet, fieldObj);
+                            final String textValue = (String) fieldMap.getOrDefault("values", BLANK);
+                            final String htmlString = new VelocityUtil().parseVelocity(textValue, velocityContext);
+                            fieldMap.put("rendered", htmlString);
+                        } catch (final Exception e) {
+                            Logger.error(JsonContentTypeTransformer.class, String.format("Failed to render Custom Field " +
+                                    "'%s': %s", fieldMap.get("variable"), ExceptionUtil.getErrorMessage(e)));
+                        }
                     }
-                }
-            });
+                }));
         } catch (final Exception e) {
             Logger.error(ContentTypeHelper.class, String.format(
                     "Failed to initialize Velocity context for Custom Field rendering: %s",
@@ -1131,6 +1147,99 @@ public class ContentTypeHelper implements Serializable {
                 .build();
         rebuilt.constructWithFields(fields);
         return rebuilt;
+    }
+
+    /**
+     * The field to create on the content type named in the path. A body without
+     * {@code contentTypeId} gets the path's type; a body whose {@code contentTypeId} names another
+     * type (by id or variable) is refused rather than saved on that other type. The returned field
+     * always carries the type's id. Without a type in the path, the field is returned as given,
+     * so the body decides as before.
+     *
+     * @throws DotStateException (400) when the body and the path name different content types
+     */
+    public Field withContentTypeFromPath(final Field field, final String typeIdOrVarName,
+                                                final User user)
+            throws DotDataException, DotSecurityException {
+        if (!UtilMethods.isSet(typeIdOrVarName)) {
+            return field;
+        }
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+        final ContentType contentType = contentTypeAPI.find(typeIdOrVarName);
+        final String bodyType = field.contentTypeId();
+        if (UtilMethods.isSet(bodyType) && !bodyType.equals(contentType.id())) {
+            // The body may name the type by id or by variable, like the path does.
+            final String bodyTypeId = Try.of(() -> contentTypeAPI.find(bodyType).id())
+                    .getOrNull();
+            if (!contentType.id().equals(bodyTypeId)) {
+                throw new DotStateException(String.format(
+                        "The field's contentTypeId '%s' does not match the content type in the "
+                                + "path ('%s', id '%s'). Omit contentTypeId: the path decides "
+                                + "the type.",
+                        bodyType, typeIdOrVarName, contentType.id()));
+            }
+        }
+        return FieldBuilder.builder(field).contentTypeId(contentType.id()).build();
+    }
+
+    /**
+     * Returns {@code true} if the raw request JSON has a {@code workflow} key, the only key that
+     * sets workflow schemes. When it is absent, an update leaves the content type's schemes as
+     * they are. The {@code workflows} key that GET returns is read-only and ignored on write. For
+     * a JSON array body, the first entry is checked, the same one the update form reads.
+     *
+     * @param requestJson the raw request body
+     * @return whether the body (or its first entry) has a {@code workflow} key
+     */
+    public static boolean requestContainsWorkflow(final Object requestJson) {
+        final JsonNode root = readRequestTree(requestJson);
+        final JsonNode entry = null != root && root.isArray() ? root.path(0) : root;
+        return null != entry && entry.has(ContentTypeFormDeserialize.WORKFLOW_ATTRIBUTE_NAME);
+    }
+
+    /**
+     * Rejects a request whose {@code workflow} value has a shape the form cannot read. Accepted
+     * shapes are an array, a string (one scheme id or variable name, or several comma-separated)
+     * and {@code null}; anything else, such as a number, a boolean or an object, would otherwise
+     * be read as an empty list and silently remove every scheme. Every content type in the body
+     * is checked: a single object, or each entry of an array body.
+     *
+     * @param requestJson the raw request body, may be {@code null}
+     * @throws BadRequestException if any {@code workflow} value has another shape
+     */
+    public static void checkWorkflowShape(final Object requestJson) {
+        final JsonNode root = readRequestTree(requestJson);
+        if (null == root) {
+            return;
+        }
+        final Iterable<JsonNode> entries = root.isArray() ? root : List.of(root);
+        for (final JsonNode entry : entries) {
+            final JsonNode workflow = entry.get(ContentTypeFormDeserialize.WORKFLOW_ATTRIBUTE_NAME);
+            if (null != workflow && !workflow.isArray() && !workflow.isTextual() && !workflow.isNull()) {
+                throw new BadRequestException("`workflow` must be an array of workflow scheme ids "
+                        + "or scheme objects, a comma-separated string of scheme ids, or null");
+            }
+        }
+    }
+
+    /**
+     * Parses the raw request body into a JSON tree.
+     *
+     * @param requestJson the raw request body, may be {@code null}
+     * @return the parsed tree, or {@code null} if there is no body or it cannot be parsed
+     */
+    private static JsonNode readRequestTree(final Object requestJson) {
+        if (requestJson == null) {
+            return null;
+        }
+        try {
+            return DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
+                    .readTree(requestJson.toString());
+        } catch (final Exception e) {
+            Logger.warn(ContentTypeResource.class,
+                    "Could not parse request JSON to check the workflow key: " + e.getMessage());
+            return null;
+        }
     }
 
     /**

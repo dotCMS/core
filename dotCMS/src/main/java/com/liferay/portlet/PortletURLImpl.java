@@ -22,7 +22,6 @@
 
 package com.liferay.portlet;
 
-import java.security.Key;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -44,8 +43,6 @@ import com.liferay.portal.model.Portlet;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.BrowserSniffer;
-import com.liferay.util.Encryptor;
-import com.liferay.util.EncryptorException;
 import com.liferay.util.Http;
 import com.liferay.util.StringPool;
 
@@ -179,10 +176,26 @@ public class PortletURLImpl implements PortletURL {
 		_anchor = anchor;
 	}
 
+	/**
+	 * Kept so that code built against earlier versions still compiles and runs. Portal URLs are
+	 * always built with their values as set, so this setting has no effect.
+	 *
+	 * @param encrypt ignored
+	 * @deprecated encrypted portal URLs are no longer supported; remove the call
+	 */
+	@Deprecated(forRemoval = true)
 	public void setEncrypt(boolean encrypt) {
-		_encrypt = encrypt;
+		// no effect: see the Javadoc
 	}
 
+	/**
+	 * Builds the portal URL for this portlet: the context path, {@code /portal/layout}, the layout,
+	 * portlet, action, window state and portlet mode, then the portlet's own parameters under its
+	 * namespace. Every value is URL-encoded as it was set.
+	 *
+	 * @return the portal URL
+	 */
+	@Override
 	public String toString() {
 
         String ctxPath = (_portletReq != null) ?
@@ -199,36 +212,25 @@ public class PortletURLImpl implements PortletURL {
 		sb.append(PortalUtil.getAuthorizedPath(_req));
 		sb.append("/layout?");
 
-		Key key = null;
-		try {
-			if (_encrypt) {
-				key = PortalUtil.getCompany(_req).getKeyObj();
-			}
-		}
-		catch (Exception e) {
-			Logger.error(this,e.getMessage(),e);
-		}
-
 		sb.append(WebKeys.PORTLET_URL_LAYOUT_ID);
 		sb.append(StringPool.EQUAL);
-		sb.append(_processValue(key, _layoutId));
+		sb.append(_processValue(_layoutId));
 		sb.append(StringPool.AMPERSAND);
 
 		sb.append(WebKeys.PORTLET_URL_PORTLET_NAME);
 		sb.append(StringPool.EQUAL);
-		sb.append(_processValue(key, _portletName));
+		sb.append(_processValue(_portletName));
 		sb.append(StringPool.AMPERSAND);
 
 		sb.append(WebKeys.PORTLET_URL_ACTION);
 		sb.append(StringPool.EQUAL);
-		sb.append(_action ? _processValue(key, ACTION_TRUE) :
-			_processValue(key, ACTION_FALSE));
+		sb.append(_processValue(_action ? ACTION_TRUE : ACTION_FALSE));
 		sb.append(StringPool.AMPERSAND);
 
 		if (_windowState != null) {
 			sb.append(WebKeys.PORTLET_URL_WINDOW_STATE);
 			sb.append(StringPool.EQUAL);
-			sb.append(_processValue(key, _windowState.toString()));
+			sb.append(_processValue(_windowState.toString()));
 			sb.append(StringPool.AMPERSAND);
 		}
 
@@ -236,14 +238,14 @@ public class PortletURLImpl implements PortletURL {
 		if (_angularCurrentPortlet != null) {
 			sb.append(WebKeys.PORTLET_URL_CURRENT_ANGULAR_PORTLET);
 			sb.append(StringPool.EQUAL);
-			sb.append(_processValue(key, _angularCurrentPortlet));
+			sb.append(_processValue(_angularCurrentPortlet));
 			sb.append(StringPool.AMPERSAND);
 		}
 
 		if (_portletMode != null) {
 			sb.append(WebKeys.PORTLET_URL_PORTLET_MODE);
 			sb.append(StringPool.EQUAL);
-			sb.append(_processValue(key, _portletMode.toString()));
+			sb.append(_processValue(_portletMode.toString()));
 			sb.append(StringPool.AMPERSAND);
 		}
 
@@ -260,16 +262,12 @@ public class PortletURLImpl implements PortletURL {
 			for (int i = 0; i < values.length; i++) {
 				sb.append(name);
 				sb.append(StringPool.EQUAL);
-				sb.append(_processValue(key, values[i]));
+				sb.append(_processValue(values[i]));
 
 				if ((i + 1 < values.length) || itr.hasNext()) {
 					sb.append(StringPool.AMPERSAND);
 				}
 			}
-		}
-
-		if (_encrypt) {
-			sb.append(StringPool.AMPERSAND + WebKeys.ENCRYPT + "=1");
 		}
 
 		if (!BrowserSniffer.is_ns_4(_req)) {
@@ -329,26 +327,29 @@ public class PortletURLImpl implements PortletURL {
 		return _anchor;
 	}
 
+	/**
+	 * Kept so that subclasses built against earlier versions still compile and run.
+	 *
+	 * @return always {@code false}: portal URL values are never encrypted
+	 * @deprecated encrypted portal URLs are no longer supported; remove the call
+	 */
+	@Deprecated(forRemoval = true)
 	protected boolean isEncrypt() {
-		return _encrypt;
+		return false;
 	}
 
 	protected boolean isSecure() {
 		return _secure;
 	}
 
-	private String _processValue(Key key, String value) {
-		if (key == null) {
-			return Http.encodeURL(value);
-		}
-		else {
-			try {
-				return Http.encodeURL(Encryptor.encrypt(key, value));
-			}
-			catch (EncryptorException ee) {
-				return value;
-			}
-		}
+	/**
+	 * URL-encodes one value of the portal URL.
+	 *
+	 * @param value the value as set on this URL
+	 * @return the URL-encoded value
+	 */
+	private String _processValue(String value) {
+		return Http.encodeURL(value);
 	}
 
 	protected final String ACTION_FALSE = "0";
@@ -365,6 +366,5 @@ public class PortletURLImpl implements PortletURL {
 	private Map _params;
 	private boolean _secure;
 	private boolean _anchor = true;
-	private boolean _encrypt = false;
 	private String _angularCurrentPortlet = null;
 }

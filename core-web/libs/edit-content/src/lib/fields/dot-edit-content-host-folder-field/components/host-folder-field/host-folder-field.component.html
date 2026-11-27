@@ -32,14 +32,14 @@
     }
 
     @if ($showDefaultTrigger()) {
-        <!-- The copy action is an input-group add-on attached to the trigger, so the field and its
-             action read as one control as wide as the other fields. The trigger is our own
-             button, not a PrimeNG input, so it squares its own right corners; the add-on brings
-             the right border and radius. -->
+        <!-- The trigger and its copy action are one PrimeNG InputGroup: the trigger is the
+             group's input (it carries `p-component`, which is what the group's own rules join
+             on) and the copy button is its addon, so the field reads as a single box instead
+             of an input with a loose button next to it. -->
         <p-inputgroup class="min-w-0 flex-auto">
             <button
                 type="button"
-                class="flex min-h-[calc(var(--p-form-field-padding-y)*2+1.4em+2px)] min-w-0 flex-auto cursor-pointer items-center gap-2 rounded-l-(--p-inputtext-border-radius) rounded-r-none border border-(--p-inputtext-border-color) bg-(--p-inputtext-background) px-3 text-left hover:border-(--p-inputtext-hover-border-color) focus-visible:border-(--p-inputtext-focus-border-color) disabled:cursor-not-allowed disabled:bg-(--p-inputtext-disabled-background) disabled:text-(--p-inputtext-disabled-color)"
+                class="p-component flex min-h-[calc(var(--p-form-field-padding-y)*2+1.4em+2px)] min-w-0 flex-auto cursor-pointer items-center gap-2 border border-(--p-inputtext-border-color) bg-(--p-inputtext-background) px-3 text-left hover:border-(--p-inputtext-hover-border-color) focus-visible:border-(--p-inputtext-focus-border-color) disabled:cursor-not-allowed disabled:bg-(--p-inputtext-disabled-background) disabled:text-(--p-inputtext-disabled-color)"
                 [class.ng-invalid]="hasError"
                 [class.ng-dirty]="hasError"
                 [class.border-(--p-inputtext-invalid-border-color)]="hasError"
@@ -52,11 +52,11 @@
                 data-testid="host-folder-trigger"
                 (click)="toggleOverlay($event)">
                 @if (store.triggerIconType() === 'site') {
-                    <span class="material-symbols-outlined flex-none text-lg text-surface-500">
+                    <span class="material-symbols-outlined flex-none text-base! text-surface-500">
                         public
                     </span>
                 } @else {
-                    <span class="material-symbols-outlined flex-none text-lg text-surface-500">
+                    <span class="material-symbols-outlined flex-none text-base! text-surface-500">
                         folder
                     </span>
                 }
@@ -85,14 +85,11 @@
             </button>
 
             <p-inputgroup-addon>
-                <!-- No vertical padding and full height, so the field's height sets the group's
-                     instead of the button's 24px glyph plus padding stretching it. -->
                 <p-button
                     [text]="true"
+                    size="small"
                     severity="secondary"
                     type="button"
-                    styleClass="h-full py-0!"
-                    class="h-full"
                     data-testid="host-folder-copy"
                     [disabled]="!confirmedNode || isDisabled"
                     [attr.aria-label]="'dot.file.field.host.folder.copy.tooltip' | dm"
@@ -100,7 +97,9 @@
                     tooltipPosition="bottom"
                     (onClick)="copyPath()">
                     <ng-template #icon>
-                        <span class="material-symbols-outlined" data-testid="host-folder-copy-icon">
+                        <span
+                            class="material-symbols-outlined text-base!"
+                            data-testid="host-folder-copy-icon">
                             {{ $pathCopied() ? 'check' : 'content_copy' }}
                         </span>
                     </ng-template>

@@ -1190,6 +1190,20 @@ describe('DotHostFolderFieldComponent', () => {
         );
     });
 
+    describe('copy button inside the field (#38724)', () => {
+        it('should join the trigger and the copy button in a PrimeNG input group', () => {
+            // One control, the PrimeNG way: the trigger is the group's input and the copy
+            // button is its addon, so the field reads as a single box.
+            const group = spectator.query('p-inputgroup');
+
+            expect(group).toBeTruthy();
+            expect(group?.querySelector('[data-testid="host-folder-trigger"]')).toBeTruthy();
+            expect(
+                group?.querySelector('p-inputgroup-addon [data-testid="host-folder-copy"]')
+            ).toBeTruthy();
+        });
+    });
+
     describe('copyPath', () => {
         beforeEach(() => {
             clipboard.copy.mockClear();
@@ -1235,8 +1249,9 @@ describe('DotHostFolderFieldComponent', () => {
     });
 
     /**
-     * The copy action reads as a regular icon-only button: a `size="small"` button shrank around
-     * the glyph and made it look too big for it (#37958).
+     * The copy action is a small icon-only button with a glyph sized to match, so the InputGroup
+     * keeps the height of the other inputs and the glyph no longer looks too big for its button
+     * (#37958, #38724).
      */
     describe('copy button size', () => {
         beforeEach(() => {
@@ -1246,11 +1261,11 @@ describe('DotHostFolderFieldComponent', () => {
             spectator.detectChanges();
         });
 
-        it('should render at the default button size, not small', () => {
+        it('should render a small button with a glyph sized to it', () => {
             const button = spectator.query(byTestId('host-folder-copy'))?.querySelector('button');
 
-            expect(button).toBeTruthy();
-            expect(button).not.toHaveClass('p-button-sm');
+            expect(button).toHaveClass('p-button-sm');
+            expect(spectator.query(byTestId('host-folder-copy-icon'))).toHaveClass('text-base!');
         });
 
         it('should not size the copy glyph per instance', () => {

@@ -119,7 +119,7 @@ abstract class DotDirective extends InputBase {
         afterRender(StringUtils.EMPTY, arguments, context);
         return true;
       }
-      Template t = loadTemplate(context, templatePath);
+      final Template t = loadTemplate(context, templatePath);
 
       // Charged here, past the getFromCache() short-circuit above, so a directive served from
       // cache stays cheap. Without this every #dotParse/#parseContainer on a page is free and
@@ -131,14 +131,10 @@ abstract class DotDirective extends InputBase {
       // A container or a template carries Velocity of its own. While that code runs, the author
       // on the request is the one who saved it, so the view tools it calls are judged on who
       // wrote them and not on the resource name the code itself can choose.
-      final Object previousAuthor =
-              RestrictedViewToolAccess.announceRenderingAuthorOf(request, templatePath);
-      final boolean result;
-      try {
-        result = this.renderTemplate(context, innerWriter, t, templatePath);
-      } finally {
-        RestrictedViewToolAccess.restoreRenderingAuthor(request, previousAuthor);
-      }
+      final String renderedPath = templatePath;
+      final boolean result = RestrictedViewToolAccess.withRenderingAuthorOfReturn(request,
+              renderedPath,
+              () -> this.renderTemplate(context, innerWriter, t, renderedPath));
       this.afterRender(innerWriter.toString(), arguments, context);
       writer.write(innerWriter.toString());
 

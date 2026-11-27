@@ -1,0 +1,74 @@
+id: content-type-add-fields
+category: content-model
+description: Add a whole-number field and a relationship field to an existing content type, keeping its fields
+difficulty: medium
+runs: 5
+max_steps: 15
+
+setup: |
+    const suffix = Date.now().toString(36) + run;
+    const book = 'EvalBook' + suffix;
+    const author = 'EvalAuthor' + suffix;
+    Object.assign(vars, { book, author }); // cleanup can use these if setup fails later
+    const headers = { Authorization: `Bearer ${token}`, Accept: 'application/json', 'Content-Type': 'application/json' };
+    const call = async (method, path, body) => {
+        const r = await fetch(new URL(path, url), { method, headers, body: body && JSON.stringify(body) });
+        const json = await r.json().catch(() => null);
+        if (!r.ok) throw new Error(`${method} ${path} -> ${r.status} ${JSON.stringify(json).slice(0, 300)}`);
+        return json;
+    };
+    const sites = (await call('GET', '/api/v1/site?per_page=100')).entity;
+    const site = sites.find((s) => s.hostname === 'default') ?? sites.find((s) => s.default);
+    const title = { clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField', name: 'Title', variable: 'title', dataType: 'TEXT', required: true, indexed: true, listed: true };
+    const type = async (variable) => {
+        const created = await call('POST', '/api/v1/contenttype', {
+            clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+            name: variable, variable, host: site.identifier, workflow: ['d61a59e1-a49c-46f2-a929-db2b4bfa88b2'], fields: [title]
+        });
+        return [].concat(created.entity)[0];
+    };
+    const created = await type(book);
+    await type(author);
+    return { book, author, titleFieldId: created.fields.find((f) => f.variable === 'title').id };
+
+prompt: |
+    The {{book}} content type needs two more fields:
+      - "Pages": a whole number
+      - "Author": a relationship to {{author}} content. A book has one author; an author can
+        have many books.
+    Keep the fields it already has.
+
+assertions:
+    - type: custom
+      name: existing-field-kept
+      script: |
+          const r = await fetch(new URL(`/api/v1/contenttype/id/${vars.book}`, url), { headers: { Authorization: `Bearer ${token}` } });
+          const fields = (await r.json()).entity?.fields ?? [];
+          return fields.some((f) => f.id === vars.titleFieldId && f.variable === 'title');
+
+    - type: custom
+      name: pages-is-a-whole-number
+      script: |
+          const r = await fetch(new URL(`/api/v1/contenttype/id/${vars.book}`, url), { headers: { Authorization: `Bearer ${token}` } });
+          const fields = (await r.json()).entity?.fields ?? [];
+          return fields.some((f) => /pages/i.test(f.name) && f.dataType === 'INTEGER');
+
+    - type: custom
+      name: author-is-a-many-to-one-relationship
+      script: |
+          const r = await fetch(new URL(`/api/v1/contenttype/id/${vars.book}`, url), { headers: { Authorization: `Bearer ${token}` } });
+          const fields = (await r.json()).entity?.fields ?? [];
+          // Read back as `relationships: { velocityVar, cardinality }`; cardinality 3 is MANY_TO_ONE.
+          return fields.some((f) =>
+              f.clazz?.endsWith('RelationshipField') &&
+              String(f.relationships?.velocityVar ?? '').split('.')[0].toLowerCase() === vars.author.toLowerCase() &&
+              f.relationships?.cardinality === 3
+          );
+
+cleanup:
+    - method: DELETE
+      path: /api/v1/contenttype/id/{{book}}
+    - method: DELETE
+      path: /api/v1/contenttype/id/{{author}}
+
+tags: [content-model, content-types, relationships]

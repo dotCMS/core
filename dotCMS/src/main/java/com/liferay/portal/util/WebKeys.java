@@ -95,6 +95,13 @@ public class WebKeys {
 
 	public static final String DOCUMENT_LIBRARY_SEARCH_RESULTS = "DOCUMENT_LIBRARY_SEARCH_RESULTS";
 
+	/**
+	 * Name of a request parameter the portal no longer reads. Kept so that code built against
+	 * earlier versions still compiles.
+	 *
+	 * @deprecated encrypted portal URLs are no longer supported; nothing reads this parameter
+	 */
+	@Deprecated(forRemoval = true)
 	public static final String ENCRYPT = "shuo";
 
 	public static final String EXTRANET_LINK = "EXTRANET_LINK";

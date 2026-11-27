@@ -189,6 +189,59 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
     });
 });
 
+// #38575: a page on a newer SDK reports its scrollY with every scroll; the store needs it to move
+// the drop targets with the page during a drag.
+describe('DotUveActionsHandlerService – IFRAME_SCROLL', () => {
+    let spectator: SpectatorService<DotUveActionsHandlerService>;
+    let service: DotUveActionsHandlerService;
+    let uveStore: ReturnType<typeof buildMockStore> & { updateEditorScrollState: Mock };
+
+    const createService = createServiceFactory({
+        service: DotUveActionsHandlerService,
+        providers: [
+            mockProvider(DotWorkflowActionsFireService),
+            mockProvider(DotMessageService),
+            mockProvider(MessageService),
+            mockProvider(DotCopyContentModalService),
+            // Not used by a scroll report; the handler's dependencies require one.
+            mockProvider(InlineEditService),
+            { provide: UVEStore, useValue: buildMockStore() }
+        ]
+    });
+
+    /** The page tells the editor it scrolled, with what its SDK sends along. */
+    const pageScrolled = (payload?: { scrollY: number }) =>
+        service.handleAction(
+            { action: DotCMSUVEAction.IFRAME_SCROLL, payload },
+            {
+                uveStore: uveStore as unknown as InstanceType<typeof UVEStore>,
+                inlineEditingService: spectator.inject(InlineEditService),
+                contentWindow: null,
+                host: 'http://localhost',
+                onCopyContent: vi.fn()
+            }
+        );
+
+    beforeEach(() => {
+        spectator = createService();
+        service = spectator.service;
+        uveStore = { ...buildMockStore(), updateEditorScrollState: vi.fn() };
+    });
+
+    it('should hand the page scrollY to the store', () => {
+        pageScrolled({ scrollY: 840 });
+
+        expect(uveStore.updateEditorScrollState).toHaveBeenCalledWith(840);
+    });
+
+    it('should tell the store about the scroll without a scrollY when an older SDK sends none', () => {
+        pageScrolled();
+
+        expect(uveStore.updateEditorScrollState).toHaveBeenCalledTimes(1);
+        expect(uveStore.updateEditorScrollState).toHaveBeenCalledWith(undefined);
+    });
+});
+
 describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
     let spectator: SpectatorService<DotUveActionsHandlerService>;
     let service: DotUveActionsHandlerService;
@@ -540,9 +593,9 @@ describe('DotUveActionsHandlerService – EDIT_CONTENTLET', () => {
         vi.spyOn(dispatcher, 'dispatch');
     });
 
-    it("should ask the content editor to edit the client's contentlet", () => {
+    it("should ask the content editor to edit the client's contentlet, as an SDK edit", () => {
         // The same request every other edit sends: the content editor picks the editor from the
-        // content type, so the SDK's editContentlet() no longer forces the legacy dialog.
+        // content type. Marked as the SDK's, so a save also asks the client to reload (#38303).
         const contentlet = createFakeContentlet({ inode: 'sdk-inode', contentType: 'Blog' });
 
         service.handleAction(
@@ -558,7 +611,7 @@ describe('DotUveActionsHandlerService – EDIT_CONTENTLET', () => {
         );
 
         expect(dispatcher.dispatch).toHaveBeenCalledWith(
-            uveContentEditorEvents.uveEditContentRequested({ contentlet }),
+            uveContentEditorEvents.uveEditContentRequested({ contentlet, fromSdk: true }),
             { scope: 'self' }
         );
     });
@@ -614,9 +667,8 @@ describe('DotUveActionsHandlerService – CREATE_CONTENTLET', () => {
 
     it('should ask the content editor to create a contentlet of the content type', () => {
         // The same request a palette drop sends, without a container position: the contentlet is
-        // only created, and the page reloads once it is saved. The content editor picks the
-        // editor from the content type, so the SDK's createContentlet() no longer forces the
-        // legacy dialog.
+        // only created, and the page reloads once it is saved. The content editor opens it in
+        // the side panel, in whichever editor the content type uses (#38303).
         service.handleAction(
             { action: DotCMSUVEAction.CREATE_CONTENTLET, payload: { contentType: 'Event' } },
             {
@@ -683,8 +735,8 @@ describe('DotUveActionsHandlerService – REORDER_MENU', () => {
     });
 
     it("should ask the content editor to open the menu reorder for the client's start level and depth", () => {
-        // The content editor owns the legacy dialog, and builds the reorder screen's URL from the
-        // page it shows.
+        // The content editor opens the reorder screen in a legacy-screen panel, and builds its
+        // URL from the page it shows.
         service.handleAction(
             { action: DotCMSUVEAction.REORDER_MENU, payload: { startLevel: 1, depth: 2 } },
             {

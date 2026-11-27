@@ -7,6 +7,7 @@ import {
     effect,
     inject,
     signal,
+    untracked,
     viewChild
 } from '@angular/core';
 
@@ -142,6 +143,14 @@ export class DotFolderListViewContextMenuComponent {
      * */
     $memoizedMenuItems = signal<Record<string, MenuItem[]>>({});
 
+    /**
+     * The latest right-click. Each one replaces it, so the answer to an earlier one, arriving late,
+     * is dropped instead of replacing the newer menu. The listing's own reset (scroll, drag) clears
+     * it; the menu's `onHide` does not, since it can fire while the next right-click is already
+     * being answered.
+     */
+    #currentTrigger: Event | null = null;
+
     /** The context menu data for the store. */
     $contextMenuData = this.#store.contextMenu;
 
@@ -153,8 +162,10 @@ export class DotFolderListViewContextMenuComponent {
     readonly rightClickEffect = effect(() => {
         const contextMenuData = this.$contextMenuData();
 
+        // Untracked: building the menu reads the selection and the memo, and a change to either
+        // would otherwise rebuild it under the same right-click. Only a new right-click may.
         if (contextMenuData) {
-            this.getMenuItems(contextMenuData);
+            untracked(() => this.getMenuItems(contextMenuData));
         }
     });
 
@@ -222,8 +233,14 @@ export class DotFolderListViewContextMenuComponent {
     readonly closeOnContextMenuReset = effect(() => {
         const data = this.#store.contextMenu();
 
-        if (!data?.contentlet && this.contextMenu()?.visible()) {
-            this.contextMenu()?.hide();
+        if (!data?.contentlet) {
+            // The listing dismissed the menu (scroll, drag): an answer still pending for it must
+            // not reopen it.
+            this.#currentTrigger = null;
+
+            if (this.contextMenu()?.visible()) {
+                this.contextMenu()?.hide();
+            }
         }
     });
 
@@ -244,12 +261,19 @@ export class DotFolderListViewContextMenuComponent {
             return;
         }
 
+        this.#currentTrigger = triggeredEvent;
+
         this.$items.set([]);
         const memoizedMenuItems = this.$memoizedMenuItems();
 
+        // The side panel edits one item, so when the clicked row is one of several selected, the
+        // entries that open one in it read as if all of them would open (#38379). A row outside
+        // the selection keeps them: its menu acts on it alone. That menu is built fresh each time
+        // and never memoized, so neither menu is ever served for the other.
+        const opensOneItem = this.#opensOneItem(contentlet);
         const key = isFolder(contentlet) ? contentlet.identifier : contentlet.inode;
 
-        if (memoizedMenuItems[key]) {
+        if (opensOneItem && memoizedMenuItems[key]) {
             this.$items.set(memoizedMenuItems[key]);
             this.contextMenu()?.show(triggeredEvent);
             return;
@@ -380,49 +404,63 @@ export class DotFolderListViewContextMenuComponent {
             this.#workflowsActionsService.getByInode(contentlet.inode, DotRenderMode.LISTING)
         );
 
-        const actionsMenu = [];
+        // Another right-click, or the listing's reset, while the requests were pending: this late
+        // answer would replace the newer menu, or reopen a dismissed one.
+        if (this.#currentTrigger !== triggeredEvent) {
+            return;
+        }
+
+        // Read again once both requests answer: a row selected meanwhile counts, or an answer that
+        // arrives after it would bring the single-item editor entries back.
+        const opensOneItemNow = this.#opensOneItem(contentlet);
 
         const isPage = contentlet.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE;
         // Without WRITE the entries still open the item, read as View, as in Content Search
         // (#37903, FR-010).
         const verb = contentAllows(contentlet, CONTENT_PERMISSION.WRITE) ? 'edit' : 'view';
 
-        // The built-in entries are a group like any other, so they get named too. Never empty:
-        // the open-in-editor entry is pushed immediately below for every row.
-        actionsMenu.push(this.#buildGroupLabel(ACTIONS_LABEL_KEY));
+        // The built-in entries are a group like any other, so they get named too. The label is
+        // added once the group is known to hold something: with several items selected the
+        // entries that open one item in an editor are left out (#38379).
+        const builtIn: MenuItem[] = [];
 
-        actionsMenu.push({
-            label: this.#dotMessageService.get(
-                `content-drive.context-menu.${verb}-${isPage ? 'page' : 'content'}`
-            ),
-            command: () => {
-                this.#navigationService.editContent(contentlet);
-            }
-        });
-
-        // A page also opens its fields, in the same side-panel form Edit Content uses elsewhere.
-        if (isPage) {
-            actionsMenu.push({
-                label: this.#dotMessageService.get(`content-drive.context-menu.${verb}-properties`),
+        if (opensOneItemNow) {
+            builtIn.push({
+                label: this.#dotMessageService.get(
+                    `content-drive.context-menu.${verb}-${isPage ? 'page' : 'content'}`
+                ),
                 command: () => {
-                    this.#navigationService.editPageProperties(contentlet);
+                    this.#navigationService.editContent(contentlet);
                 }
             });
-        }
 
-        // The file's source in a code editor, for developers. Same rule as the page editor's VTL
-        // menu, from `toSourceEditorRequest`: a file type it handles, and a lock the user can take.
-        const sourceEditorRequest = toSourceEditorRequest(contentlet, canLockData);
+            // A page also opens its fields, in the same side-panel form Edit Content uses elsewhere.
+            if (isPage) {
+                builtIn.push({
+                    label: this.#dotMessageService.get(
+                        `content-drive.context-menu.${verb}-properties`
+                    ),
+                    command: () => {
+                        this.#navigationService.editPageProperties(contentlet);
+                    }
+                });
+            }
 
-        if (sourceEditorRequest) {
-            actionsMenu.push({
-                label: this.#dotMessageService.get('content-drive.context-menu.edit-code'),
-                command: () => this.#store.openSourceEditor(sourceEditorRequest)
-            });
+            // The file's source in a code editor, for developers. Same rule as the page editor's
+            // VTL menu, from `toSourceEditorRequest`: a file type it handles, and a lock the user
+            // can take.
+            const sourceEditorRequest = toSourceEditorRequest(contentlet, canLockData);
+
+            if (sourceEditorRequest) {
+                builtIn.push({
+                    label: this.#dotMessageService.get('content-drive.context-menu.edit-code'),
+                    command: () => this.#store.openSourceEditor(sourceEditorRequest)
+                });
+            }
         }
 
         if (canLockData.canLock) {
-            actionsMenu.push({
+            builtIn.push({
                 label: canLockData.locked
                     ? this.#dotMessageService.get('content-drive.context-menu.unlock')
                     : this.#dotMessageService.get('content-drive.context-menu.lock'),
@@ -437,9 +475,9 @@ export class DotFolderListViewContextMenuComponent {
         // belongs here rather than among the workflow actions, which are scheme-driven.
         // Gated on PUBLISH like the folder branch, so a read-only row offers neither (FR-011).
         if (contentAllows(contentlet, CONTENT_PERMISSION.PUBLISH)) {
-            actionsMenu.push(this.#buildPushPublishItem(contentlet.identifier));
+            builtIn.push(this.#buildPushPublishItem(contentlet.identifier));
 
-            actionsMenu.push({
+            builtIn.push({
                 label: this.#dotMessageService.get('contenttypes.content.add_to_bundle'),
                 command: () => {
                     this.#store.setShowAddToBundle(true);
@@ -473,12 +511,16 @@ export class DotFolderListViewContextMenuComponent {
             command: () => this.#executeWorkflowActions(action, contentlet)
         });
 
+        const actionsMenu: MenuItem[] = builtIn.length
+            ? [this.#buildGroupLabel(ACTIONS_LABEL_KEY), ...builtIn]
+            : [];
+
         // The separator earns its place here as a boundary rather than a guard: the caption alone
-        // read as if it belonged to the item above it. `actionsMenu` is never empty at this point
-        // (Edit Content is pushed unconditionally), so this cannot open the menu.
+        // read as if it belonged to the item above it. With several items selected the built-in
+        // group can be empty, and a menu never opens on a separator.
         if (otherActions.length) {
             actionsMenu.push(
-                { separator: true },
+                ...(actionsMenu.length ? [{ separator: true }] : []),
                 this.#buildGroupLabel('content-drive.context-menu.workflows'),
                 ...otherActions.map(toMenuItem)
             );
@@ -487,7 +529,10 @@ export class DotFolderListViewContextMenuComponent {
         // Separated rather than merely last: these are the entries that destroy something, and the
         // separator is what stops one being clicked by momentum after the action above it.
         if (destructiveActions.length) {
-            actionsMenu.push({ separator: true }, ...destructiveActions.map(toMenuItem));
+            actionsMenu.push(
+                ...(actionsMenu.length ? [{ separator: true }] : []),
+                ...destructiveActions.map(toMenuItem)
+            );
         }
 
         if (!actionsMenu.length) {
@@ -498,12 +543,36 @@ export class DotFolderListViewContextMenuComponent {
         }
 
         this.$items.set(actionsMenu);
-        this.$memoizedMenuItems.set({
-            ...this.$memoizedMenuItems(),
-            [key]: this.$items()
-        });
+
+        if (opensOneItemNow) {
+            this.$memoizedMenuItems.set({
+                ...this.$memoizedMenuItems(),
+                [key]: this.$items()
+            });
+        }
 
         this.contextMenu()?.show(triggeredEvent);
+    }
+
+    /**
+     * Whether the row's menu may offer the entries that open one item in the side panel: not when
+     * the row is one of several selected, since the panel edits one item and the entry would read
+     * as if all of them would open (#38379). A row outside the selection keeps them: its menu acts
+     * on it alone.
+     *
+     * @param contentlet The row the menu is for.
+     * @returns `true` when the single-item editor entries belong in its menu.
+     */
+    #opensOneItem(contentlet: { identifier: string; inode?: string }): boolean {
+        const selected = this.#store.selectedItems();
+
+        return (
+            selected.length <= 1 ||
+            !selected.some(
+                (item) =>
+                    item.identifier === contentlet.identifier && item.inode === contentlet.inode
+            )
+        );
     }
 
     #executeWorkflowActions(workflowAction: DotCMSWorkflowAction, contentlet: DotCMSContentlet) {

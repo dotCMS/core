@@ -20,6 +20,17 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.CategoryDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.UserDataGen;
+import com.dotcms.mock.request.MockAttributeRequest;
+import com.dotcms.mock.request.MockHeaderRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
+import com.dotcms.mock.request.MockSessionRequest;
+import com.dotmarketing.beans.Permission;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
+import com.liferay.portal.util.WebKeys;
+import javax.servlet.http.HttpServletRequest;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
@@ -49,6 +60,7 @@ import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.stream.Collectors;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -808,6 +820,419 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
         //Must have the categories from both fields
         assertTrue("Must contain category on field 1.", present.contains(categories.get(0)));
         assertTrue("Must contain category on field 2.", present.contains(categories.get(1)));
+    }
+
+    /**
+     * Method to test: {@link MapToContentletPopulator#populate(Contentlet, Map)} resolving a
+     * relationship field value on a REST save.
+     * <p>
+     * Given Scenario: A save payload for a parent contentlet carries a relationship field whose
+     * value points at a child contentlet the saving user does NOT have READ permission on, once as
+     * an explicit identifier and once as a Lucene query. The acting user is bound to the request
+     * thread as {@code WebResource} does on every save endpoint.
+     * <p>
+     * ExpectedResult: The unreadable child is dropped, so no relationship is populated for the
+     * limited user (private-issues#930). The system user, with no request in scope, still resolves
+     * the child, proving the setup is otherwise valid and the only difference is the READ gate.
+     */
+    @Test
+    public void Test_populate_filters_relationship_targets_the_saving_user_cannot_read()
+            throws DotDataException, DotSecurityException {
+
+        final MapToContentletPopulator populator = new MapToContentletPopulator();
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final HttpServletRequest originalRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+
+        ContentType parentContentType = null;
+        ContentType childContentType  = null;
+        User limitedUser = null;
+        Role otherRole   = null;
+        Contentlet secretChild = null;
+        try {
+            parentContentType = createAndSaveSimpleContentType("parentContentType930");
+            childContentType  = createAndSaveSimpleContentType("childContentType930");
+            final Field relationshipField = createAndSaveRelationshipField(
+                    "related930", parentContentType.id(), childContentType.variable());
+
+            // The limited user is a backend user that holds only its own roles; the child is
+            // granted READ to an unrelated role, so the limited user cannot read it.
+            otherRole = new RoleDataGen().nextPersisted();
+            limitedUser = new UserDataGen()
+                    .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+
+            secretChild = new ContentletDataGen(childContentType.id())
+                    .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                    .nextPersisted();
+
+            final int readEdit = PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT;
+            permissionAPI.save(new Permission(secretChild.getPermissionId(), otherRole.getId(),
+                    readEdit, true), secretChild, user, false);
+
+            // Precondition: the limited user truly cannot read the child
+            assertFalse("The limited user must not be able to READ the child",
+                    permissionAPI.doesUserHavePermission(secretChild,
+                            PermissionAPI.PERMISSION_READ, limitedUser, false));
+
+            // Bind the limited user to the request thread the way WebResource does on a save
+            bindRequestUser(limitedUser);
+
+            // (a) explicit identifier value -> unreadable child must be filtered out
+            Contentlet parentById = createContentlet(parentContentType);
+            parentById = populator.populate(parentById, relationshipProps(
+                    parentContentType, relationshipField, secretChild.getIdentifier()));
+            assertNull("A relationship to content the saving user cannot read must not be populated"
+                    + " (identifier value)", parentById.get(Contentlet.RELATIONSHIP_KEY));
+
+            // (b) Lucene query value -> same outcome
+            Contentlet parentByQuery = createContentlet(parentContentType);
+            parentByQuery = populator.populate(parentByQuery, relationshipProps(
+                    parentContentType, relationshipField, "+contentType:" + childContentType.variable()));
+            assertNull("A relationship resolved by query must exclude content the saving user cannot"
+                    + " read", parentByQuery.get(Contentlet.RELATIONSHIP_KEY));
+
+            // Control: the system user (no request in scope) still resolves the child, so the
+            // difference above is the READ gate and not a broken fixture.
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+            Contentlet parentAsSystem = createContentlet(parentContentType);
+            parentAsSystem = populator.populate(parentAsSystem, relationshipProps(
+                    parentContentType, relationshipField, secretChild.getIdentifier()));
+            assertNotNull("The system user must still resolve the child",
+                    parentAsSystem.get(Contentlet.RELATIONSHIP_KEY));
+            final ContentletRelationships asSystem =
+                    (ContentletRelationships) parentAsSystem.get(Contentlet.RELATIONSHIP_KEY);
+            assertEquals(1, asSystem.getRelationshipsRecords().size());
+            assertEquals(1, asSystem.getRelationshipsRecords().get(0).getRecords().size());
+            assertEquals(secretChild.getIdentifier(),
+                    asSystem.getRelationshipsRecords().get(0).getRecords().get(0).getIdentifier());
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(originalRequest);
+            if (UtilMethods.isSet(secretChild) && UtilMethods.isSet(secretChild.getInode())) {
+                ContentletDataGen.remove(secretChild);
+            }
+            if (UtilMethods.isSet(limitedUser)) {
+                UserDataGen.remove(limitedUser);
+            }
+            if (UtilMethods.isSet(otherRole)) {
+                RoleDataGen.remove(otherRole);
+            }
+            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
+                contentTypeAPI.delete(parentContentType);
+            }
+            if (UtilMethods.isSet(childContentType) && UtilMethods.isSet(childContentType.id())) {
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link MapToContentletPopulator#populate(Contentlet, Map, User)} resolving a
+     * relationship field value on behalf of an explicitly supplied user.
+     * <p>
+     * Given Scenario: The request bound to the current thread belongs to a privileged user who CAN
+     * read the child (as happens for a front-end view tool, where the request belongs to the site
+     * visitor), but {@code populate} is called with an explicit limited user who CANNOT read it.
+     * <p>
+     * ExpectedResult: The gate uses the explicit user, not the request, so the unreadable child is
+     * dropped (private-issues#930). This proves the identity is taken from the parameter and not from
+     * {@code HttpServletRequestThreadLocal}.
+     */
+    @Test
+    public void Test_populate_with_explicit_user_gates_against_that_user_not_the_request()
+            throws DotDataException, DotSecurityException {
+
+        final MapToContentletPopulator populator = new MapToContentletPopulator();
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final HttpServletRequest originalRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+
+        ContentType parentContentType = null;
+        ContentType childContentType  = null;
+        User limitedUser = null;
+        Role otherRole   = null;
+        Contentlet secretChild = null;
+        try {
+            parentContentType = createAndSaveSimpleContentType("parentContentType930b");
+            childContentType  = createAndSaveSimpleContentType("childContentType930b");
+            final Field relationshipField = createAndSaveRelationshipField(
+                    "related930b", parentContentType.id(), childContentType.variable());
+
+            otherRole = new RoleDataGen().nextPersisted();
+            limitedUser = new UserDataGen()
+                    .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+
+            secretChild = new ContentletDataGen(childContentType.id())
+                    .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                    .nextPersisted();
+
+            final int readEdit = PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT;
+            permissionAPI.save(new Permission(secretChild.getPermissionId(), otherRole.getId(),
+                    readEdit, true), secretChild, user, false);
+
+            assertFalse("The limited user must not be able to READ the child",
+                    permissionAPI.doesUserHavePermission(secretChild,
+                            PermissionAPI.PERMISSION_READ, limitedUser, false));
+            assertTrue("The request user (admin) must be able to READ the child",
+                    permissionAPI.doesUserHavePermission(secretChild,
+                            PermissionAPI.PERMISSION_READ, user, false));
+
+            // Bind the privileged user to the request, then populate on behalf of the limited user.
+            bindRequestUser(user);
+            Contentlet parent = createContentlet(parentContentType);
+            parent = populator.populate(parent, relationshipProps(
+                    parentContentType, relationshipField, secretChild.getIdentifier()), limitedUser);
+
+            assertNull("populate(user) must gate against the explicit user, not the request thread,"
+                    + " so a child only the request user can read must not be populated",
+                    parent.get(Contentlet.RELATIONSHIP_KEY));
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(originalRequest);
+            if (UtilMethods.isSet(secretChild) && UtilMethods.isSet(secretChild.getInode())) {
+                ContentletDataGen.remove(secretChild);
+            }
+            if (UtilMethods.isSet(limitedUser)) {
+                UserDataGen.remove(limitedUser);
+            }
+            if (UtilMethods.isSet(otherRole)) {
+                RoleDataGen.remove(otherRole);
+            }
+            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
+                contentTypeAPI.delete(parentContentType);
+            }
+            if (UtilMethods.isSet(childContentType) && UtilMethods.isSet(childContentType.id())) {
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link MapToContentletPopulator#populate(Contentlet, Map)} and its
+     * {@code resolveSavingUser()} fallback when a request is in scope but carries no logged-in user
+     * (an anonymous save).
+     * <p>
+     * Given Scenario: A request with no logged-in user is bound to the thread, as for an anonymous
+     * content submission. The save payload relates a child readable only through a back-end role, so
+     * the anonymous user cannot READ it.
+     * <p>
+     * ExpectedResult: The anonymous save is gated against the anonymous user, so the unreadable child
+     * is dropped (private-issues#930). The same child resolves for the system user with no request in
+     * scope, proving the difference is that the save resolves as the anonymous user rather than
+     * falling back to the system user and skipping the gate.
+     */
+    @Test
+    public void Test_populate_anonymous_request_gates_against_the_anonymous_user_not_system()
+            throws DotDataException, DotSecurityException {
+
+        final MapToContentletPopulator populator = new MapToContentletPopulator();
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final HttpServletRequest originalRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+
+        ContentType parentContentType = null;
+        ContentType childContentType  = null;
+        Role otherRole   = null;
+        Contentlet secretChild = null;
+        try {
+            parentContentType = createAndSaveSimpleContentType("parentContentType930c");
+            childContentType  = createAndSaveSimpleContentType("childContentType930c");
+            final Field relationshipField = createAndSaveRelationshipField(
+                    "related930c", parentContentType.id(), childContentType.variable());
+
+            // The child is granted READ to an unrelated back-end role, so the anonymous user, whose
+            // roles do not include it, cannot read it.
+            otherRole = new RoleDataGen().nextPersisted();
+            secretChild = new ContentletDataGen(childContentType.id())
+                    .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                    .nextPersisted();
+            final int readEdit = PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT;
+            permissionAPI.save(new Permission(secretChild.getPermissionId(), otherRole.getId(),
+                    readEdit, true), secretChild, user, false);
+
+            final User anonymousUser = APILocator.getUserAPI().getAnonymousUser();
+            assertFalse("The anonymous user must not be able to READ the child",
+                    permissionAPI.doesUserHavePermission(secretChild,
+                            PermissionAPI.PERMISSION_READ, anonymousUser, false));
+
+            // Bind a request with NO logged-in user; resolveSavingUser must resolve the anonymous user
+            bindRequestWithoutUser();
+            Contentlet parentAnon = createContentlet(parentContentType);
+            parentAnon = populator.populate(parentAnon, relationshipProps(
+                    parentContentType, relationshipField, secretChild.getIdentifier()));
+            assertNull("An anonymous save must gate against the anonymous user, so a child it cannot"
+                    + " read must not be populated", parentAnon.get(Contentlet.RELATIONSHIP_KEY));
+
+            // Control: with no request in scope the save falls back to the system user, which resolves
+            // the child -- proving the drop above is the anonymous-user gate, not a broken fixture.
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+            Contentlet parentAsSystem = createContentlet(parentContentType);
+            parentAsSystem = populator.populate(parentAsSystem, relationshipProps(
+                    parentContentType, relationshipField, secretChild.getIdentifier()));
+            assertNotNull("The system user (no request) must still resolve the child",
+                    parentAsSystem.get(Contentlet.RELATIONSHIP_KEY));
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(originalRequest);
+            if (UtilMethods.isSet(secretChild) && UtilMethods.isSet(secretChild.getInode())) {
+                ContentletDataGen.remove(secretChild);
+            }
+            if (UtilMethods.isSet(otherRole)) {
+                RoleDataGen.remove(otherRole);
+            }
+            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
+                contentTypeAPI.delete(parentContentType);
+            }
+            if (UtilMethods.isSet(childContentType) && UtilMethods.isSet(childContentType.id())) {
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
+
+    private static final String MISSING_IDENTIFIER = "0000aaaa-0000-bbbb-0000-cccc0000dddd";
+
+    private static List<String> popMessages(final Contentlet contentlet) {
+        final List<MessageEntity> messages = MapToContentletPopulator.popSaveWarningMessages(contentlet);
+        return null == messages ? List.of()
+                : messages.stream().map(MessageEntity::getMessage).collect(Collectors.toList());
+    }
+
+    /**
+     * Method to test: {@link MapToContentletPopulator#populate(Contentlet, Map)}
+     * Given Scenario: A relationship value sent as an array, with one existing identifier and one
+     * that does not exist (an array used to fail with a ClassCastException)
+     * Expected Result: The existing item is related, and the other one is reported in the save
+     * warnings that the REST layer returns in {@code messages}
+     */
+    @Test
+    public void Test_populate_relationship_array_relates_and_reports_identifiers_not_related()
+            throws DotDataException, DotSecurityException {
+
+        final MapToContentletPopulator populator = new MapToContentletPopulator();
+        final HttpServletRequest originalRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        ContentType parentContentType = null;
+        ContentType childContentType  = null;
+        try {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+            parentContentType = createAndSaveSimpleContentType("parentContentTypeArray");
+            childContentType  = createAndSaveSimpleContentType("childContentTypeArray");
+            final Field relationshipField = createAndSaveRelationshipField(
+                    "relatedArray", parentContentType.id(), childContentType.variable());
+            final Contentlet child = new ContentletDataGen(childContentType.id())
+                    .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                    .nextPersisted();
+
+            final Map<String, Object> properties = new HashMap<>();
+            properties.put(Contentlet.STRUCTURE_INODE_KEY, parentContentType.id());
+            properties.put(relationshipField.variable(),
+                    List.of(child.getIdentifier(), MISSING_IDENTIFIER));
+            final Contentlet parent = populator.populate(createContentlet(parentContentType), properties);
+
+            final ContentletRelationships relationships =
+                    (ContentletRelationships) parent.get(Contentlet.RELATIONSHIP_KEY);
+            assertNotNull(relationships);
+            assertEquals(1, relationships.getRelationshipsRecords().get(0).getRecords().size());
+            assertEquals(child.getIdentifier(),
+                    relationships.getRelationshipsRecords().get(0).getRecords().get(0).getIdentifier());
+
+            final List<String> messages = popMessages(parent);
+            assertEquals(messages.toString(), 1, messages.size());
+            assertTrue(messages.get(0), messages.get(0).contains(MISSING_IDENTIFIER)
+                    && messages.get(0).contains("was not related"));
+            assertNull("The warnings key must be removed once popped",
+                    parent.getMap().get(Contentlet.SAVE_WARNINGS_KEY));
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(originalRequest);
+            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
+                contentTypeAPI.delete(parentContentType);
+            }
+            if (UtilMethods.isSet(childContentType) && UtilMethods.isSet(childContentType.id())) {
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link MapToContentletPopulator#populate(Contentlet, Map)}
+     * Given Scenario: A user who cannot READ a related item sends its identifier, and in another
+     * save sends an identifier that does not exist
+     * Expected Result: Neither is related, and both get the same message, so the response does not
+     * tell whether content the user cannot read exists
+     */
+    @Test
+    public void Test_populate_unreadable_and_missing_identifiers_get_the_same_message()
+            throws DotDataException, DotSecurityException {
+
+        final MapToContentletPopulator populator = new MapToContentletPopulator();
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final HttpServletRequest originalRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        ContentType parentContentType = null;
+        ContentType childContentType  = null;
+        Role otherRole = null;
+        Contentlet secretChild = null;
+        try {
+            parentContentType = createAndSaveSimpleContentType("parentContentTypeUnreadable");
+            childContentType  = createAndSaveSimpleContentType("childContentTypeUnreadable");
+            final Field relationshipField = createAndSaveRelationshipField(
+                    "relatedUnreadable", parentContentType.id(), childContentType.variable());
+
+            otherRole = new RoleDataGen().nextPersisted();
+            secretChild = new ContentletDataGen(childContentType.id())
+                    .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                    .nextPersisted();
+            permissionAPI.save(new Permission(secretChild.getPermissionId(), otherRole.getId(),
+                    PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true),
+                    secretChild, user, false);
+
+            bindRequestWithoutUser();
+            final Contentlet unreadable = populator.populate(createContentlet(parentContentType),
+                    relationshipProps(parentContentType, relationshipField, secretChild.getIdentifier()));
+            final Contentlet missing = populator.populate(createContentlet(parentContentType),
+                    relationshipProps(parentContentType, relationshipField, MISSING_IDENTIFIER));
+
+            assertNull(unreadable.get(Contentlet.RELATIONSHIP_KEY));
+            final String secretIdentifier = secretChild.getIdentifier();
+            final List<String> unreadableMessages = popMessages(unreadable).stream()
+                    .map(message -> message.replace(secretIdentifier, "<id>"))
+                    .collect(Collectors.toList());
+            final List<String> missingMessages = popMessages(missing).stream()
+                    .map(message -> message.replace(MISSING_IDENTIFIER, "<id>"))
+                    .collect(Collectors.toList());
+            assertEquals(1, unreadableMessages.size());
+            assertEquals(missingMessages, unreadableMessages);
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(originalRequest);
+            if (UtilMethods.isSet(secretChild) && UtilMethods.isSet(secretChild.getInode())) {
+                ContentletDataGen.remove(secretChild);
+            }
+            if (UtilMethods.isSet(otherRole)) {
+                RoleDataGen.remove(otherRole);
+            }
+            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
+                contentTypeAPI.delete(parentContentType);
+            }
+            if (UtilMethods.isSet(childContentType) && UtilMethods.isSet(childContentType.id())) {
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
+
+    private Map<String, Object> relationshipProps(final ContentType parentType, final Field relField,
+            final String value) {
+        final Map<String, Object> properties = new HashMap<>();
+        properties.put(Contentlet.STRUCTURE_INODE_KEY, parentType.id());
+        properties.put(relField.variable(), value);
+        return properties;
+    }
+
+    private void bindRequestUser(final User actingUser) {
+        final MockHeaderRequest request = new MockHeaderRequest(new MockSessionRequest(
+                new MockAttributeRequest(
+                        new MockHttpRequestIntegrationTest("localhost", "/").request()).request()).request());
+        request.setAttribute(WebKeys.USER, actingUser);
+        request.setAttribute(WebKeys.USER_ID, actingUser.getUserId());
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+    }
+
+    private void bindRequestWithoutUser() {
+        final MockHeaderRequest request = new MockHeaderRequest(new MockSessionRequest(
+                new MockAttributeRequest(
+                        new MockHttpRequestIntegrationTest("localhost", "/").request()).request()).request());
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
     }
 
 }

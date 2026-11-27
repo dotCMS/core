@@ -53,7 +53,10 @@ import { escapeHtml } from '../../utils/functions.util';
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
-        class: 'flex h-full flex-col items-start border-l border-surface-200 relative min-w-0 overflow-x-hidden',
+        // `overflow-hidden` on both axes: the <aside> fills this box and the tab panels inside
+        // it are the only scroll container, so a wheel over the tab nav must not scroll the
+        // host (hidden descendants such as the confirm dialog give it scrollable overflow).
+        class: 'flex h-full flex-col items-start border-l border-surface-200 relative min-w-0 overflow-hidden',
         '[style.width.px]': 'sidebarWidth'
     }
 })
@@ -251,10 +254,6 @@ export class DotEditContentSidebarComponent {
     readonly tabsPt = {
         root: { class: 'h-full flex flex-col' },
         nav: { class: 'border-none min-h-12 max-h-[52px]' },
-        navContent: { class: 'flex items-stretch w-full gap-3 overflow-visible' },
-        panels: {
-            class: 'h-[calc(100%-54px)] overflow-auto transition-opacity duration-150 ease-in-out'
-        },
-        panel: { class: 'h-full' }
+        navContent: { class: 'flex items-stretch w-full gap-3 overflow-visible' }
     };
 }

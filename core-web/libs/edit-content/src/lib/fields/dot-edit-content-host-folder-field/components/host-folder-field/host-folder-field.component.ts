@@ -55,6 +55,8 @@ import { HostFolderFiledStore } from '../../store/host-folder-field.store';
 @Component({
     selector: 'dot-host-folder-field',
     imports: [
+        InputGroupModule,
+        InputGroupAddonModule,
         PopoverModule,
         ScrollerModule,
         SkeletonModule,
@@ -64,8 +66,6 @@ import { HostFolderFiledStore } from '../../store/host-folder-field.store';
         ButtonModule,
         TooltipModule,
         IconFieldModule,
-        InputGroupModule,
-        InputGroupAddonModule,
         InputIconModule,
         InputTextModule,
         DotMessagePipe,

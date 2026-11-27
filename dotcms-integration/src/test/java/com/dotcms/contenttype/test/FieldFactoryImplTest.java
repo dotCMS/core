@@ -100,6 +100,7 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 				new TestCaseVelSuggestion("ArchivED", Contentlet.ARCHIVED_KEY.toLowerCase(), DateTimeField.class),
 				new TestCaseVelSuggestion("inode", Contentlet.INODE_KEY.toLowerCase(), TimeField.class),
 				new TestCaseVelSuggestion("BaseType", Contentlet.BASE_TYPE_KEY.toLowerCase(), WysiwygField.class),
+				new TestCaseVelSuggestion("SortOrder", Contentlet.SORT_ORDER_KEY.toLowerCase(), TextField.class),
 
 		};
 	}

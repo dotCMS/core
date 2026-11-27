@@ -21,6 +21,8 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -30,6 +32,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -40,9 +43,11 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -58,6 +63,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.StringReader;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.function.LongFunction;
 import java.util.function.LongSupplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -93,12 +99,51 @@ public class MapToContentletPopulator  {
     private static final Pattern HTML_START =
             Pattern.compile("^<(!|/?[a-zA-Z][a-zA-Z0-9]*[\\s/>])");
 
+    /**
+     * Populates the given {@link Contentlet} from the submitted map, resolving relationship targets
+     * as the user bound to the current request, or the system user when there is no request in scope
+     * (see {@link #resolveSavingUser()}). Callers that know the acting user -- in particular
+     * front-end view tools, where the request belongs to the site visitor rather than the saving
+     * user -- should call {@link #populate(Contentlet, Map, User)} and pass it explicitly. A caller
+     * that must force the system user while a request is in scope can wrap the call in
+     * {@code SystemUserScope}, which {@code RequestUserResolver} honors ahead of the request.
+     *
+     * @param contentlet      the contentlet to populate
+     * @param stringObjectMap the submitted field values
+     * @return the populated contentlet
+     */
     @CloseDBIfOpened
     public Contentlet populate(final Contentlet contentlet, final Map<String, Object> stringObjectMap) {
 
         try {
 
-            this.processMap(contentlet, stringObjectMap);
+            this.processMap(contentlet, stringObjectMap, resolveSavingUser());
+        } catch (DotDataException | DotSecurityException e) {
+
+            throw new DotStateException(e);
+        }
+
+        return contentlet;
+    }
+
+    /**
+     * Populates the given {@link Contentlet} from the submitted map, resolving and READ-filtering
+     * relationship targets on behalf of {@code user} (private-issues#930). Use this overload from
+     * callers that know the saving user and must not rely on the request bound to the current thread
+     * -- for example front-end view tools, where the request belongs to the site visitor.
+     *
+     * @param contentlet      the contentlet to populate
+     * @param stringObjectMap the submitted field values
+     * @param user            the user on whose behalf the save runs
+     * @return the populated contentlet
+     */
+    @CloseDBIfOpened
+    public Contentlet populate(final Contentlet contentlet, final Map<String, Object> stringObjectMap,
+            final User user) {
+
+        try {
+
+            this.processMap(contentlet, stringObjectMap, user);
         } catch (DotDataException | DotSecurityException e) {
 
             throw new DotStateException(e);
@@ -143,7 +188,7 @@ public class MapToContentletPopulator  {
     }
 
     private void processMap(final Contentlet contentlet,
-                              final Map<String, Object> map) throws DotDataException, DotSecurityException {
+                              final Map<String, Object> map, final User user) throws DotDataException, DotSecurityException {
 
         final String stInode = this.getStInode(map, contentlet);
 
@@ -171,8 +216,14 @@ public class MapToContentletPopulator  {
                     fieldMap.put(field.getVelocityVarName(), field);
                 }
 
+                // Keys that only match a field by case are ignored like any unknown key; say so.
+                caseMismatchedFieldKeys(map.keySet(), fieldMap.keySet()).forEach(
+                        (key, variable) -> appendSaveWarning(contentlet, String.format(
+                                "Key '%s' was ignored: field variables are case-sensitive. "
+                                        + "Did you mean '%s'?", key, variable)));
+
                 // look for relationships
-                contentlet.setProperty(RELATIONSHIP_KEY, this.getContentletRelationships(map, contentlet));
+                contentlet.setProperty(RELATIONSHIP_KEY, this.getContentletRelationships(map, contentlet, user));
 
                 // fill fields
                 this.fillFields(contentlet, map, type, fieldMap);
@@ -349,7 +400,7 @@ public class MapToContentletPopulator  {
                             + "Send a full Tiptap/ProseMirror JSON document to modify this field.",
                     field.getVelocityVarName(), sourceName, STORY_BLOCK_RICH_OVERWRITE_PROTECT_PROP);
             Logger.warn(this, message);
-            appendStoryBlockWarning(contentlet, message);
+            appendSaveWarning(contentlet, message);
             return existing;
         }
 
@@ -365,7 +416,7 @@ public class MapToContentletPopulator  {
                                 + "existing value rather than clearing the field.",
                         field.getVelocityVarName(), sourceName);
                 Logger.warn(this, message);
-                appendStoryBlockWarning(contentlet, message);
+                appendSaveWarning(contentlet, message);
                 return existing;
             }
             // Full-replace applies; tell the caller which stored rich blocks the submitted value
@@ -380,7 +431,7 @@ public class MapToContentletPopulator  {
                             field.getVelocityVarName(), missing.size(), sourceName,
                             summarize(missing));
                     Logger.warn(this, message);
-                    appendStoryBlockWarning(contentlet, message);
+                    appendSaveWarning(contentlet, message);
                 }
             }
             return converted.toString();
@@ -396,19 +447,19 @@ public class MapToContentletPopulator  {
 
     /**
      * Stashes an advisory warning on the contentlet under
-     * {@link Contentlet#STORY_BLOCK_CONVERSION_WARNINGS_KEY}. The REST layer pops the key and
+     * {@link Contentlet#SAVE_WARNINGS_KEY}. The REST layer pops the key and
      * surfaces each entry in the response envelope's {@code messages}; the key is transient and
      * stripped before persistence like the other workflow bookkeeping keys.
      */
     @SuppressWarnings("unchecked")
-    private void appendStoryBlockWarning(final Contentlet contentlet, final String message) {
-        final Object current = contentlet.getMap().get(Contentlet.STORY_BLOCK_CONVERSION_WARNINGS_KEY);
+    private void appendSaveWarning(final Contentlet contentlet, final String message) {
+        final Object current = contentlet.getMap().get(Contentlet.SAVE_WARNINGS_KEY);
         final List<String> warnings;
         if (current instanceof List) {
             warnings = (List<String>) current;
         } else {
             warnings = new ArrayList<>();
-            contentlet.getMap().put(Contentlet.STORY_BLOCK_CONVERSION_WARNINGS_KEY, warnings);
+            contentlet.getMap().put(Contentlet.SAVE_WARNINGS_KEY, warnings);
         }
         warnings.add(message);
     }
@@ -422,19 +473,19 @@ public class MapToContentletPopulator  {
     }
 
     /**
-     * Pops the transient Story Block conversion warnings off the given contentlets (first
+     * Pops the transient save warnings off the given contentlets (first
      * non-empty batch wins; the key is removed from every one so it can never leak into a
      * response entity map) and converts them to {@link MessageEntity} items for the response
      * envelope's {@code messages}. Returns {@code null} when there is nothing to report.
      */
-    public static List<MessageEntity> popStoryBlockConversionMessages(final Contentlet... contentlets) {
+    public static List<MessageEntity> popSaveWarningMessages(final Contentlet... contentlets) {
         List<MessageEntity> result = null;
         for (final Contentlet contentlet : contentlets) {
             if (contentlet == null) {
                 continue;
             }
             final Object popped = contentlet.getMap()
-                    .remove(Contentlet.STORY_BLOCK_CONVERSION_WARNINGS_KEY);
+                    .remove(Contentlet.SAVE_WARNINGS_KEY);
             if (result == null && popped instanceof List && !((List<?>) popped).isEmpty()) {
                 result = ((List<?>) popped).stream()
                         .map(String::valueOf)
@@ -443,6 +494,15 @@ public class MapToContentletPopulator  {
             }
         }
         return result;
+    }
+
+    /**
+     * @deprecated Returns every save warning, not only Story Block conversion ones. Use
+     * {@link #popSaveWarningMessages(Contentlet...)}.
+     */
+    @Deprecated
+    public static List<MessageEntity> popStoryBlockConversionMessages(final Contentlet... contentlets) {
+        return popSaveWarningMessages(contentlets);
     }
 
     /**
@@ -898,8 +958,38 @@ public class MapToContentletPopulator  {
         return new ContentletRelationshipsTransformer(contentlet, contentRelationships).findFirst();
     }
 
+    /**
+     * Resolves the {@link User} on whose behalf the current save is running, so relationship
+     * targets are gated by that user's READ permission instead of being resolved as the system
+     * user (private-issues#930). The authenticated REST user is placed on the request by
+     * {@code WebResource} for every save endpoint (session and API-token auth alike), so it is read
+     * from the request bound to the current thread. When there is no request in scope -- internal,
+     * non-request callers -- this falls back to the system user, preserving their existing behavior.
+     *
+     * @return the user bound to the current request (the anonymous user when the request carries no
+     *         authenticated user), or the system user only when there is no request in scope
+     * @throws DotDataException if the system user cannot be loaded
+     */
+    private User resolveSavingUser() throws DotDataException {
+
+        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        if (null != request) {
+            // getUser returns the anonymous user (never null) when the request has no logged-in
+            // user, so an anonymous save is gated against the anonymous user's READ rather than
+            // falling back to the system user and skipping the gate. This matches the checkin leg,
+            // which resolves relationships as the incoming user or the anonymous user, never system.
+            final User requestUser = WebAPILocator.getUserWebAPI().getUser(request);
+            if (null != requestUser) {
+                return requestUser;
+            }
+        }
+
+        return APILocator.getUserAPI().getSystemUser();
+    }
+
     private ContentletRelationships getContentletRelationships(final Map<String, Object> map,
-                                                                       final Contentlet contentlet) throws DotDataException {
+                                                                       final Contentlet contentlet,
+                                                                       final User user) throws DotDataException {
 
         final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
         final ContentType contentType = contentlet.getContentType();
@@ -918,9 +1008,36 @@ public class MapToContentletPopulator  {
 
                     try {
 
-                        final List<Contentlet> contentlets = RelationshipUtil
-                                .filterContentlet(contentlet.getLanguageId(), query,
-                                        APILocator.getUserAPI().getSystemUser(), false);
+                        // Resolve the relationship targets on behalf of the user performing the
+                        // save, not the system user, and drop any the user cannot READ. Otherwise
+                        // an editor could relate their content to content they cannot see
+                        // (private-issues#930). This mirrors the CSV-import entry point
+                        // RelationshipUtil.getRelatedContentFromQuery (#35222): filterContentlet
+                        // applies no permission check on the identifier branch and its Lucene
+                        // branch searches as the given user, so the explicit READ filter below is
+                        // what closes the gap for both value shapes. Batch-filter in one
+                        // round-trip (see JAVA_STANDARDS permission checks: batch vs scalar).
+                        // This relationship-resolution subsystem does not apply front-end roles:
+                        // filterContentlet searches with respectFrontendRoles=false and the checkin
+                        // preservation net (addRestrictedContentForLimitedUser) uses false as well,
+                        // so the gate is evaluated against the user's back-end roles only. Both the
+                        // populate (REST-reachable) leg here and the checkin identifier leg in
+                        // ESContentletAPIImpl.getContentletRelationships filter the same way.
+                        final List<Contentlet> resolvedContentlets = RelationshipUtil
+                                .filterContentlet(contentlet.getLanguageId(), query, user, false);
+                        final List<Contentlet> contentlets = APILocator.getPermissionAPI()
+                                .filterCollection(resolvedContentlets,
+                                        PermissionAPI.PERMISSION_READ, user, false);
+
+                        // Built from what is actually related (after the READ filter), so the
+                        // messages describe the saved result and never tell a caller anything
+                        // about content they cannot read.
+                        relationshipResultWarnings(queryEntry.getKey(), query,
+                                contentlets.stream().collect(Collectors.toMap(
+                                        Contentlet::getIdentifier, Contentlet::getLanguageId,
+                                        (first, second) -> first, LinkedHashMap::new)),
+                                contentlet.getLanguageId(), this::languageLabel)
+                                .forEach(message -> appendSaveWarning(contentlet, message));
 
                         if (contentlets.size() > 0) {
 
@@ -937,6 +1054,13 @@ public class MapToContentletPopulator  {
                     } catch (Exception e) {
 
                         Logger.warn(this, e.getMessage(), e);
+                        // The detail stays in the log above: a Lucene value can produce search
+                        // engine errors that should not reach API clients.
+                        appendSaveWarning(contentlet, String.format(
+                                "Relationship field '%s' was not changed: its value could not be "
+                                        + "resolved. Send related identifiers as a "
+                                        + "comma-separated string or an array, or a Lucene query.",
+                                queryEntry.getKey()));
                     }
                 } else if (query != null && query.trim().equals("")){
 
@@ -973,6 +1097,118 @@ public class MapToContentletPopulator  {
     }
 
     /**
+     * The value of a relationship field as the comma-separated filter
+     * {@link RelationshipUtil#filterContentlet} reads: identifiers and/or Lucene queries. Besides
+     * that string, accepts an array of them (a JSON array arrives as a {@link Collection}). An
+     * empty array, like an empty string, clears the relationship.
+     */
+    @VisibleForTesting
+    static String relationshipFilter(final Object value) {
+        final Collection<?> values = value instanceof Collection
+                ? (Collection<?>) value
+                : value instanceof Object[] ? Arrays.asList((Object[]) value) : null;
+        if (null == values) {
+            return String.valueOf(value);
+        }
+        return values.stream()
+                .filter(Objects::nonNull)
+                .map(element -> String.valueOf(element).trim())
+                .filter(element -> !element.isEmpty())
+                .collect(Collectors.joining(COMMA));
+    }
+
+    /**
+     * Keys of the request that are not a field variable of the type but match one when case is
+     * ignored, mapped to that variable. Such a key is ignored on save, like any unknown key.
+     */
+    @VisibleForTesting
+    static Map<String, String> caseMismatchedFieldKeys(final Collection<String> keys,
+                                                       final Collection<String> fieldVariables) {
+        final Map<String, String> byLowerCase = new HashMap<>();
+        fieldVariables.stream().filter(Objects::nonNull)
+                .forEach(variable -> byLowerCase.putIfAbsent(variable.toLowerCase(), variable));
+        final Map<String, String> mismatched = new LinkedHashMap<>();
+        for (final String key : keys) {
+            if (null == key || fieldVariables.contains(key)) {
+                continue;
+            }
+            final String variable = byLowerCase.get(key.toLowerCase());
+            if (null != variable) {
+                mismatched.put(key, variable);
+            }
+        }
+        return mismatched;
+    }
+
+    /**
+     * Save warnings for one relationship field, computed from the contentlets that were actually
+     * related (identifier to language id, after the READ permission filter):
+     * <ul>
+     *     <li>each identifier in {@code filter} that was not related, without telling apart
+     *     content that does not exist from content the caller cannot read;</li>
+     *     <li>each related contentlet resolved from another language, which is how
+     *     {@link RelationshipUtil#filterContentlet} relates an identifier with no version in the
+     *     language being saved. Reads in that language may return this content without it. Only
+     *     reported when the filter has identifiers only: a Lucene query does not prefer the
+     *     saved language, so another language there does not mean a version is missing.</li>
+     * </ul>
+     * Lucene queries in the filter are not checked for unrelated items; identifiers in it are.
+     */
+    @VisibleForTesting
+    static List<String> relationshipResultWarnings(final String fieldName, final String filter,
+                                                   final Map<String, Long> related,
+                                                   final long languageId,
+                                                   final LongFunction<String> languageLabel) {
+        final List<String> warnings = new ArrayList<>();
+        final Set<String> requested = new LinkedHashSet<>();
+        boolean hasLuceneQuery = false;
+        for (final String element : filter.split(COMMA)) {
+            final String id = element.trim();
+            if (UUIDUtil.isUUID(id)) {
+                requested.add(id);
+            } else if (UtilMethods.isSet(id)) {
+                hasLuceneQuery = true;
+            }
+        }
+        // Identifiers are stored with or without dashes; compare them in one form, ignoring case.
+        final Set<String> relatedKeys = related.keySet().stream()
+                .map(id -> UUIDUtil.unUidIfy(id).toLowerCase())
+                .collect(Collectors.toSet());
+        requested.stream()
+                .filter(id -> !relatedKeys.contains(UUIDUtil.unUidIfy(id).toLowerCase()))
+                .forEach(id -> warnings.add(
+                String.format("Relationship field '%s': '%s' was not related: no content with "
+                        + "that identifier exists, or you do not have permission to read it.",
+                        fieldName, id)));
+        // Only identifiers named in the filter are looked up in the saved language first, so only
+        // for them does another language mean there is no version in this one. A Lucene query
+        // keeps whichever version it finds first, and it can also resolve an identifier named
+        // after it, so a filter with a query gets no language warnings.
+        if (languageId > 0 && !hasLuceneQuery) {
+            related.forEach((id, relatedLanguageId) -> {
+                if (null != relatedLanguageId && relatedLanguageId != languageId) {
+                    warnings.add(String.format("Relationship field '%s': related content '%s' "
+                            + "has no version in language %s. The relationship is saved, but "
+                            + "reads of this content in that language (for example _search with "
+                            + "depth) may return it without the related content. To fix it, save "
+                            + "'%s' with languageId %d and the same identifier, then read this "
+                            + "content again.",
+                            fieldName, id, languageLabel.apply(languageId), id, languageId));
+                }
+            });
+        }
+        return warnings;
+    }
+
+    private String languageLabel(final long languageId) {
+        final Language language = Try.of(() -> APILocator.getLanguageAPI().getLanguage(languageId))
+                .getOrNull();
+        return null != language && UtilMethods.isSet(language.getIsoCode())
+                ? language.getIsoCode() + " (id " + languageId + ")"
+                : "id " + languageId;
+    }
+
+    /**
      * Gets the query to be used for filtering related contentlet. It supports legacy and field relationships
      * @param contentType
      * @param fieldsMap
@@ -988,7 +1224,7 @@ public class MapToContentletPopulator  {
         //Important: On this method fieldsMap.contains is not valid
         if (!relationship.isRelationshipField() && fieldsMap.get(relationTypeValue) != null) {
             //returns a legacy relationship
-            queryMap.put(relationTypeValue, (String) fieldsMap.get(relationTypeValue));
+            queryMap.put(relationTypeValue, relationshipFilter(fieldsMap.get(relationTypeValue)));
         } else if (relationship.isRelationshipField()) {
             //returns a field relationship if exists
             final Set<String> relationshipFields = contentType.fields().stream()
@@ -998,13 +1234,13 @@ public class MapToContentletPopulator  {
             if (fieldsMap.get(relationship.getChildRelationName()) != null && relationshipFields
                     .contains(relationship.getChildRelationName())) {
                 queryMap.put(relationship.getChildRelationName(),
-                        (String) fieldsMap.get(relationship.getChildRelationName()));
+                        relationshipFilter(fieldsMap.get(relationship.getChildRelationName())));
             }
 
             if (fieldsMap.get(relationship.getParentRelationName()) != null && relationshipFields
                     .contains(relationship.getParentRelationName())) {
                 queryMap.put(relationship.getParentRelationName(),
-                        (String) fieldsMap.get(relationship.getParentRelationName()));
+                        relationshipFilter(fieldsMap.get(relationship.getParentRelationName())));
             }
         }
 

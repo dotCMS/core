@@ -5,7 +5,7 @@ import {
     Spectator,
     SpyObject
 } from '@openng/spectator/vitest';
-import { NEVER, of, throwError } from 'rxjs';
+import { NEVER, of, Subject, throwError } from 'rxjs';
 import { Mock, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -549,6 +549,147 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 expect(items).toContain('content-drive.context-menu.edit-content');
                 expect(items.some((label) => label.includes('push-publish'))).toBe(true);
                 expect(items).toContain('contenttypes.content.add_to_bundle');
+            });
+        });
+
+        // The side panel edits one item, so opening one while several are selected reads as if all
+        // of them would open (#38379).
+        describe('with several items selected', () => {
+            const page = createFakeContentlet({
+                inode: 'page-inode',
+                identifier: 'page-id',
+                baseType: DotCMSBaseTypesContentTypes.HTMLPAGE,
+                permissions: [1, 2, 4, 8, 16] as unknown as DotCMSContentlet['permissions']
+            });
+            const other = createFakeContentlet({ inode: 'other-inode', identifier: 'other-id' });
+
+            const openMenuFor = async (contentlet: DotCMSContentlet) => {
+                await component.getMenuItems({
+                    triggeredEvent: mockEvent,
+                    contentlet,
+                    showAddToBundle: false
+                });
+
+                return labels(component.$items());
+            };
+
+            it('should not offer Edit Content or View Content for the clicked row', async () => {
+                store.setSelectedItems([mockContentlet, other]);
+
+                const items = await openMenuFor(mockContentlet);
+
+                expect(items).not.toContain('content-drive.context-menu.edit-content');
+                expect(items).not.toContain('content-drive.context-menu.view-content');
+            });
+
+            it('should not offer Edit Page for a clicked page', async () => {
+                store.setSelectedItems([page, other]);
+
+                const items = await openMenuFor(page);
+
+                expect(items).not.toContain('content-drive.context-menu.edit-page');
+                expect(items).not.toContain('content-drive.context-menu.view-page');
+            });
+
+            it('should offer Edit Content again once only the clicked row is selected', async () => {
+                store.setSelectedItems([mockContentlet, other]);
+                await openMenuFor(mockContentlet);
+
+                store.setSelectedItems([mockContentlet]);
+                const items = await openMenuFor(mockContentlet);
+
+                expect(items).toContain('content-drive.context-menu.edit-content');
+            });
+
+            it("should not offer a page's Edit or View Properties", async () => {
+                store.setSelectedItems([page, other]);
+
+                const items = await openMenuFor(page);
+
+                expect(items).not.toContain('content-drive.context-menu.edit-properties');
+                expect(items).not.toContain('content-drive.context-menu.view-properties');
+            });
+
+            it("should not offer a file's Edit Code", async () => {
+                const file = createFakeContentlet({
+                    inode: 'file-inode',
+                    baseType: DotCMSBaseTypesContentTypes.FILEASSET,
+                    extension: 'vtl',
+                    fileName: 'header.vtl',
+                    permissions: [1, 2, 4, 8, 16] as unknown as DotCMSContentlet['permissions']
+                });
+                store.setSelectedItems([file, other]);
+
+                const items = await openMenuFor(file);
+
+                expect(items).not.toContain('content-drive.context-menu.edit-code');
+            });
+
+            // The menu waits on two requests; a row selected meanwhile counts, so an answer that
+            // arrives after it does not bring the editor entries back.
+            it('should go by the selection as it is once the menu requests answer', async () => {
+                store.setSelectedItems([mockContentlet]);
+                workflowsActionsService.getByInode.mockImplementationOnce(() => {
+                    store.setSelectedItems([mockContentlet, other]);
+
+                    return of(mockWorkflowActions);
+                });
+
+                const items = await openMenuFor(mockContentlet);
+
+                expect(items).not.toContain('content-drive.context-menu.edit-content');
+            });
+
+            // A second right-click while the first one's requests are pending wins: the first
+            // answer arrives late and must not replace the newer menu with another row's.
+            it('should keep the newer menu when an earlier right-click answers late', async () => {
+                const pending = new Subject<typeof mockWorkflowActions>();
+                workflowsActionsService.getByInode.mockReturnValueOnce(pending);
+
+                const first = component.getMenuItems({
+                    triggeredEvent: new MouseEvent('contextmenu'),
+                    contentlet: mockContentlet,
+                    showAddToBundle: false
+                });
+                await component.getMenuItems({
+                    triggeredEvent: new MouseEvent('contextmenu'),
+                    contentlet: other,
+                    showAddToBundle: false
+                });
+                const newer = component.$items();
+
+                pending.next(mockWorkflowActions);
+                pending.complete();
+                await first;
+
+                expect(component.$items()).toBe(newer);
+            });
+
+            // Every entry of a row's menu acts on that row alone, so a row outside the selection
+            // keeps its editor entries (#38379).
+            it('should still offer Edit Content for a row outside the selection', async () => {
+                store.setSelectedItems([page, other]);
+
+                const items = await openMenuFor(mockContentlet);
+
+                expect(items).toContain('content-drive.context-menu.edit-content');
+            });
+
+            // With the editor entries left out, a read-only row that cannot be locked has nothing
+            // in the built-in group: the menu opens on the workflow actions, not on a separator.
+            it('should not open on a separator when the built-in group is empty', async () => {
+                const readOnly = createFakeContentlet({
+                    inode: 'read-only-inode',
+                    permissions: [1] as unknown as DotCMSContentlet['permissions']
+                });
+                dotContentletService.canLock.mockReturnValueOnce(
+                    of(createMockCanLock(false, false))
+                );
+                store.setSelectedItems([readOnly, other]);
+
+                const items = await openMenuFor(readOnly);
+
+                expect(items[0]).toBe('content-drive.context-menu.workflows');
             });
         });
 
@@ -1792,6 +1933,29 @@ describe('DotFolderListViewContextMenuComponent', () => {
         });
     });
 
+    describe('rightClickEffect', () => {
+        // The menu reads the selection while it is built; only a new right-click may rebuild it,
+        // or a selection change restarts the pending one under the same trigger.
+        it('should not rebuild the menu when the selection changes', () => {
+            const pending = new Subject<typeof mockWorkflowActions>();
+            workflowsActionsService.getByInode.mockReturnValueOnce(pending);
+            dotContentletService.canLock.mockReturnValueOnce(of(createMockCanLock(true, false)));
+            const getMenuItems = vi.spyOn(component, 'getMenuItems');
+
+            store.patchContextMenu({
+                contentlet: mockContentlet,
+                triggeredEvent: new MouseEvent('contextmenu'),
+                showAddToBundle: false
+            });
+            spectator.detectChanges();
+
+            store.setSelectedItems([mockContentlet]);
+            spectator.detectChanges();
+
+            expect(getMenuItems).toHaveBeenCalledTimes(1);
+        });
+    });
+
     describe('closeOnContextMenuReset', () => {
         it('should hide context menu when contentlet is null and menu is visible', () => {
             const mockContextMenu = {
@@ -1810,6 +1974,40 @@ describe('DotFolderListViewContextMenuComponent', () => {
             spectator.detectChanges();
 
             expect(mockContextMenu.hide).toHaveBeenCalled();
+        });
+
+        // Scrolling or dragging resets the listing's menu while a right-click is still being
+        // answered; the late answer must not reopen what was dismissed.
+        it('should drop a pending answer once the listing dismisses the menu', async () => {
+            const mockContextMenu = {
+                show: vi.fn(),
+                hide: vi.fn(),
+                visible: vi.fn().mockReturnValue(false)
+            } as unknown as ContextMenu;
+            vi.spyOn(component, 'contextMenu').mockReturnValue(mockContextMenu);
+            dotContentletService.canLock.mockReturnValueOnce(of(createMockCanLock(true, false)));
+            const pending = new Subject<typeof mockWorkflowActions>();
+            workflowsActionsService.getByInode.mockReturnValueOnce(pending);
+
+            const answer = component.getMenuItems({
+                triggeredEvent: new MouseEvent('contextmenu'),
+                contentlet: mockContentlet,
+                showAddToBundle: false
+            });
+            store.patchContextMenu({
+                contentlet: null,
+                triggeredEvent: null,
+                showAddToBundle: false
+            });
+            spectator.detectChanges();
+            // Let the menu reach its second request before answering it.
+            await new Promise((resolve) => setTimeout(resolve));
+
+            pending.next(mockWorkflowActions);
+            pending.complete();
+            await answer;
+
+            expect(mockContextMenu.show).not.toHaveBeenCalled();
         });
 
         it('should not hide context menu when contentlet is null and menu is not visible', () => {

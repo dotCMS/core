@@ -1,6 +1,7 @@
 <%@page import="com.dotmarketing.image.focalpoint.FocalPoint"%>
 <%@page import="java.util.Optional"%>
 <%@page import="com.dotmarketing.image.focalpoint.FocalPointAPIImpl"%>
+<%@page import="com.dotcms.rendering.velocity.viewtools.RestrictedViewToolAccess"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@page import="com.dotmarketing.util.Config"%>
@@ -34,6 +35,7 @@
 <%@ page import="com.dotmarketing.portlets.browser.BrowserUtil" %>
 <%@ page import="com.dotmarketing.portlets.folders.model.Folder" %>
 <%@ page import="com.dotcms.contenttype.transform.field.LegacyFieldTransformer" %>
+<%@ page import="com.dotcms.contenttype.transform.field.FieldVariableTransformer" %>
 <%@ page import="static com.dotmarketing.portlets.contentlet.business.ContentletAPI.dnsRegEx" %>
 <%@ page import="io.vavr.control.Try" %>
 <%@ page import="com.dotcms.contenttype.model.field.HostFolderField" %>
@@ -243,7 +245,7 @@
                 Logger.error(this.getClass(), e.getMessage());
             }
 
-            List<FieldVariable> acceptTypes = APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
+            List<FieldVariable> acceptTypes = new FieldVariableTransformer(LegacyFieldTransformer.from(field).fieldVariables()).oldFieldList();
             String fieldVariablesContent = StringEscapeUtils.escapeJavaScript(mapper.writeValueAsString(acceptTypes));
             String blockEditorTag = ConfigUtils.isFeatureFlagOn("FEATURE_FLAG_NEW_BLOCK_EDITOR")
                     ? "dotcms-block-editor"
@@ -344,7 +346,7 @@
                 textValue = textValue.replaceAll("<", "&lt;");
                 textValue = textValue.replaceAll(">", "&gt;");
             }
-            List<FieldVariable> fieldVariables=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, true);
+            List<FieldVariable> fieldVariables=new FieldVariableTransformer(LegacyFieldTransformer.from(field).fieldVariables()).oldFieldList();
             for(FieldVariable fv : fieldVariables){
                 if(fv.getKey().equals( com.dotmarketing.util.WebKeys.TEXT_EDITOR)){
                     keyValue = fv.getValue();
@@ -474,7 +476,7 @@
 
                 boolean dragAndDrop = true;
 
-                List<FieldVariable> fieldVariables=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, true);
+                List<FieldVariable> fieldVariables=new FieldVariableTransformer(LegacyFieldTransformer.from(field).fieldVariables()).oldFieldList();
                     for(FieldVariable fv : fieldVariables){
                         if (fv.getKey().equals("dragAndDrop")) {
                             dragAndDrop = !"false".equalsIgnoreCase(fv.getValue());
@@ -736,7 +738,7 @@
                     Logger.error(this.getClass(), e.getMessage());
                 }
 
-                List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
+                List<FieldVariable> acceptTypes=new FieldVariableTransformer(LegacyFieldTransformer.from(field).fieldVariables()).oldFieldList();
                 String fieldVariablesContent = mapper.writeValueAsString(acceptTypes); // Field Variables
 
                 for(FieldVariable fv : acceptTypes){
@@ -1031,7 +1033,7 @@
     <%
        String maxFileLength="-1";
        String accept="*/*";
-       List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
+       List<FieldVariable> acceptTypes=new FieldVariableTransformer(LegacyFieldTransformer.from(field).fieldVariables()).oldFieldList();
        for(FieldVariable fv : acceptTypes){
            if("accept".equalsIgnoreCase(fv.getKey())){
                accept = fv.getValue();
@@ -1489,7 +1491,16 @@
                     velocityContext.put(field.getVelocityVarName(), defaultValue);
                 }
             }
-            HTMLString = new VelocityUtil().parseVelocity(textValue,velocityContext);
+            // The field's code is about to run as a preview for this user alone, so name them:
+            // the restricted view tools it calls answer to their role, and nothing else on this
+            // path names anybody.
+            final Object previousAuthor =
+                    RestrictedViewToolAccess.announceFieldPreviewAuthor(request, structure, user);
+            try {
+                HTMLString = new VelocityUtil().parseVelocity(textValue,velocityContext);
+            } finally {
+                RestrictedViewToolAccess.restoreRenderingAuthor(request, previousAuthor);
+            }
         }
 
     %>
@@ -1536,7 +1547,7 @@
         keyValueDataRaw.append("}");
         dotKeyValueDataRaw.append("}");
 
-        List<FieldVariable> fieldVariables=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, true);
+        List<FieldVariable> fieldVariables=new FieldVariableTransformer(LegacyFieldTransformer.from(field).fieldVariables()).oldFieldList();
         String whiteListKeyValues = "";
         for(FieldVariable fv : fieldVariables) {
             if (fv.getKey().equals("whiteList")) {
@@ -1609,6 +1620,13 @@
                 return value.replaceAll('\"','&#34;').replaceAll(/\\/g, '&#92;');
             }
 
+            // Tabs and line breaks must be escaped or the hidden input holds invalid JSON
+            function escapeControlChars(value) {
+                return value.replace(/[\u0000-\u001f]/g, function (c) {
+                    return '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0');
+                });
+            }
+
             function formatToJsonData(value) {
                 var removedBrackets = value.trim().substring(1, value.length-1);
                 var preformatted = removedBrackets.replaceAll(/:/g, '":"').replaceAll(/,/g, '","');
@@ -1617,7 +1635,7 @@
 
             // Escape chars and set value to hidden input
             var dotKeyValueHiddenIput = document.getElementById('<%=field.getVelocityVarName()%>');
-            dotKeyValueHiddenIput.value = formatToJsonData(escapeQuoteAndBackSlash("<%=Xss.encodeForJavaScript(keyValueDataRaw.toString())%>"));
+            dotKeyValueHiddenIput.value = formatToJsonData(escapeControlChars(escapeQuoteAndBackSlash("<%=Xss.encodeForJavaScript(keyValueDataRaw.toString())%>")));
 
             var dotKeyValue = document.querySelector('#<%=field.getVelocityVarName()%>KeyValue');
             dotKeyValue.uniqueKeys = "true";

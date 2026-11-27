@@ -92,7 +92,11 @@ export interface EditContentState {
     // Lock state
     lockError: string | null;
     lockStatus: ComponentStatus;
-    canLock: boolean;
+    /**
+     * The backend's answer to `_canlock` for the current contentlet: `null` until it has
+     * answered, so an unchecked lock is never mistaken for a denied one (see `isReadOnly`).
+     */
+    canLock: boolean | null;
     lockSwitchLabel: string;
 
     // Form state
@@ -181,6 +185,12 @@ export interface EditContentState {
      * Used to pre-fill form fields (e.g., folderPath for Host or Folder).
      */
     queryParams: EditContentQueryParams;
+
+    /**
+     * The experiment variant the editor was opened on, from the host's identity (#38303). Every
+     * workflow action fires in it; `null` means the default variant.
+     */
+    variantName: string | null;
 }
 
 /**
@@ -243,7 +253,7 @@ export const initialRootState: EditContentState = {
     // Lock state
     lockError: null,
     lockStatus: ComponentStatus.IDLE,
-    canLock: false,
+    canLock: null,
     lockSwitchLabel: 'edit.content.unlocked',
 
     // Form state
@@ -296,7 +306,10 @@ export const initialRootState: EditContentState = {
     hiddenFields: {} as Record<string, boolean>,
 
     // Query params from URL
-    queryParams: {}
+    queryParams: {},
+
+    // Experiment variant from the host identity
+    variantName: null
 };
 
 /**
@@ -331,10 +344,11 @@ export const DotEditContentStore = signalStore(
          * Initializes the editor from the identity resolved by the host — the
          * route params in full-screen, the dialog config in overlay mode. This is
          * the single, presentation-agnostic entry point (there is no separate
-         * route-vs-dialog path). Called once by the layout after the store exists.
+         * route-vs-dialog path). Called once by the layout after the store exists. The experiment
+         * variant, when the host names one, is kept so every save fires in it.
          */
         initialize(): void {
-            const { inode, contentTypeId, folderPath } = host.resolveIdentity();
+            const { inode, contentTypeId, folderPath, variantName } = host.resolveIdentity();
 
             // Store query params first (synchronous) so they are available when the
             // async content initialization completes and the form reads them.
@@ -343,7 +357,10 @@ export const DotEditContentStore = signalStore(
                 supportedQueryParams.folderPath = folderPath;
             }
 
-            patchState(store, { queryParams: supportedQueryParams });
+            patchState(store, {
+                queryParams: supportedQueryParams,
+                variantName: variantName ?? null
+            });
 
             if (inode) {
                 store.initializeExistingContent({ inode, depth: DotContentletDepths.TWO });

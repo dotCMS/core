@@ -6,6 +6,7 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.util.PortletID;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.google.common.annotations.VisibleForTesting;
@@ -146,9 +147,14 @@ public class CompanyResource {
         if (form == null) {
             throw new BadRequestException("Request body is required");
         }
-        form.checkValid();
-
-        return new ResponseEntityCompanyConfigView(helper.saveBasicInfo(form, user));
+        try {
+            form.checkValid();
+            return new ResponseEntityCompanyConfigView(helper.saveBasicInfo(form, user));
+        } catch (final BadRequestException e) {
+            SecurityLogger.logInfo(this.getClass(), "Company basic information not saved for user '"
+                    + user.getUserId() + "': a submitted value was not accepted");
+            throw e;
+        }
     }
 
     /**

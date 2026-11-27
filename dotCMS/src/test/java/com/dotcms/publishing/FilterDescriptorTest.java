@@ -1,11 +1,14 @@
 package com.dotcms.publishing;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.dotmarketing.exception.DotDataValidationException;
 import com.dotcms.util.YamlUtil;
 import java.io.File;
+import java.util.List;
 import java.util.Map;
 import org.junit.Test;
 
@@ -99,5 +102,52 @@ public class FilterDescriptorTest {
         filterDescriptor.validate();
 
         assertEquals(Boolean.TRUE, filterDescriptor.getFilters().get("relationshipsSecondLevel"));
+        assertFalse("The shipped filter must not set relationshipsDepth (it is only documented in comments)",
+                filterDescriptor.getFilters().containsKey(FilterDescriptor.RELATIONSHIPS_DEPTH_KEY));
+    }
+
+    /**
+     * Method to test: {@link FilterDescriptor#validate()}
+     * When: the filters map declares {@code relationshipsDepth} as a positive whole number, either
+     * as an {@code Integer} or as a {@code Long} (YAML parsers can produce either)
+     * Should: validate without throwing (issue #38394)
+     */
+    @Test
+    public void validate_accepts_relationshipsDepth_positive_integer() throws DotDataValidationException {
+        new FilterDescriptor("test.yml", TITLE, Map.of("relationshipsDepth", 3), false, ROLES).validate();
+        new FilterDescriptor("test.yml", TITLE, Map.of("relationshipsDepth", 3L), false, ROLES).validate();
+    }
+
+    /**
+     * Method to test: {@link FilterDescriptor#validate()}
+     * When: the filters map declares {@code relationshipsDepth: 0}, the "unlimited" value
+     * Should: validate without throwing
+     */
+    @Test
+    public void validate_accepts_relationshipsDepth_unlimited() throws DotDataValidationException {
+        new FilterDescriptor("test.yml", TITLE,
+                Map.of("relationshipsDepth", FilterDescriptor.RELATIONSHIPS_DEPTH_UNLIMITED), false, ROLES)
+                .validate();
+    }
+
+    /**
+     * Method to test: {@link FilterDescriptor#validate()}
+     * When: the filters map declares {@code relationshipsDepth} as a negative number, a numeric
+     * string, a decimal, a boolean, or a number larger than {@link Integer#MAX_VALUE}
+     * Should: throw {@link DotDataValidationException} naming the field, for every one of them
+     */
+    @Test
+    public void validate_rejects_relationshipsDepth_invalid_values() {
+        for (final Object invalid : List.of(-1, "3", 2.5, true, (long) Integer.MAX_VALUE + 1)) {
+            final FilterDescriptor filterDescriptor = new FilterDescriptor(
+                    "test.yml", TITLE, Map.of("relationshipsDepth", invalid), false, ROLES);
+            try {
+                filterDescriptor.validate();
+                fail("relationshipsDepth=" + invalid + " (" + invalid.getClass().getSimpleName()
+                        + ") should have been rejected");
+            } catch (final DotDataValidationException e) {
+                assertTrue(e.getMessage(), e.getMessage().contains("relationshipsDepth"));
+            }
+        }
     }
 }

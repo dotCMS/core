@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiPredicate;
 import java.util.function.LongSupplier;
@@ -43,13 +44,20 @@ import java.util.function.LongSupplier;
  *     caps guessing spread over many addresses, but anyone who knows a login name can then trigger it, so
  *     it is opt-in.</li>
  * </ul>
- * An attempt is counted against its address before the password is checked ({@link #begin}), so
+ * A third count, the account's recent failures from every address together (source
+ * {@value #ACCOUNT_PACING}, or {@value #WEBDAV_ACCOUNT_PACING} for WebDAV), decides nothing on its own:
+ * it only paces the delay a failed login waits ({@link #pacingSeed}), so the wait keeps rising for the
+ * account being guessed at however the attempts are spread across addresses.
+ *
+ * <p>An attempt is counted against its address before the password is checked ({@link #begin}), so
  * parallel requests cannot all pass a check made before any of them was counted. A refused attempt whose
  * password was right hands its count back ({@link #release}), so only wrong passwords lead to a lock and
  * a client that sends many requests at once just gets some refusals it can retry. Locks last a fixed
  * time and do not grow. While a lock applies every password check fails, including the correct
- * password, and nothing is counted. A successful login clears the count for its own address; a password
- * reset or a new password set by an administrator clears everything for the account. Times come from
+ * password, and nothing is counted. A successful login clears the count for its own address and the
+ * account's pacing count, but not the account-wide count, so proving the password cannot hold off the
+ * account-wide lock; a password reset or a new password set by an administrator clears everything for
+ * the account. Times come from
  * the database clock, so nodes whose own clocks differ still agree on when a lock ends.
  *
  * <p>The client address is {@link HttpServletRequest#getRemoteAddr()}. Behind a proxy it is the real
@@ -86,6 +94,20 @@ public final class LoginLockout {
 
     /** Source of the account-wide row. Never a client address. */
     public static final String ACCOUNT_WIDE = "*";
+
+    /**
+     * Source of the row that counts an account's recent failures only to pace the login delay, kept apart
+     * from {@link #ACCOUNT_WIDE} so that pacing can be counted and cleared without touching the row the
+     * optional account-wide lock is decided on. Never a client address.
+     */
+    public static final String ACCOUNT_PACING = "*pace";
+
+    /**
+     * Source of the pacing row for WebDAV logins, which are counted apart from browser logins throughout,
+     * so a mounted drive retrying a stale password cannot slow its owner's browser login. Never a client
+     * address.
+     */
+    public static final String WEBDAV_ACCOUNT_PACING = "*pace:webdav";
 
     /** Source used when there is no request to take an address from. */
     public static final String UNKNOWN_SOURCE = "unknown";
@@ -135,6 +157,13 @@ public final class LoginLockout {
             "DELETE FROM login_lockout WHERE user_id = ? AND source = ? AND locked_until <= ?";
 
     /**
+     * Clears one source's row and the account's pacing row in a single statement, leaving a locked row and
+     * the account-wide row alone. Parameters: user, source, pacing source, now.
+     */
+    private static final String CLEAR_SOURCE_AND_PACING_SQL =
+            "DELETE FROM login_lockout WHERE user_id = ? AND source IN (?, ?) AND locked_until <= ?";
+
+    /**
      * Sources locked out of at least a given number of accounts right now, with that number. Parameters: now,
      * account-wide source, minimum accounts.
      */
@@ -148,6 +177,21 @@ public final class LoginLockout {
      */
     private static final String PURGE_SQL =
             "DELETE FROM login_lockout WHERE locked_until <= ? AND window_start < ?";
+
+    /**
+     * Sums the failures recorded for one source across every account, counting only rows still within the
+     * window. Parameters: source, window cutoff.
+     */
+    private static final String SOURCE_FAILURES_SQL =
+            "SELECT COALESCE(SUM(failures), 0) AS total FROM login_lockout WHERE source = ? AND window_start >= ?";
+
+    /**
+     * Reads an account's pacing row -- the one row that counts its recent failures from every source
+     * together -- if it is still within the window. Parameters: user, pacing source, window cutoff.
+     */
+    private static final String ACCOUNT_FAILURES_SQL =
+            "SELECT COALESCE(failures, 0) AS total FROM login_lockout WHERE user_id = ? AND source = ?"
+                    + " AND window_start >= ?";
 
     /**
      * Lock state of one account as seen from one source.
@@ -200,6 +244,23 @@ public final class LoginLockout {
          */
         public boolean isLockedOut() {
             return refused && !counted;
+        }
+
+        /**
+         * @return the count this attempt brought its source to, or 0 when it was refused before being counted
+         */
+        public int number() {
+            return number;
+        }
+
+        /**
+         * @return {@code true} when this attempt was never recorded against a real account and source: lockout
+         * is switched off, or {@link #begin} could not count it, for example after a database error. A caller
+         * that paces something by the attempt's count should fall back to a different count instead, rather
+         * than treat this as a real, freshly-counted attempt of 0.
+         */
+        public boolean isUntracked() {
+            return this == UNTRACKED;
         }
     }
 
@@ -445,13 +506,18 @@ public final class LoginLockout {
 
     /**
      * Records a successful password login from the given source that was checked outside {@link #begin}
-     * (for example by LDAP): earlier attempts from the source no longer count. A lock in force stays.
+     * (for example by LDAP): earlier attempts from the source no longer count, and neither does the account's
+     * pacing count ({@link #accountFailures}). Whoever just proved the password should not keep paying for
+     * the typing that came before it, and an attacker able to clear this has the password already. The
+     * account-wide row is deliberately left alone, so a successful login cannot hold off the optional
+     * account-wide lock. A lock in force stays: the statement leaves a locked row alone.
      */
     @CloseDBIfOpened
     public void succeeded(final String userId, final String source) {
         try {
-            new DotConnect().setSQL(CLEAR_SOURCE_SQL)
-                    .addParam(userId).addParam(source).addParam(clock.getAsLong())
+            new DotConnect().setSQL(CLEAR_SOURCE_AND_PACING_SQL)
+                    .addParam(userId).addParam(source).addParam(pacingSource(source))
+                    .addParam(clock.getAsLong())
                     .loadResult();
         } catch (final DotDataException | RuntimeException e) {
             Logger.error(this, "Unable to clear login lockout state for user " + userId + ": " + e.getMessage(), e);
@@ -492,11 +558,18 @@ public final class LoginLockout {
             if (attempt.number >= maxFailures()) {
                 lock(attempt.userId, attempt.source, attempt.number);
             }
-            final int accountMax = accountMaxFailures();
-            if (!attempt.refused && accountMax > 0) {
-                final int accountFailures = ((Number) count(attempt.userId, ACCOUNT_WIDE).get("failures")).intValue();
-                if (accountFailures >= accountMax) {
-                    lock(attempt.userId, ACCOUNT_WIDE, accountFailures);
+            if (!attempt.refused) {
+                // The pacing count is kept whatever the limit is, because the delay needs a count of the
+                // account's own failures that no change of source can reset. It is a row of its own, so
+                // keeping it never touches the account-wide lock below.
+                count(attempt.userId, pacingSource(attempt.source));
+                final int accountMax = accountMaxFailures();
+                if (accountMax > 0) {
+                    final int accountFailures =
+                            ((Number) count(attempt.userId, ACCOUNT_WIDE).get("failures")).intValue();
+                    if (accountFailures >= accountMax) {
+                        lock(attempt.userId, ACCOUNT_WIDE, accountFailures);
+                    }
                 }
             }
         } catch (final DotDataException | RuntimeException e) {
@@ -596,6 +669,106 @@ public final class LoginLockout {
                 ? "Login refused, locked out: user "
                 : "Login refused, too many concurrent attempts: user ")
                 + attempt.userId + " from " + attempt.source);
+    }
+
+    /**
+     * Recent failures for one source across every account, within the counting window right now. Unlike the
+     * per-account count in {@link #begin}, this adds up every account the source has failed against, so failures
+     * spread across many different accounts from one address build a rising total here even though each
+     * account's own count starts over at 1. Used only to pace the login delay ({@link #pacingSeed}), never to
+     * decide a lockout.
+     *
+     * @return the sum of {@code failures} recorded for the source across every account in the window, or 0 on a
+     * database error
+     */
+    @CloseDBIfOpened
+    public int sourceFailures(final String source) {
+        try {
+            final long windowCutoff = clock.getAsLong() - TimeUnit.SECONDS.toMillis(windowSeconds());
+            final List<Map<String, Object>> rows = new DotConnect()
+                    .setSQL(SOURCE_FAILURES_SQL)
+                    .addParam(source).addParam(windowCutoff)
+                    .loadObjectResults();
+            return ((Number) rows.get(0).get("total")).intValue();
+        } catch (final DotDataException | RuntimeException e) {
+            Logger.error(this, "Unable to read source failures for " + source + ": " + e.getMessage(), e);
+            return 0;
+        }
+    }
+
+    /**
+     * The seed that should pace a failed login's delay: the larger of this attempt's own atomically-counted
+     * position for its account and source, and the total recent failures its source has caused across every
+     * account. Taking the larger of the two means the delay escalates whichever way the failures are
+     * concentrated: on one account, or spread across many from the same source.
+     *
+     * <p>{@value #UNKNOWN_SOURCE} is excluded from the cross-account total: it is a shared fallback for every
+     * login that has no resolvable client address, not a real source, so unrelated accounts that happen to
+     * share it must not inflate each other's delay.
+     *
+     * <p>An attempt refused by a lock ({@link Attempt#isLockedOut()}) is paced at {@link #maxFailures()}
+     * instead: it is never counted, so its own position is always 0, and the lock that refused it also
+     * reset its source's recorded failures to 0 -- left alone, both would pace it at 0 instead of at the
+     * cap a caller applies to every other attempt.
+     *
+     * @return the pacing seed for {@code attempt}
+     */
+    public int pacingSeed(final Attempt attempt) {
+        if (attempt.isLockedOut()) {
+            return maxFailures();
+        }
+        final int seed = UNKNOWN_SOURCE.equals(attempt.source)
+                ? attempt.number
+                : Math.max(attempt.number, sourceFailures(attempt.source));
+        return Math.max(seed, accountFailures(attempt.userId, attempt.source));
+    }
+
+    /**
+     * The row an account's failures from the given source are counted under for pacing. WebDAV logins are
+     * counted apart from browser logins here as they are everywhere else, so a mounted drive retrying a
+     * stale password cannot slow its owner down in the browser.
+     *
+     * @param source the source the login came from
+     * @return {@link #WEBDAV_ACCOUNT_PACING} for a WebDAV login, {@link #ACCOUNT_PACING} otherwise
+     */
+    private static String pacingSource(final String source) {
+        return null != source && source.startsWith(WEBDAV_SOURCE_PREFIX)
+                ? WEBDAV_ACCOUNT_PACING : ACCOUNT_PACING;
+    }
+
+    /**
+     * Recent failures for one account from every source together, within the counting window right now. This
+     * is the one count an attacker cannot start over: the two counts above are both kept per source, so an
+     * attempt that arrives under a source of its own begins both of them again at 1, and whoever can choose
+     * the source the request appears to come from can keep doing that. Counting the account's own failures as
+     * well means the delay keeps rising for the account under attack however the attempts are spread.
+     *
+     * <p>How much choice of source an attacker really has depends on the deployment: the source is
+     * {@link HttpServletRequest#getRemoteAddr()}, which {@code RemoteIpValve} replaces with a forwarded
+     * header when the request arrives from a proxy the configuration trusts. A proxy that appends the real
+     * peer leaves a forged header harmless; one that passes it through does not. See
+     * {@code docs/backend/CLIENT_ADDRESS_RESOLUTION.md}.
+     *
+     * <p>Used only to pace the login delay ({@link #pacingSeed}), never to decide a lockout, which is left
+     * to {@link #accountMaxFailures()} and its own row.
+     *
+     * @param userId the account the failed login was aimed at
+     * @param source the source the login came from, which decides whether WebDAV or browser failures are read
+     * @return the failures recorded for the account in the window, or 0 on a database error
+     */
+    @CloseDBIfOpened
+    public int accountFailures(final String userId, final String source) {
+        try {
+            final long windowCutoff = clock.getAsLong() - TimeUnit.SECONDS.toMillis(windowSeconds());
+            final List<Map<String, Object>> rows = new DotConnect()
+                    .setSQL(ACCOUNT_FAILURES_SQL)
+                    .addParam(userId).addParam(pacingSource(source)).addParam(windowCutoff)
+                    .loadObjectResults();
+            return rows.isEmpty() ? 0 : ((Number) rows.get(0).get("total")).intValue();
+        } catch (final DotDataException | RuntimeException e) {
+            Logger.error(this, "Unable to read account failures for " + userId + ": " + e.getMessage(), e);
+            return 0;
+        }
     }
 
     /**
