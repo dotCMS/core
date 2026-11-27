@@ -132,7 +132,11 @@ One page of OpenSearch documents walked with `search_after` on `identifier_dotra
 `variant`, `inode_dotraw` (doc-value fields, sorted with `unmapped_type` so an empty or new index does not
 fail; never sort on `_id`, whose field data is disabled by default in OpenSearch 3.x). The last key is a
 tiebreaker: variant names are case-sensitive, so variants `Foo` and `foo` of one content share the
-lower-cased `variant`, and without it `search_after` could skip one of them. Then **one** database query
+lower-cased `variant`, and without it `search_after` could skip one of them. Because `_id` itself cannot
+be sorted, two documents whose `_id`s differ only in case and carry the same inode still tie; a page is
+therefore never cut inside a group of equal sort values — it is extended until the values change, so
+no tied document is skipped at a page boundary. A document without `identifier_dotraw` is reported as
+`EXTRA` (it cannot belong to any database row) instead of failing the call. Then **one** database query
 for those keys, taken from each document's `_id` (original case, exact primary-key match). The `_id` is
 split anchored on the document's own fields — the identifier is the first `length(identifier_dotraw)`
 characters, then `_`, the `languageid`, `_`, and the rest is the variant — because identifiers
@@ -202,8 +206,8 @@ being retried after failures, parked after exhausting its retries, or absent —
 recorded, its cause. A missing document with no queue entry is a loss that left no trace and points at a
 different bug than a parked one.
 
-**Why this priority**: turns "what is missing" into "what is missing and why"; depends on an unmerged
-change (see Dependencies).
+**Why this priority**: turns "what is missing" into "what is missing and why"; reuses the queue
+classification merged in #38750 (see Dependencies).
 
 **Independent Test**: seed four missing documents — one with a queue row at normal priority, one being
 retried with a recorded cause, one parked, one with none — and check each comes back with `queued`,
@@ -300,22 +304,28 @@ document.
 - **FR-004**: The report MUST find every `MISSING`, `EXTRA` and `STALE` document matching the filters,
   using the page step and the reverse step. It MUST NOT rely on a sorted merge of the two sides.
 - **FR-005**: withdrawn with the `quick` mode (see Deviations).
-- **FR-006**: Keys and inodes MUST be compared in the normalized form the index stores (lower-cased
-  identifier, variant and inode), and database lookups from index documents MUST use the original-case
-  key from `_id`; the result MUST NOT depend on PostgreSQL and OpenSearch ordering identifiers the same
+- **FR-006**: Keys MUST be matched exactly as stored on each side — the document `_id` built from the
+  database key, and the database key parsed from the document `_id` (both in original case); only the
+  inode, which the index stores lower-cased, MUST be compared lower-cased; the result MUST NOT depend on PostgreSQL and OpenSearch ordering identifiers the same
   way. A synchronized instance that contains `SYSTEM_HOST` MUST report no rows, under any database
   collation.
 - **FR-007**: Results MUST be paginated with a stateless cursor carrying the page-step key position, the
   reverse-step `search_after` values, which step is running, and the physical name of the index being
   walked. If the slot's active index is no longer that one (a full reindex switched it, or the phase
   changed), the call MUST answer 409 telling the operator to restart the report, never resume against
-  another index. `limit` (rows returned, ≤ 1000) and the window (keys
-  scanned per step, ≤ 1000) are separate. The cursor MUST be validated for shape and bounds; a malformed
+  another index. `limit` (rows returned, ≤ 1000) and the window (keys scanned per step, ≤ 1000) are
+  separate. When `limit` stops a call before the end of a window, the cursor MUST resume right after the
+  last row returned (its database key, or its sort values in the reverse step), never after the last key
+  scanned, so no drifting row is skipped. The cursor MUST be validated for shape and bounds; a malformed
   one is 400, and no cursor value can widen a step beyond one window.
 - **FR-008**: `contentType` MUST narrow the scan to one content type; `since` MUST narrow it to rows
   whose `version_ts` is after the given instant, applied inside the scanned window. With `since`,
-  `EXTRA` is not reported and the response states it.
-- **FR-009**: The response MUST state the slot, the engine (`OS`), that each page is a point-in-time view, whether the call stopped on its
+  `EXTRA` is not reported, the reverse step is skipped entirely (it could report nothing), and the
+  response states it.
+- **FR-009**: The response MUST state the slot, the engine (`OS`), the physical index walked, that each
+  page is a point-in-time view, whether a full reindex is in progress (the report reads the active index,
+  not the one being rebuilt), how `EXTRA` is filtered when `contentType` is set (by the type recorded in
+  the document), that `EXTRA` is not reported when `since` is set, whether the call stopped on its
   deadline, and the next cursor (absent at the end).
 - **FR-010**: Every row's `journal` MUST be derived from the reindex queue: `parked` when
   `ReindexEntry.isParked()`; `retrying` when the row matches `ReindexQueueFactory`'s `FAILED_PREDICATE`
@@ -355,10 +365,9 @@ document.
   call that passed the node guard and keyed in a key space of its own (two-key form) so it cannot collide
   with other features' locks. Both are released when the call ends; the database lock is also released
   if the node or its connection dies mid-call.
-- **FR-020**: Whole-table totals, where reported, MUST reuse readiness's database counts
-  (`ContentIndexMirrorReconciler`) and MUST NOT be recomputed per page; those counts are a deliberate
-  sequential scan and are excluded from FR-017's check. The unit (one `contentlet_version_info` row per
-  document) is the same as readiness, so a slot with no drift reads 100 % in both endpoints.
+- **FR-020**: The report MUST NOT return whole-table totals; readiness already reports them (with the
+  same unit, one `contentlet_version_info` row per document, so a slot with no drift reads 100 % there and
+  zero rows here). Drift never runs a whole-table count.
 
 **Denial-of-service bound** — whatever a caller sends, and however often, the load the report puts on
 the database, OpenSearch and the application has a fixed ceiling. There is deliberately no "stop after N
@@ -376,14 +385,15 @@ drifting rows" parameter: the readiness count gap is a net difference (`MISSING 
 - **FR-035**: Each OpenSearch request MUST be a `_search` (id lookups as an `ids` query, not `_mget`)
   carrying at most one window of ids or one page of `search_after`, MUST ask OpenSearch to cancel the
   search on its side when its time runs out (`cancel_after_time_interval`, not only a client socket
-  timeout), and MUST treat a partial answer (`timed_out: true` or failed shards)
+  timeout), with that interval shorter than both the client socket timeout and the call's remaining
+  deadline, so the server-side cancel always fires before the client gives up, and MUST treat a partial answer (`timed_out: true` or failed shards)
   as a failed call, never as a result.
 - **FR-036**: A call MUST do all its work within the request: no retries, no background or deferred work
   that outlives the call and its guard.
 - **FR-037**: Every call MUST have a wall-clock deadline, configurable with a default, checked between
   statements and OpenSearch requests. On reaching it the call stops starting new work and returns the
-  rows found so far, the cursor and a "stopped on deadline" flag. The deadline MUST be shorter than any
-  `idle_in_transaction_session_timeout` the database may have, so the guard's transaction is never cut
+  rows found so far, the cursor and a "stopped on deadline" flag. The deadline MUST be shorter than the
+  database's `idle_in_transaction_session_timeout` when one is set (read at the start of the call), so the guard's transaction is never cut
   from outside (the pool's leak detection only logs, it does not cut; staying under it avoids noise). A client disconnect does not extend the call beyond it.
 - **FR-038**: Rejections (403, 429, 400) and timeouts MUST NOT log at a level or rate that a caller
   looping on them can use to flood the logs.
@@ -403,7 +413,8 @@ drifting rows" parameter: the readiness count gap is a net difference (`MISSING 
 - **FR-028**: The report MUST call the readiness gate `MigrationReadinessResource.isMigrationSupportUser`
   (backend user who is a CMS Administrator **and** holds the role named by
   `OS_MIGRATION_INDEX_VISIBILITY_ROLE_KEY`, default `os_migration_qa`), not a copy of it; anyone else
-  gets 403.
+  gets 403 with a generic message that does not mention a migration (readiness's current 403 text does,
+  `MigrationReadinessResource.java:102`; drift must not copy it).
 - **FR-029**: The report MUST be read-only: it writes nothing to the database, the reindex queue or any
   index.
 - **FR-030**: The report MUST be `@Hidden` from the public OpenAPI document, like readiness;
@@ -464,6 +475,13 @@ drifting rows" parameter: the readiness count gap is a net difference (`MISSING 
   additive, read-only and hidden. No database schema change and no index mapping change (neither is
   rollback-unsafe here). `PUT /api/v1/content/_refresh/{identifierOrInode}` is not changed; it stays the
   way to requeue a single document once the report has named it.
+- **Accepted risk — table read locks (decided 2026-11-27).** The guard's transaction stays open for the
+  whole call, so it holds a read lock on `contentlet_version_info`, `identifier` and
+  `dist_reindex_journal` until the call ends. A concurrent `ALTER TABLE` on one of them (e.g. a startup
+  task on another node during a rolling upgrade) waits, and later reads and writes of that table queue
+  behind it — content saves included — for at most the per-call deadline (FR-037). Accepted and to be
+  documented in the migration guide; the alternative (short per-step transactions under a session-level
+  lock released by hand) risks a lock left on a pooled connection.
 - **Known related decisions**: no new write path into the index (the issue's `_reindex` action was
   dropped). Transaction-scoped PostgreSQL advisory locks already serialize work in
   `FolderBulkDeleteHelper` (blocking variant); drift uses the non-blocking try variant. Related work: the
@@ -473,11 +491,10 @@ drifting rows" parameter: the readiness count gap is a net difference (`MISSING 
 
 ## Dependencies
 
-- **PR core#38750 (fix for #37270, branch `37270-failed-reindex-records-impl`), open.** It introduces
+- **PR core#38750 (fix for #37270), merged 2026-11-27 (3daf14ed1d).** It introduced
   `ReindexEntry.isParked()`, `ReindexQueueFactory`'s `FAILED_PREDICATE` and the recorded failure cause the
-  journal annotation (FR-010, User Story 2) reuses; `FAILED_PREDICATE` is `private` there and must be
-  made reachable. Until it merges, implementation branches off it; everything else in this spec is
-  independent of it.
+  journal annotation (FR-010, User Story 2) reuses. `FAILED_PREDICATE` is `private` and must be made
+  reachable. Implementation branches off `main`.
 
 ## Assumptions
 
