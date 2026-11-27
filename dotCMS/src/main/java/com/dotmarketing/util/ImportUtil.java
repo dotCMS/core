@@ -14,6 +14,7 @@ import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
@@ -81,6 +82,8 @@ import com.dotmarketing.util.importer.model.FileInfo;
 import com.dotmarketing.util.importer.model.FileInfo.Builder;
 import com.dotmarketing.util.importer.model.HeaderInfo;
 import com.dotmarketing.util.importer.model.HeaderValidationResult;
+import com.dotmarketing.util.importer.model.AbstractImportDestination.Source;
+import com.dotmarketing.util.importer.model.ImportDestination;
 import com.dotmarketing.util.importer.model.ImportResult;
 import com.dotmarketing.util.importer.model.LineImportResult;
 import com.dotmarketing.util.importer.model.ProcessedContentResult;
@@ -114,6 +117,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -481,24 +485,31 @@ public class ImportUtil {
                                 final var lineResult = resultBuilder.build();
                                 parseLineResults(counters, lineResult, messages, savedInodes,
                                         updatedInodes, true);
+                                lineResult.destination().ifPresent(counters::addDestination);
 
                                 //Storing the record keys we just imported for a later reference...
                                 if (!keyFields.isEmpty()) {
                                     storeKeyFieldValues(keyFields, csvLine, counters);
                                 }
 
-                                // Increment the successful imports counter
-                                successfulImports++;
+                                if (lineResult.ignoreLine()) {
+                                    // The line repeats a unique value of an earlier line of the
+                                    // file, so it was not imported: it is a failed row.
+                                    failedRows++;
+                                } else {
+                                    // Increment the successful imports counter
+                                    successfulImports++;
 
-                                // Handle transaction commits based on successful imports instead of line number
-                                if (successfulImports % params.commitGranularityOverride() == 0) {
-                                    handleBatchCommit(params.preview(), lineNumber);
-                                    counters.incCommits();
-                                    savepoint = null;
+                                    // Handle transaction commits based on successful imports instead of line number
+                                    if (successfulImports % params.commitGranularityOverride() == 0) {
+                                        handleBatchCommit(params.preview(), lineNumber);
+                                        counters.incCommits();
+                                        savepoint = null;
 
-                                    Logger.debug(ImportUtil.class,
-                                            "Committed batch at line " + lineNumber + " after " +
-                                                    successfulImports + " successful imports.");
+                                        Logger.debug(ImportUtil.class,
+                                                "Committed batch at line " + lineNumber + " after " +
+                                                        successfulImports + " successful imports.");
+                                    }
                                 }
                             } else {
                                 messages.add(ValidationMessage.builder()
@@ -736,6 +747,7 @@ public class ImportUtil {
                 .info(infoMessages)
                 .warning(warningMessages)
                 .error(errorMessages)
+                .destinations(counters.getDestinations())
                 .build();
     }
 
@@ -787,18 +799,19 @@ public class ImportUtil {
      * @param csvLine                  the array representing a line from a CSV file, containing
      *                                 language details
      * @return the language ID derived from the provided parameters or the original language value
-     * if valid
+     * if valid; -1 when the row's codes match no locale, which the caller reports as a
+     * locale-not-found error for the row
      */
     private static Long processLanguage(long language, int languageCodeHeaderColumn,
             int countryCodeHeaderColumn, String[] csvLine) {
 
         if (language == -1) {
             if (languageCodeHeaderColumn != -1 && countryCodeHeaderColumn != -1) {
-                Language dotCMSLanguage = langAPI.getLanguage(
+                final Language dotCMSLanguage = langAPI.getLanguage(
                         csvLine[languageCodeHeaderColumn],
                         csvLine[countryCodeHeaderColumn]
                 );
-                return dotCMSLanguage.getId();
+                return dotCMSLanguage == null ? -1L : dotCMSLanguage.getId();
             }
         }
 
@@ -1056,7 +1069,9 @@ public class ImportUtil {
      * Validates the basic format of header lines from the CSV file. Checks for:
      * <ul>
      *   <li>Non-empty header line</li>
-     *   <li>No duplicate header names</li>
+     *   <li>No duplicate header names. A repeated header is a warning, not an error: the import
+     *   goes ahead, and each row's value from the last of the repeated columns overwrites the
+     *   earlier ones, so the message says which column is used.</li>
      * </ul>
      *
      * @param headerLine        Array of header strings to validate
@@ -1082,12 +1097,13 @@ public class ImportUtil {
             String header = headerLine[i].replaceAll("'", "").toLowerCase();
             if (!uniqueHeaders.add(header)) {
                 validationBuilder.addMessages(ValidationMessage.builder()
-                        .type(ValidationMessageType.ERROR)
+                        .type(ValidationMessageType.WARNING)
                         .code(HeaderValidationCodes.DUPLICATE_HEADER.name())
                         .field(headerLine[i])
                         .lineNumber(1)
                         .message(LanguageUtil.get(user, "Duplicate-header-found") + ": "
-                                + headerLine[i])
+                                + headerLine[i] + ". " + LanguageUtil.get(user,
+                                "duplicate-header-last-column-is-imported"))
                         .build());
             }
         }
@@ -1519,8 +1535,9 @@ public class ImportUtil {
     }
 
     /**
-     * Validates key fields specified for the import. Ensures all specified key fields are present
-     * in the headers.
+     * Validates key fields specified for the import. A key field that is not a column of the file
+     * is reported as a warning, not an error: rows are still imported, matched on the key fields
+     * that are columns, so the message says the missing one is ignored.
      *
      * @param keyFieldsInodes   Array of field inodes used as keys
      * @param headers           Map of validated header-to-field mappings
@@ -1559,14 +1576,16 @@ public class ImportUtil {
                 Field keyField = FieldFactory.getFieldByInode(keyFieldInode);
                 validationBuilder.addMessages(
                         ValidationMessage.builder()
-                                .type(ValidationMessageType.ERROR)
+                                .type(ValidationMessageType.WARNING)
                                 .code(HeaderValidationCodes.INVALID_KEY_FIELD.name())
                                 .field(keyField.getVelocityVarName())
                                 .lineNumber(1)
                                 .message(LanguageUtil.get(user, "Key-field") + ": \"" +
                                         keyField.getVelocityVarName() + "\" " +
                                         LanguageUtil.get(user,
-                                                "choosen-doesn-t-match-any-of-theh-eaders-found-in-the-file"))
+                                                "choosen-doesn-t-match-any-of-theh-eaders-found-in-the-file")
+                                        + " " + LanguageUtil.get(user,
+                                                "key-field-ignored-when-matching-rows"))
                                 .build()
                 );
             }
@@ -1574,8 +1593,9 @@ public class ImportUtil {
     }
 
     /**
-     * Processes unique fields and adds appropriate warning messages. Alerts users about fields that
-     * require unique values. Creates a single consolidated warning message for all unique fields.
+     * Tells the user which fields require unique values, in one message for all of them. It is
+     * information, not a warning: it appears on every import of a type with unique fields, whatever
+     * the file holds. A row that actually repeats a unique value is reported on its own line.
      *
      * @param uniqueFields      List of fields marked as unique
      * @param user              User performing the import (unused, kept for compatibility)
@@ -1594,7 +1614,7 @@ public class ImportUtil {
 
         validationBuilder.addMessages(
                 ValidationMessage.builder()
-                        .type(ValidationMessageType.WARNING)
+                        .type(ValidationMessageType.INFO)
                         .code(HeaderValidationCodes.UNIQUE_FIELD.name())
                         .field(fieldNames) // Comma-separated list of unique fields
                         .lineNumber(1)
@@ -1870,6 +1890,26 @@ public class ImportUtil {
             }
 
             if (!resultBuilder.isNewContent()) {
+                // Updating several items with one unique value fails on save; say so up front,
+                // so the preview reports the same failed row the import would.
+                final Optional<Field> sharedUniqueField =
+                        uniqueFieldSharedByMatches(uniqueFields, headers, values, contentlets);
+                if (sharedUniqueField.isPresent()) {
+                    final Field field = sharedUniqueField.get();
+                    final String value = values.entrySet().stream()
+                            .filter(entry -> field.equals(headers.get(entry.getKey())))
+                            .map(entry -> String.valueOf(entry.getValue()))
+                            .findFirst().orElse("");
+                    throw ImportLineException.builder()
+                            .message(String.format("The key fields match %d items, and '%s' must"
+                                            + " be unique, so they can't all be set to '%s'",
+                                    contentlets.size(), field.getVelocityVarName(), value))
+                            .code(ImportLineValidationCodes.DUPLICATE_UNIQUE_VALUE.name())
+                            .field(field.getVelocityVarName())
+                            .invalidValue(value)
+                            .build();
+                }
+
                 if (conditionValues.isEmpty()
                         || !keyContentUpdated.contains(conditionValues)
                         || isMultilingual) {
@@ -1897,6 +1937,9 @@ public class ImportUtil {
                 }
             }
         }
+        resultBuilder.setDestination(resolveDestination(
+                siteAndFolder, contentlets, resultBuilder.isNewContent(), contentType));
+
          //Here we save the contentlet(s) and process the results
         final ProcessedContentResult processResult = processContent(
                 lineNumber,
@@ -1930,6 +1973,87 @@ public class ImportUtil {
         resultBuilder.incrementContentToUpdate(processResult.contentToUpdate());
         resultBuilder.incrementUpdatedContent(processResult.updatedContent());
         resultBuilder.incrementDuplicateContent(processResult.duplicateContent());
+    }
+
+    /**
+     * Works out where a line's content lands, the same way the import places it (#37896).
+     * <p>
+     * A site/folder from the line wins. Without one, content that already exists keeps its place,
+     * and new content goes to its content type's own site/folder, which is what checkin falls back
+     * to. Nothing here changes where content is placed; it only reports it.
+     *
+     * @param siteAndFolder the site and folder the line names, or {@code null}
+     * @param contentlets   the contentlets the line creates or updates
+     * @param isNewContent  whether the line creates new content
+     * @param contentType   the content type being imported
+     * @return the destination, or {@code null} when it can't be resolved
+     */
+    private static ImportDestination resolveDestination(final Pair<Host, Folder> siteAndFolder,
+            final List<Contentlet> contentlets, final boolean isNewContent,
+            final Structure contentType) {
+        try {
+            if (siteAndFolder != null && siteAndFolder.getLeft() != null) {
+                return destination(siteAndFolder.getLeft().getHostname(),
+                        folderPath(siteAndFolder.getRight()), Source.CSV);
+            }
+
+            final String existingIdentifier = contentlets.stream()
+                    .map(Contentlet::getIdentifier)
+                    .filter(UtilMethods::isSet)
+                    .findFirst().orElse(null);
+            if (existingIdentifier != null) {
+                final Identifier identifier =
+                        APILocator.getIdentifierAPI().find(existingIdentifier);
+                if (identifier != null && UtilMethods.isSet(identifier.getHostId())) {
+                    final Host host = APILocator.getHostAPI()
+                            .find(identifier.getHostId(), APILocator.systemUser(), false);
+                    return destination(host.getHostname(), identifier.getParentPath(),
+                            Source.EXISTING);
+                }
+            }
+
+            if (isNewContent) {
+                final Host host = APILocator.getHostAPI()
+                        .find(contentType.getHost(), APILocator.systemUser(), false);
+                final Folder folder = APILocator.getFolderAPI()
+                        .find(contentType.getFolder(), APILocator.systemUser(), false);
+                return destination(host.getHostname(), folderPath(folder),
+                        Source.CONTENT_TYPE_DEFAULT);
+            }
+        } catch (final DotDataException | DotSecurityException e) {
+            Logger.debug(ImportUtil.class, () -> "Could not resolve a line's destination: "
+                    + e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * A folder's path for a destination; the system folder, or no folder, is the site root.
+     *
+     * @param folder the folder, possibly {@code null}
+     * @return the folder path, starting and ending with {@code /}
+     */
+    private static String folderPath(final Folder folder) {
+        return folder == null || folder.isSystemFolder() || !UtilMethods.isSet(folder.getPath())
+                ? "/"
+                : folder.getPath();
+    }
+
+    /**
+     * Builds a one-row destination.
+     *
+     * @param hostname the site's hostname
+     * @param path     the folder path within the site
+     * @param source   why the row lands there
+     * @return the destination
+     */
+    private static ImportDestination destination(final String hostname, final String path,
+            final Source source) {
+        return ImportDestination.builder()
+                .path("//" + hostname + (path.startsWith("/") ? path : "/" + path))
+                .rows(1)
+                .source(source)
+                .build();
     }
 
     /**
@@ -4719,8 +4843,58 @@ public class ImportUtil {
     }
 
     /**
-     * Validates if Action associated to the Contentlet can be executed validating permissions
-     * and the step of the Contentlet
+     * Finds the unique field, if any, that a row would set to the same value on more than one of
+     * the items its key fields matched. Saving those items would break the field's uniqueness, so
+     * the row can't be imported. A field that is unique per site only conflicts when two of the
+     * items are on the same site.
+     *
+     * @param uniqueFields the content type's unique {@link Field}s
+     * @param headers      the file's columns, by index, mapped to their {@link Field}
+     * @param values       the row's values, by column index
+     * @param matches      the {@link Contentlet}s the row's key fields matched
+     * @return the conflicting field, or empty when the row can update every match
+     */
+    private static Optional<Field> uniqueFieldSharedByMatches(final List<Field> uniqueFields,
+            final Map<Integer, Field> headers, final Map<Integer, Object> values,
+            final List<Contentlet> matches) {
+
+        final Map<String, String> siteByItem = new HashMap<>();
+        matches.forEach(match -> siteByItem.put(match.getIdentifier(), match.getHost()));
+        if (siteByItem.size() < 2) {
+            return Optional.empty();
+        }
+
+        return headers.entrySet().stream()
+                .filter(column -> uniqueFields.contains(column.getValue()))
+                .filter(column -> UtilMethods.isSet(values.get(column.getKey()))
+                        && UtilMethods.isSet(values.get(column.getKey()).toString()))
+                .map(Map.Entry::getValue)
+                .filter(field -> !isUniquePerSite(field)
+                        || new HashSet<>(siteByItem.values()).size() < siteByItem.size())
+                .findFirst();
+    }
+
+    /**
+     * Whether a unique field only has to be unique within each site.
+     *
+     * @param field the unique {@link Field}
+     * @return {@code true} when it is unique per site, {@code false} when unique across sites
+     */
+    private static boolean isUniquePerSite(final Field field) {
+        return LegacyFieldTransformer.from(field)
+                .fieldVariableValue(ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)
+                .map(Boolean::valueOf).orElse(false);
+    }
+
+    /**
+     * Checks that the workflow action set on the content exists, that the user may run it, and that
+     * it belongs to the content's current step.
+     *
+     * @param user       the {@link User} running the import
+     * @param contentlet the {@link Contentlet} of the row, carrying the action id to run
+     * @return the {@link WorkflowAction} to run
+     * @throws ImportLineException when the action doesn't exist, the user may not run it, or it
+     *                             can't run on the content; the message names the action id
      */
     private static WorkflowAction validateWorkflowAction(final User user,
             final Contentlet contentlet) throws ImportLineException {
@@ -4728,6 +4902,15 @@ public class ImportUtil {
         WorkflowAction executeWfAction;
         String actionId = contentlet.getActionId();
         try {
+
+            // An id that matches no action is reported as such, rather than failing further down
+            if (null == workflowAPI.findAction(actionId, APILocator.systemUser())) {
+                throw ImportLineException.builder()
+                        .message(String.format("Workflow Action '%s' doesn't exist", actionId))
+                        .code(ImportLineValidationCodes.INVALID_WORKFLOW_ACTION.name())
+                        .context(Map.of("WorkflowActionId", actionId))
+                        .build();
+            }
 
             //Validate the permissions over the action to execute
             executeWfAction = workflowAPI
@@ -4829,9 +5012,9 @@ public class ImportUtil {
                         resultBuilder.incrementContentToCreate(-1);
                         ignoreLine = true;
                         if(!stopOnError) {
-                            //this is clearly an error that will cause an exception that will be thrown downstream
-                            //Therefore we don't need it reported twice so only log it as a warning when stopOnError is not on
-                            resultBuilder.addValidationMessage(dupeWarning(user, lineNumber, f, bean));
+                            //With stopOnError on, the line is not ignored and the save throws downstream,
+                            //which reports it; otherwise the line is skipped here and reported as an error
+                            resultBuilder.addValidationMessage(dupeError(user, lineNumber, f, bean));
                         }
                     }
                     value = bean.value();
@@ -4843,18 +5026,20 @@ public class ImportUtil {
     }
 
     /**
-     * Build the warning message describing the offending dupe value encountered situation
-     * @param user
-     * @param lineNumber
-     * @param f
-     * @param bean
-     * @return
-     * @throws LanguageException
+     * Builds the error for a line that repeats, for a unique field, the value of an earlier line of
+     * the same file. The line is skipped, so it is an error and counts as a failed row.
+     *
+     * @param user       the {@link User} the message is localized for
+     * @param lineNumber the line of the file that is skipped
+     * @param f          the unique {@link Field} whose value is repeated
+     * @param bean       the repeated value
+     * @return the error message for the line
+     * @throws LanguageException if the message can't be localized
      */
-    private static ValidationMessage dupeWarning(User user, int lineNumber, Field f,
+    private static ValidationMessage dupeError(User user, int lineNumber, Field f,
             UniqueFieldBean bean) throws LanguageException {
         return ValidationMessage.builder()
-                .type(ValidationMessageType.WARNING)
+                .type(ValidationMessageType.ERROR)
                 .message(dupeUniqueFieldMessage(user, f.getVelocityVarName()))
                 .code(ImportLineValidationCodes.DUPLICATE_UNIQUE_VALUE.name())
                 .field(bean.field().getVelocityVarName())
@@ -4931,6 +5116,28 @@ public class ImportUtil {
         private final Collection<Map<String, String>> keys = new ArrayList<>();
 
         private String lastInode = "";
+
+        /** Rows per destination path and source, in the order first seen (#37896). */
+        private final Map<String, ImportDestination> destinations = new LinkedHashMap<>();
+
+        /**
+         * Counts one more row towards a destination.
+         *
+         * @param destination a line's destination
+         */
+        public void addDestination(final ImportDestination destination) {
+            destinations.merge(destination.source() + "|" + destination.path(), destination,
+                    (counted, added) -> counted.withRows(counted.rows() + added.rows()));
+        }
+
+        /**
+         * The destinations counted so far.
+         *
+         * @return one entry per destination path and source
+         */
+        public List<ImportDestination> getDestinations() {
+            return new ArrayList<>(destinations.values());
+        }
 
         public int getContentToCreate() {
             return contentToCreate;
@@ -5036,21 +5243,24 @@ public class ImportUtil {
     }
 
     /**
-     * 
-     * @param field
-     * @return
+     * Whether a CSV import has a column for a field: layout and tab fields hold no content.
+     * The CSV template served by the content import REST API uses the same rule.
+     *
+     * @param field a content type field
+     * @return {@code true} when the field can be imported
      */
-    public static boolean isImportableField ( Field field ) {
-        return !(
-                field.getFieldType().equals( Field.FieldType.BUTTON.toString() ) ||
-                field.getFieldType().equals( Field.FieldType.LINE_DIVIDER.toString() ) ||
-                field.getFieldType().equals( Field.FieldType.TAB_DIVIDER.toString() ) ||
-                field.getFieldType().equals( Field.FieldType.PERMISSIONS_TAB.toString()) ||
-                field.getFieldType().equals(Field.FieldType.COLUMN.toString())      ||  
-                field.getFieldType().equals(Field.FieldType.ROW.toString())    
-                        
-                );
+    public static boolean isImportableField(final Field field) {
+        return !NOT_IMPORTABLE_FIELD_TYPES.contains(field.getFieldType());
     }
+
+    /** Field types that hold no content of their own, so an import has no column for them. */
+    private static final Set<String> NOT_IMPORTABLE_FIELD_TYPES = Set.of(
+            Field.FieldType.BUTTON.toString(),
+            Field.FieldType.LINE_DIVIDER.toString(),
+            Field.FieldType.TAB_DIVIDER.toString(),
+            Field.FieldType.PERMISSIONS_TAB.toString(),
+            Field.FieldType.COLUMN.toString(),
+            Field.FieldType.ROW.toString());
 
     /**
      * 
@@ -5136,6 +5346,7 @@ public class ImportUtil {
         private String lastInode;
         private boolean ignoreLine;
         private boolean isNewContent;
+        private ImportDestination destination;
 
         public LineImportResultBuilder(int lineNumber) {
             this.builder = LineImportResult.builder();
@@ -5161,6 +5372,15 @@ public class ImportUtil {
 
         public void setUpdatedInodes(List<String> updatedInodes) {
             this.updatedInodes.addAll(updatedInodes);
+        }
+
+        /**
+         * Records where this line's content lands (#37896).
+         *
+         * @param destination the line's destination
+         */
+        public void setDestination(final ImportDestination destination) {
+            this.destination = destination;
         }
 
         public void setIgnoreLine(boolean ignoreLine) {
@@ -5221,6 +5441,7 @@ public class ImportUtil {
                     .updatedContent(updatedContentCount)
                     .duplicateContent(duplicateContentCount)
                     .lastInode(lastInode)
+                    .destination(Optional.ofNullable(destination))
                     .build();
         }
     }

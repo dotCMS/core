@@ -411,9 +411,9 @@ no data rows, the form is still filled in, and replacing the file lets the user 
   field values); it MUST NOT change where rows are placed. Content Drive MUST always send the site
   it is browsing. When no site is sent, the endpoint MUST behave as today. A site that doesn't
   exist or that the user can't read MUST be refused.
-- **FR-024**: A new server endpoint MUST return, for a content type, the same sample CSV Content
-  Search's import produces, and MUST refuse users who can't read that content type. Content Search
-  keeps its own download unchanged.
+- **FR-024**: The sample CSV MUST come from the server endpoint Content Search's import already
+  downloads its CSV template from, so both offer the same file. That endpoint refuses users who
+  can't read the content type.
 - **FR-025**: The sample CSV download MUST only be offered once a content type is picked.
 - **FR-026**: The import endpoint's documentation MUST state that leaving `language` out, or sending
   `-1`, means a multilingual file, MUST describe the new site parameter, and the generated API
@@ -455,10 +455,10 @@ no data rows, the form is still filled in, and replacing the file lets the user 
 ## Legacy Considerations *(dotCMS-specific — mandatory)*
 
 - **Existing behavior touched**: Content Search's import (the legacy Struts flow and its JSP
-  screens) is the reference. It is not changed or removed, and it keeps its own sample download.
-  The server's REST import, which already powers both validation and import as background jobs, is
-  reused and gains an optional site parameter. A sample CSV endpoint is added next to it, with the
-  logic that today exists only inside the legacy action made reusable. The Drive's Upload control
+  screens) is the reference. It is not changed or removed. The server's REST import, which already
+  powers both validation and import as background jobs, is reused and gains an optional site
+  parameter. The sample CSV comes from the CSV template endpoint next to it, which Content Search's
+  import also downloads from. The Drive's Upload control
   changes: it is always available and becomes a menu in every folder.
 - **Backward-compatibility expectations**: Content Search's import keeps working unchanged. Callers
   of the REST import that don't send a site keep today's behavior; its documentation of `language`

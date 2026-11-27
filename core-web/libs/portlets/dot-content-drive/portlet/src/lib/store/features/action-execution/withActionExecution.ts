@@ -45,6 +45,8 @@ import {
     DotWorkflowPushPublishValue
 } from '@dotcms/dotcms-models';
 
+import { withImportRuns } from './withImportRuns';
+
 import {
     DELETE_FOLDER_OPERATION,
     DUPLICATE_FOLDER_OPERATION,
@@ -60,6 +62,23 @@ import {
 } from '../../../shared/models';
 import { toParentFolderRefs } from '../../../utils/action-center';
 import { browsedFolderRef, normalizeFolderRef, uploadIndicatorKey } from '../../../utils/functions';
+
+/**
+ * How many completions this page holds for a job it is not tracking yet. A small job can finish,
+ * and its completion be pushed, before the answer that queued it arrives; the answer claims it.
+ * Bounded, because another tab's completions arrive here too and nothing ever claims those.
+ */
+const MAX_UNCLAIMED_COMPLETIONS = 20;
+
+/**
+ * Adds an unclaimed completion, keeping only the most recent {@link MAX_UNCLAIMED_COMPLETIONS}.
+ */
+const holdUnclaimed = <T>(held: Record<string, T>, jobId: string, entry: T): Record<string, T> =>
+    Object.fromEntries(
+        [...Object.entries(held).filter(([id]) => id !== jobId), [jobId, entry] as const].slice(
+            -MAX_UNCLAIMED_COMPLETIONS
+        )
+    );
 
 /** The status indicator's wording for a duplicate of this many folders. */
 const duplicateIndicatorKey = (count: number): string =>
@@ -169,15 +188,25 @@ interface WithActionExecutionState {
      * active listing is still being read arrives here too, and the restore reports it from here
      * once the listing shows it is theirs, rather than losing its outcome and its refresh.
      *
-     * Held only until that restore has run, which it does once, on load: nothing claims an entry
-     * after it, so the restore drops what it left and later completions are not held at all.
+     * And a batch whose completion outruns the answer that accepted it lands here as well, and
+     * {@link trackUploadJob} reports it from here once that answer arrives.
+     *
+     * The restore drops what it left; later completions are still held, a bounded number of them,
+     * for the answer still on its way.
      */
     unclaimedUploadCompletions: Record<
         string,
         { actionName: string; event: DotBulkUploadCompletedEvent }
     >;
-    /** Whether the restore on load has run, after which no completion is held for it. */
-    uploadRunsRestored: boolean;
+    /**
+     * Reindex completions this page was not tracking when they arrived, by job id: another tab's,
+     * or one of this page's that finished before the answer that queued it. That answer claims it.
+     * A bounded number, as {@link unclaimedUploadCompletions}.
+     */
+    unclaimedRefreshCompletions: Record<
+        string,
+        { actionName: string; event: DotBulkRefreshCompletedEvent }
+    >;
     /**
      * A folder duplication the server refused, as the kind it refused it for.
      *
@@ -206,6 +235,22 @@ export function withActionExecution() {
         {
             state: type<DotContentDriveState>()
         },
+        withRunExecution(),
+        // CSV imports (#37896) in their own feature, on top of the public run methods.
+        withImportRuns()
+    );
+}
+
+/**
+ * The runs, their status indicator and their outcomes, shared by every operation. Kept apart from
+ * {@link withActionExecution} so a feature such as {@link withImportRuns} can be composed on top of
+ * its public methods: chained in one feature, the methods type widens and cannot be required.
+ */
+function withRunExecution() {
+    return signalStoreFeature(
+        {
+            state: type<DotContentDriveState>()
+        },
         withState<WithActionExecutionState>({
             runs: {},
             actionExecutionResults: [],
@@ -218,7 +263,7 @@ export function withActionExecution() {
             settledDuplicateJobs: [],
             settledUploadJobs: [],
             unclaimedUploadCompletions: {},
-            uploadRunsRestored: false,
+            unclaimedRefreshCompletions: {},
             folderDuplicateRefusal: undefined
         }),
         withComputed(({ runs, actionExecutionResults }) => ({
@@ -564,19 +609,15 @@ export function withActionExecution() {
 
                     if (!isTrackedUpload(event.jobId)) {
                         // Not ours, as far as this page knows: another tab's batch, or one of
-                        // this author's finishing before the restore has placed it. Silent by
-                        // design — an error here would blame this author for someone else's —
-                        // and held, so the restore can still report it if it is theirs. Not once
-                        // it has run: nothing would claim it then.
-                        if (store.uploadRunsRestored()) {
-                            return;
-                        }
-
+                        // this author's finishing before the restore, or the answer that accepted
+                        // it, has placed it. Silent by design — an error here would blame this
+                        // author for someone else's — and held, so either can still report it.
                         patchState(store, {
-                            unclaimedUploadCompletions: {
-                                ...store.unclaimedUploadCompletions(),
-                                [event.jobId]: { actionName, event }
-                            }
+                            unclaimedUploadCompletions: holdUnclaimed(
+                                store.unclaimedUploadCompletions(),
+                                event.jobId,
+                                { actionName, event }
+                            )
                         });
 
                         return;
@@ -918,13 +959,109 @@ export function withActionExecution() {
                 };
 
                 /**
-                 * Drops the completions nobody claimed, which belong to other tabs or other
-                 * authors, and stops holding new ones: nothing would claim them after the restore.
+                 * Drops the completions the restore did not claim, which belong to other tabs or
+                 * other authors.
                  */
                 const dropUnclaimedUploadCompletions = (): void => {
+                    patchState(store, { unclaimedUploadCompletions: {} });
+                };
+
+                /**
+                 * Reports a finished bulk refresh, from the pushed completion event.
+                 *
+                 * Feeds the same {@link onSettled} path as every other action, so the toast copy,
+                 * severity, grid reload and selection clear all behave identically — with its own
+                 * partial-outcome wording, because a reindex falls short for different reasons than a
+                 * workflow fire.
+                 *
+                 * Three ways a run can arrive with nothing honest to report, all of which would
+                 * otherwise render as a green success toast:
+                 *
+                 * 1. No counters at all.
+                 * 2. A state whose counters describe only how far the job got before dying — a
+                 *    permanently failed job still carries the counters it had reached, so an all-zero
+                 *    result is indistinguishable from a clean run over nothing unless state is checked.
+                 * 3. Counters that do not close over `total`, meaning the run did not account for
+                 *    every item and the shortfall is unexplained.
+                 */
+                const reportRefreshCompleted = (
+                    actionName: string,
+                    event: DotBulkRefreshCompletedEvent
+                ): void => {
+                    if (!event.jobId) {
+                        return;
+                    }
+
+                    if (!store.refreshJobIds().includes(event.jobId)) {
+                        // Not ours as far as this page knows: another tab's run, or one of this
+                        // page's that finished before its answer arrived. Silent by design - an
+                        // error toast here would blame the user for somebody else's event - and
+                        // held, so that answer can still report it.
+                        patchState(store, {
+                            unclaimedRefreshCompletions: holdUnclaimed(
+                                store.unclaimedRefreshCompletions(),
+                                event.jobId,
+                                { actionName, event }
+                            )
+                        });
+
+                        return;
+                    }
+
                     patchState(store, {
-                        unclaimedUploadCompletions: {},
-                        uploadRunsRestored: true
+                        refreshJobIds: store.refreshJobIds().filter((id) => id !== event.jobId)
+                    });
+
+                    const closes =
+                        undefined !== event.total &&
+                        (event.successCount ?? 0) +
+                            (event.failedCount ?? 0) +
+                            (event.skippedCount ?? 0) ===
+                            event.total;
+
+                    if ('SUCCESS' !== event.state && 'CANCELED' !== event.state) {
+                        // Note what is not touched: actionExecution. It may belong to a different
+                        // action that is still running - a reindex no longer locks the dialog, so
+                        // that is an ordinary situation, and clearing it here would un-gate that
+                        // action early.
+                        httpErrorManagerService.handle(
+                            new HttpErrorResponse({
+                                status: 500,
+                                statusText: `The reindex did not report a usable outcome (state: ${event.state})`
+                            })
+                        );
+
+                        return;
+                    }
+
+                    if (!closes) {
+                        httpErrorManagerService.handle(
+                            new HttpErrorResponse({
+                                status: 500,
+                                statusText: 'The reindex counters did not account for every item'
+                            })
+                        );
+
+                        return;
+                    }
+
+                    // Still not onSettled, but for a smaller reason now: a reindex never
+                    // registered a run, so there is nothing to settle. Before the registry this
+                    // also had to avoid wiping a *different* action's slot; keying runs by id
+                    // removed that hazard.
+                    patchState(store, {
+                        actionExecutionResults: [
+                            ...store.actionExecutionResults(),
+                            {
+                                actionName,
+                                successCount: event.successCount ?? 0,
+                                skippedCount: event.skippedCount ?? 0,
+                                failedCount: event.failedCount ?? 0,
+                                partialDetailKey:
+                                    'content-drive.action-center.toast.refreshed-partial',
+                                backgrounded: true
+                            }
+                        ]
                     });
                 };
 
@@ -1121,94 +1258,22 @@ export function withActionExecution() {
                                 patchState(store, {
                                     refreshJobIds: [...store.refreshJobIds(), response.jobId]
                                 });
+
+                                // A run over a few rows can finish before this answer arrives; its
+                                // completion was held, and is reported now.
+                                const held = store.unclaimedRefreshCompletions();
+
+                                if (Object.hasOwn(held, response.jobId)) {
+                                    const { actionName: heldName, event } = held[response.jobId];
+                                    const remaining = { ...held };
+                                    delete remaining[response.jobId];
+                                    patchState(store, { unclaimedRefreshCompletions: remaining });
+                                    reportRefreshCompleted(heldName, event);
+                                }
                             });
                     },
 
-                    /**
-                     * Reports a finished bulk refresh, from the pushed completion event.
-                     *
-                     * Feeds the same {@link onSettled} path as every other action, so the toast copy,
-                     * severity, grid reload and selection clear all behave identically — with its own
-                     * partial-outcome wording, because a reindex falls short for different reasons than a
-                     * workflow fire.
-                     *
-                     * Three ways a run can arrive with nothing honest to report, all of which would
-                     * otherwise render as a green success toast:
-                     *
-                     * 1. No counters at all.
-                     * 2. A state whose counters describe only how far the job got before dying — a
-                     *    permanently failed job still carries the counters it had reached, so an all-zero
-                     *    result is indistinguishable from a clean run over nothing unless state is checked.
-                     * 3. Counters that do not close over `total`, meaning the run did not account for
-                     *    every item and the shortfall is unexplained.
-                     */
-                    reportRefreshCompleted: (
-                        actionName: string,
-                        event: DotBulkRefreshCompletedEvent
-                    ): void => {
-                        if (!event.jobId || !store.refreshJobIds().includes(event.jobId)) {
-                            // Not ours: another tab's run, or one already settled. Silent by design -
-                            // an error toast here would blame the user for somebody else's event.
-                            return;
-                        }
-
-                        patchState(store, {
-                            refreshJobIds: store.refreshJobIds().filter((id) => id !== event.jobId)
-                        });
-
-                        const closes =
-                            undefined !== event.total &&
-                            (event.successCount ?? 0) +
-                                (event.failedCount ?? 0) +
-                                (event.skippedCount ?? 0) ===
-                                event.total;
-
-                        if ('SUCCESS' !== event.state && 'CANCELED' !== event.state) {
-                            // Note what is not touched: actionExecution. It may belong to a different
-                            // action that is still running - a reindex no longer locks the dialog, so
-                            // that is an ordinary situation, and clearing it here would un-gate that
-                            // action early.
-                            httpErrorManagerService.handle(
-                                new HttpErrorResponse({
-                                    status: 500,
-                                    statusText: `The reindex did not report a usable outcome (state: ${event.state})`
-                                })
-                            );
-
-                            return;
-                        }
-
-                        if (!closes) {
-                            httpErrorManagerService.handle(
-                                new HttpErrorResponse({
-                                    status: 500,
-                                    statusText:
-                                        'The reindex counters did not account for every item'
-                                })
-                            );
-
-                            return;
-                        }
-
-                        // Still not onSettled, but for a smaller reason now: a reindex never
-                        // registered a run, so there is nothing to settle. Before the registry this
-                        // also had to avoid wiping a *different* action's slot; keying runs by id
-                        // removed that hazard.
-                        patchState(store, {
-                            actionExecutionResults: [
-                                ...store.actionExecutionResults(),
-                                {
-                                    actionName,
-                                    successCount: event.successCount ?? 0,
-                                    skippedCount: event.skippedCount ?? 0,
-                                    failedCount: event.failedCount ?? 0,
-                                    partialDetailKey:
-                                        'content-drive.action-center.toast.refreshed-partial',
-                                    backgrounded: true
-                                }
-                            ]
-                        });
-                    },
+                    reportRefreshCompleted,
 
                     /**
                      * Fires the selected workflow action over the given contentlet inodes.
@@ -1460,6 +1525,15 @@ export function withActionExecution() {
                                 })
                             )
                             .subscribe((handle) => {
+                                // A delete of a few folders can finish, and its completion be
+                                // reported, before this answer arrives. Tracking it now would
+                                // leave its folders marked in flight with nothing left to end it.
+                                if (store.settledFolderDeleteJobs().includes(handle.jobId)) {
+                                    endRun(runId);
+
+                                    return;
+                                }
+
                                 // The server's count, not the caller's. The two disagree whenever a
                                 // duplicate or a nested path is dropped, and the first screen has to
                                 // agree with the last (CR-03). Left as submitted when the instance
@@ -1652,7 +1726,33 @@ export function withActionExecution() {
                         dropUnclaimedUploadCompletions();
                     },
 
-                    trackUploadJob,
+                    /**
+                     * Remembers a batch this page submitted, so its completion can be told from
+                     * another tab's, and reports it right away when that completion has already
+                     * arrived: a small batch can finish before the answer that accepted it.
+                     *
+                     * @param affectedFolders where the batch landed, as `//hostname/path` refs
+                     */
+                    trackUploadJob: (
+                        jobId: string,
+                        affectedFolders: string[] = [],
+                        runId?: string,
+                        baseType?: string
+                    ): void => {
+                        trackUploadJob(jobId, affectedFolders, runId, baseType);
+
+                        const held = store.unclaimedUploadCompletions();
+
+                        if (!Object.hasOwn(held, jobId)) {
+                            return;
+                        }
+
+                        const { actionName, event } = held[jobId];
+                        const remaining = { ...held };
+                        delete remaining[jobId];
+                        patchState(store, { unclaimedUploadCompletions: remaining });
+                        reportUploadCompleted(actionName, event);
+                    },
 
                     reportUploadCompleted,
 

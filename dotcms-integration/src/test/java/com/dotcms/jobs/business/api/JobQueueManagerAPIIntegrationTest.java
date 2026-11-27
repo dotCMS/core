@@ -817,6 +817,50 @@ public class JobQueueManagerAPIIntegrationTest extends com.dotcms.Junit5WeldBase
         }
     }
 
+    /**
+     * Method to test: createJob waking the job queue's idle workers (#37896, PR #38054 review)
+     * Given Scenario: every worker has found the queue empty long enough to back off to a long
+     * sleep (1s, 2s, 4s, 8s, 16s... up to 30s), and then a job is created
+     * ExpectedResult: the job starts and finishes within a few seconds, instead of waiting for a
+     * worker's backoff to run out
+     */
+    @Test
+    void test_JobCreatedOnAnIdleQueueStartsRightAway() throws Exception {
+        jobQueueManagerAPI.registerProcessor("idleWakeQueue", InstantJobProcessor.class);
+        if (!jobQueueManagerAPI.isStarted()) {
+            jobQueueManagerAPI.start();
+            jobQueueManagerAPI.awaitStart(5, TimeUnit.SECONDS);
+        }
+
+        // Long enough for every worker to back off past 16s: none would poll again for seconds.
+        Awaitility.await().pollDelay(20, TimeUnit.SECONDS).atMost(21, TimeUnit.SECONDS)
+                .until(() -> true);
+
+        final Map<String, Object> parameters = new HashMap<>();
+        parameters.put("testParam", "testValue");
+        final String jobId = jobQueueManagerAPI.createJob("idleWakeQueue", parameters);
+
+        Awaitility.await().atMost(3, TimeUnit.SECONDS)
+                .pollInterval(50, TimeUnit.MILLISECONDS)
+                .untilAsserted(() -> assertEquals(JobState.SUCCESS,
+                        jobQueueManagerAPI.getJob(jobId).state(),
+                        "A job created on an idle queue should not wait for a worker's backoff"));
+    }
+
+    /** A processor that does nothing, so the time to SUCCESS is the time to be picked up. */
+    static class InstantJobProcessor implements JobProcessor {
+
+        @Override
+        public void process(Job job) {
+            // Nothing to do: the test measures how soon the job is taken.
+        }
+
+        @Override
+        public Map<String, Object> getResultMetadata(Job job) {
+            return new HashMap<>();
+        }
+    }
+
     static class TestJobProcessor implements JobProcessor {
 
         @Override

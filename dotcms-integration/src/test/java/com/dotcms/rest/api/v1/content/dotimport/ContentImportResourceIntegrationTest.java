@@ -66,6 +66,12 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import java.util.Map;
+import com.dotcms.jobs.business.job.JobResult;
+import com.dotcms.rest.exception.ForbiddenException;
+import com.dotcms.datagen.SiteDataGen;
+import java.util.Arrays;
+import com.dotmarketing.business.Permissionable;
 
 /**
  * Integration test suite for content import functionality.
@@ -641,6 +647,178 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
         assertBadRequestResponse(importResource.validateContentImport(request, response, params));
     }
 
+    /**
+     * Given scenario: a preview is requested with {@code site} set to another site's identifier.
+     * Expected result: the job runs against that site, not the session's (#37896, FR-023).
+     */
+    @Test
+    void test_validate_with_site_id_uses_that_site() throws Exception {
+        final Host otherSite = new SiteDataGen().nextPersisted();
+        final ContentImportForm form = createContentImportForm(contentType.name(),
+                String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
+                List.of(fieldId), otherSite.getIdentifier());
+
+        final Response result = importResource.validateContentImport(request, response,
+                createContentImportParams(csvFile, form));
+
+        final Job job = jobOf(result);
+        assertEquals(otherSite.getIdentifier(), job.parameters().get("siteIdentifier"));
+        assertEquals(otherSite.getHostname(), job.parameters().get("siteName"));
+    }
+
+    /**
+     * Given scenario: an import is requested with {@code site} set to another site's hostname.
+     * Expected result: the hostname resolves, and the job runs against that site (#37896, FR-023).
+     */
+    @Test
+    void test_import_with_site_hostname_uses_that_site() throws Exception {
+        final Host otherSite = new SiteDataGen().nextPersisted();
+        final ContentImportForm form = createContentImportForm(contentType.name(),
+                String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
+                List.of(fieldId), otherSite.getHostname());
+
+        final Response result = importResource.importContent(request, response,
+                createContentImportParams(csvFile, form));
+
+        assertEquals(otherSite.getIdentifier(), jobOf(result).parameters().get("siteIdentifier"));
+    }
+
+    /**
+     * Given scenario: a preview names another site in {@code site}, and is refused for a reason
+     * unrelated to the site (an unknown workflow action).
+     * Expected result: 400, and the refused job reports the site the request named, not the
+     * session's (PR #38054 review).
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    void test_refused_validate_reports_the_requested_site() throws Exception {
+        final Host otherSite = new SiteDataGen().nextPersisted();
+        final ContentImportForm form = createContentImportForm(contentType.name(),
+                String.valueOf(defaultLanguage.getId()), "no-such-action",
+                List.of(fieldId), otherSite.getIdentifier());
+
+        final Response result = importResource.validateContentImport(request, response,
+                createContentImportParams(csvFile, form));
+
+        assertBadRequestResponse(result);
+        final JobView refused = ((ResponseEntityView<JobView>) result.getEntity()).getEntity();
+        assertEquals(otherSite.getIdentifier(), refused.parameters().get("siteIdentifier"));
+        assertEquals(otherSite.getHostname(), refused.parameters().get("siteName"));
+    }
+
+    /**
+     * Given scenario: {@code site} names a site that doesn't exist.
+     * Expected result: the request is refused with 400 and no job runs (#37896, FR-023).
+     */
+    @Test
+    void test_validate_with_unknown_site_is_refused() throws Exception {
+        final ContentImportForm form = createContentImportForm(contentType.name(),
+                String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
+                List.of(fieldId), "no-such-site-" + System.currentTimeMillis() + ".example");
+
+        assertBadRequestResponse(importResource.validateContentImport(request, response,
+                createContentImportParams(csvFile, form)));
+    }
+
+    /**
+     * Given scenario: a limited backend user names a site they have no permission to read.
+     * Expected result: the request is refused as forbidden, which the REST layer answers with 403
+     * (#37896, FR-023).
+     */
+    @Test
+    void test_validate_with_unreadable_site_is_forbidden() throws Exception {
+        final Host privateSite = new SiteDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen()
+                .roles(TestUserUtils.getBackendRole()).nextPersisted();
+        final HttpServletRequest limitedRequest =
+                JobUtil.generateMockRequest(limitedUser, defaultSite.getHostname());
+        final ContentImportForm form = createContentImportForm(contentType.name(),
+                String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
+                List.of(fieldId), privateSite.getIdentifier());
+
+        assertThrows(ForbiddenException.class, () -> importResource.validateContentImport(
+                limitedRequest, response, createContentImportParams(csvFile, form)));
+    }
+
+    /**
+     * Given scenario: an import job is created from an uploaded CSV.
+     * Expected result: the job records the CSV's original file name, so Content Drive can name the
+     * import in its status toast after a reload (#37896).
+     */
+    @Test
+    void test_import_job_records_the_file_name() throws Exception {
+        final ContentImportForm form = createContentImportForm(contentType.name(),
+                String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
+                List.of(fieldId));
+
+        final Response result = importResource.importContent(request, response,
+                createContentImportParams(csvFile, form));
+
+        assertEquals(csvFile.getName(), jobOf(result).parameters().get("fileName"));
+    }
+
+    /**
+     * Given scenario: a preview is requested for a CSV that has a header and no data rows.
+     * Expected result: 400 with a failed job whose result carries an error message the Drive's
+     * import dialog can show (#37896, US5).
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    void test_validate_empty_csv_explains_the_failure() throws Exception {
+        final File headerOnly = File.createTempFile("header-only", ".csv");
+        try {
+            Files.write(headerOnly.toPath(), "title,body\n".getBytes());
+            final ContentImportForm form = createContentImportForm(contentType.name(),
+                    String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
+                    List.of(fieldId));
+
+            final Response result = importResource.validateContentImport(request, response,
+                    createContentImportParams(headerOnly, form));
+
+            assertBadRequestResponse(result);
+            final JobView job = ((ResponseEntityView<JobView>) result.getEntity()).getEntity();
+            final Map<String, Object> metadata =
+                    job.result().flatMap(JobResult::metadata).orElseThrow();
+            final List<Map<String, Object>> errors =
+                    (List<Map<String, Object>>) metadata.get("error");
+            assertFalse(errors.isEmpty(), "The failed job should explain why");
+            assertFalse(String.valueOf(errors.get(0).get("message")).isBlank(),
+                    "The first error should carry a message");
+        } finally {
+            headerOnly.delete();
+        }
+    }
+
+    /**
+     * Reads the job a successful create/validate response refers to, as the administrator, who may
+     * read any user's job.
+     *
+     * @param result the endpoint's response
+     * @return the job
+     */
+    private Job jobOf(final Response result) throws DotDataException {
+        assertEquals(Response.Status.OK.getStatusCode(), result.getStatus());
+        final ResponseEntityJobStatusView view = (ResponseEntityJobStatusView) result.getEntity();
+        return contentImportHelper.getJob(view.getEntity().jobId(), adminUser);
+    }
+
+    /**
+     * Grants a limited user's individual role the given permissions on a permissionable.
+     *
+     * @param permissionable what the permissions apply to
+     * @param limitedUser    the user whose personal role receives them
+     * @param permissions    the permission bits to add together
+     * @throws Exception if the permission can't be saved
+     */
+    private static void addPermission(final Permissionable permissionable, final User limitedUser,
+            final int... permissions) throws Exception {
+        final Permission permission = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                permissionable.getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                Arrays.stream(permissions).sum(), true);
+        APILocator.getPermissionAPI().save(permission, permissionable, APILocator.systemUser(), false);
+    }
+
     private void validateJobPaginatedResult(ResponseEntityView<JobViewPaginatedResult> result, long expectedTotalJobs) {
         assertNotNull(result, "Response should not be null");
 
@@ -785,6 +963,17 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
     private ContentImportForm createContentImportForm(String contentType, String language,
             String workflowActionId, List<String> fields) {
         return new ContentImportForm(contentType, language, workflowActionId, fields, null, null);
+    }
+
+    /**
+     * Creates a ContentImportForm that names the site the import runs against (#37896).
+     *
+     * @param site the site's identifier or hostname
+     */
+    private ContentImportForm createContentImportForm(String contentType, String language,
+            String workflowActionId, List<String> fields, String site) {
+        return new ContentImportForm(contentType, language, workflowActionId, fields, null, null,
+                site);
     }
 
     /**

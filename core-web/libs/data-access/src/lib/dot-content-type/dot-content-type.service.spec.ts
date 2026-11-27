@@ -354,6 +354,46 @@ describe('DotContentletService', () => {
         ]);
     });
 
+    /**
+     * #37896 (PR #38054 review): the content types the user can WRITE to, a page at a time, for
+     * any selector that must not offer read-only types; Content Drive's CSV import is one.
+     */
+    describe('getWritableContentTypes', () => {
+        it('asks for one page of a search, leaving out the excluded variables', () => {
+            const types = [{ id: '1', variable: 'Blog', name: 'Blog', baseType: 'CONTENT' }];
+            const pagination: DotPagination = { currentPage: 2, perPage: 40, totalEntries: 41 };
+            let received: unknown;
+
+            dotContentTypeService
+                .getWritableContentTypes({ page: 2, per_page: 40, filter: 'b', exclude: ['Host'] })
+                .subscribe((value) => (received = value));
+
+            const req = httpMock.expectOne(
+                (request) =>
+                    request.url === '/api/v1/contenttype/_writable' &&
+                    request.params.get('page') === '2' &&
+                    request.params.get('per_page') === '40' &&
+                    request.params.get('filter') === 'b' &&
+                    request.params.get('exclude') === 'Host'
+            );
+            expect(req.request.method).toBe('GET');
+            req.flush({ entity: types, pagination });
+
+            expect(received).toEqual({ contentTypes: types, pagination });
+        });
+
+        it('sends no search and no exclusion when there are none', () => {
+            dotContentTypeService.getWritableContentTypes({ page: 1, per_page: 40 }).subscribe();
+
+            const req = httpMock.expectOne(
+                (request) => request.url === '/api/v1/contenttype/_writable'
+            );
+            expect(req.request.params.has('filter')).toBe(false);
+            expect(req.request.params.has('exclude')).toBe(false);
+            req.flush({ entity: [], pagination: { currentPage: 1, perPage: 40, totalEntries: 0 } });
+        });
+    });
+
     describe('getContentTypeWithRender', () => {
         it('should get content type with render by id', () =>
             new Promise<void>((done) => {

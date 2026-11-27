@@ -33,7 +33,13 @@ export enum DotSystemEventType {
     /** A bulk folder delete finished; scoped to the submitter, and carries the run's outcome. */
     BULK_FOLDER_DELETE_COMPLETED = 'BULK_FOLDER_DELETE_COMPLETED',
     /** A bulk folder duplication finished; the payload carries the run's outcome (#37062). */
-    BULK_FOLDER_DUPLICATE_COMPLETED = 'BULK_FOLDER_DUPLICATE_COMPLETED'
+    BULK_FOLDER_DUPLICATE_COMPLETED = 'BULK_FOLDER_DUPLICATE_COMPLETED',
+    /**
+     * A content import job (#37896) ended, successfully or not; scoped to the submitter. Content
+     * Drive's import dialog waits on it for a preview queued through `/_validate`, and the status
+     * toast for an import. The same job may be reported twice, so consumers de-duplicate by `jobId`.
+     */
+    IMPORT_CONTENTLETS_COMPLETED = 'IMPORT_CONTENTLETS_COMPLETED'
 }
 
 /**

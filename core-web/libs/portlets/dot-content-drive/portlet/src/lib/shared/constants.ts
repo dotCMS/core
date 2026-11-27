@@ -215,7 +215,12 @@ export const DIALOG_TYPE = {
      * the URL can name it while it is open (#37759, FR-030); the shell renders it as the JSP
      * permissions dialog rather than in its own `p-dialog`.
      */
-    FOLDER_PERMISSIONS: 'FOLDER_PERMISSIONS'
+    FOLDER_PERMISSIONS: 'FOLDER_PERMISSIONS',
+    /**
+     * Import content from a CSV (#37896). Opened from the Upload menu; not named in the URL, since
+     * the file the form holds can't survive a reload anyway.
+     */
+    IMPORT: 'IMPORT'
 } as const;
 
 /**
@@ -250,6 +255,13 @@ export const ACTION_CENTER_DIALOG_CLASS =
  * `overflow-hidden`. Inline styles win without needing `!` overrides. `min-height: 0` lets the box
  * shrink inside the flex column; without it a flex item refuses to go below its content height.
  */
+/**
+ * Root classes for the Import dialog: the Import form's width, and a height capped at 80vh so a
+ * long form or preview scrolls inside the dialog. With {@link ACTION_CENTER_DIALOG_CONTENT_STYLE}
+ * on its content box, the body scrolls and the buttons stay pinned below it.
+ */
+export const IMPORT_DIALOG_CLASS = 'w-175 max-w-[92vw] max-h-[80vh]! overflow-hidden';
+
 export const ACTION_CENTER_DIALOG_CONTENT_STYLE = {
     display: 'flex',
     'flex-direction': 'column',

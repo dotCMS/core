@@ -97,6 +97,7 @@ import {
 import { DotContentDriveActionCenterComponent } from '../components/dialogs/dot-content-drive-action-center/dot-content-drive-action-center.component';
 import { DotContentDriveDialogContentTypeSelectorComponent } from '../components/dialogs/dot-content-drive-dialog-content-type-selector/dot-content-drive-dialog-content-type-selector.component';
 import { DotContentDriveDialogFolderComponent } from '../components/dialogs/dot-content-drive-dialog-folder/dot-content-drive-dialog-folder.component';
+import { DotContentDriveDialogImportComponent } from '../components/dialogs/dot-content-drive-dialog-import/dot-content-drive-dialog-import.component';
 import { DotContentDriveGridCardComponent } from '../components/dot-content-drive-grid-card/dot-content-drive-grid-card.component';
 import { DotContentDriveScopeBarComponent } from '../components/dot-content-drive-scope-bar/dot-content-drive-scope-bar.component';
 import { DotContentDriveSidebarComponent } from '../components/dot-content-drive-sidebar/dot-content-drive-sidebar.component';
@@ -105,6 +106,7 @@ import { DotFolderListViewContextMenuComponent } from '../components/dot-folder-
 import {
     ACTION_CENTER_DIALOG_CONTENT_STYLE,
     ACTION_CENTER_DIALOG_CLASS,
+    IMPORT_DIALOG_CLASS,
     CONTENT_DRIVE_EDIT_CODE_PARAM,
     CONTENT_DRIVE_URL_PARAM,
     CONTENT_DRIVE_VIEW_PARAM,
@@ -186,6 +188,7 @@ type DotFolderUserAccess = { canEdit: boolean; canEditPermissions: boolean };
         PopoverModule,
         NgTemplateOutlet,
         DotContentDriveDialogFolderComponent,
+        DotContentDriveDialogImportComponent,
         DotContentDriveDialogContentTypeSelectorComponent,
         DotUploadTypeSelectorComponent,
         MessageModule,
@@ -533,6 +536,12 @@ export class DotContentDriveShellComponent implements OnDestroy {
     protected readonly $activeDialog = signal<DotContentDriveDialog | undefined>(undefined);
 
     /**
+     * The import dialog's child component, so the header can follow its step: the preview reads
+     * "View Conflicts", the form keeps "Import Content".
+     */
+    protected readonly $importDialog = viewChild(DotContentDriveDialogImportComponent);
+
+    /**
      * The grid's checked rows, driven from the store.
      *
      * Passing this puts `dot-folder-list-view` in its controlled mode, which is what makes clearing the
@@ -588,8 +597,10 @@ export class DotContentDriveShellComponent implements OnDestroy {
         switch (this.$activeDialog()?.type) {
             case DIALOG_TYPE.CONTENT_TYPE_SELECTOR:
                 return 'w-152 max-w-[92vw] px-0! pt-0 pb-4';
-            // Action Center sizes itself through `$dialogStyle` / `$dialogContentStyle` instead.
+            // Action Center sizes itself through `$dialogStyle` / `$dialogContentStyle` instead,
+            // and Import pads its own scrolling body and pinned footer.
             case DIALOG_TYPE.ACTION_CENTER:
+            case DIALOG_TYPE.IMPORT:
                 return '';
             default:
                 return 'w-175 pt-0 p-4';
@@ -599,18 +610,28 @@ export class DotContentDriveShellComponent implements OnDestroy {
     /**
      * @see ACTION_CENTER_DIALOG_CLASS
      */
-    readonly $dialogRootClass = computed(() =>
-        this.$activeDialog()?.type === DIALOG_TYPE.ACTION_CENTER ? ACTION_CENTER_DIALOG_CLASS : ''
-    );
+    readonly $dialogRootClass = computed(() => {
+        switch (this.$activeDialog()?.type) {
+            case DIALOG_TYPE.ACTION_CENTER:
+                return ACTION_CENTER_DIALOG_CLASS;
+            case DIALOG_TYPE.IMPORT:
+                return IMPORT_DIALOG_CLASS;
+            default:
+                return '';
+        }
+    });
 
     /**
      * @see ACTION_CENTER_DIALOG_CONTENT_STYLE
      */
-    readonly $dialogContentStyle = computed(() =>
-        this.$activeDialog()?.type === DIALOG_TYPE.ACTION_CENTER
+    readonly $dialogContentStyle = computed(() => {
+        const type = this.$activeDialog()?.type;
+
+        // Import shares the layout: one scrolling body with its buttons pinned below.
+        return type === DIALOG_TYPE.ACTION_CENTER || type === DIALOG_TYPE.IMPORT
             ? ACTION_CENTER_DIALOG_CONTENT_STYLE
-            : undefined
-    );
+            : undefined;
+    });
 
     /**
      * Drops the header's bottom rule and locks horizontal padding to `px-6` so the title lines up
@@ -1099,6 +1120,16 @@ export class DotContentDriveShellComponent implements OnDestroy {
             return;
         }
 
+        // A CSV import (#37896) has no per-row failure groups to describe: it reports its counts,
+        // or the server's reason when it failed outright, then reloads like any background run.
+        if (OUTCOME_KIND.IMPORT === result.outcomeKind) {
+            this.#messageService.add(this.#importOutcomeMessage(result));
+            this.#reloadAfterOutcome(true, undefined);
+            this.#store.clearActionExecutionResult();
+
+            return;
+        }
+
         const outcome = this.#readOutcome(result);
 
         if (outcome.isFolderOutcome) {
@@ -1128,6 +1159,43 @@ export class DotContentDriveShellComponent implements OnDestroy {
         this.#store.clearActionExecutionResult();
     });
 
+    /**
+     * The toast for a finished CSV import (#37896): the created, updated and failed counts, as a
+     * success, or a warning when some rows failed; or the server's message, as an error, when the
+     * import failed before it could place any row.
+     *
+     * @param result the import's outcome
+     */
+    #importOutcomeMessage(result: DotContentDriveActionExecutionResult): ToastMessageOptions {
+        const summary = this.#dotMessageService.get('content-drive.import.dialog.header');
+
+        if (result.message) {
+            return {
+                severity: 'error',
+                summary,
+                detail: this.#dotMessageService.get(
+                    'content-drive.import.toast.failed',
+                    result.actionName,
+                    result.message
+                ),
+                life: ERROR_MESSAGE_LIFE
+            };
+        }
+
+        return {
+            severity: result.failedCount ? 'warn' : 'success',
+            summary,
+            detail: this.#dotMessageService.get(
+                'content-drive.import.toast.summary',
+                result.actionName,
+                String(result.createdCount ?? 0),
+                String(result.updatedCount ?? 0),
+                String(result.failedCount)
+            ),
+            life: result.failedCount ? WARNING_MESSAGE_LIFE : SUCCESS_MESSAGE_LIFE
+        };
+    }
+
     /** Resolves a message key, in the shape the failure describers take. */
     readonly #resolveMessage = (key: string, ...args: string[]): string =>
         this.#dotMessageService.get(key, ...args);
@@ -1151,6 +1219,12 @@ export class DotContentDriveShellComponent implements OnDestroy {
         [OUTCOME_KIND.FOLDER_DUPLICATE]: {
             error: 'content-drive.duplicate.toast.failed',
             warn: 'content-drive.duplicate.toast.incomplete'
+        },
+        // An import reports no per-row failure groups (#37896): its summary is counts plus the
+        // server's message. Listed only so every outcome kind has keys.
+        [OUTCOME_KIND.IMPORT]: {
+            error: 'content-drive.import.toast.failed',
+            warn: 'content-drive.import.toast.summary'
         }
     };
 
@@ -2128,9 +2202,11 @@ export class DotContentDriveShellComponent implements OnDestroy {
     }
 
     /**
-     * Upload-button flow. When the current folder pins a base type (`defaultBaseType`), skip the
-     * menu and open the OS file picker straight away; otherwise open the type menu anchored to the
-     * button and defer the picker until the user picks a type in {@link onUploadTypeSelected}.
+     * Upload-button flow: always opens the Upload menu anchored to the button (#37896). The menu
+     * offers the upload types the folder allows — none without CAN_ADD_CHILDREN, only the pinned
+     * one when the folder pins a base type, both otherwise — and always Import CSV, since an import
+     * places rows by its CSV rather than in this folder. Picking an upload type opens the file
+     * picker in {@link onUploadTypeSelected}.
      */
     protected onUpload(event: MouseEvent) {
         const targetFolder = this.#store.selectedNode()?.data;
@@ -2140,14 +2216,27 @@ export class DotContentDriveShellComponent implements OnDestroy {
                 : undefined;
         const baseType = this.#resolvePreferredBaseType(contentData?.defaultBaseType);
 
-        if (baseType) {
-            this.$activeSelection.set({ targetFolder, baseType });
-            this.$fileInput()?.nativeElement.click();
+        this.openUploadSelector(
+            {
+                targetFolder,
+                fromButton: true,
+                showUploadTypes: this.#store.$canAddChildren(),
+                allowedBaseTypes: baseType ? [baseType] : undefined
+            },
+            event
+        );
+    }
 
-            return;
-        }
-
-        this.openUploadSelector({ targetFolder }, event);
+    /**
+     * Opens the CSV import dialog from the Upload menu (#37896), closing the menu first.
+     */
+    protected openImportDialog() {
+        this.$uploadSelectorPopover()?.hide();
+        this.$uploadSelectorPayload.set(undefined);
+        this.#store.setDialog({
+            type: DIALOG_TYPE.IMPORT,
+            header: this.#dotMessageService.get('content-drive.import.dialog.header')
+        });
     }
 
     /**

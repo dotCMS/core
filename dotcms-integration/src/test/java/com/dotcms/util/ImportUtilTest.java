@@ -33,6 +33,7 @@ import com.dotcms.datagen.CategoryDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FieldVariableDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.SiteDataGen;
@@ -90,7 +91,11 @@ import com.dotmarketing.util.ImportUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.dotmarketing.util.importer.HeaderValidationCodes;
+import com.dotmarketing.util.importer.ImportLineValidationCodes;
 import com.dotmarketing.util.importer.ImportResultConverter;
+import com.dotmarketing.util.importer.model.AbstractImportDestination;
+import com.dotmarketing.util.importer.model.ImportDestination;
 import com.dotmarketing.util.importer.model.ImportResult;
 import com.dotmarketing.util.importer.model.ResultData;
 import com.dotmarketing.util.importer.model.ValidationMessage;
@@ -129,6 +134,7 @@ import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID;
+import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.DUPLICATE_UNIQUE_VALUE;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_BINARY_URL;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_CATEGORY_KEY;
@@ -752,10 +758,10 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                                 countryCodeHeaderColumn, reader,
                                 schemeStepActionResult1.getAction().getId(),getHttpRequest());
         //Validations
-        validate(results, true, false, true);
+        validate(results, true, false, false);
 
-        assertEquals(1, results.get("warnings").size());
-        assertThat(results.get("warnings").get(0), allOf(containsString(UNIQUE_FIELDS_WARNING)));
+        assertTrue("The unique fields notice is information",
+                results.get("messages").stream().anyMatch(m -> m.contains(UNIQUE_FIELDS_WARNING)));
     }
 
     /**
@@ -812,11 +818,14 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                                     countryCodeHeaderColumn, reader,
                                     schemeStepActionResult1.getAction().getId(),getHttpRequest());
             //Validations
-            validate(results, true, false, true);
+            // The repeated line is skipped, so it is an error and a failed row (the second error is
+            // the count of lines with errors); the unique fields notice is information
+            validate(results, true, true, false);
 
-            assertTrue(results.get("warnings").size() == 2);
-            assertThat(results.get("warnings").get(0), allOf(containsString(UNIQUE_FIELDS_WARNING)));
-            assertEquals("Line #3: contains duplicate values for a unique Content Type field 'testTitle', and will be ignored.", results.get("warnings").get(1));
+            assertEquals(2, results.get("errors").size());
+            assertEquals("Line #3: contains duplicate values for a unique Content Type field 'testTitle', and will be ignored.", results.get("errors").get(0));
+            assertTrue("The unique fields notice is information",
+                    results.get("messages").stream().anyMatch(m -> m.contains(UNIQUE_FIELDS_WARNING)));
         } finally {
             try {
                 contentTypeApi.delete(type);
@@ -877,11 +886,14 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                                     countryCodeHeaderColumn, reader,
                                     schemeStepActionResult1.getAction().getId(),getHttpRequest());
             //Validations
-            validate(results, true, false, true);
+            // The repeated line is skipped, so it is an error and a failed row (the second error is
+            // the count of lines with errors); the unique fields notice is information
+            validate(results, true, true, false);
 
-            assertEquals(2, results.get("warnings").size());
-            assertThat(results.get("warnings").get(0), allOf(containsString(UNIQUE_FIELDS_WARNING)));
-            assertEquals("Line #3: contains duplicate values for a unique Content Type field 'testNumber', and will be ignored.", results.get("warnings").get(1));
+            assertEquals(2, results.get("errors").size());
+            assertEquals("Line #3: contains duplicate values for a unique Content Type field 'testNumber', and will be ignored.", results.get("errors").get(0));
+            assertTrue("The unique fields notice is information",
+                    results.get("messages").stream().anyMatch(m -> m.contains(UNIQUE_FIELDS_WARNING)));
 
         } finally {
             try {
@@ -949,10 +961,10 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                                     countryCodeHeaderColumn, reader,
                                     schemeStepActionResult1.getAction().getId(),getHttpRequest());
             //Validations
-            validate(results, true, false, true);
+            validate(results, true, false, false);
 
-            assertEquals(1, results.get("warnings").size());
-            assertThat(results.get("warnings").get(0), allOf(containsString(UNIQUE_FIELDS_WARNING)));
+            assertTrue("The unique fields notice is information",
+                    results.get("messages").stream().anyMatch(m -> m.contains(UNIQUE_FIELDS_WARNING)));
             assertEquals(0, results.get("errors").size());
         } finally {
             try {
@@ -1014,10 +1026,10 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                                     countryCodeHeaderColumn, reader,
                                     schemeStepActionResult1.getAction().getId(),getHttpRequest());
             //Validations
-            validate(results, true, false, true);
+            validate(results, true, false, false);
 
-            assertEquals(1, results.get("warnings").size());
-            assertThat(results.get("warnings").get(0), allOf(containsString(UNIQUE_FIELDS_WARNING)));
+            assertTrue("The unique fields notice is information",
+                    results.get("messages").stream().anyMatch(m -> m.contains(UNIQUE_FIELDS_WARNING)));
             assertEquals(0, results.get("errors").size());
         } finally {
             try {
@@ -5817,6 +5829,505 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             }
         } catch (Exception e) {
             Logger.warn(ImportUtilTest.class, "Error listing tags for cleanup", e);
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Where rows land (#37896, FR-013): ImportResult.destinations, in preview and in publish.
+    // ---------------------------------------------------------------------------------------------
+
+    /**
+     * Runs {@code ImportUtil.importFileResult} on a CSV for the destination tests.
+     *
+     * @param contentType the type to import into
+     * @param keyField    the key field, or {@code null} for none
+     * @param csv         the CSV content, header line included
+     * @param site        the site the import runs against
+     * @param preview     whether this is a preview (nothing is written) or a publish
+     * @return the import result
+     */
+    private ImportResult importForDestinations(final ContentType contentType,
+            final com.dotcms.contenttype.model.field.Field keyField, final String csv,
+            final Host site, final boolean preview) throws IOException, DotDataException {
+        final CsvReader csvReader = new CsvReader(createTempFile(csv));
+        csvReader.setSafetySwitch(false);
+        final String[] headers = csvReader.getHeaders();
+        final ImmutableImportFileParams.Builder params = ImmutableImportFileParams.builder()
+                .importId(0L)
+                .siteId(site.getIdentifier())
+                .contentTypeInode(contentType.inode())
+                .user(user)
+                .language(defaultLanguage.getId())
+                .csvHeaders(headers)
+                .csvReader(csvReader)
+                .request(getHttpRequest())
+                .preview(preview)
+                .keyFields(keyField == null ? new String[0] : new String[]{keyField.id()});
+        return ImportUtil.importFileResult(params.build());
+    }
+
+    /**
+     * Finds the destination bucket for a path and source in a result.
+     *
+     * @return the bucket, or {@code null} when the result has none
+     */
+    private static ImportDestination destination(final ImportResult result, final String path,
+            final AbstractImportDestination.Source source) {
+        return result.destinations().stream()
+                .filter(d -> path.equals(d.path()) && source == d.source())
+                .findFirst().orElse(null);
+    }
+
+    /**
+     * Given scenario: a CSV whose site/folder column sends two rows to folder {@code a}, one row to
+     * folder {@code b}, and one row to a site that doesn't exist.
+     * Expected result: in preview and in publish, the destinations count 2 rows for {@code //site/a/}
+     * and 1 for {@code //site/b/}, both from the CSV; the row with the bad location is an error and
+     * is not counted.
+     */
+    @Test
+    public void testDestinations_countRowsPerCsvLocation_inPreviewAndPublish() throws Exception {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder folderA = new FolderDataGen().site(site).name("a").nextPersisted();
+        final Folder folderB = new FolderDataGen().site(site).name("b").nextPersisted();
+        com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
+                .name("title").velocityVarName("title").type(TextField.class).next();
+        com.dotcms.contenttype.model.field.Field hostField = new FieldDataGen()
+                .name("location").velocityVarName("location").type(HostFolderField.class).next();
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(titleField).field(hostField).nextPersisted();
+        try {
+            final String pathA = "//" + site.getHostname() + folderA.getPath();
+            final String pathB = "//" + site.getHostname() + folderB.getPath();
+            final String csv = "title,location\r\n"
+                    + "one," + pathA + "\r\n"
+                    + "two," + pathA + "\r\n"
+                    + "three," + pathB + "\r\n"
+                    + "four,//no-such-site-" + System.currentTimeMillis() + "/x/\r\n";
+
+            for (final boolean preview : new boolean[]{true, false}) {
+                final ImportResult result =
+                        importForDestinations(contentType, null, csv, site, preview);
+
+                final ImportDestination a =
+                        destination(result, pathA, AbstractImportDestination.Source.CSV);
+                final ImportDestination b =
+                        destination(result, pathB, AbstractImportDestination.Source.CSV);
+                assertNotNull("Rows sent to folder a should be counted (preview=" + preview + ")", a);
+                assertNotNull("Rows sent to folder b should be counted (preview=" + preview + ")", b);
+                assertEquals(2, a.rows());
+                assertEquals(1, b.rows());
+                assertEquals("A row with errors is not counted anywhere (preview=" + preview + ")",
+                        3, result.destinations().stream().mapToInt(ImportDestination::rows).sum());
+            }
+        } finally {
+            ContentTypeDataGen.remove(contentType);
+        }
+    }
+
+    /**
+     * Given scenario: a content type whose default location is folder {@code a} of a site, and a CSV
+     * with no site/folder column that creates two new items.
+     * Expected result: both rows are counted under that folder, with source CONTENT_TYPE_DEFAULT.
+     */
+    @Test
+    public void testDestinations_newContentWithoutLocationColumn_usesContentTypeDefault()
+            throws Exception {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder folderA = new FolderDataGen().site(site).name("a").nextPersisted();
+        com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
+                .name("title").velocityVarName("title").type(TextField.class).next();
+        final ContentType contentType = new ContentTypeDataGen()
+                .host(site).folder(folderA).field(titleField).nextPersisted();
+        try {
+            final ImportResult result = importForDestinations(contentType, null,
+                    "title\r\nfirst\r\nsecond\r\n", site, true);
+
+            final ImportDestination bucket = destination(result,
+                    "//" + site.getHostname() + folderA.getPath(),
+                    AbstractImportDestination.Source.CONTENT_TYPE_DEFAULT);
+            assertNotNull("New rows without a location column go to the content type's default",
+                    bucket);
+            assertEquals(2, bucket.rows());
+        } finally {
+            ContentTypeDataGen.remove(contentType);
+        }
+    }
+
+    /**
+     * Given scenario: an item already lives in folder {@code b}; the content type's default is folder
+     * {@code a}; a CSV with no site/folder column updates that item by its key field.
+     * Expected result: the row is counted under folder {@code b}, its current place, with source
+     * EXISTING.
+     */
+    @Test
+    public void testDestinations_updatedContentWithoutLocationColumn_keepsItsPlace()
+            throws Exception {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder folderA = new FolderDataGen().site(site).name("a").nextPersisted();
+        final Folder folderB = new FolderDataGen().site(site).name("b").nextPersisted();
+        com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
+                .name("title").velocityVarName("title").type(TextField.class).next();
+        final ContentType contentType = new ContentTypeDataGen()
+                .host(site).folder(folderA).field(titleField).nextPersisted();
+        titleField = fieldAPI.byContentTypeAndVar(contentType, titleField.variable());
+        try {
+            final String title = "existing-" + System.currentTimeMillis();
+            new ContentletDataGen(contentType).host(site).folder(folderB)
+                    .setProperty("title", title).nextPersisted();
+
+            final ImportResult result = importForDestinations(contentType, titleField,
+                    "title\r\n" + title + "\r\n", site, true);
+
+            final ImportDestination bucket = destination(result,
+                    "//" + site.getHostname() + folderB.getPath(),
+                    AbstractImportDestination.Source.EXISTING);
+            assertNotNull("An updated item without a location column keeps its place", bucket);
+            assertEquals(1, bucket.rows());
+        } finally {
+            ContentTypeDataGen.remove(contentType);
+        }
+    }
+
+    /**
+     * Given scenario: a preview result that carries destinations.
+     * Expected result: the legacy Content Search preview built from it is identical to the one built
+     * from the same result without destinations, so the JSP screens don't change.
+     */
+    @Test
+    public void testDestinations_doNotChangeLegacyPreview() throws Exception {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder folderA = new FolderDataGen().site(site).name("a").nextPersisted();
+        com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
+                .name("title").velocityVarName("title").type(TextField.class).next();
+        final ContentType contentType = new ContentTypeDataGen()
+                .host(site).folder(folderA).field(titleField).nextPersisted();
+        try {
+            final ImportResult result = importForDestinations(contentType, null,
+                    "title\r\nfirst\r\n", site, true);
+            assertFalse("The result should carry destinations", result.destinations().isEmpty());
+
+            assertEquals(
+                    ImportResultConverter.toLegacyFormat(result.withDestinations(List.of()), user),
+                    ImportResultConverter.toLegacyFormat(result, user));
+        } finally {
+            ContentTypeDataGen.remove(contentType);
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Message levels (#37896): an error means a row is not imported, a warning means the import
+    // goes ahead, and the preview says what the import will do.
+    // ---------------------------------------------------------------------------------------------
+
+    /**
+     * Runs {@code ImportUtil.importFileResult} on a CSV for the message level tests.
+     *
+     * @param contentType  the type to import into
+     * @param keyFieldIds  the ids of the key fields, empty for none
+     * @param csv          the CSV content, header line included
+     * @param site         the {@link Host} the import runs against
+     * @param preview      whether this is a preview (nothing is written) or a publish
+     * @param multilingual whether the file is multilingual, taking each row's locale from its
+     *                     languageCode and countryCode columns
+     * @return the import result
+     */
+    private ImportResult importForLevels(final ContentType contentType, final String[] keyFieldIds,
+            final String csv, final Host site, final boolean preview, final boolean multilingual)
+            throws IOException, DotDataException {
+        final CsvReader csvReader = new CsvReader(createTempFile(csv));
+        csvReader.setSafetySwitch(false);
+        // The reader hasn't read the header line yet, so the import reads it; the locale columns
+        // are found from the CSV text instead.
+        final List<String> columns = Arrays.stream(csv.split("\r?\n", 2)[0].split(","))
+                .map(header -> header.trim().toLowerCase()).collect(Collectors.toList());
+        return ImportUtil.importFileResult(ImmutableImportFileParams.builder()
+                .importId(0L)
+                .siteId(site.getIdentifier())
+                .contentTypeInode(contentType.inode())
+                .user(user)
+                .isMultilingual(multilingual)
+                .language(multilingual ? -1 : defaultLanguage.getId())
+                .languageCodeHeaderColumn(columns.indexOf("languagecode"))
+                .countryCodeHeaderColumn(columns.indexOf("countrycode"))
+                .csvReader(csvReader)
+                .request(getHttpRequest())
+                .preview(preview)
+                .keyFields(keyFieldIds)
+                .build());
+    }
+
+    /**
+     * The messages of a result with the given code.
+     *
+     * @param messages the result's errors, warnings or info
+     * @param code     the code to look for
+     * @return the matching messages, empty when there are none
+     */
+    private static List<ValidationMessage> withCode(final List<ValidationMessage> messages,
+            final String code) {
+        return messages.stream()
+                .filter(message -> message.code().map(code::equals).orElse(false))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Persists a text field on a content type.
+     *
+     * @param contentType the type to add it to
+     * @param variable    the field's variable, also its name
+     * @param unique      whether its values must be unique
+     * @return the saved field
+     */
+    private static com.dotcms.contenttype.model.field.Field textField(
+            final ContentType contentType, final String variable, final boolean unique) {
+        return new FieldDataGen().contentTypeId(contentType.id()).type(TextField.class)
+                .name(variable).velocityVarName(variable).unique(unique).nextPersisted();
+    }
+
+    /**
+     * Given scenario: the key field chosen is not a column in the CSV.
+     * Expected result: a warning, not an error, since the import matches rows on the other key
+     * fields; in preview and in publish both rows are counted and created.
+     */
+    @Test
+    public void testLevels_keyFieldNotInFile_isAWarningAndRowsStillImport() throws Exception {
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        try {
+            textField(contentType, "title", false);
+            final com.dotcms.contenttype.model.field.Field code = textField(contentType, "code", false);
+
+            for (final boolean preview : new boolean[]{true, false}) {
+                final ImportResult result = importForLevels(contentType, new String[]{code.id()},
+                        "title\r\none\r\ntwo\r\n", defaultSite, preview, false);
+
+                assertTrue("No error (preview=" + preview + "): " + result.error(),
+                        result.error().isEmpty());
+                assertEquals(1, withCode(result.warning(),
+                        HeaderValidationCodes.INVALID_KEY_FIELD.name()).size());
+                assertEquals(2, result.data().orElseThrow().summary().createdDisplay());
+            }
+        } finally {
+            ContentTypeDataGen.remove(contentType);
+        }
+    }
+
+    /**
+     * Given scenario: the CSV has the same column twice.
+     * Expected result: a warning naming the column, not an error, since the import goes ahead; the
+     * last of the repeated columns is the one imported.
+     */
+    @Test
+    public void testLevels_duplicateHeader_isAWarningAndTheLastColumnWins() throws Exception {
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        try {
+            textField(contentType, "title", false);
+            final String csv = "title,title\r\nfirst,last\r\n";
+
+            final ImportResult preview =
+                    importForLevels(contentType, new String[0], csv, defaultSite, true, false);
+            assertTrue("No error: " + preview.error(), preview.error().isEmpty());
+            final List<ValidationMessage> warnings =
+                    withCode(preview.warning(), HeaderValidationCodes.DUPLICATE_HEADER.name());
+            assertEquals(1, warnings.size());
+            assertEquals("title", warnings.get(0).field().orElse(null));
+
+            final ImportResult publish =
+                    importForLevels(contentType, new String[0], csv, defaultSite, false, false);
+            final Contentlet imported = contentletAPI.find(publish.lastInode().orElseThrow(),
+                    user, false);
+            assertEquals("last", imported.getStringProperty("title"));
+        } finally {
+            ContentTypeDataGen.remove(contentType);
+        }
+    }
+
+    /**
+     * Given scenario: two rows of the CSV carry the same value for a unique field.
+     * Expected result: the second row is not imported, so it is an error and a failed row, in
+     * preview and in publish; the first row is created.
+     */
+    @Test
+    public void testLevels_duplicateUniqueValueInFile_isAnErrorAndAFailedRow() throws Exception {
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        try {
+            textField(contentType, "title", false);
+            textField(contentType, "code", true);
+            final String code = "same-" + System.currentTimeMillis();
+
+            for (final boolean preview : new boolean[]{true, false}) {
+                final ImportResult result = importForLevels(contentType, new String[0],
+                        "title,code\r\none," + code + "\r\ntwo," + code + "\r\n",
+                        defaultSite, preview, false);
+
+                final List<ValidationMessage> errors =
+                        withCode(result.error(), DUPLICATE_UNIQUE_VALUE.name());
+                assertEquals("One error (preview=" + preview + ")", 1, errors.size());
+                assertEquals(Integer.valueOf(3), errors.get(0).lineNumber().orElse(null));
+                assertTrue(withCode(result.warning(), DUPLICATE_UNIQUE_VALUE.name()).isEmpty());
+                assertEquals(1, result.data().orElseThrow().summary().failedDisplay());
+                if (!preview) {
+                    assertEquals(1, result.data().orElseThrow().summary().createdDisplay());
+                }
+            }
+        } finally {
+            ContentTypeDataGen.remove(contentType);
+        }
+    }
+
+    /**
+     * Given scenario: a multilingual CSV row whose languageCode and countryCode match no locale.
+     * Expected result: the row fails with the locale-not-found error that names the codes, not with
+     * an internal exception message.
+     */
+    @Test
+    public void testLevels_unknownLocale_saysTheLocaleWasNotFound() throws Exception {
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        try {
+            final com.dotcms.contenttype.model.field.Field title =
+                    textField(contentType, "title", false);
+
+            final ImportResult result = importForLevels(contentType, new String[]{title.id()},
+                    "languageCode,countryCode,title\r\nxx,YY,one\r\n", defaultSite, true, true);
+
+            final List<ValidationMessage> errors =
+                    withCode(result.error(), ImportLineValidationCodes.LANGUAGE_NOT_FOUND.name());
+            assertEquals("Errors: " + result.error(), 1, errors.size());
+            assertTrue(errors.get(0).message(), errors.get(0).message().contains("xx"));
+            assertEquals(1, result.data().orElseThrow().summary().failedDisplay());
+        } finally {
+            ContentTypeDataGen.remove(contentType);
+        }
+    }
+
+    /**
+     * Given scenario: a CSV whose workflow action column names an action that doesn't exist.
+     * Expected result: a warning that says the action doesn't exist, not an internal exception
+     * message; the row is still imported.
+     */
+    @Test
+    public void testLevels_unknownWorkflowActionInColumn_saysItDoesNotExist() throws Exception {
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        try {
+            textField(contentType, "title", false);
+
+            final ImportResult result = importForLevels(contentType, new String[0],
+                    "title," + Contentlet.WORKFLOW_ACTION_KEY + "\r\none,not-an-action\r\n",
+                    defaultSite, false, false);
+
+            final List<ValidationMessage> warnings = withCode(result.warning(),
+                    ImportLineValidationCodes.INVALID_WORKFLOW_ACTION.name());
+            assertEquals("Warnings: " + result.warning(), 1, warnings.size());
+            assertTrue(warnings.get(0).message(),
+                    warnings.get(0).message().contains("not-an-action"));
+            assertEquals(1, result.data().orElseThrow().summary().createdDisplay());
+        } finally {
+            ContentTypeDataGen.remove(contentType);
+        }
+    }
+
+    /**
+     * Given scenario: the key field matches two items, and the row sets a unique field, so updating
+     * both would give them the same unique value.
+     * Expected result: the row fails with an error in preview as it does in publish, and neither
+     * item changes.
+     */
+    @Test
+    public void testLevels_keyMatchesSeveralItemsAndRowSetsAUniqueValue_failsInPreviewToo()
+            throws Exception {
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        try {
+            final com.dotcms.contenttype.model.field.Field title =
+                    textField(contentType, "title", false);
+            textField(contentType, "code", true);
+            final String shared = "shared-" + System.currentTimeMillis();
+            final Contentlet first = new ContentletDataGen(contentType).host(defaultSite)
+                    .setProperty("title", shared).setProperty("code", shared + "-a")
+                    .nextPersisted();
+            final Contentlet second = new ContentletDataGen(contentType).host(defaultSite)
+                    .setProperty("title", shared).setProperty("code", shared + "-b")
+                    .nextPersisted();
+
+            for (final boolean preview : new boolean[]{true, false}) {
+                final ImportResult result = importForLevels(contentType,
+                        new String[]{title.id()},
+                        "title,code\r\n" + shared + "," + shared + "-c\r\n",
+                        defaultSite, preview, false);
+
+                assertEquals("Errors (preview=" + preview + "): " + result.error(), 1,
+                        withCode(result.error(), DUPLICATE_UNIQUE_VALUE.name()).size());
+                assertEquals(1, result.data().orElseThrow().summary().failedDisplay());
+                assertEquals(0, result.data().orElseThrow().summary().updatedDisplay());
+            }
+            assertEquals(shared + "-a", contentletAPI.findContentletByIdentifierAnyLanguage(
+                    first.getIdentifier()).getStringProperty("code"));
+            assertEquals(shared + "-b", contentletAPI.findContentletByIdentifierAnyLanguage(
+                    second.getIdentifier()).getStringProperty("code"));
+        } finally {
+            ContentTypeDataGen.remove(contentType);
+        }
+    }
+
+    /**
+     * Given scenario: as above, but the unique field is unique per site and the two items are on
+     * different sites, so both can take the same value.
+     * Expected result: no error; both items are updated, in preview and in publish.
+     */
+    @Test
+    public void testLevels_keyMatchesItemsOnDifferentSitesAndUniquePerSite_updatesThem()
+            throws Exception {
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        try {
+            final com.dotcms.contenttype.model.field.Field title =
+                    textField(contentType, "title", false);
+            final com.dotcms.contenttype.model.field.Field code =
+                    textField(contentType, "code", true);
+            new FieldVariableDataGen().key(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME).value("true")
+                    .field(code).nextPersisted();
+            final ContentType reloaded = contentTypeApi.find(contentType.inode());
+            final String shared = "shared-" + System.currentTimeMillis();
+            new ContentletDataGen(reloaded).host(new SiteDataGen().nextPersisted())
+                    .setProperty("title", shared).setProperty("code", shared + "-a")
+                    .nextPersisted();
+            new ContentletDataGen(reloaded).host(new SiteDataGen().nextPersisted())
+                    .setProperty("title", shared).setProperty("code", shared + "-b")
+                    .nextPersisted();
+
+            for (final boolean preview : new boolean[]{true, false}) {
+                final ImportResult result = importForLevels(reloaded, new String[]{title.id()},
+                        "title,code\r\n" + shared + "," + shared + "-c\r\n",
+                        defaultSite, preview, false);
+
+                assertTrue("No error (preview=" + preview + "): " + result.error(),
+                        result.error().isEmpty());
+                assertEquals(2, result.data().orElseThrow().summary().updatedDisplay());
+            }
+        } finally {
+            ContentTypeDataGen.remove(contentType);
+        }
+    }
+
+    /**
+     * Given scenario: a content type with a unique field.
+     * Expected result: the notice that duplicates are rejected is information, not a warning, since
+     * it is shown on every import of that type whatever the file holds.
+     */
+    @Test
+    public void testLevels_uniqueFieldNotice_isInformation() throws Exception {
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        try {
+            textField(contentType, "code", true);
+
+            final ImportResult result = importForLevels(contentType, new String[0],
+                    "code\r\nunique-" + System.currentTimeMillis() + "\r\n", defaultSite, true,
+                    false);
+
+            assertEquals(1, withCode(result.info(),
+                    HeaderValidationCodes.UNIQUE_FIELD.name()).size());
+            assertTrue(withCode(result.warning(),
+                    HeaderValidationCodes.UNIQUE_FIELD.name()).isEmpty());
+        } finally {
+            ContentTypeDataGen.remove(contentType);
         }
     }
 

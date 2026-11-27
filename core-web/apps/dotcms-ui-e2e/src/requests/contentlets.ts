@@ -313,6 +313,37 @@ export async function deleteContentlets(
 }
 
 /**
+ * The contentlets of one content type, as the content search API answers them.
+ *
+ * For checks that need what was written rather than what a listing shows: an import places rows by
+ * its own rules, often outside the folder on screen, so the listing is no evidence either way.
+ *
+ * @param request - Playwright APIRequestContext
+ * @param contentTypeVariable - the content type's variable
+ * @returns The contentlets found, possibly none
+ */
+export async function findContentletsOfType(
+    request: APIRequestContext,
+    contentTypeVariable: string
+): Promise<Contentlet[]> {
+    const response = await request.post('/api/content/_search', {
+        headers: {
+            Authorization: generateBase64Credentials(admin1.username, admin1.password)
+        },
+        data: {
+            query: `+contentType:${contentTypeVariable} +deleted:false`,
+            limit: 100,
+            offset: 0
+        }
+    });
+    expect(response.status()).toBe(200);
+
+    const body = await response.json();
+
+    return (body.entity?.jsonObjectView?.contentlets ?? []) as Contentlet[];
+}
+
+/**
  * How many versions of a contentlet the content index holds, archived ones included, so a test
  * can tell content that was archived (still there) from content that was deleted (gone).
  * `findWorkingContentlet` cannot: it leaves archived content out.

@@ -32,9 +32,10 @@ public class ContentImportParamsSchema {
                     "  \"contentType\": \"activity\",\n" +
                     "  \"language\": \"en-US\",\n" +
                     "  \"workflowActionId\": \"b9d89c80-3d88-4311-8365-187323c96436\",\n" +
-                    "  \"fields\": [\"title\"]\n" +
-                    "  \"stopOnError\":false \n" +
-                    "  \"commitGranularity\": 100\n" +
+                    "  \"fields\": [\"title\"],\n" +
+                    "  \"stopOnError\": false,\n" +
+                    "  \"commitGranularity\": 100,\n" +
+                    "  \"site\": \"demo.dotcms.com\"\n" +
                     "}"
     )
     private String form;
