@@ -1,11 +1,28 @@
 @let field = $field();
+@let isEditorReady = $isEditorReady();
 
 <div
     [class.dot-wysiwyg-tinymce__container--error]="$hasError()"
     [class.dot-wysiwyg-tinymce__container--focused]="$isFocused()"
-    class="dot-wysiwyg-tinymce__container">
-    <editor
-        [formControlName]="field.variable"
-        [init]="$editorConfig()"
-        (onInit)="handleEditorInit($event)" />
+    [class.min-h-50]="!isEditorReady"
+    class="dot-wysiwyg-tinymce__container relative">
+    @if ($configReady()) {
+        <editor
+            [formControlName]="field.variable"
+            [init]="$editorConfig()"
+            (onInit)="handleEditorInit($event)" />
+    }
+
+    <!-- Holds the editor's place while the system-wide config loads and TinyMCE builds its
+         iframe; blurs whatever TinyMCE has already painted underneath. -->
+    @if (!isEditorReady) {
+        <div
+            class="absolute inset-0 flex items-center justify-center rounded-(--p-inputtext-border-radius) border border-(--p-inputtext-border-color) bg-white/60 backdrop-blur-sm"
+            data-testid="wysiwyg-tinymce-loading">
+            <p-progressSpinner
+                styleClass="h-8! w-8!"
+                strokeWidth="4"
+                [ariaLabel]="'Loading' | dm" />
+        </div>
+    }
 </div>

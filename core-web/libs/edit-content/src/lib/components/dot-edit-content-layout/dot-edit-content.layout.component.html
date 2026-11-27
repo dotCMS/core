@@ -1,7 +1,21 @@
-@if ($store.isLoaded() || $store.isSaving() || $store.isReloading()) {
+@let permissionsSettled = $store.isPermissionsSettled();
+@let editorShown = $editorShown();
+
+<!-- An existing content renders only once its edit permission is known (`permissionsSettled`),
+     so the form never shows enabled and then flips to read-only when `_canlock` answers. That
+     hold is for the FIRST load only (`editorShown`): once the editor is on screen it stays
+     mounted while the permission is re-checked — after the first save in the dialog, or under
+     the overlay of an in-place reload — unmounting it would flash the spinner and reset the
+     sidebar tab. -->
+@if (
+    ($store.isLoaded() && (permissionsSettled || editorShown)) ||
+    $store.isSaving() ||
+    $store.isReloading()
+) {
     @let showSidebar = $store.isSidebarOpen();
     @let showSelectWorkflowWarning = $store.showSelectWorkflowWarning();
     @let lockWarningMessage = $store.lockWarningMessage();
+    @let isReadOnly = $store.isReadOnly();
     @let showBetaMessage = $store.isBetaMessageVisible();
     @let view = $store.uiState().view;
     @let showInvalidMessage = $store.formStatus() === 'invalid';
@@ -11,6 +25,7 @@
     @let topBarHasMessages =
         (isEnabledNewContentEditor && showBetaMessage) ||
         lockWarningMessage ||
+        isReadOnly ||
         showSelectWorkflowWarning;
     <div
         class="edit-content-layout__topBar flex flex-col [grid-area:topBar]"
@@ -103,6 +118,26 @@
             </p-message>
         }
 
+        <!-- Read-only banner: the backend denied the lock and offered no workflow action
+             (READ without EDIT), so the form below is disabled. Same lock-banner styling.
+             When someone else holds the lock, the lock banner above already says why the
+             form is disabled, so this one is not added on top. -->
+        @if (isReadOnly && !lockWarningMessage) {
+            <p-message
+                severity="warn"
+                styleClass="rounded-none! border-x-0! border-y-(--p-yellow-200)!"
+                data-testId="edit-content-layout__read-only-message">
+                <ng-template #container>
+                    <div class="flex w-full items-center gap-3 text-(--p-yellow-800)">
+                        <i class="pi pi-eye shrink-0 text-[18px] text-(--p-yellow-700)"></i>
+                        <div class="mr-auto" data-testId="edit-content-layout__read-only-content">
+                            {{ 'edit.content.no.edit.permission' | dm }}
+                        </div>
+                    </div>
+                </ng-template>
+            </p-message>
+        }
+
         @if (showSelectWorkflowWarning) {
             <p-message
                 [style.animation]="'slideIn 0.15s ease-out'"
@@ -180,12 +215,14 @@
         (workflowActionFired)="onWorkflowActionFired($event)"
         data-testId="edit-content-layout__sidebar"
         class="edit-content-layout__sidebar min-w-0 overflow-x-hidden [grid-area:sidebar]" />
-} @else if ($store.isLoading()) {
-    <!-- The first load, before there is any content to show: the same spinner as a reload. -->
+} @else if ($store.isLoading() || !permissionsSettled) {
+    <!-- The first load, before there is any content to show. The same spinner, in the same
+         place, as the side-panel drawer shows while this component's chunk loads, so opening
+         the panel reads as one continuous loading rather than two. -->
     <div
         class="edit-content-layout__loading flex items-center justify-center"
         data-testId="edit-content-layout__loading">
-        <i class="pi pi-spin pi-spinner text-4xl text-gray-500"></i>
+        <p-progressSpinner styleClass="h-8! w-8!" strokeWidth="4" [ariaLabel]="'Loading' | dm" />
     </div>
 }
 

@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.contenttype;
 
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.test.util.ApiTokenTestUtils;
 import org.junit.ClassRule;
 
@@ -2406,5 +2407,29 @@ public class FieldResourceTest {
 		request.setHeader("Authorization", TOKEN_UTILS.adminBearerHeader());
 
 		return request;
+	}
+
+	/**
+	 * Method to test: {@link FieldResource#createContentTypeField(String, String, HttpServletRequest)}
+	 * Given Scenario: The body has no contentTypeId (this used to fail with a 500)
+	 * Expected Result: 200, and the field is created on the type in the path
+	 */
+	@Test
+	public void test_createField_withoutContentTypeIdInBody_usesThePathType() throws Exception {
+		final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+		try {
+			final String json = "{"
+					+ "\"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\","
+					+ "\"name\": \"noBodyType\", \"variable\": \"noBodyType\", \"dataType\": \"TEXT\"}";
+
+			final Response response = new FieldResource()
+					.createContentTypeField(contentType.id(), json, getHttpRequest());
+
+			assertEquals(response.getEntity().toString(), 200, response.getStatus());
+			assertTrue(APILocator.getContentTypeFieldAPI().byContentTypeId(contentType.id()).stream()
+					.anyMatch(field -> "noBodyType".equals(field.variable())));
+		} finally {
+			ContentTypeDataGen.remove(contentType);
+		}
 	}
 }

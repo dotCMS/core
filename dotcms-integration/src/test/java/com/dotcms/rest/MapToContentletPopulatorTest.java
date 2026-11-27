@@ -60,6 +60,7 @@ import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.stream.Collectors;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -1065,6 +1066,134 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
                     parentContentType, relationshipField, secretChild.getIdentifier()));
             assertNotNull("The system user (no request) must still resolve the child",
                     parentAsSystem.get(Contentlet.RELATIONSHIP_KEY));
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(originalRequest);
+            if (UtilMethods.isSet(secretChild) && UtilMethods.isSet(secretChild.getInode())) {
+                ContentletDataGen.remove(secretChild);
+            }
+            if (UtilMethods.isSet(otherRole)) {
+                RoleDataGen.remove(otherRole);
+            }
+            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
+                contentTypeAPI.delete(parentContentType);
+            }
+            if (UtilMethods.isSet(childContentType) && UtilMethods.isSet(childContentType.id())) {
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
+
+    private static final String MISSING_IDENTIFIER = "0000aaaa-0000-bbbb-0000-cccc0000dddd";
+
+    private static List<String> popMessages(final Contentlet contentlet) {
+        final List<MessageEntity> messages = MapToContentletPopulator.popSaveWarningMessages(contentlet);
+        return null == messages ? List.of()
+                : messages.stream().map(MessageEntity::getMessage).collect(Collectors.toList());
+    }
+
+    /**
+     * Method to test: {@link MapToContentletPopulator#populate(Contentlet, Map)}
+     * Given Scenario: A relationship value sent as an array, with one existing identifier and one
+     * that does not exist (an array used to fail with a ClassCastException)
+     * Expected Result: The existing item is related, and the other one is reported in the save
+     * warnings that the REST layer returns in {@code messages}
+     */
+    @Test
+    public void Test_populate_relationship_array_relates_and_reports_identifiers_not_related()
+            throws DotDataException, DotSecurityException {
+
+        final MapToContentletPopulator populator = new MapToContentletPopulator();
+        final HttpServletRequest originalRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        ContentType parentContentType = null;
+        ContentType childContentType  = null;
+        try {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+            parentContentType = createAndSaveSimpleContentType("parentContentTypeArray");
+            childContentType  = createAndSaveSimpleContentType("childContentTypeArray");
+            final Field relationshipField = createAndSaveRelationshipField(
+                    "relatedArray", parentContentType.id(), childContentType.variable());
+            final Contentlet child = new ContentletDataGen(childContentType.id())
+                    .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                    .nextPersisted();
+
+            final Map<String, Object> properties = new HashMap<>();
+            properties.put(Contentlet.STRUCTURE_INODE_KEY, parentContentType.id());
+            properties.put(relationshipField.variable(),
+                    List.of(child.getIdentifier(), MISSING_IDENTIFIER));
+            final Contentlet parent = populator.populate(createContentlet(parentContentType), properties);
+
+            final ContentletRelationships relationships =
+                    (ContentletRelationships) parent.get(Contentlet.RELATIONSHIP_KEY);
+            assertNotNull(relationships);
+            assertEquals(1, relationships.getRelationshipsRecords().get(0).getRecords().size());
+            assertEquals(child.getIdentifier(),
+                    relationships.getRelationshipsRecords().get(0).getRecords().get(0).getIdentifier());
+
+            final List<String> messages = popMessages(parent);
+            assertEquals(messages.toString(), 1, messages.size());
+            assertTrue(messages.get(0), messages.get(0).contains(MISSING_IDENTIFIER)
+                    && messages.get(0).contains("was not related"));
+            assertNull("The warnings key must be removed once popped",
+                    parent.getMap().get(Contentlet.SAVE_WARNINGS_KEY));
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(originalRequest);
+            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
+                contentTypeAPI.delete(parentContentType);
+            }
+            if (UtilMethods.isSet(childContentType) && UtilMethods.isSet(childContentType.id())) {
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link MapToContentletPopulator#populate(Contentlet, Map)}
+     * Given Scenario: A user who cannot READ a related item sends its identifier, and in another
+     * save sends an identifier that does not exist
+     * Expected Result: Neither is related, and both get the same message, so the response does not
+     * tell whether content the user cannot read exists
+     */
+    @Test
+    public void Test_populate_unreadable_and_missing_identifiers_get_the_same_message()
+            throws DotDataException, DotSecurityException {
+
+        final MapToContentletPopulator populator = new MapToContentletPopulator();
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final HttpServletRequest originalRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        ContentType parentContentType = null;
+        ContentType childContentType  = null;
+        Role otherRole = null;
+        Contentlet secretChild = null;
+        try {
+            parentContentType = createAndSaveSimpleContentType("parentContentTypeUnreadable");
+            childContentType  = createAndSaveSimpleContentType("childContentTypeUnreadable");
+            final Field relationshipField = createAndSaveRelationshipField(
+                    "relatedUnreadable", parentContentType.id(), childContentType.variable());
+
+            otherRole = new RoleDataGen().nextPersisted();
+            secretChild = new ContentletDataGen(childContentType.id())
+                    .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                    .nextPersisted();
+            permissionAPI.save(new Permission(secretChild.getPermissionId(), otherRole.getId(),
+                    PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true),
+                    secretChild, user, false);
+
+            bindRequestWithoutUser();
+            final Contentlet unreadable = populator.populate(createContentlet(parentContentType),
+                    relationshipProps(parentContentType, relationshipField, secretChild.getIdentifier()));
+            final Contentlet missing = populator.populate(createContentlet(parentContentType),
+                    relationshipProps(parentContentType, relationshipField, MISSING_IDENTIFIER));
+
+            assertNull(unreadable.get(Contentlet.RELATIONSHIP_KEY));
+            final String secretIdentifier = secretChild.getIdentifier();
+            final List<String> unreadableMessages = popMessages(unreadable).stream()
+                    .map(message -> message.replace(secretIdentifier, "<id>"))
+                    .collect(Collectors.toList());
+            final List<String> missingMessages = popMessages(missing).stream()
+                    .map(message -> message.replace(MISSING_IDENTIFIER, "<id>"))
+                    .collect(Collectors.toList());
+            assertEquals(1, unreadableMessages.size());
+            assertEquals(missingMessages, unreadableMessages);
         } finally {
             HttpServletRequestThreadLocal.INSTANCE.setRequest(originalRequest);
             if (UtilMethods.isSet(secretChild) && UtilMethods.isSet(secretChild.getInode())) {

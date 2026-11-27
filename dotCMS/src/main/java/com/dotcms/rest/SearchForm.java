@@ -52,7 +52,8 @@ public class SearchForm {
             + "`-1` (default) loads none.", example = "1", defaultValue = "-1")
     private final int depth;
 
-    @Schema(description = "Language id to search in. Defaults to the system default language when omitted.",
+    @Schema(description = "Not a filter: results are not limited to this language. Filter by language with "
+            + "`+languageId:<id>` in `query`.",
             example = "1")
     private final long languageId;
 

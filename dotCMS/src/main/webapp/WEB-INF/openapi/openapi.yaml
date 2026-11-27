@@ -7588,6 +7588,13 @@ paths:
       description: |-
         Performs a comprehensive content search using [Lucene query syntax](https://dev.dotcms.com/docs/content-search-syntax). Supports filtering, sorting, pagination, and depth-based relationship loading. Returns structured JSON with search metadata and contentlet results.
 
+        **What a query returns:**
+
+        - **Unpublished content too.** Called as a back-end user (API token or session), results include working (unpublished) versions. Add `+live:true` to get published content only; a draft that is not in that result still exists.
+        - **One entry per language version.** Content that exists in two languages comes back twice, with the same `identifier`. Filter with `+languageId:<id>` **in the query**: a `languageId` property in the request body does not filter.
+        - **Fields by type.** Query a content type's field as `+<ContentTypeVar>.<fieldVar>:value`, e.g. `+Blog.author:"Ada"`, together with `+contentType:<ContentTypeVar>`.
+        - **Relationships.** With `depth: 1`, relationship fields come back as the related contentlets, resolved in each result's language.
+
         > **Note:** This is a wrapper around the former `api/content/_search`. Both paths remain valid for backwards compatibility, but the `v1` path is preferred.
       operationId: wrapperLuceneSearch
       parameters:
@@ -8608,7 +8615,7 @@ paths:
           - `host` *(string)* — site identifier UUID or the literal `SYSTEM_HOST` (defaults to the default site)
           - `folder` *(string)* — folder identifier UUID or the literal `SYSTEM_FOLDER` (defaults to `SYSTEM_FOLDER`)
           - `description` *(string)*
-          - `workflow` *(array of workflow scheme UUIDs)* — e.g. `["d61a59e1-a49c-46f2-a929-db2b4bfa88b2"]` for System Workflow. ⚠️ **Note:** this is `workflow` (singular) in the request. GET responses return `workflows` (plural, array of objects) — clients round-tripping an object must rename this key.
+          - `workflow` *(array of workflow scheme UUIDs)* — e.g. `["d61a59e1-a49c-46f2-a929-db2b4bfa88b2"]` for System Workflow. GET responses return `workflows` (plural, array of scheme objects); that key is read-only and ignored on write, so send `workflow` to set the schemes. Accepted values: an array of scheme ids, variable names or scheme objects; a string with one id or variable name, or several comma-separated; `null` or `[]` for no schemes. Any other type is rejected with a 400.
           - `fields` *(array of field objects)* — see field schema below (`ContentTypeFieldView`)
           - `metadata` *(object)* — known keys: `CONTENT_EDITOR2_ENABLED` (boolean), `DOT_STYLE_EDITOR_SCHEMA` (JSON string)
           - `systemActionMappings` *(object)* — maps system actions (`NEW`, `EDIT`, `PUBLISH`, `UNPUBLISH`, `ARCHIVE`, `UNARCHIVE`, `DELETE`, `DESTROY`) to workflow action UUIDs
@@ -8902,11 +8909,13 @@ paths:
       description: |-
         Updates the content type based on the given ID or Velocity variable name.
 
-        ⚠️ **Destructive semantics.** (with one exception). This endpoint treats the request body as the full desired state. Any editable property (including items in `fields[]`) absent from the body will be removed. **Exception: `metadata`** — if the `metadata` key is absent from the request body, the server preserves the existing metadata unchanged. To explicitly clear all metadata, send `"metadata": null`.
+        ⚠️ **Destructive semantics.** (with two exceptions). This endpoint treats the request body as the full desired state. Any editable property (including items in `fields[]`) absent from the body will be removed. **Exception: `metadata`** — if the `metadata` key is absent from the request body, the server preserves the existing metadata unchanged. To explicitly clear all metadata, send `"metadata": null`.
+
+        **Exception: workflow schemes** — only `workflow` (array of scheme UUIDs or scheme objects) sets them. If `workflow` is absent, the existing schemes are preserved unchanged; the `workflows` array GET returns is read-only and ignored on write. Accepted `workflow` values: an array of scheme ids, variable names or scheme objects; a string with one id or variable name, or several comma-separated (`"a,b"`); `null` or `[]` to remove every scheme. Any other type (number, boolean, object) is rejected with a 400.
 
         **Recommended update pattern:**
         1. `GET /api/v1/contenttype/id/{idOrVar}` to fetch the current object.
-        2. Mutate the returned object in place. Rename `workflows` (array of objects) → `workflow` (array of UUIDs) before sending.
+        2. Mutate the returned object in place. To change the schemes, send `workflow` (see accepted values above); editing `workflows` has no effect.
         3. PUT the entire mutated object back.
 
         This is also the only supported way to add, remove, or modify individual fields — the `/api/v1/contenttype/{typeId}/fields/**` family is deprecated in favor of this full-CT PUT.
@@ -8950,7 +8959,7 @@ paths:
           | Property | Value | Description |
           |-|-|-|
           | `systemActionMappings` | JSON Object | Maps [Default Workflow Actions](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) (as keys) to workflow action identifiers (as values) for this content type.|
-          | `workflow` | List of Strings | A list of identifiers of workflow schemes to be associated with the content type.
+          | `workflow` | List of Strings, String or null | A list of identifiers of workflow schemes to be associated with the content type. When absent, the current schemes are kept; `workflows` (the scheme objects GET returns) is ignored. Also accepts a single id or variable name, a comma-separated string of them, or `null` (no schemes); any other type is rejected with a 400.|
         required: true
       responses:
         "200":
@@ -9494,12 +9503,14 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/ContentTypeFieldView"
-        description: "A SINGLE field object to create on the content type. This endpoint\
-          \ creates exactly one field: if you pass a JSON array, only the first element\
-          \ is saved (it returns 200 and silently drops the rest). To add multiple\
-          \ fields at once, use PUT /api/v1/contenttype/{typeId}/fields (which takes\
-          \ an array), or include them inline as the 'fields' array when creating\
-          \ the content type via POST /api/v1/contenttype."
+        description: "A SINGLE field object to create on the content type. The content\
+          \ type is the one in the path; `contentTypeId` in the body can be omitted,\
+          \ and a different one is rejected with 400. This endpoint creates exactly\
+          \ one field: if you pass a JSON array, only the first element is saved (it\
+          \ returns 200 and silently drops the rest). To add multiple fields at once,\
+          \ use PUT /api/v1/contenttype/{typeId}/fields (which takes an array), or\
+          \ include them inline as the 'fields' array when creating the content type\
+          \ via POST /api/v1/contenttype."
         required: true
       responses:
         "200":
@@ -20038,7 +20049,9 @@ paths:
   /v1/users:
     post:
       description: "Creates a new user. Requires a CMS Administrator. FirstName, LastName,\
-        \ Email and Password are required"
+        \ Email and Password are required. The optional active flag sets the new user's\
+        \ status; omit it to create an active user. The optional male flag is applied\
+        \ the same way; omit it to take the default."
       operationId: createUser
       requestBody:
         content:
@@ -20088,7 +20101,12 @@ paths:
         \ the user's individual role) are never modified, keys that resolve to no\
         \ role are ignored, and null or blank entries are rejected with 400. Note\
         \ that roles without a key cannot be expressed in this list — manage those\
-        \ through the role-centric /v1/roles/{roleId}/users endpoints instead."
+        \ through the role-centric /v1/roles/{roleId}/users endpoints instead. The\
+        \ optional active flag activates or deactivates the user; omit it to leave\
+        \ the status untouched. Deactivating a user invalidates their login tokens\
+        \ and ends their sessions, which is why deactivating your own account is refused\
+        \ with a 400. The optional male flag follows the same rule: omit it to leave\
+        \ the stored value untouched."
       operationId: updateUser
       requestBody:
         content:
@@ -20112,7 +20130,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseSiteVariablesEntityView"
-          description: If the user information is not valid
+          description: "If the user information is not valid, or the payload asks\
+            \ to deactivate the calling user's own account"
         "403":
           content:
             application/json:
@@ -20228,6 +20247,8 @@ paths:
       - Users
   /v1/users/deactivate/{userId}:
     patch:
+      description: "Deactivates a user, which invalidates their login tokens and ends\
+        \ their sessions. Deactivating your own account is refused with a 400."
       operationId: deactivateUser
       parameters:
       - description: "Identifier of an user.\n\nExample value: `b9d89c80-3d88-4311-8365-187323c96436` "
@@ -20248,7 +20269,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseUserMapEntityView"
-          description: If the user information is not valid
+          description: "If the user id is the calling user's own, which cannot be\
+            \ deactivated"
         "403":
           content:
             application/json:
@@ -21097,7 +21119,13 @@ paths:
           }
         }
         ```
-        Field keys inside `contentlet` are the content type's field `variable` names (e.g., `title`, `body`, `image`). Unknown field names are silently dropped (a typo like `titel` will be ignored and may surface as a misleading 'title is required' error). Radio/Select/Checkbox values are not validated against the field's `values` list — out-of-range values are accepted as-is. Always verify spelling against `fields[].variable` from `GET /api/v1/contenttype/id/{idOrVar}`.
+        Field keys inside `contentlet` are the content type's field `variable` names (e.g., `title`, `body`, `image`), and they are case-sensitive. Unknown field names are dropped (a typo like `titel` will be ignored and may surface as a misleading 'title is required' error); a key that matches a field only by case (`Title` for `title`) is dropped too and reported in `messages`. Radio/Select/Checkbox values are not validated against the field's `values` list — out-of-range values are accepted as-is. Always verify spelling against `fields[].variable` from `GET /api/v1/contenttype/id/{idOrVar}`.
+
+        **Language** — set `languageId` in `contentlet`. Without it, new content is saved in the instance's default language. To add a language version to existing content, send its `identifier` with the new `languageId`.
+
+        **Relationship fields** — the value is the related content's identifiers, as a comma-separated string (`"id1,id2"`) or an array (`["id1", "id2"]`), or a Lucene query; an empty string or array clears the relationship. Relationships are read per language: content read in a language shows only related items that have a version in that language. The save still succeeds when an identifier does not exist (it is skipped) or when related content has no version in the content's language; both are reported in `messages`. Read relationships back with `POST /api/v1/content/_search` and `depth: 1`.
+
+        **`messages`** — advisory entries about the save (ignored keys, related content that will not resolve as sent, Story Block conversion). The save itself succeeded; read them before assuming the content looks exactly as sent.
 
         **Validation error response shape:**
 
@@ -40235,8 +40263,8 @@ components:
         languageId:
           type: integer
           format: int64
-          description: Language id to search in. Defaults to the system default language
-            when omitted.
+          description: "Not a filter: results are not limited to this language. Filter\
+            \ by language with `+languageId:<id>` in `query`."
           example: 1
         limit:
           type: integer
@@ -42948,6 +42976,12 @@ components:
       properties:
         active:
           type: boolean
+          description: "Whether the user account is active. Absent = the status is\
+            \ left as it is on update, and a new user is created active. An explicit\
+            \ value activates or deactivates the user; deactivating invalidates their\
+            \ login tokens and ends their sessions."
+          example: true
+          nullable: true
         additionalInfo:
           type: object
           additionalProperties:
@@ -42964,6 +42998,11 @@ components:
           type: string
         male:
           type: boolean
+          description: "Whether the user is male. Absent = the stored value is left\
+            \ as it is on update, and a new user is created with false. An explicit\
+            \ value sets it."
+          example: false
+          nullable: true
         middleName:
           type: string
         nickName:

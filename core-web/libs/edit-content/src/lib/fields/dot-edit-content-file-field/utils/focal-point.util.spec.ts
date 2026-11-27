@@ -29,6 +29,18 @@ describe('focalPointFromContentlet', () => {
         expect(focalPointFromContentlet(file)).toBe('0.1,0.2');
     });
 
+    it('reads the given binary field, not the title image, when a field variable is passed', () => {
+        // A saved Binary field is hydrated with the PARENT contentlet: `titleImage` names the
+        // item's title image (another field), so the focal must come from the clicked field.
+        const parent = {
+            titleImage: 'imageOne',
+            imageOneMetaData: { focalPoint: '0.2,0.3' },
+            imageTwoMetaData: { focalPoint: '0.7,0.8' }
+        } as unknown as DotCMSContentlet;
+        expect(focalPointFromContentlet(parent, 'imageTwo')).toBe('0.7,0.8');
+        expect(focalPointFromContentlet(parent, 'imageOne')).toBe('0.2,0.3');
+    });
+
     it('returns undefined when the field metadata carries no focal', () => {
         expect(focalPointFromContentlet(null)).toBeUndefined();
         expect(
