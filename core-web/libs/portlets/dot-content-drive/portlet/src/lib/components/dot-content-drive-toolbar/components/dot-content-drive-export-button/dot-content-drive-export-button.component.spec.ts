@@ -123,6 +123,19 @@ const selectedContentlet = (identifier: string, languageId: number): DotContentD
 const selectedContentlets = (count: number): DotContentDriveItem[] =>
     Array.from({ length: count }, (_, index) => selectedContentlet(`contentlet-${index}`, 1));
 
+/** A selected folder at `path`, shaped like the folders the listing holds. */
+const selectedFolder = (path: string): DotContentDriveItem =>
+    ({
+        ...FOLDER,
+        identifier: `folder${path}`,
+        inode: `folder${path}`,
+        path
+    }) as DotContentDriveItem;
+
+/** `count` distinct selected folders, each at the site root. */
+const selectedFolders = (count: number): DotContentDriveItem[] =>
+    Array.from({ length: count }, (_, index) => selectedFolder(`/folder-${index}/`));
+
 /** A selection-mode 200: the zip, holding one CSV per content type. */
 const ZIP_RESULT: DotContentDriveExportResult = {
     kind: 'file',
@@ -494,7 +507,8 @@ describe('DotContentDriveExportButtonComponent', () => {
     });
 
     // Selection mode (#37900, US2): with anything selected, the button exports the selected
-    // contentlets as a zip, whatever the listing is filtered to. Folders are Phase 9's (T085).
+    // contentlets and folders as a zip, whatever the listing is filtered to. Folders go as
+    // `//<hostname><path>` asset paths (US3).
     describe('selection mode', () => {
         /** The wrapper the limit tooltip hangs off: a disabled button fires no tooltip itself. */
         const exportTooltipWrapper = () =>
@@ -606,6 +620,94 @@ describe('DotContentDriveExportButtonComponent', () => {
                         })
                     })
                 );
+            });
+        });
+
+        // US3: a selected folder exports everything below it, so it is sent as the folder's asset
+        // path on the browsed site, and it counts toward the item limit like a contentlet.
+        describe('folders', () => {
+            it('should send the selected folders as asset paths on the browsed site, with the contentlets', async () => {
+                selectedItemsSignal.set([
+                    selectedFolder('/blog/'),
+                    selectedContentlet('blog-1', 1),
+                    selectedFolder('/a/b/'),
+                    selectedContentlet('news-1', 2)
+                ]);
+                await render();
+
+                spectator.click(exportButton() as HTMLElement);
+
+                expect(exportService.export).toHaveBeenCalledTimes(1);
+                expect(exportService.export).toHaveBeenCalledWith({
+                    siteId: CURRENT_SITE.identifier,
+                    selection: {
+                        folders: ['//demo.dotcms.com/blog/', '//demo.dotcms.com/a/b/'],
+                        contentlets: [
+                            { identifier: 'blog-1', languageId: 1 },
+                            { identifier: 'news-1', languageId: 2 }
+                        ]
+                    }
+                });
+            });
+
+            it('should send only folders when no contentlet is selected', async () => {
+                selectedItemsSignal.set([selectedFolder('/blog/')]);
+                await render();
+
+                spectator.click(exportButton() as HTMLElement);
+
+                expect(exportService.export).toHaveBeenCalledTimes(1);
+                expect(exportService.export).toHaveBeenCalledWith({
+                    siteId: CURRENT_SITE.identifier,
+                    selection: {
+                        folders: ['//demo.dotcms.com/blog/'],
+                        contentlets: []
+                    }
+                });
+            });
+
+            it("should build the folder paths with the browsed site's hostname", async () => {
+                currentSiteSignal.set({
+                    ...CURRENT_SITE,
+                    identifier: 'site-002',
+                    hostname: 'other.example.com'
+                });
+                selectedItemsSignal.set([selectedFolder('/blog/')]);
+                await render();
+
+                spectator.click(exportButton() as HTMLElement);
+
+                expect(exportService.export).toHaveBeenCalledWith({
+                    siteId: 'site-002',
+                    selection: {
+                        folders: ['//other.example.com/blog/'],
+                        contentlets: []
+                    }
+                });
+            });
+
+            it(`should count folders and contentlets together: ${MAX_SELECTION_ITEMS / 2} of each is enabled`, async () => {
+                selectedItemsSignal.set([
+                    ...selectedFolders(MAX_SELECTION_ITEMS / 2),
+                    ...selectedContentlets(MAX_SELECTION_ITEMS / 2)
+                ]);
+                await render();
+
+                expect(exportButton()).toBeTruthy();
+                expect(exportButton()?.disabled).toBe(false);
+                expect(exportTooltip()?.content ?? '').toBe('');
+            });
+
+            it(`should count folders and contentlets together: one past ${MAX_SELECTION_ITEMS} is disabled with the limit tooltip`, async () => {
+                selectedItemsSignal.set([
+                    ...selectedFolders(MAX_SELECTION_ITEMS / 2),
+                    ...selectedContentlets(MAX_SELECTION_ITEMS / 2 + 1)
+                ]);
+                await render();
+
+                expect(exportButton()).toBeTruthy();
+                expect(exportButton()?.disabled).toBe(true);
+                expect(exportTooltip()?.content).toBe(MAX_ITEMS_TOOLTIP);
             });
         });
 

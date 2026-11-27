@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.drive;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -11,15 +12,21 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.DotAssetDataGen;
 import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.api.v1.drive.export.DriveExportRequestForm;
 import com.dotcms.rest.api.v1.drive.export.ExportContentletRefForm;
 import com.dotcms.rest.api.v1.drive.export.ExportFileBuilder;
@@ -29,10 +36,12 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -93,6 +102,30 @@ public class ContentDriveExportSelectionModeTest extends IntegrationTestBase {
     private static Contentlet twinTwoEntry;
     private static Contentlet unsafeNameEntry;
 
+    // Folder part (User Story 3)
+    private static final String INVALID_PATH = "Invalid folder path.";
+    private static Host otherSite;
+    /** {@code /a/} holds X; {@code /a/b/c/} holds Y. */
+    private static Folder folderA;
+    private static Folder folderAB;
+    private static Contentlet x;
+    private static Contentlet y;
+    /** Holds one contentlet in two languages and an archived one. */
+    private static Folder languagesFolder;
+    private static Contentlet bilingual;
+    private static Contentlet bilingualSecondLanguage;
+    private static Contentlet archivedInFolder;
+    /** Holds a file asset, a dotAsset and a page. */
+    private static Folder assetsFolder;
+    private static Contentlet fileAsset;
+    private static Contentlet dotAsset;
+    private static Contentlet page;
+    /** Holds a Form entry and a Blog entry. */
+    private static Folder formFolder;
+    private static Contentlet formInFolder;
+    private static Contentlet blogInFormFolder;
+    private static Folder otherSiteFolder;
+
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
@@ -103,7 +136,7 @@ public class ContentDriveExportSelectionModeTest extends IntegrationTestBase {
 
         final String unique = String.valueOf(System.currentTimeMillis());
         site = new SiteDataGen().name("drive-selection-" + unique + ".local").nextPersisted();
-        final Host otherSite = new SiteDataGen().name("drive-selection-other-" + unique + ".local")
+        otherSite = new SiteDataGen().name("drive-selection-other-" + unique + ".local")
                 .nextPersisted();
         defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
         secondLanguage = new LanguageDataGen().nextPersisted();
@@ -137,6 +170,44 @@ public class ContentDriveExportSelectionModeTest extends IntegrationTestBase {
         twinOneEntry = entry(twinOne, site, "twin one");
         twinTwoEntry = entry(twinTwo, site, "twin two");
         unsafeNameEntry = entry(unsafeName, site, "unsafe");
+
+        folderA = new FolderDataGen().site(site).name("a").nextPersisted();
+        folderAB = new FolderDataGen().parent(folderA).name("b").nextPersisted();
+        final Folder folderABC = new FolderDataGen().parent(folderAB).name("c").nextPersisted();
+        x = entryIn(blog, folderA, "x");
+        y = entryIn(news, folderABC, "y");
+
+        languagesFolder = new FolderDataGen().site(site).name("languages").nextPersisted();
+        bilingual = entryIn(blog, languagesFolder, "bilingual");
+        final Contentlet bilingualDraft = ContentletDataGen.checkout(bilingual);
+        bilingualDraft.setLanguageId(secondLanguage.getId());
+        bilingualSecondLanguage = ContentletDataGen.checkin(bilingualDraft);
+        archivedInFolder = ContentletDataGen.publish(entryIn(blog, languagesFolder, "archived"));
+        ContentletDataGen.archive(archivedInFolder);
+
+        // "assets" is a reserved folder name
+        assetsFolder = new FolderDataGen().site(site).name("media").nextPersisted();
+        final File text = File.createTempFile("drive-export-file", ".txt");
+        Files.writeString(text.toPath(), "file asset body");
+        fileAsset = new FileAssetDataGen(assetsFolder, text).nextPersisted();
+        final File image = File.createTempFile("drive-export-dotasset", ".png");
+        Files.write(image.toPath(), new byte[]{1, 2, 3});
+        dotAsset = new DotAssetDataGen(site, assetsFolder, image).nextPersisted();
+        page = new HTMLPageDataGen(assetsFolder, new TemplateDataGen().nextPersisted())
+                .nextPersisted();
+
+        formFolder = new FolderDataGen().site(site).name("forms").nextPersisted();
+        formInFolder = new ContentletDataGen(formType).host(site).folder(formFolder)
+                .nextPersistedWithSampleTextValues();
+        blogInFormFolder = entryIn(blog, formFolder, "beside the form");
+
+        otherSiteFolder = new FolderDataGen().site(otherSite).name("elsewhere").nextPersisted();
+    }
+
+    private static Contentlet entryIn(final ContentType type, final Folder folder,
+            final String title) {
+        return new ContentletDataGen(type).host(site).folder(folder)
+                .languageId(defaultLanguage.getId()).setProperty("title", title).nextPersisted();
     }
 
     private static ContentType titledType(final String name, final String variable) {
@@ -169,6 +240,22 @@ public class ContentDriveExportSelectionModeTest extends IntegrationTestBase {
     private static DriveExportRequestForm selectionOf(final Contentlet... contentlets) {
         return selection(site.getIdentifier(), Stream.of(contentlets)
                 .map(ContentDriveExportSelectionModeTest::ref).collect(Collectors.toList()))
+                .build();
+    }
+
+    private static String pathOf(final Folder folder) {
+        return "//" + site.getHostname() + folder.getPath();
+    }
+
+    /** A selection of folder paths and contentlets in the browsed site. */
+    private static DriveExportRequestForm folderSelection(final List<String> folders,
+            final Contentlet... contentlets) {
+        return DriveExportRequestForm.builder().siteId(site.getIdentifier())
+                .selection(ExportSelectionForm.builder().folders(folders)
+                        .contentlets(Stream.of(contentlets)
+                                .map(ContentDriveExportSelectionModeTest::ref)
+                                .collect(Collectors.toList()))
+                        .build())
                 .build();
     }
 
@@ -454,5 +541,142 @@ public class ContentDriveExportSelectionModeTest extends IntegrationTestBase {
         assertEquals(FOLDER_NOT_FOUND, errorMessage(missing));
         assertEquals(404, unreadable.getStatus());
         assertEquals(FOLDER_NOT_FOUND, errorMessage(unreadable));
+    }
+    // ---------------------------------------------------------------------------------------------
+    // folders (User Story 3)
+    // ---------------------------------------------------------------------------------------------
+
+    /**
+     * Method to test: {@link ContentDriveResource#export}
+     * Given Scenario: (a) {@code /a/} holds X and {@code /a/b/c/} holds Y; {@code /a/},
+     *                 {@code /a/b/} and X are selected
+     * ExpectedResult: X and Y once each, at any depth, and no row for a folder (FR-006, FR-017)
+     */
+    @Test
+    public void test_nestedFolderSelection_exportsEachContentletOnce() throws Exception {
+        final Response response = export(
+                folderSelection(List.of(pathOf(folderA), pathOf(folderAB)), x));
+
+        assertEquals("2", header(response, "X-Export-Contentlets"));
+        final Map<String, String> entries = zipEntries(response);
+        assertEquals(Set.of(keyOf(x), keyOf(y)), rowKeys(entries));
+        final List<String> identifiers = new ArrayList<>();
+        entries.values().forEach(csv -> dataRows(csv).forEach(row -> identifiers.add(row.get(0))));
+        assertEquals("each contentlet once", 2, identifiers.size());
+        assertFalse("no row for a folder", identifiers.contains(folderA.getIdentifier()));
+        assertFalse("no row for a folder", identifiers.contains(folderAB.getIdentifier()));
+    }
+
+    /**
+     * Method to test: {@link ContentDriveResource#export}
+     * Given Scenario: (b) A folder holding a contentlet in two languages and an archived contentlet
+     * ExpectedResult: All three rows: every language and archived content (FR-006)
+     */
+    @Test
+    public void test_folder_exportsEveryLanguageAndArchivedContent() throws Exception {
+        final Map<String, String> entries =
+                zipEntries(export(folderSelection(List.of(pathOf(languagesFolder)))));
+
+        assertEquals(Set.of(keyOf(bilingual), keyOf(bilingualSecondLanguage),
+                keyOf(archivedInFolder)), rowKeys(entries));
+    }
+
+    /**
+     * Method to test: {@link ContentDriveResource#export}
+     * Given Scenario: (c) A folder holding a file asset, a dotAsset and a page
+     * ExpectedResult: Each in its own type's CSV; the file asset's binary field is a download URL
+     */
+    @Test
+    public void test_folderAssets_exportInTheirOwnTypeCsv() throws Exception {
+        final Map<String, String> entries =
+                zipEntries(export(folderSelection(List.of(pathOf(assetsFolder)))));
+
+        for (final Contentlet asset : List.of(fileAsset, dotAsset, page)) {
+            final String csv = entries.get(csvName(asset.getContentType()));
+            assertNotNull("a CSV for " + asset.getContentType().variable(), csv);
+            assertEquals(Set.of(keyOf(asset)), rowKeys(Map.of("csv", csv)));
+        }
+        final String fileCsv = entries.get(csvName(fileAsset.getContentType()));
+        final String[] lines = fileCsv.split("\r\n");
+        final List<String> header = List.of(lines[0].split(","));
+        final List<String> row = List.of(lines[1].split(",", -1));
+        final String binary = row.get(header.indexOf("fileAsset"));
+        assertTrue("binary as a download URL: " + binary, binary.startsWith("http"));
+    }
+
+    /**
+     * Method to test: {@link ContentDriveResource#export}
+     * Given Scenario: (d) A folder and a contentlet outside it are selected
+     * ExpectedResult: Both end up in the same zip
+     */
+    @Test
+    public void test_folderAndOutsideContentlet_shareOneZip() throws Exception {
+        final Map<String, String> entries =
+                zipEntries(export(folderSelection(List.of(pathOf(folderA)), newsOne)));
+
+        assertTrue(rowKeys(entries).containsAll(Set.of(keyOf(x), keyOf(y), keyOf(newsOne))));
+    }
+
+    /**
+     * Method to test: {@link ContentDriveResource#export}
+     * Given Scenario: (e) A folder holding a Form entry and a Blog entry
+     * ExpectedResult: The Blog entry only: Form content is never exported (FR-007). Sites live in
+     *                 System Host, never in a site folder, so the Host exclusion is covered by the
+     *                 filter-mode and BrowserAPI tests
+     */
+    @Test
+    public void test_folderForm_isNotExported() throws Exception {
+        final Map<String, String> entries =
+                zipEntries(export(folderSelection(List.of(pathOf(formFolder)))));
+
+        assertEquals(Set.of(keyOf(blogInFormFolder)), rowKeys(entries));
+        assertFalse(rowKeys(entries).contains(keyOf(formInFolder)));
+    }
+
+    /**
+     * Method to test: {@link ContentDriveResource#export}
+     * Given Scenario: (f) A path that does not parse, {@code //}, and the site root; (h) no file
+     * ExpectedResult: 400 "Invalid folder path." each time, and no file left
+     */
+    @Test
+    public void test_invalidFolderPaths_areRejected() throws Exception {
+        final Set<Path> before = exportDirectoryFiles();
+        for (final String path : List.of("not a path", "//", "//" + site.getHostname() + "/")) {
+            final Response response = export(folderSelection(List.of(path)));
+
+            assertEquals(path, 400, response.getStatus());
+            assertEquals(path, INVALID_PATH, errorMessage(response));
+        }
+        final Set<Path> added = new HashSet<>(exportDirectoryFiles());
+        added.removeAll(before);
+        assertEquals("no temp file is left", Set.of(), added);
+    }
+
+    /**
+     * Method to test: {@link ContentDriveResource#export}
+     * Given Scenario: (g) A path that does not exist, a path naming a file, and a folder of another
+     *                 site; (h) no file
+     * ExpectedResult: 404 "Folder not found." each time, with identical bodies, and no file left
+     * (FR-014)
+     */
+    @Test
+    public void test_unresolvableFolders_areNotFound() throws Exception {
+        final Set<Path> before = exportDirectoryFiles();
+        final String filePath = "//" + site.getHostname()
+                + APILocator.getIdentifierAPI().find(fileAsset.getIdentifier()).getPath();
+        final Set<String> bodies = new HashSet<>();
+        for (final String path : List.of(pathOf(folderA) + "no-such-folder/", filePath,
+                "//" + otherSite.getHostname() + otherSiteFolder.getPath())) {
+            final Response response = export(folderSelection(List.of(path)));
+
+            assertEquals(path, 404, response.getStatus());
+            assertEquals(path, FOLDER_NOT_FOUND, errorMessage(response));
+            bodies.add(DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
+                    .writeValueAsString(response.getEntity()));
+        }
+        assertEquals("identical bodies", 1, bodies.size());
+        final Set<Path> added = new HashSet<>(exportDirectoryFiles());
+        added.removeAll(before);
+        assertEquals("no temp file is left", Set.of(), added);
     }
 }
