@@ -15,6 +15,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -98,6 +99,7 @@ import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.LuceneQueryUtils;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.PaginatedContentList;
@@ -106,6 +108,7 @@ import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -144,6 +147,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 
@@ -800,19 +804,12 @@ public class PageResourceTest {
         final ContentSearchResults<Contentlet> results = new ContentSearchResults<>(
                 ContentSearchResponse.builder().hits(SearchHits.empty()).tookMillis(0).build(),
                 contentlets);
-        final String query = String.format("{"
-                + "query: {"
-                + "query_string: {"
-                    + "query: \"+basetype:5 +path:*%s*  languageid:1^10\""
-                    + "}"
-                    + "}"
-                + "}", path.replace("/", "\\\\/"));
-
-
-        when(esapi.search(query, false, user, false)).thenReturn(results);
+        when(esapi.search(anyString(), eq(false), eq(user), eq(false))).thenReturn(results);
 
         final Response response = pageResource.searchPage(request,  new EmptyHttpResponse(), path, false, true);
         RestUtilTest.verifySuccessResponse(response);
+        assertEquals("+basetype:5 +path:*" + LuceneQueryUtils.escape(path) + "* languageid:1^10",
+                capturedPageSearchQuery());
 
         final Collection contentLetsResponse = (Collection) ((ResponseEntityView) response.getEntity()).getEntity();
         assertEquals(contentLetsResponse.size(), 1);
@@ -820,6 +817,18 @@ public class PageResourceTest {
         final Map responseMap = (Map) contentLetsResponse.iterator().next();
         assertEquals(responseMap.get("identifier"), contentlet.getIdentifier());
         assertEquals(responseMap.get("inode"), contentlet.getInode());
+    }
+
+    /**
+     * Reads the query text of the last request the page search sent to the mocked content API.
+     *
+     * @return the {@code query_string} text of that request
+     */
+    private String capturedPageSearchQuery() throws DotDataException, DotSecurityException {
+        final ArgumentCaptor<String> request = ArgumentCaptor.forClass(String.class);
+        verify(esapi).search(request.capture(), eq(false), eq(user), eq(false));
+        return new JSONObject(request.getValue()).getJSONObject("query")
+                .getJSONObject("query_string").getString("query");
     }
 
     /**
@@ -838,19 +847,13 @@ public class PageResourceTest {
         final ContentSearchResults<Contentlet> results = new ContentSearchResults<>(
                 ContentSearchResponse.builder().hits(SearchHits.empty()).tookMillis(0).build(),
                 contentlets);
-        String preparedPagePath = String.format("%s/%s",folderName,pageName).replace("/", "\\\\/");
-        final String query = String.format("{"
-                + "query: {"
-                + "query_string: {"
-                + "query: \"+basetype:5 +path:*%s* +conhostName:%s languageid:1^10\""
-                + "}"
-                + "}"
-                + "}", preparedPagePath, host.getHostname());
-
-        when(esapi.search(query, false, user, false)).thenReturn(results);
+        when(esapi.search(anyString(), eq(false), eq(user), eq(false))).thenReturn(results);
 
         final Response response = pageResource.searchPage(request,  new EmptyHttpResponse(), path, false, true);
         RestUtilTest.verifySuccessResponse(response);
+        assertEquals("+basetype:5 +path:*" + LuceneQueryUtils.escape(folderName + "/" + pageName)
+                        + "* +conhostName:" + LuceneQueryUtils.escape(host.getHostname()) + " languageid:1^10",
+                capturedPageSearchQuery());
 
         final Collection contentLetsResponse = (Collection) ((ResponseEntityView) response.getEntity()).getEntity();
         assertEquals(contentLetsResponse.size(), 1);
