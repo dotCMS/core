@@ -276,7 +276,7 @@ describe('mcp-server boot smoke test', () => {
 
         const initialize = listed.responses.find((response) => response.id === 1);
         expect(initialize?.error).toBeUndefined();
-        const capabilities = initialize?.result?.capabilities as
+        const capabilities = initialize?.result?.['capabilities'] as
             | {
                   resources?: unknown;
                   extensions?: Record<string, unknown>;
