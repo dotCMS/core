@@ -13,9 +13,10 @@
 **Input**: [#37900](https://github.com/dotCMS/core/issues/37900) — Content Drive: Add content export.
 Bring the Content Search CSV export to Content Drive with feature parity first (filter mode: exactly
 one content type, every result of the listing's location and filters, as one CSV), then add
-selection as new capability (selection mode: up to 60 folders and contentlets of any content types,
-as a zip with one CSV per content type). Both reuse the Content Search CSV writer and file names
-(`<ContentType>_contents_<M_d_yyyy>.csv`; the zip is `<SiteName>_export_<M_d_yyyy>.zip`), keep the
+selection as new capability (selection mode: up to a configurable number of folders and contentlets,
+60 by default, of any content types, as one CSV when they resolve to a single content type and
+otherwise a zip with one CSV per content type). Both reuse the Content Search CSV writer and file
+names (`<ContentType>_contents_<M_d_yyyy>.csv`; the zip is `<SiteName>_export_<M_d_yyyy>.zip`), keep the
 100,000-row limit but refuse bigger exports instead of truncating them, and let the selection win
 over the filter.
 
@@ -37,7 +38,8 @@ This feature brings that export to Drive, through one new endpoint, in two modes
 - **Selection mode (new).** The user selects folders and contentlets, of any content types. A
   selected contentlet is exported in the language version the user selected, and only that one. A
   selected folder brings every contentlet below it, at any depth, in every language version and
-  including archived ones. Folders themselves are never rows. The result is a zip with one CSV per content type. Drive's filters do not apply: **what you
+  including archived ones. Folders themselves are never rows. The result is one CSV when every row
+  is of a single content type, and otherwise a zip with one CSV per content type. Drive's filters do not apply: **what you
   select is what you export.**
 
 Each CSV has the same columns, values and file name as the Content Search export, so it can be
@@ -100,7 +102,7 @@ CSV.
 ### User Story 2 - Export selected contentlets of several content types (Priority: P2)
 
 An editor selects contentlets in Drive and clicks **Export**. A zip downloads with one CSV per
-content type among them. Each selected row is exported as it was selected: the contentlet in that
+content type among them; when they are all of one content type, that single CSV downloads instead. Each selected row is exported as it was selected: the contentlet in that
 language, and no other language version of it.
 
 **Why this priority**: It is new capability beyond Content Search. It reuses the CSV writer, the
@@ -116,11 +118,14 @@ data row. The toast reports 3 items and 2 files.
 **Acceptance Scenarios**:
 
 1. **Given** one or more items are selected in Drive, **When** the toolbar renders, **Then** an
-   Export button is shown beside the workflow actions, and the Action Center does not list an
-   Export row.
+   Export button is shown as the last button of the toolbar, where filter mode shows it, and the
+   Action Center does not list an Export row.
 2. **Given** contentlets of two content types are selected, **When** the user clicks Export,
    **Then** a zip downloads that holds one CSV per content type, and the toast reports the number
    of rows and CSV files exported.
+2a. **Given** the selected items resolve to rows of a single content type (contentlets of one type,
+   or folders whose content is all of one type), **When** the user clicks Export, **Then** that one
+   CSV downloads, named as in filter mode, not a zip holding it.
 3. **Given** a contentlet has versions in two languages and only its English row is selected,
    **When** it is exported, **Then** its CSV has only the English row. **Given** both language rows
    are selected, **Then** both are exported, each with its languageCode and countryCode.
@@ -130,19 +135,19 @@ data row. The toast reports 3 items and 2 files.
    the user exports a selection, **Then** the filters do not change which items are exported.
 6. **Given** items are selected and the listing is filtered to one content type, **When** the user
    exports, **Then** the selection is exported and the filter is ignored.
-7. **Given** more than 60 items are selected (folders and contentlets together), **When** the
-   toolbar renders, **Then** the Export button is disabled and explains that at most 60 items can be
-   exported at once.
-8. **Given** a request whose selection has more than 60 entries, **When** it reaches the server,
-   **Then** it is refused as a bad request and no file is produced.
+7. **Given** more items are selected than the configured selection limit (folders and contentlets
+   together; 60 by default), **When** the toolbar renders, **Then** the Export button is disabled
+   and explains that at most that many items can be exported at once.
+8. **Given** a request whose selection has more entries than the configured selection limit,
+   **When** it reaches the server, **Then** it is refused as a bad request and no file is produced.
 
 ---
 
 ### User Story 3 - Export whole folders (Priority: P2)
 
 An editor selects one or more folders, optionally together with contentlets, and exports them. The
-zip holds every contentlet inside the folders at any depth, plus the selected contentlets, each
-exported once. Folders are only walked to reach their content; they are never rows.
+file (a zip, or one CSV when everything is of one content type) holds every contentlet inside the
+folders at any depth, plus the selected contentlets, each exported once. Folders are only walked to reach their content; they are never rows.
 
 **Why this priority**: Exporting a whole section of a site, of every content type, is what
 selection adds over Content Search, which has no recursive folder export.
@@ -161,7 +166,7 @@ and no row stands for a folder.
 3. **Given** a selected folder holds files and pages, **When** it is exported, **Then** they are
    exported in their own content types' CSVs, with binary fields as a download URL.
 4. **Given** a folder and a contentlet outside it are selected, **When** they are exported, **Then**
-   both are in the same zip.
+   both are in the same file.
 5. **Given** a contentlet is selected directly and is also inside a selected folder, **When** they
    are exported, **Then** the contentlet appears in its CSV once.
 6. **Given** a folder and one of its subfolders are both selected, **When** they are exported,
@@ -242,7 +247,7 @@ An editor exports content, edits a CSV, and imports it back to update the same c
 moves the CSV writer and changes one column (host/folder), and neither may break importing. It is
 checked as part of this ticket, without waiting for the Drive import ticket (#37896).
 
-**Independent Test**: Export a filter-mode CSV and a selection-mode zip that together hold content in
+**Independent Test**: Export a filter-mode CSV and a selection-mode file that together hold content in
 a folder, content at a site root and content in System Host. Import one CSV of each with Identifier
 as the key field and no language (multilingual file). The same contentlets are updated with no row
 errors, and each one is still on the same site and in the same folder.
@@ -305,9 +310,9 @@ file.
   a Form type filter (FR-007).
 - **Listing changes while it is being exported.** Content created or deleted during a filter-mode
   export may or may not be in the file; the export does not lock the listing.
-- **60 items selected, one of them a large folder.** The 60-item limit counts what the user selected,
-  not what is below it: a folder is one item. The 100,000-row limit still applies to what the
-  selection expands to (FR-010).
+- **The selection limit reached, one of them a large folder.** The selection limit counts what the
+  user selected, not what is below it: a folder is one item. The 100,000-row limit still applies to
+  what the selection expands to (FR-010).
 - **Content at a site root.** Its host/folder column is the bare hostname, not `//site/`. Written as
   `//site/`, the import would resolve the path `/` to the system folder and silently move the
   contentlet to System Host, with no row error (FR-022).
@@ -353,9 +358,12 @@ file.
   resolved for the user, before any content is read: a content type that does not exist and one the
   user cannot read MUST both be refused, with the same bad-request message. An unresolved type MUST
   never fall through to a query with no content type restriction.
-- **FR-004a**: A selection MUST hold at most 60 items, counting folders and contentlets together. A
-  folder counts as one item, whatever it contains. A request whose selection has more than 60
-  entries MUST be refused as a bad request.
+- **FR-004a**: A selection MUST hold at most a configurable number of items
+  (`CONTENT_DRIVE_EXPORT_MAX_SELECTED_ITEMS`, 60 by default), counting folders and contentlets
+  together. A folder counts as one item, whatever it contains. The limit applies to selection mode
+  only. A request whose selection has more entries than the limit MUST be refused as a bad request
+  whose message says at most that many items can be exported at once. The UI MUST read the same
+  configured value, so the button and the server never disagree.
 
 **What gets exported**
 
@@ -403,9 +411,12 @@ file.
 
 **Files and names**
 
-- **FR-016**: A filter-mode export MUST produce a single CSV, not a zip. A selection-mode export MUST
-  produce a zip named `<SiteName>_export_<M_d_yyyy>.zip`, where `<SiteName>` is the site the user is
-  browsing in Drive and the date is the export date.
+- **FR-016**: A filter-mode export MUST produce a single CSV, not a zip. A selection-mode export whose
+  rows are all of one content type MUST produce that single CSV as well, named as in filter mode
+  (FR-019). A selection-mode export with rows of two or more content types MUST produce a zip named
+  `<SiteName>_export_<M_d_yyyy>.zip`, where `<SiteName>` is the site the user is browsing in Drive
+  and the date is the export date. Which applies is decided by the rows resolved, not by what was
+  selected: a folder may hold content of several types.
 - **FR-017**: Each contentlet MUST appear at most once per language: duplicates are removed by
   identifier and language, not by inode. This applies when a contentlet is selected and also inside
   a selected folder, when nested folders are both selected, when the same entry is sent twice, and
@@ -480,7 +491,7 @@ file.
 - **FR-027**: When there is nothing the user can read to export, the system MUST return "no
   content" (204) and no file.
 - **FR-028**: An empty selection with no listing query, a malformed folder path, a filter-mode query
-  not naming exactly one readable content type, a selection of more than 60 entries, and an export
+  not naming exactly one readable content type, a selection over the configured selection limit, and an export
   over 100,000 rows MUST return "bad request" (400) with a message the UI can show. A folder that
   does not resolve is "not found" (404), as an unreadable one is (FR-014).
 - **FR-029**: When the export fails, the system MUST return a server error (500) with a JSON error
@@ -499,10 +510,11 @@ file.
   is not a Form, Drive MUST show the Export button in the toolbar, which exports in filter mode. If
   the listing shows no contentlets for the current filters, the button MUST be disabled. Otherwise,
   with nothing selected, it MUST NOT be shown.
-- **FR-035**: When one or more items are selected, Drive MUST show the Export button beside the
-  workflow actions in the toolbar, which exports the selection. The Action Center MUST NOT list an
-  Export row. With more than 60 items selected, the button MUST be disabled and tell the user that
-  at most 60 items can be exported at once.
+- **FR-035**: When one or more items are selected, Drive MUST show the Export button in the toolbar,
+  which exports the selection. In both modes the button MUST sit in the same place: last, after
+  every other toolbar button. The Action Center MUST NOT list an Export row. With more items
+  selected than the configured selection limit (FR-004a), the button MUST be disabled and tell the
+  user that at most that many items can be exported at once.
 - **FR-036**: While an export runs, the Export button MUST show a loading state and be disabled.
 - **FR-037**: On success, the browser MUST download the file under the server's file name, and a
   toast MUST report the number of items and CSV files exported.
@@ -522,8 +534,9 @@ file.
   identifier and language.
 - **Content-type CSV**: All export rows of one content type, with one header row, named
   `<ContentType>_contents_<M_d_yyyy>.csv`.
-- **Export file**: A single content-type CSV (filter mode) or a zip of content-type CSVs (selection
-  mode), with its row and file counts.
+- **Export file**: A single content-type CSV (filter mode, or a selection whose rows are of one
+  content type) or a zip of content-type CSVs (a selection with rows of several content types), with
+  its row and file counts.
 
 ## Success Criteria *(mandatory)*
 
@@ -532,8 +545,9 @@ file.
 - **SC-001**: Every export an editor can make today from Content Search (one content type, filtered
   by site or folder, language, workflow, text and System Host) can be made from Drive in one
   action, without paging through the listing first.
-- **SC-002**: A user can export any mix of up to 60 selected folders and contentlets they can read,
-  of any number of content types, in one action, up to 100,000 rows.
+- **SC-002**: A user can export any mix of selected folders and contentlets they can read, up to the
+  configured selection limit (60 by default), of any number of content types, in one action, up to
+  100,000 rows.
 - **SC-003**: For the same content, 100% of columns and values in a Drive CSV match the Content
   Search export, except the host/folder column.
 - **SC-004**: A CSV from either mode, imported back with Identifier as key and no language, updates
@@ -562,8 +576,9 @@ file.
 - **Known related decisions**:
   - Feature parity with Content Search is the first goal; selection is additional (team decision,
     2026-10-14).
-  - The Export button sits in the toolbar, beside the workflow actions when there is a selection,
-    not in the Action Center. This was decided in the team meeting.
+  - The Export button sits in the toolbar, not in the Action Center. This was decided in the team
+    meeting. After the manual check (2026-11-27) the developer asked for the same place in both
+    modes: last in the toolbar.
   - The relationship column keeps legacy behavior and is not filtered by the user's permissions
     (FR-024). This was decided explicitly in the spec review, as feature parity: today's Content
     Search export already writes every related identifier unchecked (`loadRelationships`, with
