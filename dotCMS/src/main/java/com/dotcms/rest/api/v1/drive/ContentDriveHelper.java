@@ -45,6 +45,13 @@ import java.util.stream.Collectors;
  */
 public class ContentDriveHelper {
 
+    /**
+     * The 400 message for search text or filter values the index cannot build a query from. The
+     * listing and the Content Drive export give the same one.
+     */
+    public static final String TOO_COMPLEX_MESSAGE = "The search text or filter values are too "
+            + "complex to search for; simplify or shorten them and try again.";
+
     private final BrowserAPI browserAPI;
     private final ContentDriveFieldFilterResolver fieldFilterResolver =
             new ContentDriveFieldFilterResolver();
@@ -88,6 +95,54 @@ public class ContentDriveHelper {
      * @throws DotSecurityException any security violation exception
      */
     public PaginatedContents driveSearch(final DriveRequestForm requestForm, final User user)
+            throws DotDataException, DotSecurityException {
+
+        final Builder builder = toBrowserQueryBuilder(requestForm, user);
+
+        // Build once and log the query itself: flags such as showLinks and showFolders can be
+        // overridden by the workflow and userSearchable branches of toBrowserQueryBuilder, so
+        // logging the request would misreport what actually ran. BrowserQuery.toString() carries the
+        // effective flags, all three cursors and the filters.
+        //
+        // ⚠ EVERY builder mutation MUST go ABOVE this line. build() snapshots the builder, so a
+        // `builder.withX(...)` placed after it is silently discarded — the request succeeds and the
+        // filter simply does nothing. That is exactly how the status filter shipped broken once:
+        // the block was anchored on the Logger.debug below, and a refactor that hoisted build()
+        // above the log moved it to the wrong side without any compile or test failure.
+        final BrowserQuery browserQuery = builder.build();
+
+        Logger.debug(this, () -> String.format("Content drive search - User: %s, Path: %s, %s",
+                user.getUserId(), requestForm.assetPath(), browserQuery));
+
+        checkSearchable(browserQuery);
+        try {
+            return browserAPI.getPaginatedContents(browserQuery);
+        } catch (final DotDataException | DotRuntimeException e) {
+            if (ExceptionUtil.causedBy(e, ESQueryTooComplexException.class)) {
+                throw new BadRequestException(e, TOO_COMPLEX_MESSAGE);
+            }
+            throw e;
+        }
+    }
+
+    /**
+     * Turns a Drive listing request into the {@link BrowserQuery} builder that serves it: the site
+     * or folder, the browse scope, languages, content and base types, text and field filters,
+     * workflow and status. The listing and the Content Drive export both start from it, so an
+     * export matches exactly what the listing shows.
+     * <p>
+     * The builder is returned unbuilt so a caller can adjust it. Every adjustment must be made
+     * before {@code build()}, which snapshots the builder: a mutation after it is silently lost.
+     * Call {@link #checkSearchable(BrowserQuery)} on the built query before running it.
+     *
+     * @param requestForm the Drive listing request
+     * @param user        the {@link User} the listing runs as
+     * @return the builder, with every part of the request applied
+     * @throws BadRequestException  when the request is invalid
+     * @throws DotDataException     when the site, folder or content types cannot be resolved
+     * @throws DotSecurityException when the user cannot read the site or folder
+     */
+    public Builder toBrowserQueryBuilder(final DriveRequestForm requestForm, final User user)
             throws DotDataException, DotSecurityException {
 
         final List<Long> langIds = requestForm.language().stream()
@@ -257,39 +312,21 @@ public class ContentDriveHelper {
         if (!contentStatuses.isEmpty()) {
             builder.withContentStatuses(contentStatuses);
         }
+        return builder;
+    }
 
-        // Build once and log the query itself: flags such as showLinks and showFolders can be
-        // overridden by the workflow and userSearchable branches above, so logging the locals would
-        // misreport what actually ran. (The status branch is deliberately not in that list — it
-        // sets no flags, see the comment above it.) BrowserQuery.toString() carries the effective
-        // flags, all three cursors and the filters.
-        //
-        // ⚠ EVERY builder mutation MUST go ABOVE this line. build() snapshots the builder, so a
-        // `builder.withX(...)` placed after it is silently discarded — the request succeeds and the
-        // filter simply does nothing. That is exactly how the status filter shipped broken once:
-        // the block was anchored on the Logger.debug below, and a refactor that hoisted build()
-        // above the log moved it to the wrong side without any compile or test failure.
-        final BrowserQuery browserQuery = builder.build();
-
-        Logger.debug(this, () -> String.format("Content drive search - User: %s, Path: %s, %s",
-                user.getUserId(), assetPath, browserQuery));
-
-        // Search input the index cannot serve is bad input, not a server failure (issue #37488):
-        // a term or values too long to leave room for the per-sub-query inode restriction, and a
-        // query the index finds too complex to build from them.
+    /**
+     * Rejects a built query the index cannot serve. Search input the index cannot serve is bad
+     * input, not a server failure (issue #37488): a term or values too long to leave room for the
+     * per-sub-query inode restriction.
+     *
+     * @param browserQuery the query built from {@link #toBrowserQueryBuilder(DriveRequestForm, User)}
+     * @throws BadRequestException when the search text or filter values are too long
+     */
+    public void checkSearchable(final BrowserQuery browserQuery) {
         if (!browserAPI.esQueryLeavesRoomForInodes(browserQuery)) {
             throw new BadRequestException(
                     "The search text or filter values are too long; shorten them and try again.");
-        }
-        try {
-            return browserAPI.getPaginatedContents(browserQuery);
-        } catch (final DotDataException | DotRuntimeException e) {
-            if (ExceptionUtil.causedBy(e, ESQueryTooComplexException.class)) {
-                throw new BadRequestException(e,
-                        "The search text or filter values are too complex to search for; simplify "
-                                + "or shorten them and try again.");
-            }
-            throw e;
         }
     }
 

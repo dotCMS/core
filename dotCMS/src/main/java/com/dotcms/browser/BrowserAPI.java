@@ -284,6 +284,26 @@ public interface BrowserAPI {
             throws DotSecurityException, DotDataException;
 
     /**
+     * Returns every contentlet row a Content Drive export of this query writes: the working
+     * version of each contentlet in each language the listing would show, readable by the query's
+     * user, at most one row per identifier and language, ordered by identifier and then language.
+     * <p>
+     * It runs the same structural query as {@link #getPaginatedContents(BrowserQuery)}, including
+     * the index narrowing of text and field filters, but ignores cursors, paging, sorting and the
+     * listing's time and row budgets. Folders and links are never returned, and neither are Form
+     * or Host content.
+     *
+     * @param browserQuery the listing query
+     * @param maxRows      the most rows an export may hold; reading stops at the first row past it
+     * @return the rows, with {@link ExportCandidates#overLimit()} set when more than
+     *         {@code maxRows} readable rows exist
+     * @throws DotSecurityException if the user cannot read the parent
+     * @throws DotDataException     if the rows cannot be read
+     */
+    ExportCandidates getContentForExport(BrowserQuery browserQuery, int maxRows)
+            throws DotSecurityException, DotDataException;
+
+    /**
      * Tells whether the index query this request would send leaves room, within the index's
      * maximum query-string length, for a useful batch of candidate inodes. A search term or filter
      * values long enough to leave no room cannot be served, and callers should reject the request

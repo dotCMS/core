@@ -62,6 +62,7 @@ import org.glassfish.jersey.server.ServerProperties;
 				@Tag(name = "Content", description = "Endpoints for managing content and contentlets"),
 				@Tag(name = "Content Analytics", description = "Content performance analytics and reporting"),
 				@Tag(name = "Content Delivery", description = "Content delivery and rendering"),
+				@Tag(name = "Content Drive", description = "Content Drive browsing and export"),
 				@Tag(name = "Content Report", description = "Content reporting and analytics"),
 				@Tag(name = "Content Type", description = "Content type definitions and schema management",
 					externalDocs = @ExternalDocumentation(description = "Additional Content Type API information",

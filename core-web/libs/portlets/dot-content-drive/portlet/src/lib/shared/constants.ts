@@ -316,6 +316,12 @@ export const SUCCESS_MESSAGE_LIFE = 4500;
  */
 export const WARNING_MESSAGE_LIFE = 7000;
 export const ERROR_MESSAGE_LIFE = 4500;
+
+/**
+ * The most items a selection-mode export sends at once. Matches the server's limit on selection
+ * entries, which rejects more with a 400.
+ */
+export const MAX_SELECTION_ITEMS = 60;
 export const MOVE_TO_FOLDER_WORKFLOW_ACTION_ID = 'dd4c4b7c-e9d3-4dc0-8fbf-36102f9c6324';
 
 /**

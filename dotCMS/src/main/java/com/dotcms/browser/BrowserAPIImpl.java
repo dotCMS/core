@@ -86,6 +86,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -2636,6 +2637,83 @@ public class BrowserAPIImpl implements BrowserAPI {
         return returnMap;
     }
 
+    @CloseDBIfOpened
+    @Override
+    public ExportCandidates getContentForExport(final BrowserQuery browserQuery, final int maxRows)
+            throws DotSecurityException, DotDataException {
+        // The listing's budgets (scan rows, scan time, heuristic) are deliberately not read here:
+        // an export must hold every matching row, not as many as a page can afford (FR-011).
+        final SelectQuery sqlQuery = selectQuery(browserQuery, Projection.EXPORT);
+        final boolean narrowThroughIndex = isUseElasticSearchForFiltering(browserQuery);
+        final int chunkSize = Math.max(1,
+                Config.getIntProperty(BROWSER_CONTENT_CHUNK_SIZE_KEY, BROWSER_CONTENT_CHUNK_SIZE_DEFAULT));
+        final ReadableRowFilter readableRowFilter = new ReadableRowFilter();
+
+        final Map<String, ExportRow> rows = new LinkedHashMap<>();
+        ExportRow last = null;
+        while (true) {
+            final List<ExportRow> chunk = readExportChunk(sqlQuery, last, chunkSize);
+            if (chunk.isEmpty()) {
+                break;
+            }
+            last = chunk.get(chunk.size() - 1);
+
+            List<ExportRow> candidates = chunk;
+            if (narrowThroughIndex) {
+                final Set<String> matched = processESDirectly(browserQuery,
+                        chunk.stream().map(ExportRow::inode)
+                                .collect(Collectors.toCollection(LinkedHashSet::new)));
+                candidates = chunk.stream().filter(row -> matched.contains(row.inode()))
+                        .collect(Collectors.toList());
+            }
+            for (final ExportRow row : readableRowFilter.filter(candidates, browserQuery.user)) {
+                rows.putIfAbsent(row.key(), row);
+                if (rows.size() > maxRows) {
+                    return new ExportCandidates(new ArrayList<>(rows.values()), true);
+                }
+            }
+            if (chunk.size() < chunkSize) {
+                break;
+            }
+        }
+        return new ExportCandidates(new ArrayList<>(rows.values()), false);
+    }
+
+    /**
+     * Reads the next chunk of export rows in {@code (identifier, language)} order, starting right
+     * after {@code after}. Keyset paging keeps every chunk as cheap as the first, however deep
+     * the export goes. Package-visible so tests can count the chunks an export reads.
+     *
+     * @param sqlQuery  the export select, built with {@link Projection#EXPORT}
+     * @param after     the last row of the previous chunk, or {@code null} for the first chunk
+     * @param chunkSize the most rows to read
+     * @return the rows, in order
+     * @throws DotDataException if the query fails
+     */
+    List<ExportRow> readExportChunk(final SelectQuery sqlQuery, final ExportRow after,
+            final int chunkSize) throws DotDataException {
+        final StringBuilder sql = new StringBuilder(sqlQuery.selectQuery);
+        if (after != null) {
+            sql.append(" and (cvi.identifier, cvi.lang) > (?, ?) ");
+        }
+        sql.append(" order by cvi.identifier, cvi.lang limit ?");
+
+        final DotConnect dotConnect = new DotConnect().setSQL(sql.toString());
+        sqlQuery.params.forEach(dotConnect::addParam);
+        if (after != null) {
+            dotConnect.addParam(after.identifier());
+            dotConnect.addParam(after.languageId());
+        }
+        dotConnect.addParam(chunkSize);
+
+        final List<ExportRow> chunk = new ArrayList<>();
+        for (final Map<String, Object> row : dotConnect.loadObjectResults()) {
+            chunk.add(new ExportRow((String) row.get("inode"), (String) row.get("identifier"),
+                    ((Number) row.get("lang")).longValue(), (String) row.get("structure_inode")));
+        }
+        return chunk;
+    }
+
     @Override
     @CloseDBIfOpened
     public PaginatedContents getPaginatedContents(final BrowserQuery browserQuery)
@@ -2955,6 +3033,35 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @return The {@link SelectQuery} object containing the select query string and its bound parameters.
      */
     private SelectQuery selectQuery(final BrowserQuery browserQuery) {
+        return selectQuery(browserQuery, Projection.LISTING);
+    }
+
+    /**
+     * What a select built by {@link #selectQuery(BrowserQuery, Projection)} returns. The WHERE
+     * clause is the same for both; only the selected columns, the ORDER BY and the export's
+     * exclusions differ.
+     */
+    enum Projection {
+        /** The listing: one {@code inode} column, ordered as the request asks. */
+        LISTING,
+        /**
+         * A Content Drive export: the working inode, identifier, language and content type of each
+         * row, with no ORDER BY (the caller adds its keyset order) and Form and Host content
+         * excluded.
+         */
+        EXPORT
+    }
+
+    /**
+     * Builds the SQL select for a {@link BrowserQuery} with the given projection. The structural
+     * predicates — site, folder, scope, languages, types, workflow, status, filters — are shared,
+     * so an export reads exactly the rows the listing reads.
+     *
+     * @param browserQuery The filtering criteria set via the {@link BrowserQuery}.
+     * @param projection   What the select returns.
+     * @return The {@link SelectQuery} object containing the select query string and its bound parameters.
+     */
+    private SelectQuery selectQuery(final BrowserQuery browserQuery, final Projection projection) {
         final String workingLiveInode = browserQuery.showWorking || browserQuery.showArchived ?
                 "working_inode" : "live_inode";
 
@@ -3005,7 +3112,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
 
         final StringBuilder selectQuery = new StringBuilder(
-                buildSelectBaseQuery(browserQuery, workingLiveInode, candidatesCte));
+                buildSelectBaseQuery(browserQuery, workingLiveInode, candidatesCte, projection));
 
         if (!browserQuery.languageIds.isEmpty()) {
             appendLanguageQuery(selectQuery, browserQuery.languageIds,
@@ -3083,7 +3190,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         if (UtilMethods.isSet(browserQuery.mimeTypes)) {
             appendMIMETypeQuery(selectQuery, browserQuery.mimeTypes, parameters);
         }
-        if (null != browserQuery.sortBy) {
+        if (Projection.LISTING == projection && null != browserQuery.sortBy) {
             appendOrderByQuery(selectQuery, browserQuery.sortByDesc, useFolderCte);
         }
 
@@ -3116,10 +3223,11 @@ public class BrowserAPIImpl implements BrowserAPI {
      *                         {@code contentlet} -- see {@link #selectQuery(BrowserQuery)}. When
      *                         blank, the query joins directly against {@code identifier} exactly
      *                         as before this fix (every non-folder-scoped caller is unaffected).
+     * @param projection       What the select returns; see {@link Projection}.
      * @return The base SQL SELECT query string.
      */
     private String buildSelectBaseQuery(final BrowserQuery browserQuery, final String workingLiveInode,
-            final String candidatesCte) {
+            final String candidatesCte, final Projection projection) {
 
         final String identifierSource = UtilMethods.isSet(candidatesCte) ? "candidates" : "identifier";
 
@@ -3129,8 +3237,19 @@ public class BrowserAPIImpl implements BrowserAPI {
                 + " c.inode = cvi." + workingLiveInode + " and cvi.variant_id='"
                 + DEFAULT_VARIANT.name() + "' ";
 
-        final StringBuilder baseQuery = new StringBuilder(candidatesCte)
-                .append("select cvi.").append(workingLiveInode).append(" as inode ").append(baseClause);
+        final StringBuilder baseQuery = new StringBuilder(candidatesCte);
+        if (Projection.EXPORT == projection) {
+            baseQuery.append("select cvi.").append(workingLiveInode).append(" as inode, ")
+                    .append("cvi.identifier as identifier, cvi.lang as lang, ")
+                    .append("struc.inode as structure_inode ").append(baseClause)
+                    // Forms and sites are never exported (FR-007); both are constants, not input
+                    .append(" and struc.structuretype <> ").append(BaseContentType.FORM.getType())
+                    .append(" and struc.velocity_var_name <> '").append(Host.HOST_VELOCITY_VAR_NAME)
+                    .append("' ");
+        } else {
+            baseQuery.append("select cvi.").append(workingLiveInode).append(" as inode ")
+                    .append(baseClause);
+        }
 
         final boolean showAllBaseTypes = browserQuery.baseTypes.contains(BaseContentType.ANY);
         if (!showAllBaseTypes) {
@@ -3746,7 +3865,7 @@ public class BrowserAPIImpl implements BrowserAPI {
      * </ul>
      * The match on the synthetic value is exact on purpose. A MIME Type that merely starts with it -- say,
      * {@code application/dotpage-foo} -- must still go through the metadata check.
-     * <p>The {@code struc} table is already joined by {@link #buildSelectBaseQuery(BrowserQuery, String)}, so the
+     * <p>The {@code struc} table is already joined by {@link #buildSelectBaseQuery(BrowserQuery, String, String, Projection)}, so the
      * base type condition needs no extra join and no bound parameter.
      *
      * @param sqlQuery  The main SQL query.

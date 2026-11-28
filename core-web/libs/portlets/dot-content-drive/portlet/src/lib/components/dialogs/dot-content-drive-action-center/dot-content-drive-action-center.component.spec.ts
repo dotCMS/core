@@ -1003,6 +1003,45 @@ describe('DotContentDriveActionCenterComponent', () => {
         });
     });
 
+    // Export (#37900) is a toolbar button beside the workflow actions, not an Action Center row: it
+    // has no preview, no eligible subset and nothing to run over the selection (T074).
+    describe('export is not offered here', () => {
+        beforeEach(() => {
+            // Every row the dialog can show: an admin, with an environment to push to, over
+            // contentlets and a folder.
+            mockCurrentUserIsAdmin.set(true);
+            mockHasPushPublishEnvironments.set(true);
+            mockSelectedItems.set([
+                contentlet({ inode: 'inode-1' }),
+                contentlet({ inode: 'inode-2', live: true }),
+                folderRow('folder-1', '/blogs/folder-1/')
+            ]);
+            spectator.detectChanges();
+        });
+
+        it('should label no quick action Export', () => {
+            // The row buttons only: the warning icon and coming-soon badge share the prefix.
+            const rows = spectator.queryAll<HTMLButtonElement>(
+                'button[data-testid^="quick-action-"]'
+            );
+
+            expect(rows.length).toBeGreaterThan(0);
+            expect(spectator.query('[data-testid="quick-action-EXPORT"]')).toBeNull();
+
+            // The message mock echoes keys, so a row labeled from any export key reads "export".
+            for (const row of rows) {
+                expect(row.textContent).not.toMatch(/\bexport\b/i);
+            }
+        });
+
+        it('should label no row in the dialog Export', () => {
+            const dialog = spectator.query('[data-testid="action-center"]');
+
+            expect(dialog).toBeTruthy();
+            expect(dialog?.textContent).not.toMatch(/\bexport\b/i);
+        });
+    });
+
     describe('lock and unlock quick actions', () => {
         it('should fire LOCK with only the unlocked inodes', () => {
             mockSelectedItems.set([

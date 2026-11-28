@@ -73,6 +73,11 @@
                             (click)="menu.toggle($event)"
                             #button />
                     </span>
+
+                    <!-- Filter mode (#37900): exports the listing as a CSV when it is filtered to
+                         one content type. It decides for itself whether to show, so it renders
+                         nothing for any other filter. -->
+                    <dot-content-drive-export-button data-testid="export-button" />
                 }
 
                 @if ($displayActions()) {
@@ -83,6 +88,11 @@
                         animate.enter="toolbar-enter"
                         animate.leave="toolbar-leave"
                         data-testid="workflow-actions" />
+
+                    <!-- Selection mode (#37900): exports the selected contentlets as a zip. Beside
+                         the workflow actions, since Upload and Add New are hidden while anything
+                         is selected. -->
+                    <dot-content-drive-export-button data-testid="export-button" />
 
                     @if ($displayActionCenter()) {
                         <!-- Refused outright during a run: the dialog would open with every row

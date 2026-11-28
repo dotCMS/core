@@ -1,0 +1,16 @@
+@if ($visible()) {
+    <!-- The tooltip sits on a wrapper, not on the button: a disabled button gets no hover, so a
+         tooltip bound there would never say why it is disabled. -->
+    <span
+        [pTooltip]="$tooltip() | dm"
+        data-testid="content-drive-export-tooltip"
+        class="inline-flex">
+        <p-button
+            [label]="'content-drive.export.button' | dm"
+            [outlined]="true"
+            [loading]="$exporting()"
+            [disabled]="$disabled()"
+            data-testid="content-drive-export-button"
+            (click)="onExport()" />
+    </span>
+}
