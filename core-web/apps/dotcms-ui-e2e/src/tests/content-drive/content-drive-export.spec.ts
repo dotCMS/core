@@ -133,10 +133,9 @@ test.describe('Content Drive export', () => {
                     .click();
             }
 
-            // With a selection the button sits beside the workflow actions.
-            await expect(drive.toolbar.getByTestId('workflow-actions')).toBeVisible({
-                timeout: 20000
-            });
+            // With a selection the button sits in the selection block, beside the workflow actions.
+            // The actions themselves are not awaited: for contentlets of two types there may be no
+            // action they share, and the component then renders hidden.
             const exportButton = drive.toolbar.getByTestId('export-button').getByRole('button');
             await expect(exportButton).toBeEnabled({ timeout: 20000 });
 
